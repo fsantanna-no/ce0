@@ -1,6 +1,6 @@
 enum class TK {
     ERR, EOF, CHAR,
-    XVAR, XUSER, XNAT,
+    XVAR, XUSER, XNAT, XNUM,
     ARROW,
     VAR, ELSE, TYPE
 }
@@ -14,7 +14,7 @@ val key2tk: HashMap<String, TK> = hashMapOf (
 sealed class TK_Val
 data class TK_Chr (val v: Char):   TK_Val()
 data class TK_Str (val v: String): TK_Val()
-//    data class Num (val v: Int)
+data class TK_Num (val v: Int):    TK_Val()
 
 data class Tk (
     var enu: TK,
@@ -131,26 +131,41 @@ fun token (all: All) {
                 all.tk1.enu = TK.XNAT
             }
             else -> {
-                if (x1.isLetter()) {
-                    // OK
+                var pay = ""
+                if (x1.isDigit()) {
+                    while (x1.isLetterOrDigit()) {
+                        if (x1.isDigit()) {
+                            pay += x1
+                            c1 = all.inp.read()
+                            x1 = c1.toChar()
+                            all.col += 1
+                        } else {
+                            all.tk1.enu = TK.ERR
+                            all.tk1.pay = TK_Str(pay)
+                            return
+                        }
+                    }
+                    all.inp.unread(c1)
+                    all.col -= 1
+                    all.tk1.enu = TK.XNUM
+                    all.tk1.pay = TK_Num(pay.toInt())
+                } else if (x1.isLetter()) {
+                    while (x1.isLetterOrDigit() || x1=='_') {
+                        pay += x1
+                        c1 = all.inp.read()
+                        x1 = c1.toChar()
+                        all.col += 1
+                    }
+                    all.inp.unread(c1)
+                    all.col -= 1
+                    val key = key2tk[pay]
+                    all.tk1.enu = key ?: (if (pay[0].isLowerCase()) TK.XVAR else TK.XUSER)
+                    all.tk1.pay = TK_Str(pay)
                 } else {
                     all.tk1.enu = TK.ERR
                     all.tk1.pay = TK_Chr(x1)
                     return
                 }
-                var pay = ""
-                while (x1.isLetterOrDigit() || x1=='_') {
-                    pay += x1
-                    c1 = all.inp.read()
-                    x1 = c1.toChar()
-                    all.col += 1
-                }
-                all.inp.unread(c1)
-                all.col -= 1
-                all.tk1.pay = TK_Str(pay)
-
-                val key = key2tk[pay]
-                all.tk1.enu = key ?: (if (pay[0].isLowerCase()) TK.XVAR else TK.XUSER)
             }
         }
     }

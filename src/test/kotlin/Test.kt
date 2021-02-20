@@ -117,4 +117,18 @@ class Tests {
         lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1.pay.let { (it as TK_Str).v == "(1)" }))
         lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1.pay.let { (it as TK_Str).v == "2+2" }))
     }
+
+    // XNUM
+
+    @Test
+    fun b09_lexer_xnum () {
+        val all = all_new(PushbackReader(StringReader(".1a"), 2))
+        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay.let { (it as TK_Chr).v == '.' }))
+        lexer(all) ; assert(all.tk1.enu==TK.ERR)
+    }
+    @Test
+    fun b10_lexer_xnum () {
+        val all = all_new(PushbackReader(StringReader("10"), 2))
+        lexer(all) ; assert(all.tk1.enu==TK.XNUM && (all.tk1.pay.let { (it as TK_Num).v == 10 }))
+    }
 }
