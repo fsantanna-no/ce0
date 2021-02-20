@@ -1,17 +1,26 @@
 enum class TK {
-    ERR, EOF, CHAR, ARROW
+    ERR, EOF,
+    CHAR, XVAR,
+    ARROW,
+    VAR, ELSE, TYPE
 }
 
+val key2tk: HashMap<String, TK> = hashMapOf (
+    "var"  to TK.VAR,
+    "else" to TK.ELSE,
+    "type" to TK.TYPE,
+)
+
 sealed class TK_Val
-data class TK_Chr (val v: Char): TK_Val()
-//    data class Str (val v: String)
+data class TK_Chr (val v: Char):   TK_Val()
+data class TK_Str (val v: String): TK_Val()
 //    data class Num (val v: Int)
 
 data class Tk (
     var enu: TK,
     var pay: TK_Val?,
     var lin: Int,
-    var col: Int
+    var col: Int,
 )
 
 fun blanks (all: All) {
@@ -60,14 +69,15 @@ fun token (all: All) {
     all.tk1.col = all.col
 
     val c1 = all.inp.read()
+    var x1 = c1.toChar()
     all.col += 1
     if (c1 == -1) {
         all.tk1.enu = TK.EOF
     } else {
-        when (c1.toChar()) {
+        when (x1) {
             '{' , '}' , ')' , ';' , ':' , '=' , ',' , '.' , '\\' , '!' , '?' -> {
                 all.tk1.enu = TK.CHAR
-                all.tk1.pay = TK_Chr(c1.toChar())
+                all.tk1.pay = TK_Chr(x1)
             }
             '-' -> {
                 val c2 = all.inp.read().toChar()
@@ -75,7 +85,25 @@ fun token (all: All) {
                     all.tk1.enu = TK.ARROW
                 }
             }
-            else -> assert(false) { "TODO" }
+            else -> {
+                if (x1.isLetter()) {
+                    // OK
+                } else {
+                    all.tk1.enu = TK.ERR
+                    all.tk1.pay = TK_Chr(x1)
+                    return
+                }
+                var pay = ""
+                while (x1.isLetterOrDigit() || x1=='_') {
+                    pay += x1
+                    x1 = all.inp.read().toChar()
+                    all.col += 1
+                }
+                all.tk1.pay = TK_Str(pay)
+
+                val key = key2tk[pay]
+                all.tk1.enu = key ?: TK.XVAR
+            }
         }
     }
 }
