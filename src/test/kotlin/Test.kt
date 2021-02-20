@@ -111,4 +111,10 @@ class Tests {
         lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1.pay.let { (it as TK_Str).v == "char" }))
         lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1.pay.let { (it as TK_Str).v == "Tp" }))
     }
+    @Test
+    fun b08_lexer_xnat () {
+        val all = all_new(PushbackReader(StringReader("_{(1)} _(2+2)"), 2))
+        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1.pay.let { (it as TK_Str).v == "(1)" }))
+        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1.pay.let { (it as TK_Str).v == "2+2" }))
+    }
 }

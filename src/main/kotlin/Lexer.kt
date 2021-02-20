@@ -92,14 +92,41 @@ fun token (all: All) {
                 var c2 = all.inp.read()
                 var x2 = c2.toChar()
                 var pay = ""
-                while (x2.isLetterOrDigit() || x2=='_') {
-                    pay += x2
+
+                var open:  Char? = null
+                var close: Char? = null
+                var open_close = 0
+                if (x2=='(' || x2=='{') {
+                    open  = x2
+                    close = if (x2=='(') ')' else '}'
+                    open_close += 1
                     c2 = all.inp.read()
                     x2 = c2.toChar()
                     all.col += 1
                 }
-                all.inp.unread(c2)
-                all.col -= 1
+
+                while (close!=null || x2.isLetterOrDigit() || x2=='_') {
+                    if (x2 == open) {
+                        open_close += 1
+                    } else if (x2 == close) {
+                        open_close -= 1
+                        if (open_close == 0) {
+                            break
+                        }
+                    }
+                    pay += x2
+                    if (x2 == '\n') {
+                        all.lin += 1
+                        all.col = 0
+                    }
+                    c2 = all.inp.read()
+                    x2 = c2.toChar()
+                    all.col += 1
+                }
+                if (close == null) {
+                    all.inp.unread(c2)
+                    all.col -= 1
+                }
                 all.tk1.pay = TK_Str(pay)
                 all.tk1.enu = TK.XNAT
             }
