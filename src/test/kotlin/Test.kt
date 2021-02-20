@@ -24,5 +24,15 @@ class Tests {
         assert(inp.read() == 65535)     // for some reason, it returns this value after reading -1
         assert(inp.read() == -1)        // then, it returns -1 correctly
         assert(inp.read() == -1)        // then, it returns -1 correctly
+        assert(all.lin == 1)
+        assert(all.col == 10)
+    }
+    @Test
+    fun a02_blanks () {
+        val inp = PushbackReader(StringReader("-- c1\n--c2\n\n"))
+        val all = All(inp)
+        blanks(all)
+        assert(all.lin == 4)
+        assert(all.col == 1)
     }
 }
