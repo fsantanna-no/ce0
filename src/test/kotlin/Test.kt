@@ -58,17 +58,17 @@ class Tests {
     @Test
     fun b03_lexer_syms () {
         val all = all_new(PushbackReader(StringReader("{ -> ,"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay.let { (it as TK_Chr).v == '{' }))
+        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay as TK_Chr).v=='{')
         lexer(all) ; assert(all.tk1.enu==TK.ARROW)
-        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay.let { (it as TK_Chr).v == ',' }))
+        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay as TK_Chr).v==',')
     }
     @Test
     fun b04_lexer_syms () {
         val all = all_new(PushbackReader(StringReader(": }{ :"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay.let { (it as TK_Chr).v == ':' }))
-        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay.let { (it as TK_Chr).v == '}' }))
-        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay.let { (it as TK_Chr).v == '{' }))
-        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay.let { (it as TK_Chr).v == ':' }))
+        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay as TK_Chr).v==':')
+        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay as TK_Chr).v=='}')
+        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay as TK_Chr).v=='{')
+        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay as TK_Chr).v==':')
     }
 
     // KEYWORDS
@@ -76,10 +76,21 @@ class Tests {
     @Test
     fun b05_lexer_keys () {
         val all = all_new(PushbackReader(StringReader("xvar var else varx type"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.XVAR && (all.tk1.pay.let { (it as TK_Str).v == "xvar" }))
+        lexer(all) ; assert(all.tk1.enu==TK.XVAR && (all.tk1.pay as TK_Str).v=="xvar")
         lexer(all) ; assert(all.tk1.enu==TK.VAR)
         lexer(all) ; assert(all.tk1.enu==TK.ELSE)
-        lexer(all) ; assert(all.tk1.enu==TK.XVAR && (all.tk1.pay.let { (it as TK_Str).v == "varx" }))
+        lexer(all) ; assert(all.tk1.enu==TK.XVAR && (all.tk1.pay as TK_Str).v=="varx")
         lexer(all) ; assert(all.tk1.enu==TK.TYPE)
+    }
+
+    // XVAR / XUSER
+
+    @Test
+    fun b06_lexer_keys () {
+        val all = all_new(PushbackReader(StringReader("c1\nc2 c3  \n    \nc4"), 2))
+        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XVAR && (all.tk1.pay.let { (it as TK_Str).v == "c1" }))
+        lexer(all) ; assert(all.tk1.lin==2 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XVAR && (all.tk1.pay.let { (it as TK_Str).v == "c2" }))
+        lexer(all) ; assert(all.tk1.lin==2 && all.tk1.col==4) ; assert(all.tk1.enu==TK.XVAR && (all.tk1.pay.let { (it as TK_Str).v == "c3" }))
+        lexer(all) ; assert(all.tk1.lin==4 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XVAR && (all.tk1.pay.let { (it as TK_Str).v == "c4" }))
     }
 }

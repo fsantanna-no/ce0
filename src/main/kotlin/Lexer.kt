@@ -68,7 +68,7 @@ fun token (all: All) {
     all.tk1.lin = all.lin
     all.tk1.col = all.col
 
-    val c1 = all.inp.read()
+    var c1 = all.inp.read()
     var x1 = c1.toChar()
     all.col += 1
     if (c1 == -1) {
@@ -81,6 +81,7 @@ fun token (all: All) {
             }
             '-' -> {
                 val c2 = all.inp.read().toChar()
+                all.col += 1
                 if (c2 == '>') {
                     all.tk1.enu = TK.ARROW
                 }
@@ -96,9 +97,12 @@ fun token (all: All) {
                 var pay = ""
                 while (x1.isLetterOrDigit() || x1=='_') {
                     pay += x1
-                    x1 = all.inp.read().toChar()
+                    c1 = all.inp.read()
+                    x1 = c1.toChar()
                     all.col += 1
                 }
+                all.inp.unread(c1)
+                all.col -= 1
                 all.tk1.pay = TK_Str(pay)
 
                 val key = key2tk[pay]
