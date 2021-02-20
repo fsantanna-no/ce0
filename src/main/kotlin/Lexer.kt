@@ -1,6 +1,6 @@
 enum class TK {
     ERR, EOF,
-    CHAR, XVAR,
+    CHAR, XVAR, XUSER,
     ARROW,
     VAR, ELSE, TYPE
 }
@@ -106,7 +106,7 @@ fun token (all: All) {
                 all.tk1.pay = TK_Str(pay)
 
                 val key = key2tk[pay]
-                all.tk1.enu = key ?: TK.XVAR
+                all.tk1.enu = key ?: (if (pay[0].isLowerCase()) TK.XVAR else TK.XUSER)
             }
         }
     }
