@@ -1,6 +1,6 @@
 enum class TK {
-    ERR, EOF,
-    CHAR, XVAR, XUSER,
+    ERR, EOF, CHAR,
+    XVAR, XUSER, XNAT,
     ARROW,
     VAR, ELSE, TYPE
 }
@@ -84,7 +84,24 @@ fun token (all: All) {
                 all.col += 1
                 if (c2 == '>') {
                     all.tk1.enu = TK.ARROW
+                } else {
+                    assert(false) { "TODO" }
                 }
+            }
+            '_' -> {
+                var c2 = all.inp.read()
+                var x2 = c2.toChar()
+                var pay = ""
+                while (x2.isLetterOrDigit() || x2=='_') {
+                    pay += x2
+                    c2 = all.inp.read()
+                    x2 = c2.toChar()
+                    all.col += 1
+                }
+                all.inp.unread(c2)
+                all.col -= 1
+                all.tk1.pay = TK_Str(pay)
+                all.tk1.enu = TK.XNAT
             }
             else -> {
                 if (x1.isLetter()) {
