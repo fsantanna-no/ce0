@@ -162,4 +162,32 @@ class Parser {
         val e = parser_expr(all,true)
         assert(e is Expr.Call && e.arg is Expr.Call && (e.arg as Expr.Call).arg is Expr.Call && ((e.arg as Expr.Call).arg as Expr.Call).arg is Expr.Unit)
     }
+    @Test
+    fun b13_parser_expr_call () {
+        val all = All_new(PushbackReader(StringReader("xxx ("), 2))
+        lexer(all)
+        val e = parser_expr(all,true)
+        assert(e==null && all.err=="(ln 1, col 6): expected expression : have end of file")
+    }
+    @Test
+    fun b14_parser_expr_cons () {
+        val all = All_new(PushbackReader(StringReader("X ("), 2))
+        lexer(all)
+        val e = parser_expr(all,false)
+        assert(e==null && all.err=="(ln 1, col 4): expected expression : have end of file")
+    }
+    @Test
+    fun b15_parser_expr_cons () {
+        val all = All_new(PushbackReader(StringReader("X ()"), 2))
+        lexer(all)
+        val e = parser_expr(all,false)
+        assert(e is Expr.Cons && (e.tk.pay as TK_Str).v=="X" && e.arg is Expr.Unit)
+    }
+    @Test
+    fun b16_parser_expr_cons () {
+        val all = All_new(PushbackReader(StringReader("X"), 2))
+        lexer(all)
+        val e = parser_expr(all,false)
+        assert(e is Expr.Cons && (e.tk.pay as TK_Str).v=="X" && e.arg is Expr.Unit)
+    }
 }
