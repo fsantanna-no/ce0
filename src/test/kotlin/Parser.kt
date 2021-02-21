@@ -131,4 +131,18 @@ class Parser {
         val e = parser_expr(all,true)
         assert(e is Expr.Nat && (e.tk.pay as TK_Str).v=="x")
     }
+    @Test
+    fun b09_parser_expr_call () {
+        val all = All_new(PushbackReader(StringReader("xxx ()"), 2))
+        lexer(all)
+        val e = parser_expr(all,true)
+        assert(e is Expr.Call && e.func is Expr.Var && (e.func.tk.pay as TK_Str).v=="xxx" && e.arg is Expr.Unit)
+    }
+    @Test
+    fun b10_parser_expr_call () {
+        val all = All_new(PushbackReader(StringReader("call xxx ()"), 2))
+        lexer(all)
+        val e = parser_expr(all,true)
+        assert(e is Expr.Call && e.func is Expr.Var && (e.func.tk.pay as TK_Str).v=="xxx" && e.arg is Expr.Unit)
+    }
 }

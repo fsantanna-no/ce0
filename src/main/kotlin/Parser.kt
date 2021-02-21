@@ -12,6 +12,7 @@ sealed class Expr (val tk: Tk) {
     data class Var  (val tk_: Tk): Expr(tk_)
     data class Nat  (val tk_: Tk): Expr(tk_)
     data class Tuple (val tk_: Tk, val vec: Array<Expr>): Expr(tk_)
+    data class Call (val tk_: Tk, val func: Expr, val arg: Expr): Expr(tk_)
 }
 
 fun All.accept (enu: TK, chr: Char? = null): Boolean {
@@ -107,5 +108,32 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
     }
 
     val ispre = canpre && all.accept(TK.CALL)
-    return one()
+
+    var ret = one()
+    if (ret == null) {
+        return null
+    }
+
+    while (true) {
+        val tk = all.tk0
+        when {
+            all.accept(TK.CHAR,'.') -> {}
+            else -> {
+                var ok = false
+                if (ret is Expr.Nat || ret is Expr.Var) {
+                    val e = parser_expr(all, false)
+                    if (e != null) {
+                        ok = true
+                        ret = Expr.Call(tk,ret,e)
+                    }
+                }
+                when {
+                    ok -> {}
+                    (tk.lin==all.tk0.lin && tk.col==all.tk0.col) -> break
+                    else -> return null
+                }
+            }
+        }
+    }
+    return ret
 }
