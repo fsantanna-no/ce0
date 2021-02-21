@@ -124,4 +124,11 @@ class Parser {
         val e = parser_expr(all)
         assert(e==null && all.err=="(ln 1, col 7): expected expression : have end of file")
     }
+    @Test
+    fun b08_parser_expr_nat () {
+        val all = All_new(PushbackReader(StringReader("_x"), 2))
+        lexer(all)
+        val e = parser_expr(all)
+        assert(e is Expr.Nat && (e.tk.pay as TK_Str).v=="x")
+    }
 }

@@ -10,6 +10,7 @@ sealed class Type (val tk: Tk) {
 sealed class Expr (val tk: Tk) {
     data class Unit (val tk_: Tk): Expr(tk_)
     data class Var  (val tk_: Tk): Expr(tk_)
+    data class Nat  (val tk_: Tk): Expr(tk_)
     data class Tuple (val tk_: Tk, val vec: Array<Expr>): Expr(tk_)
 }
 
@@ -79,6 +80,7 @@ fun parser_expr (all: All): Expr? {
     return when {
         all.accept(TK.UNIT) -> Expr.Unit(all.tk0)
         all.accept(TK.XVAR) -> Expr.Var(all.tk0)
+        all.accept(TK.XNAT) -> Expr.Nat(all.tk0)
         all.accept(TK.CHAR,'(') -> { // Expr.Tuple
             val e = parser_expr(all)
             when {
