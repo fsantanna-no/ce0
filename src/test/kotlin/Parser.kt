@@ -145,4 +145,21 @@ class Parser {
         val e = parser_expr(all,true)
         assert(e is Expr.Call && e.func is Expr.Var && (e.func.tk.pay as TK_Str).v=="xxx" && e.arg is Expr.Unit)
     }
+    @Test
+    fun b11_parser_expr_call () {
+        val all = All_new(PushbackReader(StringReader("f()\n()\n()"), 2))
+        lexer(all)
+        val e1 = parser_expr(all,true)
+        val e2 = parser_expr(all,true)
+        val e3 = parser_expr(all,true)
+        assert(e1 is Expr.Call && e2 is Expr.Unit && e3 is Expr.Unit)
+        assert(e1 is Expr.Call && e1.func is Expr.Var && (e1.func.tk.pay as TK_Str).v=="f" && e1.arg is Expr.Unit)
+    }
+    @Test
+    fun b12_parser_expr_call () {
+        val all = All_new(PushbackReader(StringReader("f1 f2\nf3\n()"), 2)) // f1 (f2 (f3 ()))
+        lexer(all)
+        val e = parser_expr(all,true)
+        assert(e is Expr.Call && e.arg is Expr.Call && (e.arg as Expr.Call).arg is Expr.Call && ((e.arg as Expr.Call).arg as Expr.Call).arg is Expr.Unit)
+    }
 }
