@@ -293,4 +293,15 @@ class Parser {
         val e = parser_expr(all,false)
         assert(e is Expr.Pred && (e.tk.pay as TK_Str).v=="Item" && e.pre is Expr.Var)
     }
+
+    // STMT
+
+    @Test
+    fun c01_parser_stmt () {
+        val all = All_new(PushbackReader(StringReader("var x: () = ()"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.Var && s.type is Type.Unit && s.init is Expr.Unit)
+    }
+
 }

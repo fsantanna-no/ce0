@@ -23,6 +23,10 @@ sealed class Expr (val tk: Tk) {
     data class Call  (val tk_: Tk, val pre: Expr, val pos: Expr): Expr(tk_)
 }
 
+sealed class Stmt (val tk: Tk) {
+    data class Var(val tk_: Tk, val type: Type, val init: Expr) : Stmt(tk_)
+}
+
 fun All.accept (enu: TK, chr: Char? = null): Boolean {
     val ret = when {
         (this.tk1.enu != enu) -> false
@@ -194,4 +198,31 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
         }
     }
     return ret
+}
+
+fun parser_stmt (all: All): Stmt? {
+    when {
+        all.accept(TK.VAR) -> {
+            if (!all.accept_err(TK.XVAR)) {
+                return null
+            }
+            val tk_id = all.tk0
+            if (!all.accept_err(TK.CHAR,':')) {
+                return null
+            }
+            val tp = parser_type(all)
+            if (tp == null) {
+                return null
+            }
+            if (!all.accept_err(TK.CHAR,'=')) {
+                return null
+            }
+            val e = parser_expr(all, true)
+            if (e == null) {
+                return null
+            }
+            return Stmt.Var(tk_id, tp, e)
+        }
+        else -> { all.err_expected("statement") ; return null }
+    }
 }
