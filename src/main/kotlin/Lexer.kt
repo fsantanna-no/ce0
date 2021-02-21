@@ -25,39 +25,30 @@ data class Tk (
 
 fun blanks (all: All) {
     while (true) {
-        val c1 = all.inp.read()
-        when (c1.toChar()) {
-            '\n' -> {   // ignore new lines
-                all.lin += 1
-                all.col = 1
-            }
-            ' ' -> {    // ignore new spaces
-                all.col += 1
-            }
+        val (c1,x1) = all.read()
+        when (x1) {
+            '\n', ' ' -> { }                // ignore line/space
             '-' -> {
-                val c2 = all.inp.read()
-                if (c2.toChar() == '-') {            // ignore comments
-                    all.col += 1
-                    all.col += 1
+                val (c2,x2) = all.read()
+                if (x2 == '-') {            // ignore comments
                     while (true) {
-                        val c3 = all.inp.read()
-                        if (c3 == -1) {              // EOF stops comment
+                        val (c3,x3) = all.read()
+                        if (c3 == -1) {     // EOF stops comment
                             break
                         }
-                        if (c3.toChar() == '\n') {   // LN stops comment
-                            all.inp.unread(c3)
+                        if (x3 == '\n') {   // LN stops comment
+                            all.unread(c3)
                             break
                         }
-                        all.col += 1
                     }
                 } else {
-                    all.inp.unread(c2)
-                    all.inp.unread(c1)
+                    all.unread(c2)
+                    all.unread(c1)
                     return
                 }
             }
             else -> {
-                all.inp.unread(c1)
+                all.unread(c1)
                 return
             }
         }
@@ -68,9 +59,7 @@ fun token (all: All) {
     all.tk1.lin = all.lin
     all.tk1.col = all.col
 
-    var c1 = all.inp.read()
-    var x1 = c1.toChar()
-    all.col += 1
+    var (c1,x1) = all.read()
     if (c1 == -1) {
         all.tk1.enu = TK.EOF
     } else {
@@ -80,17 +69,15 @@ fun token (all: All) {
                 all.tk1.pay = TK_Chr(x1)
             }
             '-' -> {
-                val c2 = all.inp.read().toChar()
-                all.col += 1
-                if (c2 == '>') {
+                val (_,x2) = all.read()
+                if (x2 == '>') {
                     all.tk1.enu = TK.ARROW
                 } else {
                     assert(false) { "TODO" }
                 }
             }
             '_' -> {
-                var c2 = all.inp.read()
-                var x2 = c2.toChar()
+                var (c2,x2) = all.read()
                 var pay = ""
 
                 var open:  Char? = null
@@ -100,9 +87,7 @@ fun token (all: All) {
                     open  = x2
                     close = if (x2=='(') ')' else '}'
                     open_close += 1
-                    c2 = all.inp.read()
-                    x2 = c2.toChar()
-                    all.col += 1
+                    all.read().let { c2=it.first ; x2=it.second }
                 }
 
                 while (close!=null || x2.isLetterOrDigit() || x2=='_') {
@@ -115,17 +100,10 @@ fun token (all: All) {
                         }
                     }
                     pay += x2
-                    if (x2 == '\n') {
-                        all.lin += 1
-                        all.col = 0
-                    }
-                    c2 = all.inp.read()
-                    x2 = c2.toChar()
-                    all.col += 1
+                    all.read().let { c2=it.first ; x2=it.second }
                 }
                 if (close == null) {
-                    all.inp.unread(c2)
-                    all.col -= 1
+                    all.unread(c2)
                 }
                 all.tk1.pay = TK_Str(pay)
                 all.tk1.enu = TK.XNAT
@@ -135,37 +113,29 @@ fun token (all: All) {
 
                 val isdollar = (x1 == '$')
                 if (isdollar) {
-                    c1 = all.inp.read()
-                    x1 = c1.toChar()
-                    all.col += 1
+                    all.read().let { c1=it.first ; x1=it.second }
                 }
 
                 if (!isdollar && x1.isDigit()) {
                     while (x1.isLetterOrDigit()) {
                         if (x1.isDigit()) {
                             pay += x1
-                            c1 = all.inp.read()
-                            x1 = c1.toChar()
-                            all.col += 1
+                            all.read().let { c1=it.first ; x1=it.second }
                         } else {
                             all.tk1.enu = TK.ERR
                             all.tk1.pay = TK_Str(pay)
                             return
                         }
                     }
-                    all.inp.unread(c1)
-                    all.col -= 1
+                    all.unread(c1)
                     all.tk1.enu = TK.XNUM
                     all.tk1.pay = TK_Num(pay.toInt())
                 } else if (x1.isUpperCase() || (x1.isLowerCase() && !isdollar)) {
                     while (x1.isLetterOrDigit() || x1=='_') {
                         pay += x1
-                        c1 = all.inp.read()
-                        x1 = c1.toChar()
-                        all.col += 1
+                        all.read().let { c1=it.first ; x1=it.second }
                     }
-                    all.inp.unread(c1)
-                    all.col -= 1
+                    all.unread(c1)
                     all.tk1.pay = TK_Str(pay)
                     val key = key2tk[pay]
                     all.tk1.enu = when {
