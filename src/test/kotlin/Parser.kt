@@ -96,6 +96,20 @@ class Parser {
         val e = parser_expr(all,true)
         assert(e is Expr.Nat && (e.tk.pay as TK_Str).v=="x")
     }
+    @Test
+    fun b08_parser_expr_empty () {
+        val all = All_new(PushbackReader(StringReader("\$Nat"), 2))
+        lexer(all)
+        val e = parser_expr(all,false)
+        assert(e is Expr.Empty && (e.tk.pay as TK_Str).v=="Nat")
+    }
+    @Test
+    fun b08_parser_expr_int () {
+        val all = All_new(PushbackReader(StringReader("10"), 2))
+        lexer(all)
+        val e = parser_expr(all,false)
+        assert(e is Expr.Int && (e.tk.pay as TK_Num).v==10)
+    }
 
     // PARENS, TUPLE
 
@@ -207,7 +221,7 @@ class Parser {
         assert(e is Expr.Cons && (e.tk.pay as TK_Str).v=="Aa1" && e.pos is Expr.Cons && (e.pos as Expr.Cons).pos is Expr.Tuple)
     }
 
-    // INDEX, PRED, DISC
+    // INDEX
 
     @Test
     fun b18_parser_expr_index () {
@@ -260,5 +274,23 @@ class Parser {
         lexer(all)
         val e = parser_expr(all,false)
         assert(e==null && all.err=="(ln 1, col 3): unexpected operand to `\\´")
+    }
+
+    // PRED, DISC
+
+    @Test
+    fun b25_parser_expr_disc () {
+        val all = All_new(PushbackReader(StringReader("x.Item!"), 2))
+        lexer(all)
+        val e = parser_expr(all,false)
+        println(e)
+        assert(e is Expr.Disc && (e.tk.pay as TK_Str).v=="Item" && e.pre is Expr.Var)
+    }
+    @Test
+    fun b26_parser_expr_pred () {
+        val all = All_new(PushbackReader(StringReader("x.Item?"), 2))
+        lexer(all)
+        val e = parser_expr(all,false)
+        assert(e is Expr.Pred && (e.tk.pay as TK_Str).v=="Item" && e.pre is Expr.Var)
     }
 }

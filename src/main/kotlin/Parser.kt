@@ -9,8 +9,10 @@ sealed class Type (val tk: Tk) {
 
 sealed class Expr (val tk: Tk) {
     data class Unit  (val tk_: Tk): Expr(tk_)
+    data class Int   (val tk_: Tk): Expr(tk_)
     data class Var   (val tk_: Tk): Expr(tk_)
     data class Nat   (val tk_: Tk): Expr(tk_)
+    data class Empty (val tk_: Tk): Expr(tk_)
     data class Tuple (val tk_: Tk, val vec: Array<Expr>): Expr(tk_)
     data class Cons  (val tk_: Tk, val pos: Expr): Expr(tk_)
     data class Dnref (val tk_: Tk, val pre: Expr): Expr(tk_)
@@ -86,9 +88,11 @@ fun parser_type (all: All): Type? {
 fun parser_expr (all: All, canpre: Boolean): Expr? {
     fun one (): Expr? {
         return when {
-            all.accept(TK.UNIT)  -> Expr.Unit(all.tk0)
-            all.accept(TK.XVAR)  -> Expr.Var(all.tk0)
-            all.accept(TK.XNAT)  -> Expr.Nat(all.tk0)
+            all.accept(TK.UNIT)   -> Expr.Unit(all.tk0)
+            all.accept(TK.XNUM)   -> Expr.Int(all.tk0)
+            all.accept(TK.XVAR)   -> Expr.Var(all.tk0)
+            all.accept(TK.XNAT)   -> Expr.Nat(all.tk0)
+            all.accept(TK.XEMPTY) -> Expr.Empty(all.tk0)
             all.accept(TK.XUSER) -> {
                 val sub = all.tk0
                 val arg = parser_expr(all, false)
@@ -150,9 +154,10 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
                         ret = Expr.Index(all.tk0, ret!!)
                     }
                     all.accept(TK.XUSER) || all.accept(TK.XEMPTY) -> {
+                        val tk = all.tk0
                         when {
-                            all.accept(TK.CHAR,'?') -> Expr.Pred(all.tk0,ret!!)
-                            all.accept(TK.CHAR,'!') -> Expr.Disc(all.tk0,ret!!)
+                            all.accept(TK.CHAR,'?') -> ret = Expr.Pred(tk,ret!!)
+                            all.accept(TK.CHAR,'!') -> ret = Expr.Disc(tk,ret!!)
                             else -> {
                                 all.err_expected("`?´ or `!´")
                                 return null
