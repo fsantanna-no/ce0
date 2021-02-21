@@ -1,7 +1,7 @@
 sealed class Type (val isptr: Boolean) {
-    class Any  (isptr: Boolean):             Type(isptr)
-    class Unit (isptr: Boolean):             Type(isptr)
-    class Nat  (isptr: Boolean, val tk: Tk): Type(isptr)
+    data class Any  (val x: Boolean):             Type(x)
+    data class Unit (val x: Boolean):             Type(x)
+    data class Nat  (val x: Boolean, val tk: Tk): Type(x)
 }
 
 fun All.accept (enu: TK, chr: Char? = null): Boolean {
@@ -16,6 +16,7 @@ fun parser_type (all: All): Type? {
     val isptr = false
     return when {
         all.accept(TK.UNIT) -> Type.Unit(isptr)
+        all.accept(TK.XNAT) -> Type.Nat(isptr, all.tk0)
         else -> { all.err_expected("type") ; null }
     }
 }

@@ -14,7 +14,6 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("xxx"), 2))
         lexer(all)
         val tp = parser_type(all)
-        println(all.err)
         assert(tp==null && all.err=="(ln 1, col 1): expected type : have \"xxx\"")
     }
     @Test
@@ -22,6 +21,13 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("()"), 2))
         lexer(all)
         val tp = parser_type(all)
-        println(all.err)
         assert(tp is Type.Unit)
-    }}
+    }
+    @Test
+    fun a03_parser_type () {
+        val all = All_new(PushbackReader(StringReader("_char"), 2))
+        lexer(all)
+        val tp = parser_type(all)
+        assert(tp is Type.Nat && (tp.tk.pay as TK_Str).v=="char")
+    }
+}
