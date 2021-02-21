@@ -32,8 +32,23 @@ class Parser {
     }
     @Test
     fun a04_parser_type () {
+        val all = All_new(PushbackReader(StringReader("Nat"), 2))
+        lexer(all)
+        val tp = parser_type(all)
+        assert(tp is Type.User && (tp.tk.pay as TK_Str).v=="Nat")
+    }
+    @Test
+    fun a05_parser_type () {
         val all = All_new(PushbackReader(StringReader("((),_char)"), 2))
         lexer(all)
         val tp = parser_type(all)
         assert(tp is Type.Tuple && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Nat && (tp.vec[1].tk.pay as TK_Str).v=="char")
-    }}
+    }
+    @Test
+    fun a06_parser_type_func () {
+        val all = All_new(PushbackReader(StringReader("() -> ()"), 2))
+        lexer(all)
+        val tp = parser_type(all)
+        assert(tp is Type.Func && tp.inp is Type.Unit && tp.out is Type.Unit)
+    }
+}
