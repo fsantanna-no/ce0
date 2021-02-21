@@ -36,8 +36,18 @@ fun parser_type (all: All): Type? {
                 all.accept(TK.CHAR,')') -> return tp
                 !all.accept_err(TK.CHAR,',') -> return null
             }
-            val tps = arrayOf(tp!!)
-            return Type.Tuple(all.tk0, tps)
+            val tps = arrayListOf(tp!!)
+            while (true) {
+                val tp2 = parser_type(all)
+                if (tp2 == null) {
+                    return null
+                }
+                tps.add(tp2)
+                if (!all.accept(TK.CHAR,',')) {
+                    break
+                }
+            }
+            return Type.Tuple(all.tk0, tps.toTypedArray())
         }
         else -> { all.err_expected("type") ; null }
     }
