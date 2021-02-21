@@ -77,30 +77,33 @@ fun parser_type (all: All): Type? {
 }
 
 fun parser_expr (all: All): Expr? {
-    return when {
-        all.accept(TK.UNIT) -> Expr.Unit(all.tk0)
-        all.accept(TK.XVAR) -> Expr.Var(all.tk0)
-        all.accept(TK.XNAT) -> Expr.Nat(all.tk0)
-        all.accept(TK.CHAR,'(') -> { // Expr.Tuple
-            val e = parser_expr(all)
-            when {
-                (e == null)                       -> return null
-                all.accept(TK.CHAR,')')      -> return e
-                !all.accept_err(TK.CHAR,',') -> return null
-            }
-            val es = arrayListOf(e!!)
-            while (true) {
-                val e2 = parser_expr(all)
-                if (e2 == null) {
-                    return null
+    fun one (): Expr? {
+        return when {
+            all.accept(TK.UNIT) -> Expr.Unit(all.tk0)
+            all.accept(TK.XVAR) -> Expr.Var(all.tk0)
+            all.accept(TK.XNAT) -> Expr.Nat(all.tk0)
+            all.accept(TK.CHAR,'(') -> { // Expr.Tuple
+                val e = parser_expr(all)
+                when {
+                    (e == null)                       -> return null
+                    all.accept(TK.CHAR,')')      -> return e
+                    !all.accept_err(TK.CHAR,',') -> return null
                 }
-                es.add(e2)
-                if (!all.accept(TK.CHAR,',')) {
-                    break
+                val es = arrayListOf(e!!)
+                while (true) {
+                    val e2 = parser_expr(all)
+                    if (e2 == null) {
+                        return null
+                    }
+                    es.add(e2)
+                    if (!all.accept(TK.CHAR,',')) {
+                        break
+                    }
                 }
+                return Expr.Tuple(all.tk0, es.toTypedArray())
             }
-            return Expr.Tuple(all.tk0, es.toTypedArray())
+            else -> { all.err_expected("expression") ; null }
         }
-        else -> { all.err_expected("expression") ; null }
     }
+    return one()
 }
