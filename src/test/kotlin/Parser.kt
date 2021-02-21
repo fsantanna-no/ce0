@@ -303,5 +303,12 @@ class Parser {
         val s = parser_stmt(all)
         assert(s is Stmt.Var && s.type is Type.Unit && s.init is Expr.Unit)
     }
-
+    @Test
+    fun c02_parser_stmt () {
+        val all = All_new(PushbackReader(StringReader("type Bool { False:() ; True:() }"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        println(s)
+        assert(s is Stmt.User && (s.tk.pay as TK_Str).v=="Bool" && !s.isrec && s.subs.size==2 && s.subs[0].second is Type.Unit && (s.subs[1].first.pay as TK_Str).v=="True")
+    }
 }

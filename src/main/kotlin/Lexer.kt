@@ -24,11 +24,22 @@ data class Tk (
     var col: Int,
 )
 
+fun TK.toErr (chr: Char?): String {
+    return when (this) {
+        TK.EOF   -> "end of file"
+        TK.CHAR  -> "`" + chr!! + "´"
+        TK.XVAR  -> "variable identifier"
+        TK.XUSER -> "type identifier"
+        else -> { println(this) ; error("TODO") }
+    }
+}
+
 fun Tk.toPay (): String {
     return when (this.enu) {
-        TK.EOF -> "end of file"
-        TK.CHAR -> "`" + (this.pay as TK_Chr).v + "´"
-        TK.XVAR -> '"' + (this.pay as TK_Str).v + '"'
+        TK.EOF   -> "end of file"
+        TK.CHAR  -> "`" + (this.pay as TK_Chr).v + "´"
+        TK.XVAR  -> '"' + (this.pay as TK_Str).v + '"'
+        TK.XUSER -> '"' + (this.pay as TK_Str).v + '"'
         else -> { println(this) ; error("TODO") }
     }
 }

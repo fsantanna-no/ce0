@@ -24,7 +24,8 @@ sealed class Expr (val tk: Tk) {
 }
 
 sealed class Stmt (val tk: Tk) {
-    data class Var(val tk_: Tk, val type: Type, val init: Expr) : Stmt(tk_)
+    data class Var  (val tk_: Tk, val type: Type, val init: Expr) : Stmt(tk_)
+    data class User (val tk_: Tk, val isrec: Boolean, val subs: Array<Pair<Tk,Type>>) : Stmt(tk_)
 }
 
 fun All.accept (enu: TK, chr: Char? = null): Boolean {
@@ -42,7 +43,7 @@ fun All.accept (enu: TK, chr: Char? = null): Boolean {
 fun All.accept_err (enu: TK, chr: Char? = null): Boolean {
     val ret = this.accept(enu,chr)
     if (!ret) {
-        this.err_expected(Tk(enu,if (chr==null) null else TK_Chr(chr),0,0).toPay())
+        this.err_expected(enu.toErr(chr))
     }
     return ret
 }
@@ -202,7 +203,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
 
 fun parser_stmt (all: All): Stmt? {
     when {
-        all.accept(TK.VAR) -> {
+        all.accept(TK.VAR)  -> {
             if (!all.accept_err(TK.XVAR)) {
                 return null
             }
@@ -222,6 +223,51 @@ fun parser_stmt (all: All): Stmt? {
                 return null
             }
             return Stmt.Var(tk_id, tp, e)
+        }
+        all.accept(TK.TYPE) -> {
+            if (!all.accept_err(TK.XUSER)) {
+                return null
+            }
+            val tk_id = all.tk0
+            if (!all.accept_err(TK.CHAR,'{')) {
+                return null
+            }
+
+            fun parser_sub (): Pair<Tk,Type>? {
+                if (!all.accept_err(TK.XUSER)) {
+                    return null
+                }
+                val tk = all.tk0
+                if (!all.accept_err(TK.CHAR,':')) {
+                    return null
+                }
+                val tp = parser_type(all)
+                if (tp == null) {
+                    return null
+                }
+                return Pair(tk,tp)
+            }
+
+            val sub1 = parser_sub()
+            if (sub1 == null) {
+                return null
+            }
+
+            val subs = arrayListOf(sub1)
+            while (true) {
+                all.accept(TK.CHAR,';')
+                val subi = parser_sub()
+                if (subi == null) {
+                    break
+                }
+                subs.add(subi)
+            }
+
+            if (!all.accept_err(TK.CHAR,'}')) {
+                return null
+            }
+
+            return Stmt.User(tk_id,false,subs.toTypedArray())
         }
         else -> { all.err_expected("statement") ; return null }
     }
