@@ -76,14 +76,14 @@ fun parser_type (all: All): Type? {
     }
 }
 
-fun parser_expr (all: All): Expr? {
+fun parser_expr (all: All, canpre: Boolean): Expr? {
     fun one (): Expr? {
         return when {
             all.accept(TK.UNIT) -> Expr.Unit(all.tk0)
             all.accept(TK.XVAR) -> Expr.Var(all.tk0)
             all.accept(TK.XNAT) -> Expr.Nat(all.tk0)
             all.accept(TK.CHAR,'(') -> { // Expr.Tuple
-                val e = parser_expr(all)
+                val e = parser_expr(all,false)
                 when {
                     (e == null)                       -> return null
                     all.accept(TK.CHAR,')')      -> return e
@@ -91,7 +91,7 @@ fun parser_expr (all: All): Expr? {
                 }
                 val es = arrayListOf(e!!)
                 while (true) {
-                    val e2 = parser_expr(all)
+                    val e2 = parser_expr(all,false)
                     if (e2 == null) {
                         return null
                     }
@@ -105,5 +105,7 @@ fun parser_expr (all: All): Expr? {
             else -> { all.err_expected("expression") ; null }
         }
     }
+
+    val ispre = canpre && all.accept(TK.CALL)
     return one()
 }

@@ -79,56 +79,56 @@ class Parser {
     fun b01_parser_expr_unit () {
         val all = All_new(PushbackReader(StringReader("()"), 2))
         lexer(all)
-        val e = parser_expr(all)
+        val e = parser_expr(all,false)
         assert(e is Expr.Unit)
     }
     @Test
     fun b02_parser_expr_var () {
         val all = All_new(PushbackReader(StringReader("x"), 2))
         lexer(all)
-        val e = parser_expr(all)
+        val e = parser_expr(all,true)
         assert(e is Expr.Var && (e.tk.pay as TK_Str).v=="x")
     }
     @Test
     fun b03_parser_expr_parens () {
         val all = All_new(PushbackReader(StringReader("( () )"), 2))
         lexer(all)
-        val e = parser_expr(all)
+        val e = parser_expr(all,false)
         assert(e is Expr.Unit)
     }
     @Test
     fun b04_parser_expr_parens () {
         val all = All_new(PushbackReader(StringReader("("), 2))
         lexer(all)
-        val e = parser_expr(all)
+        val e = parser_expr(all,true)
         assert(e==null && all.err=="(ln 1, col 2): expected expression : have end of file")
     }
     @Test
     fun b05_parser_expr_parens () {
         val all = All_new(PushbackReader(StringReader("(x"), 2))
         lexer(all)
-        val e = parser_expr(all)
+        val e = parser_expr(all,false)
         assert(e==null && all.err=="(ln 1, col 3): expected `,´ : have end of file")
     }
     @Test
     fun b06_parser_expr_tuple () {
         val all = All_new(PushbackReader(StringReader("((),x,())"), 2))
         lexer(all)
-        val e = parser_expr(all)
+        val e = parser_expr(all,true)
         assert(e is Expr.Tuple && e.vec.size==3 && e.vec[0] is Expr.Unit && e.vec[1] is Expr.Var && (e.vec[1].tk.pay as TK_Str).v=="x")
     }
     @Test
     fun b07_parser_expr_tuple_err () {
         val all = All_new(PushbackReader(StringReader("((),x,"), 2))
         lexer(all)
-        val e = parser_expr(all)
+        val e = parser_expr(all,false)
         assert(e==null && all.err=="(ln 1, col 7): expected expression : have end of file")
     }
     @Test
     fun b08_parser_expr_nat () {
         val all = All_new(PushbackReader(StringReader("_x"), 2))
         lexer(all)
-        val e = parser_expr(all)
+        val e = parser_expr(all,true)
         assert(e is Expr.Nat && (e.tk.pay as TK_Str).v=="x")
     }
 }
