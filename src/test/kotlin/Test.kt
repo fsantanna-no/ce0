@@ -131,4 +131,12 @@ class Tests {
         val all = all_new(PushbackReader(StringReader("10"), 2))
         lexer(all) ; assert(all.tk1.enu==TK.XNUM && (all.tk1.pay.let { (it as TK_Num).v == 10 }))
     }
+
+    // XEMPTY
+
+    @Test
+    fun b11_lexer_xempty () {
+        val all = all_new(PushbackReader(StringReader("\$List"), 2))
+        lexer(all) ; assert(all.tk1.enu==TK.XEMPTY && (all.tk1.pay.let { (it as TK_Str).v == "List" }))
+    }
 }

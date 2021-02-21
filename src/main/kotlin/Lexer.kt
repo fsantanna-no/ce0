@@ -1,6 +1,6 @@
 enum class TK {
     ERR, EOF, CHAR,
-    XVAR, XUSER, XNAT, XNUM,
+    XVAR, XUSER, XNAT, XNUM, XEMPTY,
     ARROW,
     VAR, ELSE, TYPE
 }
@@ -132,7 +132,15 @@ fun token (all: All) {
             }
             else -> {
                 var pay = ""
-                if (x1.isDigit()) {
+
+                val isdollar = (x1 == '$')
+                if (isdollar) {
+                    c1 = all.inp.read()
+                    x1 = c1.toChar()
+                    all.col += 1
+                }
+
+                if (!isdollar && x1.isDigit()) {
                     while (x1.isLetterOrDigit()) {
                         if (x1.isDigit()) {
                             pay += x1
@@ -149,7 +157,7 @@ fun token (all: All) {
                     all.col -= 1
                     all.tk1.enu = TK.XNUM
                     all.tk1.pay = TK_Num(pay.toInt())
-                } else if (x1.isLetter()) {
+                } else if (x1.isUpperCase() || (x1.isLowerCase() && !isdollar)) {
                     while (x1.isLetterOrDigit() || x1=='_') {
                         pay += x1
                         c1 = all.inp.read()
@@ -158,9 +166,15 @@ fun token (all: All) {
                     }
                     all.inp.unread(c1)
                     all.col -= 1
-                    val key = key2tk[pay]
-                    all.tk1.enu = key ?: (if (pay[0].isLowerCase()) TK.XVAR else TK.XUSER)
                     all.tk1.pay = TK_Str(pay)
+                    val key = key2tk[pay]
+                    all.tk1.enu = when {
+                        key != null -> { assert(pay[0].isLowerCase()); key }
+                        isdollar -> TK.XEMPTY
+                        pay[0].isLowerCase() -> TK.XVAR
+                        pay[0].isUpperCase() -> TK.XUSER
+                        else -> { assert(false) { "impossible case" }; TK.ERR }
+                    }
                 } else {
                     all.tk1.enu = TK.ERR
                     all.tk1.pay = TK_Chr(x1)
