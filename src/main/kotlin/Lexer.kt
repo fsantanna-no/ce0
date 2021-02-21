@@ -26,6 +26,7 @@ data class Tk (
 fun Tk.toPay (): String {
     return when (this.enu) {
         TK.EOF -> "end of file"
+        TK.CHAR -> "`" + (this.pay as TK_Chr).v + "´"
         TK.XVAR -> '"' + (this.pay as TK_Str).v + '"'
         else -> { println(this) ; error("TODO") }
     }
