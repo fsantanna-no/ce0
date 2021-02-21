@@ -28,26 +28,6 @@ sealed class Stmt (val tk: Tk) {
     data class User (val tk_: Tk, val isrec: Boolean, val subs: Array<Pair<Tk,Type>>) : Stmt(tk_)
 }
 
-fun All.accept (enu: TK, chr: Char? = null): Boolean {
-    val ret = when {
-        (this.tk1.enu != enu) -> false
-        (chr == null)         -> true
-        else -> (this.tk1.pay as TK_Chr).v == chr
-    }
-    if (ret) {
-        lexer(this)
-    }
-    return ret
-}
-
-fun All.accept_err (enu: TK, chr: Char? = null): Boolean {
-    val ret = this.accept(enu,chr)
-    if (!ret) {
-        this.err_expected(enu.toErr(chr))
-    }
-    return ret
-}
-
 fun parser_type (all: All): Type? {
     fun one (): Type? { // Unit, Nat, User, Tuple
         return when {
@@ -140,9 +120,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
         }
     }
 
-    if (canpre) {
-        all.accept(TK.CALL)
-    }
+    var ispre = (canpre && all.accept(TK.CALL))
 
     var ret = one()
     if (ret == null) {
@@ -153,7 +131,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
         val tk_bef = all.tk0
         when {
             // INDEX, DISC, PRED
-            all.accept(TK.CHAR,'.') -> {
+            !ispre && all.accept(TK.CHAR,'.') -> {
                 when {
                     all.accept(TK.XNUM) -> {
                         ret = Expr.Index(all.tk0, ret!!)
@@ -176,27 +154,29 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
                 }
             }
             // DNREF
-            all.accept(TK.CHAR,'\\') -> when (ret) {
+            !ispre && all.accept(TK.CHAR,'\\') -> when (ret) {
                 is Expr.Nat, is Expr.Var, is Expr.Upref, is Expr.Dnref, is Expr.Index, is Expr.Call -> ret = Expr.Dnref(all.tk0,ret)
                 else -> { all.err_tk(all.tk0, "unexpected operand to `\\´") ; return null }
             }
+
             // CALL
             else -> {
-                var ok = false
-                if (ret is Expr.Nat || ret is Expr.Var) {
-                    val e = parser_expr(all, false)
-                    if (e != null) {
-                        ok = true
-                        ret = Expr.Call(tk_bef,ret,e)
+                val e = parser_expr(all, false)
+                if (e == null) {
+                    if (!ispre && tk_bef.lin==all.tk0.lin && tk_bef.col==all.tk0.col) {
+                        break   // not a call (nothing consumed)
+                    } else {
+                        return null
                     }
                 }
-                when {
-                    ok -> {}
-                    (tk_bef.lin==all.tk0.lin && tk_bef.col==all.tk0.col) -> break
-                    else -> return null
+                if (ret !is Expr.Nat && ret !is Expr.Var) {
+                    all.err_tk(ret!!.tk, "expected function")
+                    return null
                 }
+                ret = Expr.Call(tk_bef,ret,e)
             }
         }
+        ispre = false
     }
     return ret
 }
@@ -268,6 +248,13 @@ fun parser_stmt (all: All): Stmt? {
             }
 
             return Stmt.User(tk_id,false,subs.toTypedArray())
+        }
+        all.check(TK.CALL) -> {
+            val e = parser_expr(all, true)
+            if (e == null) {
+                return null
+            }
+            return null
         }
         else -> { all.err_expected("statement") ; return null }
     }

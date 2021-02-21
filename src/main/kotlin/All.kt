@@ -39,6 +39,30 @@ fun All.unread (i: Int) {
     }
 }
 
+fun All.accept (enu: TK, chr: Char? = null): Boolean {
+    val ret = this.check(enu, chr)
+    if (ret) {
+        lexer(this)
+    }
+    return ret
+}
+
+fun All.accept_err (enu: TK, chr: Char? = null): Boolean {
+    val ret = this.accept(enu,chr)
+    if (!ret) {
+        this.err_expected(enu.toErr(chr))
+    }
+    return ret
+}
+
+fun All.check (enu: TK, chr: Char? = null): Boolean {
+    return when {
+        (this.tk1.enu != enu) -> false
+        (chr == null)         -> true
+        else -> (this.tk1.pay as TK_Chr).v == chr
+    }
+}
+
 fun All.err_expected (str: String) {
     this.err = "(ln ${this.tk1.lin}, col ${this.tk1.col}): expected $str : have ${this.tk1.toPay()}"
 }
