@@ -174,7 +174,7 @@ fun token (all: All) {
 }
 
 fun lexer (all: All) {
-    all.tk0 = all.tk1
+    all.tk0 = all.tk1.copy()
     blanks(all)
     token(all)
     blanks(all)
