@@ -6,6 +6,7 @@ data class All(
     var tk1: Tk,
     var lin: Int = 1,
     var col: Int = 1,
+    var err: String = "",
 )
 
 fun All_new (inp: PushbackReader): All {
@@ -33,4 +34,8 @@ fun All.unread (i: Int) {
         this.lin -= 1
         //this.col = ?
     }
+}
+
+fun All.err_expected (str: String) {
+    this.err = "(ln ${this.tk1.lin}, col ${this.tk1.col}): expected $str : have ${this.tk1.toPay()}"
 }

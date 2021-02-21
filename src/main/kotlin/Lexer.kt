@@ -23,6 +23,14 @@ data class Tk (
     var col: Int,
 )
 
+fun Tk.toPay (): String {
+    return when (this.enu) {
+        TK.EOF -> "end of file"
+        TK.XVAR -> '"' + (this.pay as TK_Str).v + '"'
+        else -> { error("TODO") }
+    }
+}
+
 fun blanks (all: All) {
     while (true) {
         val (c1,x1) = all.read()
@@ -73,7 +81,7 @@ fun token (all: All) {
                 if (x2 == '>') {
                     all.tk1.enu = TK.ARROW
                 } else {
-                    assert(false) { "TODO" }
+                    error("TODO")
                 }
             }
             '_' -> {
@@ -143,7 +151,7 @@ fun token (all: All) {
                         isdollar -> TK.XEMPTY
                         pay[0].isLowerCase() -> TK.XVAR
                         pay[0].isUpperCase() -> TK.XUSER
-                        else -> { assert(false) { "impossible case" }; TK.ERR }
+                        else -> error("impossible case")
                     }
                 } else {
                     all.tk1.enu = TK.ERR
