@@ -51,4 +51,14 @@ class Parser {
         val tp = parser_type(all)
         assert(tp is Type.Func && tp.inp is Type.Unit && tp.out is Type.Unit)
     }
+
+    // EXPR
+
+    @Test
+    fun b01_parser_expr_unit () {
+        val all = All_new(PushbackReader(StringReader("()"), 2))
+        lexer(all)
+        val e = parser_expr(all)
+        assert(e is Expr.Unit)
+    }
 }

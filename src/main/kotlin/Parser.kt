@@ -7,6 +7,10 @@ sealed class Type (val tk: Tk) {
     data class Func  (val tk_: Tk, val inp: Type, val out: Type): Type(tk_)
 }
 
+sealed class Expr (val tk: Tk) {
+    data class Unit (val tk_: Tk): Expr(tk_)
+}
+
 fun All.accept (enu: TK, chr: Char? = null): Boolean {
     val ret = when {
         (this.tk1.enu != enu) -> false
@@ -66,5 +70,12 @@ fun parser_type (all: All): Type? {
             if (oth==null) null else Type.Func(all.tk0, ret, oth)
         }
         else -> ret
+    }
+}
+
+fun parser_expr (all: All): Expr? {
+    return when {
+        all.accept(TK.UNIT) -> Expr.Unit(all.tk0)
+        else -> { all.err_expected("expression") ; null }
     }
 }
