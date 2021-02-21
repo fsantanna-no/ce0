@@ -1,7 +1,7 @@
 enum class TK {
     ERR, EOF, CHAR,
     XVAR, XUSER, XNAT, XNUM, XEMPTY,
-    ARROW,
+    UNIT, ARROW,
     VAR, ELSE, TYPE
 }
 
@@ -75,6 +75,16 @@ fun token (all: All) {
             '{' , '}' , ')' , ';' , ':' , '=' , ',' , '.' , '\\' , '!' , '?' -> {
                 all.tk1.enu = TK.CHAR
                 all.tk1.pay = TK_Chr(x1)
+            }
+            '(' -> {
+                val (c2,x2) = all.read()
+                if (x2 == ')') {
+                    all.tk1.enu = TK.UNIT
+                } else {
+                    all.tk1.enu = TK.CHAR
+                    all.tk1.pay = TK_Chr(x1)
+                    all.unread(c2)
+                }
             }
             '-' -> {
                 val (_,x2) = all.read()

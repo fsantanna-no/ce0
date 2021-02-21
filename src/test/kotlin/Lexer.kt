@@ -57,10 +57,11 @@ class Lexer {
 
     @Test
     fun b03_lexer_syms () {
-        val all = All_new(PushbackReader(StringReader("{ -> ,"), 2))
+        val all = All_new(PushbackReader(StringReader("{ -> , ()"), 2))
         lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay as TK_Chr).v=='{')
         lexer(all) ; assert(all.tk1.enu==TK.ARROW)
         lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay as TK_Chr).v==',')
+        lexer(all) ; assert(all.tk1.enu==TK.UNIT)
     }
     @Test
     fun b04_lexer_syms () {

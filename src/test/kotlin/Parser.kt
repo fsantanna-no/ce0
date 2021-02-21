@@ -17,4 +17,11 @@ class Parser {
         println(all.err)
         assert(tp==null && all.err=="(ln 1, col 1): expected type : have \"xxx\"")
     }
-}
+    @Test
+    fun a02_parser_type () {
+        val all = All_new(PushbackReader(StringReader("()"), 2))
+        lexer(all)
+        val tp = parser_type(all)
+        println(all.err)
+        assert(tp is Type.Unit)
+    }}
