@@ -42,3 +42,7 @@ fun All.unread (i: Int) {
 fun All.err_expected (str: String) {
     this.err = "(ln ${this.tk1.lin}, col ${this.tk1.col}): expected $str : have ${this.tk1.toPay()}"
 }
+
+fun All.err_tk (tk: Tk, str: String) {
+    this.err = "(ln ${tk.lin}, col ${tk.col}): $str"
+}

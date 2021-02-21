@@ -8,12 +8,17 @@ sealed class Type (val tk: Tk) {
 }
 
 sealed class Expr (val tk: Tk) {
-    data class Unit (val tk_: Tk): Expr(tk_)
-    data class Var  (val tk_: Tk): Expr(tk_)
-    data class Nat  (val tk_: Tk): Expr(tk_)
+    data class Unit  (val tk_: Tk): Expr(tk_)
+    data class Var   (val tk_: Tk): Expr(tk_)
+    data class Nat   (val tk_: Tk): Expr(tk_)
     data class Tuple (val tk_: Tk, val vec: Array<Expr>): Expr(tk_)
-    data class Cons (val tk_: Tk, val arg: Expr): Expr(tk_)
-    data class Call (val tk_: Tk, val func: Expr, val arg: Expr): Expr(tk_)
+    data class Cons  (val tk_: Tk, val pos: Expr): Expr(tk_)
+    data class Dnref (val tk_: Tk, val pre: Expr): Expr(tk_)
+    data class Upref (val tk_: Tk, val pos: Expr): Expr(tk_)
+    data class Index (val tk_: Tk, val pre: Expr): Expr(tk_)
+    data class Pred  (val tk_: Tk, val pre: Expr): Expr(tk_)
+    data class Disc  (val tk_: Tk, val pre: Expr): Expr(tk_)
+    data class Call  (val tk_: Tk, val pre: Expr, val pos: Expr): Expr(tk_)
 }
 
 fun All.accept (enu: TK, chr: Char? = null): Boolean {
@@ -93,6 +98,15 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
                     else -> null
                 }
             }
+            all.accept(TK.CHAR,'\\') -> {
+                val tk = all.tk0
+                val e = parser_expr(all,false)
+                when (e) {
+                    null -> null
+                    is Expr.Nat, is Expr.Var, is Expr.Index -> Expr.Upref(tk,e)
+                    else -> { all.err_tk(all.tk0, "unexpected operand to `\\´") ; null }
+                }
+            }
             all.accept(TK.CHAR,'(') -> { // Expr.Tuple
                 val e = parser_expr(all,false)
                 when {
@@ -117,7 +131,9 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
         }
     }
 
-    val ispre = canpre && all.accept(TK.CALL)
+    if (canpre) {
+        all.accept(TK.CALL)
+    }
 
     var ret = one()
     if (ret == null) {
@@ -125,21 +141,48 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
     }
 
     while (true) {
-        val tk = all.tk0
+        val tk_bef = all.tk0
         when {
-            all.accept(TK.CHAR,'.') -> {}
+            // INDEX, DISC, PRED
+            all.accept(TK.CHAR,'.') -> {
+                when {
+                    all.accept(TK.XNUM) -> {
+                        ret = Expr.Index(all.tk0, ret!!)
+                    }
+                    all.accept(TK.XUSER) || all.accept(TK.XEMPTY) -> {
+                        when {
+                            all.accept(TK.CHAR,'?') -> Expr.Pred(all.tk0,ret!!)
+                            all.accept(TK.CHAR,'!') -> Expr.Disc(all.tk0,ret!!)
+                            else -> {
+                                all.err_expected("`?´ or `!´")
+                                return null
+                            }
+                        }
+                    }
+                    else -> {
+                        all.err_expected("index or subtype")
+                        return null
+                    }
+                }
+            }
+            // DNREF
+            all.accept(TK.CHAR,'\\') -> when (ret) {
+                is Expr.Nat, is Expr.Var, is Expr.Upref, is Expr.Dnref, is Expr.Index, is Expr.Call -> ret = Expr.Dnref(all.tk0,ret)
+                else -> { all.err_tk(all.tk0, "unexpected operand to `\\´") ; return null }
+            }
+            // CALL
             else -> {
                 var ok = false
                 if (ret is Expr.Nat || ret is Expr.Var) {
                     val e = parser_expr(all, false)
                     if (e != null) {
                         ok = true
-                        ret = Expr.Call(tk,ret,e)
+                        ret = Expr.Call(tk_bef,ret,e)
                     }
                 }
                 when {
                     ok -> {}
-                    (tk.lin==all.tk0.lin && tk.col==all.tk0.col) -> break
+                    (tk_bef.lin==all.tk0.lin && tk_bef.col==all.tk0.col) -> break
                     else -> return null
                 }
             }
