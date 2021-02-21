@@ -62,6 +62,7 @@ class Lexer {
         lexer(all) ; assert(all.tk1.enu==TK.ARROW)
         lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay as TK_Chr).v==',')
         lexer(all) ; assert(all.tk1.enu==TK.UNIT)
+        lexer(all) ; assert(all.tk1.enu==TK.EOF)
     }
     @Test
     fun b04_lexer_syms () {

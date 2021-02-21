@@ -61,4 +61,25 @@ class Parser {
         val e = parser_expr(all)
         assert(e is Expr.Unit)
     }
+    @Test
+    fun b02_parser_expr_var () {
+        val all = All_new(PushbackReader(StringReader("x"), 2))
+        lexer(all)
+        val e = parser_expr(all)
+        assert(e is Expr.Var && (e.tk.pay as TK_Str).v=="x")
+    }
+    @Test
+    fun b03_parser_expr_parens () {
+        val all = All_new(PushbackReader(StringReader("( () )"), 2))
+        lexer(all)
+        val e = parser_expr(all)
+        assert(e is Expr.Unit)
+    }
+    @Test
+    fun b04_parser_expr_parens () {
+        val all = All_new(PushbackReader(StringReader("("), 2))
+        lexer(all)
+        val e = parser_expr(all)
+        assert(e==null && all.err=="(ln 1, col 2): expected expression : have end of file")
+    }
 }

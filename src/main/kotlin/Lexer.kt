@@ -27,7 +27,7 @@ fun Tk.toPay (): String {
     return when (this.enu) {
         TK.EOF -> "end of file"
         TK.XVAR -> '"' + (this.pay as TK_Str).v + '"'
-        else -> { error("TODO") }
+        else -> { println(this) ; error("TODO") }
     }
 }
 

@@ -14,13 +14,16 @@ fun All_new (inp: PushbackReader): All {
 }
 
 fun All.read (): Pair<Int,Char> {
-    val i = this.inp.read()
+    val i = this.inp.read().let { if (it == 65535) -1 else it }  // TODO: 65535??
     val c = i.toChar()
-    if (c == '\n') {
-        this.lin += 1
-        this.col = 1
-    } else if (i != -1) {
-        this.col += 1
+    when {
+        (c == '\n') -> {
+            this.lin += 1
+            this.col = 1
+        }
+        (i != -1) -> {
+            this.col += 1
+        }
     }
     return Pair(i,c)
 }
