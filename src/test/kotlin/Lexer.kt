@@ -5,7 +5,7 @@ import java.io.PushbackReader
 import java.io.StringReader
 
 @TestMethodOrder(Alphanumeric::class)
-class Tests {
+class Lexer {
     @Test
     fun a00_buffer () {
         val inp = PushbackReader(StringReader("Hello World!"),2)
