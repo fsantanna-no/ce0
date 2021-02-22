@@ -26,6 +26,7 @@ sealed class Expr (val tk: Tk) {
 sealed class Stmt (val tk: Tk) {
     data class Var  (val tk_: Tk, val type: Type, val init: Expr) : Stmt(tk_)
     data class User (val tk_: Tk, val isrec: Boolean, val subs: Array<Pair<Tk,Type>>) : Stmt(tk_)
+    data class Call (val tk_: Tk, val call: Expr.Call) : Stmt(tk_)
 }
 
 fun parser_type (all: All): Type? {
@@ -250,11 +251,12 @@ fun parser_stmt (all: All): Stmt? {
             return Stmt.User(tk_id,false,subs.toTypedArray())
         }
         all.check(TK.CALL) -> {
+            val tk = all.tk1
             val e = parser_expr(all, true)
             if (e == null) {
                 return null
             }
-            return null
+            return Stmt.Call(tk, e as Expr.Call)
         }
         else -> { all.err_expected("statement") ; return null }
     }
