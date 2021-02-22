@@ -24,11 +24,13 @@ sealed class Expr (val tk: Tk) {
 }
 
 sealed class Stmt (val tk: Tk) {
-    data class Pass (val tk_: Tk) : Stmt(tk_)
-    data class Var  (val tk_: Tk, val type: Type, val init: Expr) : Stmt(tk_)
-    data class User (val tk_: Tk, val isrec: Boolean, val subs: Array<Pair<Tk,Type>>) : Stmt(tk_)
-    data class Call (val tk_: Tk, val call: Expr.Call) : Stmt(tk_)
-    data class Seq  (val tk_: Tk, val s1: Stmt, val s2: Stmt) : Stmt(tk_)
+    data class Pass  (val tk_: Tk) : Stmt(tk_)
+    data class Var   (val tk_: Tk, val type: Type, val init: Expr) : Stmt(tk_)
+    data class User  (val tk_: Tk, val isrec: Boolean, val subs: Array<Pair<Tk,Type>>) : Stmt(tk_)
+    data class Call  (val tk_: Tk, val call: Expr.Call) : Stmt(tk_)
+    data class Seq   (val tk_: Tk, val s1: Stmt, val s2: Stmt) : Stmt(tk_)
+    data class Block (val tk_: Tk, val body: Stmt) : Stmt(tk_)
+    data class If    (val tk_: Tk, val tst: Expr, val true_: Stmt, val false_: Stmt) : Stmt(tk_)
 }
 
 fun parser_type (all: All): Type? {
@@ -185,6 +187,18 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
 }
 
 fun parser_stmt (all: All): Stmt? {
+    fun parser_block (): Stmt? {
+        if (!all.accept_err(TK.CHAR,'{')) {
+            return null
+        }
+        val tk = all.tk0
+        val ret = parser_stmts(all, Pair(TK.CHAR,'}'))
+        return when {
+            (ret == null) -> null
+            !all.accept_err(TK.CHAR,'}') -> null
+            else -> Stmt.Block(tk, ret)
+        }
+    }
     when {
         all.accept(TK.VAR)  -> {
             if (!all.accept_err(TK.XVAR)) {
@@ -252,7 +266,26 @@ fun parser_stmt (all: All): Stmt? {
 
             return Stmt.User(tk_id,false,subs.toTypedArray())
         }
-        all.check(TK.CALL) -> {
+        all.accept(TK.IF)   -> {
+            val tk = all.tk0
+            val tst = parser_expr(all, false)
+            if (tst == null) {
+                return null
+            }
+            val true_ = parser_block()
+            if (true_ == null) {
+                return null
+            }
+            if (!all.accept(TK.ELSE)) {
+                return Stmt.If(tk, tst, true_, Stmt.Pass(all.tk0))
+            }
+            val false_ = parser_block()
+            if (false_ == null) {
+                return null
+            }
+            return Stmt.If(tk, tst, true_, false_)
+        }
+        all.check(TK.CALL)  -> {
             val tk = all.tk1
             val e = parser_expr(all, true)
             if (e == null) {
@@ -260,6 +293,7 @@ fun parser_stmt (all: All): Stmt? {
             }
             return Stmt.Call(tk, e as Expr.Call)
         }
+        all.check(TK.CHAR,'{') -> return parser_block()
         else -> { all.err_expected("statement") ; return null }
     }
 }

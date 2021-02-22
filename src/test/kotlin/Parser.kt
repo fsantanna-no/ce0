@@ -378,4 +378,30 @@ class Parser {
             }
         )
     }
-}
+
+    // STMT_BLOCK
+
+    @Test
+    fun c09_parser_stmt_block () {
+        val all = All_new(PushbackReader(StringReader("{ call f() }"), 2))
+        lexer(all)
+        val s = parser_stmts(all, Pair(TK.EOF,null))
+        assert(s is Stmt.Block && s.body is Stmt.Call)
+    }
+
+    // STMT_IF
+
+    @Test
+    fun c10_parser_stmt_if () {
+        val all = All_new(PushbackReader(StringReader("if () {} else { call f() }"), 2))
+        lexer(all)
+        val s = parser_stmts(all, Pair(TK.EOF,null))
+        assert(s is Stmt.If && s.tst is Expr.Unit && s.true_ is Stmt.Pass && s.false_ is Stmt.Call)
+    }
+    @Test
+    fun c11_parser_stmt_if () {
+        val all = All_new(PushbackReader(StringReader("if (True) {}"), 2))
+        lexer(all)
+        val s = parser_stmts(all, Pair(TK.EOF,null))
+        assert(s is Stmt.If && s.tst is Expr.Cons && s.true_ is Stmt.Pass && s.false_ is Stmt.Pass)
+    }}
