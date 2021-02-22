@@ -1,5 +1,5 @@
 sealed class Type (val tk: Tk) {
-    data class Any   (val tk_: Tk): Type(tk_)
+    //data class Any   (val tk_: Tk): Type(tk_)
     data class Unit  (val tk_: Tk): Type(tk_)
     data class Nat   (val tk_: Tk): Type(tk_)
     data class User  (val tk_: Tk): Type(tk_)
@@ -24,6 +24,7 @@ sealed class Expr (val tk: Tk) {
 }
 
 sealed class Stmt (val tk: Tk) {
+    data class Pass (val tk_: Tk) : Stmt(tk_)
     data class Var  (val tk_: Tk, val type: Type, val init: Expr) : Stmt(tk_)
     data class User (val tk_: Tk, val isrec: Boolean, val subs: Array<Pair<Tk,Type>>) : Stmt(tk_)
     data class Call (val tk_: Tk, val call: Expr.Call) : Stmt(tk_)
@@ -84,7 +85,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
                 val arg = parser_expr(all, false)
                 when {
                     (arg != null) -> Expr.Cons(sub, arg)
-                    (sub.lin==all.tk0.lin && sub.col==all.tk0.col) -> Expr.Cons(sub, Expr.Unit(all.tk0))
+                    !all.consumed(sub) -> Expr.Cons(sub, Expr.Unit(all.tk0))
                     else -> null
                 }
             }
@@ -164,9 +165,8 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
             else -> {
                 var e = parser_expr(all, false)
                 if (e == null) {
-                    val consumed = (tk_bef.lin!=all.tk0.lin || tk_bef.col!=all.tk0.col)
                     when {
-                        consumed -> return null // failed parser_expr and consumed input: error
+                        all.consumed(tk_bef) -> return null // failed parser_expr and consumed input: error
                         ispre    -> e = Expr.Unit(all.tk0) // call f -> call f ()
                         !ispre   -> break // just e (not a call)
                     }
@@ -261,4 +261,15 @@ fun parser_stmt (all: All): Stmt? {
         }
         else -> { all.err_expected("statement") ; return null }
     }
+}
+
+fun parser_stmt (all: All, opt: Pair<TK,Char?>): Stmt? {
+    var ret = Stmt.Pass(all.tk0)
+    while (true) {
+        all.accept(TK.CHAR, ';')
+        val tk_bef = all.tk0
+        val s = parser_stmt(all)
+        return null
+    }
+    return null
 }

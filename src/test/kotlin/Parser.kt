@@ -323,7 +323,7 @@ class Parser {
         assert(s is Stmt.User && (s.tk.pay as TK_Str).v=="Bool" && !s.isrec && s.subs.size==2 && s.subs[0].second is Type.Unit && (s.subs[1].first.pay as TK_Str).v=="True")
     }
 
-    // CALL
+    // STMT_CALL
 
     @Test
     fun c03_parser_stmt_call () {
@@ -345,7 +345,31 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("call f ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        println(s)
         assert(s is Stmt.Call && s.call.pre is Expr.Var && s.call.pos is Expr.Unit)
     }
+    @Test
+    fun c06_parser_stmt_call () {
+        val all = All_new(PushbackReader(StringReader("call f"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.Call && s.call.pre is Expr.Var && s.call.pos is Expr.Unit)
+    }
+    @Test
+    fun c07_parser_stmt_call () {
+        val all = All_new(PushbackReader(StringReader("call _printf ()"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.Call && s.call.pre is Expr.Nat && s.call.pos is Expr.Unit)
+    }
+
+    // STMT_SEQ
+/*
+    @Test
+    fun c08_parser_stmt_seq () {
+        val all = All_new(PushbackReader(StringReader("call f() ; call _printf() call g"), 2))
+        lexer(all)
+        val s = parser_stmts(all, TK.EOF)
+        assert(s is Stmt.Call && s.call.pre is Expr.Nat && s.call.pos is Expr.Unit)
+    }
+    */
 }
