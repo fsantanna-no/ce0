@@ -363,13 +363,19 @@ class Parser {
     }
 
     // STMT_SEQ
-/*
+
     @Test
     fun c08_parser_stmt_seq () {
         val all = All_new(PushbackReader(StringReader("call f() ; call _printf() call g"), 2))
         lexer(all)
-        val s = parser_stmts(all, TK.EOF)
-        assert(s is Stmt.Call && s.call.pre is Expr.Nat && s.call.pos is Expr.Unit)
+        val s = parser_stmts(all, Pair(TK.EOF,null))
+        assert (
+            s is Stmt.Seq && s.s1 is Stmt.Seq && s.s2 is Stmt.Call && ((s.s2 as Stmt.Call).call.pre.tk.pay as TK_Str).v=="g" &&
+            (s.s1 as Stmt.Seq).let {
+                it.s1 is Stmt.Call && (it.s1 as Stmt.Call).let {
+                    it.call.pre is Expr.Var && (it.call.pre.tk.pay as TK_Str).v=="f"
+                }
+            }
+        )
     }
-    */
 }

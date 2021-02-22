@@ -28,6 +28,7 @@ sealed class Stmt (val tk: Tk) {
     data class Var  (val tk_: Tk, val type: Type, val init: Expr) : Stmt(tk_)
     data class User (val tk_: Tk, val isrec: Boolean, val subs: Array<Pair<Tk,Type>>) : Stmt(tk_)
     data class Call (val tk_: Tk, val call: Expr.Call) : Stmt(tk_)
+    data class Seq  (val tk_: Tk, val s1: Stmt, val s2: Stmt) : Stmt(tk_)
 }
 
 fun parser_type (all: All): Type? {
@@ -263,13 +264,27 @@ fun parser_stmt (all: All): Stmt? {
     }
 }
 
-fun parser_stmt (all: All, opt: Pair<TK,Char?>): Stmt? {
-    var ret = Stmt.Pass(all.tk0)
+fun parser_stmts (all: All, opt: Pair<TK,Char?>): Stmt? {
+    fun enseq (s1: Stmt?, s2: Stmt?): Stmt? {
+        return when {
+            (s1 == null)      -> s2
+            (s2 == null)      -> s1
+            (s1 is Stmt.Pass) -> s2
+            (s2 is Stmt.Pass) -> s1
+            else -> Stmt.Seq(s1.tk, s1, s2)
+        }
+    }
+    var ret: Stmt = Stmt.Pass(all.tk0)
     while (true) {
         all.accept(TK.CHAR, ';')
         val tk_bef = all.tk0
         val s = parser_stmt(all)
-        return null
+        when {
+            (s != null) -> ret = enseq(ret,s)!!
+            all.consumed(tk_bef) -> return null
+            all.check(opt.first, opt.second) -> break
+            else -> return null
+        }
     }
-    return null
+    return ret
 }

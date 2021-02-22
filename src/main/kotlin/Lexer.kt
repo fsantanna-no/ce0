@@ -40,7 +40,14 @@ fun Tk.toPay (): String {
         TK.CHAR  -> "`" + (this.pay as TK_Chr).v + "´"
         TK.XVAR  -> '"' + (this.pay as TK_Str).v + '"'
         TK.XUSER -> '"' + (this.pay as TK_Str).v + '"'
-        else -> { println(this) ; error("TODO") }
+        else -> {
+            val keys = key2tk.filterValues { it == this.enu }.keys
+            if (keys.isEmpty()) {
+                println(this); error("TODO")
+            } else {
+                keys.first()    // TYPE -> "type"
+            }
+        }
     }
 }
 
