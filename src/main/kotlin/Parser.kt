@@ -27,10 +27,13 @@ sealed class Stmt (val tk: Tk) {
     data class Pass  (val tk_: Tk) : Stmt(tk_)
     data class Var   (val tk_: Tk, val type: Type, val init: Expr) : Stmt(tk_)
     data class User  (val tk_: Tk, val isrec: Boolean, val subs: Array<Pair<Tk,Type>>) : Stmt(tk_)
+    data class Nat   (val tk_: Tk) : Stmt(tk_)
     data class Call  (val tk_: Tk, val call: Expr.Call) : Stmt(tk_)
     data class Seq   (val tk_: Tk, val s1: Stmt, val s2: Stmt) : Stmt(tk_)
-    data class Block (val tk_: Tk, val body: Stmt) : Stmt(tk_)
     data class If    (val tk_: Tk, val tst: Expr, val true_: Stmt, val false_: Stmt) : Stmt(tk_)
+    data class Func  (val tk_: Tk, val type: Type.Func, val body: Stmt) : Stmt(tk_)
+    data class Ret   (val tk_: Tk, val e: Expr) : Stmt(tk_)
+    data class Block (val tk_: Tk, val body: Stmt) : Stmt(tk_)
 }
 
 fun parser_type (all: All): Type? {
@@ -277,13 +280,47 @@ fun parser_stmt (all: All): Stmt? {
                 return null
             }
             if (!all.accept(TK.ELSE)) {
-                return Stmt.If(tk, tst, true_, Stmt.Pass(all.tk0))
+                return Stmt.If(tk, tst, true_, Stmt.Block(all.tk0,Stmt.Pass(all.tk0)))
             }
             val false_ = parser_block()
             if (false_ == null) {
                 return null
             }
             return Stmt.If(tk, tst, true_, false_)
+        }
+        all.accept(TK.FUNC) -> {
+            if (!all.accept_err(TK.XVAR)) {
+                return null
+            }
+            val tk_id = all.tk0
+            if (!all.accept_err(TK.CHAR,':')) {
+                return null
+            }
+            val tp = parser_type(all)
+            when (tp) {
+                null -> return null
+                !is Type.Func -> { all.err_tk(all.tk0, "expected function type") ; return null}
+            }
+            val body = parser_block()
+            if (body == null) {
+                return null
+            }
+            return Stmt.Func(tk_id, tp as Type.Func, body)
+        }
+        all.accept(TK.RET)  -> {
+            val tk = all.tk0
+            val e = parser_expr(all, false)
+            return when {
+                (e != null)      -> Stmt.Ret(tk, e)
+                all.consumed(tk) -> null
+                else             -> Stmt.Ret(tk, Expr.Unit(all.tk0))
+            }
+        }
+        all.accept(TK.NAT)  -> {
+            if (!all.accept_err(TK.XNAT)) {
+                return null
+            }
+            return Stmt.Nat(all.tk0)
         }
         all.check(TK.CALL)  -> {
             val tk = all.tk1

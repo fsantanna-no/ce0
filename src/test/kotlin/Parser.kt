@@ -177,7 +177,6 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("f()\n()\n()"), 2))
         lexer(all)
         val e1 = parser_expr(all,true)
-        println(all.err)
         assert(e1==null && all.err=="(ln 2, col 1): expected function")
         /*
         val e2 = parser_expr(all,true)
@@ -385,7 +384,7 @@ class Parser {
     fun c09_parser_stmt_block () {
         val all = All_new(PushbackReader(StringReader("{ call f() }"), 2))
         lexer(all)
-        val s = parser_stmts(all, Pair(TK.EOF,null))
+        val s = parser_stmt(all)
         assert(s is Stmt.Block && s.body is Stmt.Call)
     }
 
@@ -395,13 +394,49 @@ class Parser {
     fun c10_parser_stmt_if () {
         val all = All_new(PushbackReader(StringReader("if () {} else { call f() }"), 2))
         lexer(all)
-        val s = parser_stmts(all, Pair(TK.EOF,null))
-        assert(s is Stmt.If && s.tst is Expr.Unit && s.true_ is Stmt.Pass && s.false_ is Stmt.Call)
+        val s = parser_stmt(all)
+        assert (
+            s is Stmt.If && s.tst is Expr.Unit && s.true_ is Stmt.Block && s.false_ is Stmt.Block &&
+            (s.true_ as Stmt.Block).body is Stmt.Pass && (s.false_ as Stmt.Block).body is Stmt.Call
+        )
     }
     @Test
     fun c11_parser_stmt_if () {
         val all = All_new(PushbackReader(StringReader("if (True) {}"), 2))
         lexer(all)
-        val s = parser_stmts(all, Pair(TK.EOF,null))
-        assert(s is Stmt.If && s.tst is Expr.Cons && s.true_ is Stmt.Pass && s.false_ is Stmt.Pass)
-    }}
+        val s = parser_stmt(all)
+        assert (
+            s is Stmt.If && s.tst is Expr.Cons && s.true_ is Stmt.Block && s.false_ is Stmt.Block &&
+            (s.true_ as Stmt.Block).body is Stmt.Pass && (s.false_ as Stmt.Block).body is Stmt.Pass
+        )
+    }
+
+    // STMT_FUNC, STMT_RET
+
+    @Test
+    fun c12_parser_func () {
+        val all = All_new(PushbackReader(StringReader("func f : () { }"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s==null && all.err=="(ln 1, col 10): expected function type")
+    }
+    @Test
+    fun c13_parser_func () {
+        val all = All_new(PushbackReader(StringReader("func f : () -> () { return }"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert (
+            s is Stmt.Func && (s.tk.pay as TK_Str).v=="f" && s.type.inp is Type.Unit && s.body is Stmt.Block &&
+            (s.body as Stmt.Block).let { it.body is Stmt.Ret && (it.body as Stmt.Ret).e is Expr.Unit }
+        )
+    }
+
+    // STMT_NAT
+    @Test
+    fun c14_parser_nat () {
+        val all = All_new(PushbackReader(StringReader("native _{xxx}"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.Nat && (s.tk.pay as TK_Str).v=="xxx")
+    }
+}
