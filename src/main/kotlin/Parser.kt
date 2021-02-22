@@ -30,9 +30,11 @@ sealed class Stmt (val tk: Tk) {
     data class Nat   (val tk_: Tk) : Stmt(tk_)
     data class Call  (val tk_: Tk, val call: Expr.Call) : Stmt(tk_)
     data class Seq   (val tk_: Tk, val s1: Stmt, val s2: Stmt) : Stmt(tk_)
-    data class If    (val tk_: Tk, val tst: Expr, val true_: Stmt, val false_: Stmt) : Stmt(tk_)
-    data class Func  (val tk_: Tk, val type: Type.Func, val body: Stmt) : Stmt(tk_)
+    data class If    (val tk_: Tk, val tst: Expr, val true_: Block, val false_: Block) : Stmt(tk_)
+    data class Func  (val tk_: Tk, val type: Type.Func, val block: Block) : Stmt(tk_)
     data class Ret   (val tk_: Tk, val e: Expr) : Stmt(tk_)
+    data class Loop  (val tk_: Tk, val block: Block) : Stmt(tk_)
+    data class Break (val tk_: Tk) : Stmt(tk_)
     data class Block (val tk_: Tk, val body: Stmt) : Stmt(tk_)
 }
 
@@ -190,7 +192,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
 }
 
 fun parser_stmt (all: All): Stmt? {
-    fun parser_block (): Stmt? {
+    fun parser_block (): Stmt.Block? {
         if (!all.accept_err(TK.CHAR,'{')) {
             return null
         }
@@ -203,7 +205,7 @@ fun parser_stmt (all: All): Stmt? {
         }
     }
     when {
-        all.accept(TK.VAR)  -> {
+        all.accept(TK.VAR)   -> {
             if (!all.accept_err(TK.XVAR)) {
                 return null
             }
@@ -224,7 +226,13 @@ fun parser_stmt (all: All): Stmt? {
             }
             return Stmt.Var(tk_id, tp, e)
         }
-        all.accept(TK.TYPE) -> {
+        all.accept(TK.NAT)   -> {
+            if (!all.accept_err(TK.XNAT)) {
+                return null
+            }
+            return Stmt.Nat(all.tk0)
+        }
+        all.accept(TK.TYPE)  -> {
             if (!all.accept_err(TK.XUSER)) {
                 return null
             }
@@ -269,7 +277,15 @@ fun parser_stmt (all: All): Stmt? {
 
             return Stmt.User(tk_id,false,subs.toTypedArray())
         }
-        all.accept(TK.IF)   -> {
+        all.check(TK.CALL)   -> {
+            val tk = all.tk1
+            val e = parser_expr(all, true)
+            if (e == null) {
+                return null
+            }
+            return Stmt.Call(tk, e as Expr.Call)
+        }
+        all.accept(TK.IF)    -> {
             val tk = all.tk0
             val tst = parser_expr(all, false)
             if (tst == null) {
@@ -288,7 +304,7 @@ fun parser_stmt (all: All): Stmt? {
             }
             return Stmt.If(tk, tst, true_, false_)
         }
-        all.accept(TK.FUNC) -> {
+        all.accept(TK.FUNC)  -> {
             if (!all.accept_err(TK.XVAR)) {
                 return null
             }
@@ -301,13 +317,13 @@ fun parser_stmt (all: All): Stmt? {
                 null -> return null
                 !is Type.Func -> { all.err_tk(all.tk0, "expected function type") ; return null}
             }
-            val body = parser_block()
-            if (body == null) {
+            val block = parser_block()
+            if (block == null) {
                 return null
             }
-            return Stmt.Func(tk_id, tp as Type.Func, body)
+            return Stmt.Func(tk_id, tp as Type.Func, block)
         }
-        all.accept(TK.RET)  -> {
+        all.accept(TK.RET)   -> {
             val tk = all.tk0
             val e = parser_expr(all, false)
             return when {
@@ -316,20 +332,15 @@ fun parser_stmt (all: All): Stmt? {
                 else             -> Stmt.Ret(tk, Expr.Unit(all.tk0))
             }
         }
-        all.accept(TK.NAT)  -> {
-            if (!all.accept_err(TK.XNAT)) {
+        all.accept(TK.LOOP)  -> {
+            val tk = all.tk0
+            val block = parser_block()
+            if (block == null) {
                 return null
             }
-            return Stmt.Nat(all.tk0)
+            return Stmt.Loop(tk, block)
         }
-        all.check(TK.CALL)  -> {
-            val tk = all.tk1
-            val e = parser_expr(all, true)
-            if (e == null) {
-                return null
-            }
-            return Stmt.Call(tk, e as Expr.Call)
-        }
+        all.accept(TK.BREAK) -> return Stmt.Break(all.tk0)
         all.check(TK.CHAR,'{') -> return parser_block()
         else -> { all.err_expected("statement") ; return null }
     }

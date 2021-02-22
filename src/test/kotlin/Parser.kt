@@ -396,8 +396,8 @@ class Parser {
         lexer(all)
         val s = parser_stmt(all)
         assert (
-            s is Stmt.If && s.tst is Expr.Unit && s.true_ is Stmt.Block && s.false_ is Stmt.Block &&
-            (s.true_ as Stmt.Block).body is Stmt.Pass && (s.false_ as Stmt.Block).body is Stmt.Call
+            s is Stmt.If && s.tst is Expr.Unit &&
+            s.true_.body is Stmt.Pass && s.false_.body is Stmt.Call
         )
     }
     @Test
@@ -406,8 +406,8 @@ class Parser {
         lexer(all)
         val s = parser_stmt(all)
         assert (
-            s is Stmt.If && s.tst is Expr.Cons && s.true_ is Stmt.Block && s.false_ is Stmt.Block &&
-            (s.true_ as Stmt.Block).body is Stmt.Pass && (s.false_ as Stmt.Block).body is Stmt.Pass
+            s is Stmt.If && s.tst is Expr.Cons &&
+            s.true_.body is Stmt.Pass && s.false_.body is Stmt.Pass
         )
     }
 
@@ -426,17 +426,28 @@ class Parser {
         lexer(all)
         val s = parser_stmt(all)
         assert (
-            s is Stmt.Func && (s.tk.pay as TK_Str).v=="f" && s.type.inp is Type.Unit && s.body is Stmt.Block &&
-            (s.body as Stmt.Block).let { it.body is Stmt.Ret && (it.body as Stmt.Ret).e is Expr.Unit }
+            s is Stmt.Func && (s.tk.pay as TK_Str).v=="f" && s.type.inp is Type.Unit &&
+            s.block.body is Stmt.Ret && (s.block.body as Stmt.Ret).e is Expr.Unit
         )
     }
 
     // STMT_NAT
+
     @Test
     fun c14_parser_nat () {
         val all = All_new(PushbackReader(StringReader("native _{xxx}"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert(s is Stmt.Nat && (s.tk.pay as TK_Str).v=="xxx")
+    }
+
+    // STMT_NAT
+
+    @Test
+    fun c15_parser_loop () {
+        val all = All_new(PushbackReader(StringReader("loop { break }"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.Loop && s.block.body is Stmt.Break)
     }
 }
