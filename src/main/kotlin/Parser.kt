@@ -162,19 +162,20 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
 
             // CALL
             else -> {
-                val e = parser_expr(all, false)
+                var e = parser_expr(all, false)
                 if (e == null) {
-                    if (!ispre && tk_bef.lin==all.tk0.lin && tk_bef.col==all.tk0.col) {
-                        break   // not a call (nothing consumed)
-                    } else {
-                        return null
+                    val consumed = (tk_bef.lin!=all.tk0.lin || tk_bef.col!=all.tk0.col)
+                    when {
+                        consumed -> return null // failed parser_expr and consumed input: error
+                        ispre    -> e = Expr.Unit(all.tk0) // call f -> call f ()
+                        !ispre   -> break // just e (not a call)
                     }
                 }
                 if (ret !is Expr.Nat && ret !is Expr.Var) {
                     all.err_tk(ret!!.tk, "expected function")
                     return null
                 }
-                ret = Expr.Call(tk_bef,ret,e)
+                ret = Expr.Call(tk_bef, ret, e!!)
             }
         }
         ispre = false

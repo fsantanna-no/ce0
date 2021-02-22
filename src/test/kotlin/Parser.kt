@@ -330,7 +330,8 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("call ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s==null && all.err=="(ln 1, col 8): expected expression : have end of file")
+        //assert(s==null && all.err=="(ln 1, col 8): expected expression : have end of file")
+        assert(s==null && all.err=="(ln 1, col 6): expected function")
     }
     @Test
     fun c04_parser_stmt_call () {
