@@ -10,7 +10,7 @@ data class All(
 )
 
 fun All_new (inp: PushbackReader): All {
-    return All(inp, Tk(TK.ERR,null,1,1), Tk(TK.ERR,null,1,1))
+    return All(inp, Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,""))
 }
 
 fun All.read (): Pair<Int,Char> {
@@ -59,7 +59,7 @@ fun All.check (enu: TK, chr: Char? = null): Boolean {
     return when {
         (this.tk1.enu != enu) -> false
         (chr == null)         -> true
-        else -> (this.tk1.pay as TK_Chr).v == chr
+        else -> (this.tk1 as Tk.Chr).chr == chr
     }
 }
 

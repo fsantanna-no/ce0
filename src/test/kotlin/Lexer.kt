@@ -36,7 +36,7 @@ class Lexer {
     @Test
     fun b01_lexer_blanks () {
         val inp = PushbackReader(StringReader("-- foobar"),2)
-        val all = All(inp, Tk(TK.ERR,null,1,1), Tk(TK.ERR,null,1,1))
+        val all = All(inp, Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,""))
         blanks(all)
         assert(inp.read() == 65535)     // for some reason, it returns this value after reading -1
         assert(inp.read() == -1)        // then, it returns -1 correctly
@@ -47,7 +47,7 @@ class Lexer {
     @Test
     fun b02_lexer_blanks () {
         val inp = PushbackReader(StringReader("-- c1\n--c2\n\n"), 2)
-        val all = All(inp, Tk(TK.ERR,null,1,1), Tk(TK.ERR,null,1,1))
+        val all = All(inp, Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,""))
         blanks(all)
         assert(all.lin == 4)
         assert(all.col == 1)
@@ -58,19 +58,19 @@ class Lexer {
     @Test
     fun b03_lexer_syms () {
         val all = All_new(PushbackReader(StringReader("{ -> , ()"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay as TK_Chr).v=='{')
+        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1 as Tk.Chr).chr=='{')
         lexer(all) ; assert(all.tk1.enu==TK.ARROW)
-        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay as TK_Chr).v==',')
+        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1 as Tk.Chr).chr==',')
         lexer(all) ; assert(all.tk1.enu==TK.UNIT)
         lexer(all) ; assert(all.tk1.enu==TK.EOF)
     }
     @Test
     fun b04_lexer_syms () {
         val all = All_new(PushbackReader(StringReader(": }{ :"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay as TK_Chr).v==':')
-        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay as TK_Chr).v=='}')
-        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay as TK_Chr).v=='{')
-        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay as TK_Chr).v==':')
+        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1 as Tk.Chr).chr==':')
+        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1 as Tk.Chr).chr=='}')
+        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1 as Tk.Chr).chr=='{')
+        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1 as Tk.Chr).chr==':')
     }
 
     // KEYWORDS
@@ -78,10 +78,10 @@ class Lexer {
     @Test
     fun b05_lexer_keys () {
         val all = All_new(PushbackReader(StringReader("xvar var else varx type"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.XVAR && (all.tk1.pay as TK_Str).v=="xvar")
+        lexer(all) ; assert(all.tk1.enu==TK.XVAR && (all.tk1 as Tk.Str).str=="xvar")
         lexer(all) ; assert(all.tk1.enu==TK.VAR)
         lexer(all) ; assert(all.tk1.enu==TK.ELSE)
-        lexer(all) ; assert(all.tk1.enu==TK.XVAR && (all.tk1.pay as TK_Str).v=="varx")
+        lexer(all) ; assert(all.tk1.enu==TK.XVAR && (all.tk1 as Tk.Str).str=="varx")
         lexer(all) ; assert(all.tk1.enu==TK.TYPE)
     }
 
@@ -90,19 +90,19 @@ class Lexer {
     @Test
     fun b06_lexer_xs () {
         val all = All_new(PushbackReader(StringReader("c1\nc2 c3  \n    \nc4"), 2))
-        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XVAR && (all.tk1.pay.let { (it as TK_Str).v == "c1" }))
-        lexer(all) ; assert(all.tk1.lin==2 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XVAR && (all.tk1.pay.let { (it as TK_Str).v == "c2" }))
-        lexer(all) ; assert(all.tk1.lin==2 && all.tk1.col==4) ; assert(all.tk1.enu==TK.XVAR && (all.tk1.pay.let { (it as TK_Str).v == "c3" }))
-        lexer(all) ; assert(all.tk1.lin==4 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XVAR && (all.tk1.pay.let { (it as TK_Str).v == "c4" }))
+        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XVAR && (all.tk1 as Tk.Str).str=="c1")
+        lexer(all) ; assert(all.tk1.lin==2 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XVAR && (all.tk1 as Tk.Str).str=="c2")
+        lexer(all) ; assert(all.tk1.lin==2 && all.tk1.col==4) ; assert(all.tk1.enu==TK.XVAR && (all.tk1 as Tk.Str).str=="c3")
+        lexer(all) ; assert(all.tk1.lin==4 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XVAR && (all.tk1 as Tk.Str).str=="c4")
     }
     @Test
     fun b07_lexer_xs () {
         val all = All_new(PushbackReader(StringReader("c1 C1 Ca a C"), 2))
-        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==1)  ; assert(all.tk1.enu==TK.XVAR  && (all.tk1.pay.let { (it as TK_Str).v == "c1" }))
-        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==4)  ; assert(all.tk1.enu==TK.XUSER && (all.tk1.pay.let { (it as TK_Str).v == "C1" }))
-        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==7)  ; assert(all.tk1.enu==TK.XUSER && (all.tk1.pay.let { (it as TK_Str).v == "Ca" }))
-        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==10) ; assert(all.tk1.enu==TK.XVAR  && (all.tk1.pay.let { (it as TK_Str).v == "a" }))
-        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==12) ; assert(all.tk1.enu==TK.XUSER && (all.tk1.pay.let { (it as TK_Str).v == "C" }))
+        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==1)  ; assert(all.tk1.enu==TK.XVAR  && (all.tk1 as Tk.Str).str=="c1")
+        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==4)  ; assert(all.tk1.enu==TK.XUSER && (all.tk1 as Tk.Str).str=="C1")
+        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==7)  ; assert(all.tk1.enu==TK.XUSER && (all.tk1 as Tk.Str).str=="Ca")
+        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==10) ; assert(all.tk1.enu==TK.XVAR  && (all.tk1 as Tk.Str).str=="a")
+        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==12) ; assert(all.tk1.enu==TK.XUSER && (all.tk1 as Tk.Str).str=="C")
     }
 
     // XNAT
@@ -110,14 +110,14 @@ class Lexer {
     @Test
     fun b07_lexer_xnat () {
         val all = All_new(PushbackReader(StringReader("_char _Tp"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1.pay.let { (it as TK_Str).v == "char" }))
-        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1.pay.let { (it as TK_Str).v == "Tp" }))
+        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1 as Tk.Str).str=="char")
+        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1 as Tk.Str).str=="Tp")
     }
     @Test
     fun b08_lexer_xnat () {
         val all = All_new(PushbackReader(StringReader("_{(1)} _(2+2)"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1.pay.let { (it as TK_Str).v == "(1)" }))
-        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1.pay.let { (it as TK_Str).v == "2+2" }))
+        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1 as Tk.Str).str=="(1)")
+        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1 as Tk.Str).str=="2+2")
     }
 
     // XNUM
@@ -125,13 +125,13 @@ class Lexer {
     @Test
     fun b09_lexer_xnum () {
         val all = All_new(PushbackReader(StringReader(".1a"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1.pay.let { (it as TK_Chr).v == '.' }))
+        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1 as Tk.Chr).chr== '.')
         lexer(all) ; assert(all.tk1.enu==TK.ERR)
     }
     @Test
     fun b10_lexer_xnum () {
         val all = All_new(PushbackReader(StringReader("10"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.XNUM && (all.tk1.pay.let { (it as TK_Num).v == 10 }))
+        lexer(all) ; assert(all.tk1.enu==TK.XNUM && (all.tk1 as Tk.Num).num==10)
     }
 
     // XEMPTY
@@ -139,6 +139,6 @@ class Lexer {
     @Test
     fun b11_lexer_xempty () {
         val all = All_new(PushbackReader(StringReader("\$List"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.XEMPTY && (all.tk1.pay.let { (it as TK_Str).v == "List" }))
+        lexer(all) ; assert(all.tk1.enu==TK.XEMPTY && (all.tk1 as Tk.Str).str=="List")
     }
 }

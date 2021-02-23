@@ -17,10 +17,10 @@ fun Expr.toc (): String {
     val tp = this.totype()
     return when (this) {
         is Expr.Unit  -> ""
-        is Expr.Var   -> (this.tk.pay as TK_Str).v
-        is Expr.Nat   -> (this.tk.pay as TK_Str).v
+        is Expr.Var   -> this.tk_.str
+        is Expr.Nat   -> this.tk_.str
         is Expr.Tuple -> "((${tp.toc()}) { })"
-        is Expr.Index -> this.pre.toc() + "._" + (this.tk.pay as TK_Num).v
+        is Expr.Index -> this.pre.toc() + "._" + this.tk_.num
         else -> error("TODO")
     }
 }

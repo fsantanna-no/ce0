@@ -28,21 +28,21 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("_char"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Nat && (tp.tk.pay as TK_Str).v=="char")
+        assert(tp is Type.Nat && tp.tk_.str=="char")
     }
     @Test
     fun a04_parser_type () {
         val all = All_new(PushbackReader(StringReader("Nat"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.User && (tp.tk.pay as TK_Str).v=="Nat")
+        assert(tp is Type.User && tp.tk_.str=="Nat")
     }
     @Test
     fun a05_parser_type () {
         val all = All_new(PushbackReader(StringReader("((),_char)"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Tuple && tp.vec.size==2 && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Nat && (tp.vec[1].tk.pay as TK_Str).v=="char")
+        assert(tp is Type.Tuple && tp.vec.size==2 && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Nat && (tp.vec[1].tk as Tk.Str).str=="char")
     }
     @Test
     fun a05_parser_type_tuple_err () {
@@ -87,28 +87,28 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("x"), 2))
         lexer(all)
         val e = parser_expr(all,true)
-        assert(e is Expr.Var && (e.tk.pay as TK_Str).v=="x")
+        assert(e is Expr.Var && e.tk_.str=="x")
     }
     @Test
     fun b08_parser_expr_nat () {
         val all = All_new(PushbackReader(StringReader("_x"), 2))
         lexer(all)
         val e = parser_expr(all,true)
-        assert(e is Expr.Nat && (e.tk.pay as TK_Str).v=="x")
+        assert(e is Expr.Nat && e.tk_.str=="x")
     }
     @Test
     fun b08_parser_expr_empty () {
         val all = All_new(PushbackReader(StringReader("\$Nat"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Empty && (e.tk.pay as TK_Str).v=="Nat")
+        assert(e is Expr.Empty && e.tk_.str=="Nat")
     }
     @Test
     fun b08_parser_expr_int () {
         val all = All_new(PushbackReader(StringReader("10"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Int && (e.tk.pay as TK_Num).v==10)
+        assert(e is Expr.Int && e.tk_.num==10)
     }
 
     // PARENS, TUPLE
@@ -139,7 +139,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("((),x,())"), 2))
         lexer(all)
         val e = parser_expr(all,true)
-        assert(e is Expr.Tuple && e.vec.size==3 && e.vec[0] is Expr.Unit && e.vec[1] is Expr.Var && (e.vec[1].tk.pay as TK_Str).v=="x")
+        assert(e is Expr.Tuple && e.vec.size==3 && e.vec[0] is Expr.Unit && e.vec[1] is Expr.Var && (e.vec[1].tk as Tk.Str).str=="x")
     }
     @Test
     fun b07_parser_expr_tuple_err () {
@@ -156,14 +156,14 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("xxx ()"), 2))
         lexer(all)
         val e = parser_expr(all,true)
-        assert(e is Expr.Call && e.pre is Expr.Var && (e.pre.tk.pay as TK_Str).v=="xxx" && e.pos is Expr.Unit)
+        assert(e is Expr.Call && e.pre is Expr.Var && (e.pre.tk as Tk.Str).str=="xxx" && e.pos is Expr.Unit)
     }
     @Test
     fun b10_parser_expr_call () {
         val all = All_new(PushbackReader(StringReader("call xxx ()"), 2))
         lexer(all)
         val e = parser_expr(all,true)
-        assert(e is Expr.Call && e.pre is Expr.Var && (e.pre.tk.pay as TK_Str).v=="xxx" && e.pos is Expr.Unit)
+        assert(e is Expr.Call && e.pre is Expr.Var && (e.pre.tk as Tk.Str).str=="xxx" && e.pos is Expr.Unit)
     }
     @Test
     fun b10_parser_expr_call_err () {
@@ -197,7 +197,6 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("xxx ("), 2))
         lexer(all)
         val e = parser_expr(all,true)
-        println(e)
         assert(e==null && all.err=="(ln 1, col 6): expected expression : have end of file")
     }
 
@@ -215,21 +214,21 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("X ()"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Cons && (e.tk.pay as TK_Str).v=="X" && e.pos is Expr.Unit)
+        assert(e is Expr.Cons && e.tk_.str=="X" && e.pos is Expr.Unit)
     }
     @Test
     fun b16_parser_expr_cons () {
         val all = All_new(PushbackReader(StringReader("X"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Cons && (e.tk.pay as TK_Str).v=="X" && e.pos is Expr.Unit)
+        assert(e is Expr.Cons && e.tk_.str=="X" && e.pos is Expr.Unit)
     }
     @Test
     fun b17_parser_expr_cons () {
         val all = All_new(PushbackReader(StringReader("Aa1 Bb1 ((),())"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Cons && (e.tk.pay as TK_Str).v=="Aa1" && e.pos is Expr.Cons && (e.pos as Expr.Cons).pos is Expr.Tuple)
+        assert(e is Expr.Cons && e.tk_.str=="Aa1" && e.pos is Expr.Cons && (e.pos as Expr.Cons).pos is Expr.Tuple)
     }
 
     // INDEX
@@ -239,7 +238,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("x.1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Index && (e.tk.pay as TK_Num).v==1 && e.pre is Expr.Var)
+        assert(e is Expr.Index && e.tk_.num==1 && e.pre is Expr.Var)
     }
     @Test
     fun b19_parser_expr_index () {
@@ -294,15 +293,14 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("x.Item!"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        println(e)
-        assert(e is Expr.Disc && (e.tk.pay as TK_Str).v=="Item" && e.pre is Expr.Var)
+        assert(e is Expr.Disc && e.tk_.str=="Item" && e.pre is Expr.Var)
     }
     @Test
     fun b26_parser_expr_pred () {
         val all = All_new(PushbackReader(StringReader("x.Item?"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Pred && (e.tk.pay as TK_Str).v=="Item" && e.pre is Expr.Var)
+        assert(e is Expr.Pred && e.tk_.str=="Item" && e.pre is Expr.Var)
     }
 
     // STMT
@@ -319,7 +317,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("type Bool { False:() ; True:() }"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.User && (s.tk.pay as TK_Str).v=="Bool" && !s.isrec && s.subs.size==2 && s.subs[0].second is Type.Unit && (s.subs[1].first.pay as TK_Str).v=="True")
+        assert(s is Stmt.User && s.tk_.str=="Bool" && !s.isrec && s.subs.size==2 && s.subs[0].second is Type.Unit && (s.subs[1].first as Tk.Str).str=="True")
     }
 
     // STMT_CALL
@@ -369,10 +367,10 @@ class Parser {
         lexer(all)
         val s = parser_stmts(all, Pair(TK.EOF,null))
         assert (
-            s is Stmt.Seq && s.s1 is Stmt.Seq && s.s2 is Stmt.Call && ((s.s2 as Stmt.Call).call.pre.tk.pay as TK_Str).v=="g" &&
+            s is Stmt.Seq && s.s1 is Stmt.Seq && s.s2 is Stmt.Call && ((s.s2 as Stmt.Call).call.pre.tk as Tk.Str).str=="g" &&
             (s.s1 as Stmt.Seq).let {
                 it.s1 is Stmt.Call && (it.s1 as Stmt.Call).let {
-                    it.call.pre is Expr.Var && (it.call.pre.tk.pay as TK_Str).v=="f"
+                    it.call.pre is Expr.Var && (it.call.pre.tk as Tk.Str).str=="f"
                 }
             }
         )
@@ -426,7 +424,7 @@ class Parser {
         lexer(all)
         val s = parser_stmt(all)
         assert (
-            s is Stmt.Func && (s.tk.pay as TK_Str).v=="f" && s.type.inp is Type.Unit &&
+            s is Stmt.Func && s.tk_.str=="f" && s.type.inp is Type.Unit &&
             s.block.body is Stmt.Ret && (s.block.body as Stmt.Ret).e is Expr.Unit
         )
     }
@@ -438,7 +436,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("native _{xxx}"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Nat && (s.tk.pay as TK_Str).v=="xxx")
+        assert(s is Stmt.Nat && s.tk_.str=="xxx")
     }
 
     // STMT_NAT
