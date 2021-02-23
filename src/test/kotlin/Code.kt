@@ -1,6 +1,8 @@
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
+import java.io.PushbackReader
+import java.io.StringReader
 
 @TestMethodOrder(Alphanumeric::class)
 class Code {
@@ -85,4 +87,23 @@ class Code {
             }
         """.trimIndent())
     }
+
+    // STRING -> C
+
+    fun toc (inp: String): Pair<Boolean,String> {
+        val all = All_new(PushbackReader(StringReader(inp), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        if (s == null) {
+            return Pair(false, all.err)
+        }
+        return Pair(true, s.toc(emptyList()))
+    }
+
+    @Test
+    fun e01_call () {
+        val (ok, out) = toc("call _stdo a")
+        assert(ok && out == "stdo(a);\n")
+    }
+
 }

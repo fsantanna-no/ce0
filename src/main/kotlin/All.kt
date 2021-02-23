@@ -1,4 +1,5 @@
 import java.io.PushbackReader
+import java.io.StringReader
 
 data class All(
     val inp: PushbackReader,
@@ -8,6 +9,16 @@ data class All(
     var col: Int = 1,
     var err: String = "",
 )
+
+fun All_all (inp: String): Pair<Boolean,String> {
+    val all = All_new(PushbackReader(StringReader(inp), 2))
+    lexer(all)
+    val s = parser_stmt(all)
+    if (s == null) {
+        return Pair(false, all.err)
+    }
+    return Pair(true, s.code(emptyList()))
+}
 
 fun All_new (inp: PushbackReader): All {
     return All(inp, Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,""))

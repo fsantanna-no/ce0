@@ -20,6 +20,7 @@ fun Expr.toc (envs: Envs): String {
         is Expr.Nat   -> this.tk_.str
         is Expr.Tuple -> "((${this.totype(envs).toc()}) { })"
         is Expr.Index -> this.pre.toc(envs) + "._" + this.tk_.num
+        is Expr.Call  -> this.pre.toc(envs) + "(" + this.pos.toc(envs) + ")"
         else -> error("TODO")
     }
 }
@@ -27,6 +28,7 @@ fun Expr.toc (envs: Envs): String {
 fun Stmt.toc (envs: Envs): String {
     return when (this) {
         is Stmt.Pass -> ""
+        is Stmt.Call -> this.call.toc(envs) + ";\n"
         else -> error("TODO")
     }
 }
