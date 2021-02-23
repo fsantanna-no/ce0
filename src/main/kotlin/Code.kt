@@ -30,3 +30,19 @@ fun Stmt.toc (envs: Envs): String {
         else -> error("TODO")
     }
 }
+
+fun Stmt.code (envs: Envs): String {
+    return ("""
+        #include <assert.h>
+        #include <stdio.h>
+        #include <stdlib.h>
+        typedef int Int;
+        #define stdout_Unit_() printf("()")
+        #define stdout_Unit()  (stdout_Unit_(), puts(""))
+        #define stdout_Int_(x) printf("%d",x)
+        #define stdout_Int(x)  (stdout_Int_(x), puts(""))
+        int main (void) {
+    """ + this.toc(envs) + """
+        }
+    """).trimIndent()
+}

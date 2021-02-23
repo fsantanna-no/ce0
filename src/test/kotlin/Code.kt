@@ -63,4 +63,26 @@ class Code {
         val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
         assert(s.toc(emptyList()) == "")
     }
+
+    // CODE
+
+    @Test
+    fun d01 () {
+        val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
+        val out = s.code(emptyList())
+        println(out)
+        assert(out == """
+            #include <assert.h>
+            #include <stdio.h>
+            #include <stdlib.h>
+            typedef int Int;
+            #define stdout_Unit_() printf("()")
+            #define stdout_Unit()  (stdout_Unit_(), puts(""))
+            #define stdout_Int_(x) printf("%d",x)
+            #define stdout_Int(x)  (stdout_Int_(x), puts(""))
+            int main (void) {
+
+            }
+        """.trimIndent())
+    }
 }
