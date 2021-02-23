@@ -13,7 +13,7 @@ data class All(
 fun All_all (inp: String): Pair<Boolean,String> {
     val all = All_new(PushbackReader(StringReader(inp), 2))
     lexer(all)
-    val s = parser_stmt(all)
+    val s = parser_stmts(all, Pair(TK.EOF,null))
     if (s == null) {
         return Pair(false, all.err)
     }

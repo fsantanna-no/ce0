@@ -28,7 +28,14 @@ fun Expr.toc (envs: Envs): String {
 fun Stmt.toc (envs: Envs): String {
     return when (this) {
         is Stmt.Pass -> ""
+        is Stmt.Seq  -> this.s1.toc(envs) + this.s2.toc(envs)
         is Stmt.Call -> this.call.toc(envs) + ";\n"
+        is Stmt.Var  -> {
+            if (this.type is Type.Unit) {
+                return ""
+            }
+            error("TODO")
+        }
         else -> error("TODO")
     }
 }

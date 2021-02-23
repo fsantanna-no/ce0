@@ -93,10 +93,11 @@ class Code {
     fun toc (inp: String): Pair<Boolean,String> {
         val all = All_new(PushbackReader(StringReader(inp), 2))
         lexer(all)
-        val s = parser_stmt(all)
+        val s = parser_stmts(all, Pair(TK.EOF,null))
         if (s == null) {
             return Pair(false, all.err)
         }
+        println(s)
         return Pair(true, s.toc(emptyList()))
     }
 
@@ -105,5 +106,14 @@ class Code {
         val (ok, out) = toc("call _stdo a")
         assert(ok && out == "stdo(a);\n")
     }
-
+    @Test
+    fun e02_seq () {
+        val (ok, out) = toc("var a : () = () ; call _stdo a")
+        assert(ok && out == "stdo(a);\n")
+    }
+    @Test
+    fun e03_type () {
+        val (ok, out) = toc("type Bool { False: () ; True: () }")
+        assert(ok && out == "stdo(a);\n")
+    }
 }
