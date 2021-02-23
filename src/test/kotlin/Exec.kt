@@ -21,7 +21,7 @@ class Exec {
         if (!ok1) {
             return out1
         }
-        File("out1.c").writeText(out1)
+        File("out.c").writeText(out1)
         exec("gcc out.c -o out.exe")
         val out2 = exec("./out.exe")
         return out2
