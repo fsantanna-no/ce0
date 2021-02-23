@@ -13,13 +13,14 @@ fun Type.toc (): String {
     }
 }
 
-fun code_expr (e: Expr): String {
-    val tp = e.totype()
-    return when (e) {
+fun Expr.toc (): String {
+    val tp = this.totype()
+    return when (this) {
         is Expr.Unit  -> ""
-        is Expr.Var   -> (e.tk.pay as TK_Str).v
-        is Expr.Nat   -> (e.tk.pay as TK_Str).v
+        is Expr.Var   -> (this.tk.pay as TK_Str).v
+        is Expr.Nat   -> (this.tk.pay as TK_Str).v
         is Expr.Tuple -> "((${tp.toc()}) { })"
+        is Expr.Index -> this.pre.toc() + "._" + (this.tk.pay as TK_Num).v
         else -> error("TODO")
     }
 }
