@@ -20,7 +20,7 @@ sealed class Expr (val tk: Tk) {
     data class Index (val tk_: Tk.Num, val pre: Expr): Expr(tk_)
     data class Pred  (val tk_: Tk.Str, val pre: Expr): Expr(tk_)
     data class Disc  (val tk_: Tk.Str, val pre: Expr): Expr(tk_)
-    data class Call  (val tk_: Tk, val pre: Expr, val pos: Expr): Expr(tk_)
+    data class Call  (val tk_: Tk.Key, val pre: Expr, val pos: Expr): Expr(tk_)
 }
 
 sealed class Stmt (val tk: Tk) {
@@ -29,7 +29,7 @@ sealed class Stmt (val tk: Tk) {
     data class Set   (val tk_: Tk, val dst: Expr, val src: Expr) : Stmt(tk_)
     data class User  (val tk_: Tk.Str, val isrec: Boolean, val subs: Array<Pair<Tk.Str,Type>>) : Stmt(tk_)
     data class Nat   (val tk_: Tk.Str) : Stmt(tk_)
-    data class Call  (val tk_: Tk, val call: Expr.Call) : Stmt(tk_)
+    data class Call  (val tk_: Tk.Key, val call: Expr.Call) : Stmt(tk_)
     data class Seq   (val tk_: Tk, val s1: Stmt, val s2: Stmt) : Stmt(tk_)
     data class If    (val tk_: Tk.Key, val tst: Expr, val true_: Block, val false_: Block) : Stmt(tk_)
     data class Func  (val tk_: Tk.Str, val type: Type.Func, val block: Block) : Stmt(tk_)
@@ -134,7 +134,8 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
         }
     }
 
-    var ispre = (canpre && all.accept(TK.CALL))
+    var ispre = (canpre && (all.accept(TK.CALL) || all.accept(TK.OUT)))
+    val tk_pre = all.tk0
 
     var ret = one()
     if (ret == null) {
@@ -187,7 +188,8 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
                     all.err_tk(ret!!.tk, "expected function")
                     return null
                 }
-                ret = Expr.Call(tk_bef, ret, e!!)
+                val tk0 = if (ispre) tk_pre as Tk.Key else Tk.Key(TK.CALL,tk_pre.lin,tk_pre.col,"call")
+                ret = Expr.Call(tk0, ret, e!!)
             }
         }
         ispre = false
@@ -296,13 +298,13 @@ fun parser_stmt (all: All): Stmt? {
 
             return Stmt.User(tk_id,false,subs.toTypedArray())
         }
-        all.check(TK.CALL)   -> {
-            val tk = all.tk1
+        all.check(TK.CALL) || all.check(TK.OUT) -> {
+            val tk0 = all.tk1 as Tk.Key
             val e = parser_expr(all, true)
             if (e == null) {
                 return null
             }
-            return Stmt.Call(tk, e as Expr.Call)
+            return Stmt.Call(tk0, e as Expr.Call)
         }
         all.accept(TK.IF)    -> {
             val tk0 = all.tk0 as Tk.Key

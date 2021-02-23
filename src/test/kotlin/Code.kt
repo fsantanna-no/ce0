@@ -8,6 +8,7 @@ import java.io.StringReader
 class Code {
 
     val tp_unit = Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
+
     // TYPE
 
     @Test
@@ -76,10 +77,10 @@ class Code {
             #include <stdio.h>
             #include <stdlib.h>
             typedef int Int;
-            #define stdout_Unit_() printf("()")
-            #define stdout_Unit()  (stdout_Unit_(), puts(""))
-            #define stdout_Int_(x) printf("%d",x)
-            #define stdout_Int(x)  (stdout_Int_(x), puts(""))
+            #define output_std_Unit_() printf("()")
+            #define output_std_Unit()  (output_std_Unit_(), puts(""))
+            #define output_std_Int_(x) printf("%d",x)
+            #define output_std_Int(x)  (output_std_Int_(x), puts(""))
             int main (void) {
 
             }
@@ -118,4 +119,11 @@ class Code {
             typedef enum { Bool_False, Bool_True } _Bool_;
         """.trimIndent())
     }
+    @Test
+    fun e04_output () {
+        val (ok, out) = toc("output std ()")
+        println(out)
+        assert(ok && out == "output_std_Unit();\n")
+    }
+
 }

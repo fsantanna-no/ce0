@@ -317,7 +317,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("type Bool { False:() ; True:() }"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.User && s.tk_.str=="Bool" && !s.isrec && s.subs.size==2 && s.subs[0].second is Type.Unit && (s.subs[1].first as Tk.Str).str=="True")
+        assert(s is Stmt.User && s.tk_.str=="Bool" && !s.isrec && s.subs.size==2 && s.subs[0].second is Type.Unit && s.subs[1].first.str=="True")
     }
 
     // STMT_CALL
@@ -357,6 +357,13 @@ class Parser {
         lexer(all)
         val s = parser_stmt(all)
         assert(s is Stmt.Call && s.call.pre is Expr.Nat && s.call.pos is Expr.Unit)
+    }
+    @Test
+    fun c07_parser_stmt_output () {
+        val all = All_new(PushbackReader(StringReader("output std ()"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.Call && s.call.pre is Expr.Var && (s.call.pre as Expr.Var).tk_.str=="std")
     }
 
     // STMT_SEQ
@@ -450,6 +457,7 @@ class Parser {
     }
 
     // STMT_SET
+
     @Test
     fun c16_parser_set () {
         val all = All_new(PushbackReader(StringReader("set s = ()"), 2))

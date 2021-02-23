@@ -77,12 +77,13 @@ class Lexer {
 
     @Test
     fun b05_lexer_keys () {
-        val all = All_new(PushbackReader(StringReader("xvar var else varx type"), 2))
+        val all = All_new(PushbackReader(StringReader("xvar var else varx type output"), 2))
         lexer(all) ; assert(all.tk1.enu==TK.XVAR && (all.tk1 as Tk.Str).str=="xvar")
         lexer(all) ; assert(all.tk1.enu==TK.VAR)
         lexer(all) ; assert(all.tk1.enu==TK.ELSE)
         lexer(all) ; assert(all.tk1.enu==TK.XVAR && (all.tk1 as Tk.Str).str=="varx")
         lexer(all) ; assert(all.tk1.enu==TK.TYPE)
+        lexer(all) ; assert(all.tk1.enu==TK.OUT)
     }
 
     // XVAR / XUSER

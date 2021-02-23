@@ -2,7 +2,7 @@ enum class TK {
     ERR, EOF, CHAR,
     XVAR, XUSER, XNAT, XNUM, XEMPTY,
     UNIT, ARROW,
-    BREAK, CALL, ELSE, FUNC, IF, LOOP, NAT, RET, SET, TYPE, VAR
+    BREAK, CALL, ELSE, FUNC, IF, LOOP, NAT, OUT, RET, SET, TYPE, VAR
 }
 
 val key2tk: HashMap<String, TK> = hashMapOf (
@@ -13,6 +13,7 @@ val key2tk: HashMap<String, TK> = hashMapOf (
     "if"     to TK.IF,
     "loop"   to TK.LOOP,
     "native" to TK.NAT,
+    "output" to TK.OUT,
     "return" to TK.RET,
     "set"    to TK.SET,
     "type"   to TK.TYPE,

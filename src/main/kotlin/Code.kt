@@ -20,7 +20,14 @@ fun Expr.toc (envs: Envs): String {
         is Expr.Nat   -> this.tk_.str
         is Expr.Tuple -> "((${this.totype(envs).toc()}) { })"
         is Expr.Index -> this.pre.toc(envs) + "._" + this.tk_.num
-        is Expr.Call  -> this.pre.toc(envs) + "(" + this.pos.toc(envs) + ")"
+        is Expr.Call  ->  {
+            val (pre,pos) = when {
+                (this.tk.enu != TK.OUT) -> Pair("","")
+                (this.pre is Expr.Var && this.pre.tk_.str=="std") -> Pair("output_","_"+this.pos.totype(envs).toce())
+                else -> Pair("output_","")
+            }
+            pre + this.pre.toc(envs) + pos + "(" + this.pos.toc(envs) + ")"
+        }
         else -> error("TODO")
     }
 }
@@ -64,10 +71,10 @@ fun Stmt.code (envs: Envs): String {
         #include <stdio.h>
         #include <stdlib.h>
         typedef int Int;
-        #define stdout_Unit_() printf("()")
-        #define stdout_Unit()  (stdout_Unit_(), puts(""))
-        #define stdout_Int_(x) printf("%d",x)
-        #define stdout_Int(x)  (stdout_Int_(x), puts(""))
+        #define output_std_Unit_() printf("()")
+        #define output_std_Unit()  (output_std_Unit_(), puts(""))
+        #define output_std_Int_(x) printf("%d",x)
+        #define output_std_Int(x)  (output_std_Int_(x), puts(""))
         int main (void) {
     """ + this.toc(envs) + """
         }

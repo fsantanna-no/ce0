@@ -10,7 +10,7 @@ data class All(
     var err: String = "",
 )
 
-fun All_all (inp: String): Pair<Boolean,String> {
+fun All_inp2out (inp: String): Pair<Boolean,String> {
     val all = All_new(PushbackReader(StringReader(inp), 2))
     lexer(all)
     val s = parser_stmts(all, Pair(TK.EOF,null))
