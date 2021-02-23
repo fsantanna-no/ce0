@@ -450,4 +450,13 @@ class Parser {
         val s = parser_stmt(all)
         assert(s is Stmt.Loop && s.block.body is Stmt.Break)
     }
+
+    // STMT_SET
+    @Test
+    fun c16_parser_set () {
+        val all = All_new(PushbackReader(StringReader("set s = ()"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.Set && s.dst is Expr.Var && s.src is Expr.Unit)
+    }
 }
