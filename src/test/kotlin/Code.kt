@@ -24,17 +24,17 @@ class Code {
     @Test
     fun b01_expr_unit () {
         val e = Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
-        assert(e.toc() == "")
+        assert(e.toc(emptyList()) == "")
     }
     @Test
     fun b02_expr_var () {
         val e = Expr.Var(Tk.Str(TK.XVAR,1,1,"xxx"))
-        assert(e.toc() == "xxx")
+        assert(e.toc(emptyList()) == "xxx")
     }
     @Test
     fun b03_expr_nat () {
         val e = Expr.Var(Tk.Str(TK.XNAT,1,1,"xxx"))
-        assert(e.toc() == "xxx")
+        assert(e.toc(emptyList()) == "xxx")
     }
     @Test
     fun b04_expr_tuple () {
@@ -45,7 +45,7 @@ class Code {
                 Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()")),
             )
         )
-        assert(e.toc() == "((TUPLE__Unit__Unit) { })")
+        assert(e.toc(emptyList()) == "((TUPLE__Unit__Unit) { })")
     }
     @Test
     fun b05_expr_index () {
@@ -53,7 +53,6 @@ class Code {
             Tk.Num(TK.XNUM,1,1,2),
             Expr.Var(Tk.Str(TK.XVAR,1,1,"x"))
         )
-        println(e.toc())
-        assert(e.toc() == "x._2")
+        assert(e.toc(emptyList()) == "x._2")
     }
 }

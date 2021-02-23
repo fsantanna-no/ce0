@@ -13,14 +13,13 @@ fun Type.toc (): String {
     }
 }
 
-fun Expr.toc (): String {
-    val tp = this.totype()
+fun Expr.toc (envs: Envs): String {
     return when (this) {
         is Expr.Unit  -> ""
         is Expr.Var   -> this.tk_.str
         is Expr.Nat   -> this.tk_.str
-        is Expr.Tuple -> "((${tp.toc()}) { })"
-        is Expr.Index -> this.pre.toc() + "._" + this.tk_.num
+        is Expr.Tuple -> "((${this.totype(envs).toc()}) { })"
+        is Expr.Index -> this.pre.toc(envs) + "._" + this.tk_.num
         else -> error("TODO")
     }
 }
