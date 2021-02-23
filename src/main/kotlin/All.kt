@@ -14,11 +14,15 @@ fun All_inp2out (inp: String): Pair<Boolean,String> {
     val all = All_new(PushbackReader(StringReader(inp), 2))
     lexer(all)
     val s = parser_stmts(all, Pair(TK.EOF,null))
-    println(s)
+    //println(s)
     if (s == null) {
         return Pair(false, all.err)
     }
     gUPS_set(s)
+    val err = check_vars(s)
+    if (err != null) {
+        return Pair(false, err)
+    }
     return Pair(true, s.code())
 }
 
@@ -84,6 +88,10 @@ fun All.err_expected (str: String) {
     this.err = "(ln ${this.tk1.lin}, col ${this.tk1.col}): expected $str : have ${this.tk1.toPay()}"
 }
 
+fun All_err_tk (tk: Tk, str: String): String {
+    return "(ln ${tk.lin}, col ${tk.col}): $str"
+}
+
 fun All.err_tk (tk: Tk, str: String) {
-    this.err = "(ln ${tk.lin}, col ${tk.col}): $str"
+    this.err = All_err_tk(tk,str)
 }

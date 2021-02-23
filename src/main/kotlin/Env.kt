@@ -1,7 +1,7 @@
 val gUPS: MutableMap<Any,Any> = mutableMapOf()
 
 fun gUPS_set (S: Stmt) {
-    fun fs (s: Stmt) {
+    fun fs (s: Stmt): Boolean {
         when (s) {
             is Stmt.Pass, is Stmt.User, is Stmt.Nat, is Stmt.Break -> {}
             is Stmt.Var   -> gUPS[s.init] = s
@@ -14,8 +14,9 @@ fun gUPS_set (S: Stmt) {
             is Stmt.Loop  -> gUPS[s.block] = s
             is Stmt.Block -> gUPS[s.body] = s
         }
+        return true
     }
-    fun fe (e: Expr) {
+    fun fe (e: Expr): Boolean {
         when (e) {
             is Expr.Unit, is Expr.Int, is Expr.Var, is Expr.Nat, is Expr.Empty -> {}
             is Expr.Tuple -> e.vec.forEach { gUPS[it]=e }
@@ -27,6 +28,7 @@ fun gUPS_set (S: Stmt) {
             is Expr.Disc  -> gUPS[e.pre] = e
             is Expr.Call  -> { gUPS[e.pre]=e ; gUPS[e.pos]=e }
         }
+        return true
     }
     S.visit(::fs,::fe)
 }
@@ -49,4 +51,22 @@ fun Expr.totype (): Type {
         is Expr.Index -> error("TODO")
         else -> error("TODO")
     }
+}
+
+fun check_vars (s: Stmt): String? {
+    var ret: String? = null
+    fun fe (e: Expr): Boolean {
+        return when (e) {
+            is Expr.Var -> {
+                if (gUPS[e]!!.id2var(e.tk_.str) == null) {
+                    ret = All_err_tk(e.tk, "undeclared variable \"${e.tk_.str}\"")
+                    return false
+                }
+                return true
+            }
+            else -> true
+        }
+    }
+    s.visit(null,::fe)
+    return ret
 }

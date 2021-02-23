@@ -30,7 +30,7 @@ class Exec {
     @Test
     fun a01_output () {
         val out = all("output std ()")
-        assert("()\n" == out)
+        assert(out == "()\n")
     }
     @Test
     fun a02_var () {
@@ -38,7 +38,18 @@ class Exec {
             var x: () = ()
             output std x
         """.trimIndent())
+        assert(out == "()\n")
+    }
+    @Test
+    fun a03_error () {
+        val out = all("//output std ()")
         println(out)
-        assert("()\n" == out)
+        assert(out == "(ln 1, col 1): expected statement : have \"/\"")
+    }
+    @Test
+    fun a04_undeclared () {
+        val out = all("output std x")
+        println(out)
+        assert(out == "(ln 1, col 1): expected statement : have \"/\"")
     }
 }
