@@ -27,7 +27,7 @@ sealed class Stmt (val tk: Tk) {
     data class Pass  (val tk_: Tk) : Stmt(tk_)
     data class Var   (val tk_: Tk.Str, val type: Type, val init: Expr) : Stmt(tk_)
     data class Set   (val tk_: Tk, val dst: Expr, val src: Expr) : Stmt(tk_)
-    data class User  (val tk_: Tk.Str, val isrec: Boolean, val subs: Array<Pair<Tk,Type>>) : Stmt(tk_)
+    data class User  (val tk_: Tk.Str, val isrec: Boolean, val subs: Array<Pair<Tk.Str,Type>>) : Stmt(tk_)
     data class Nat   (val tk_: Tk.Str) : Stmt(tk_)
     data class Call  (val tk_: Tk, val call: Expr.Call) : Stmt(tk_)
     data class Seq   (val tk_: Tk, val s1: Stmt, val s2: Stmt) : Stmt(tk_)
@@ -260,11 +260,11 @@ fun parser_stmt (all: All): Stmt? {
                 return null
             }
 
-            fun parser_sub (): Pair<Tk,Type>? {
+            fun parser_sub (): Pair<Tk.Str,Type>? {
                 if (!all.accept_err(TK.XUSER)) {
                     return null
                 }
-                val tk = all.tk0
+                val tk = all.tk0 as Tk.Str
                 if (!all.accept_err(TK.CHAR,':')) {
                     return null
                 }

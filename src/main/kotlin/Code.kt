@@ -36,6 +36,24 @@ fun Stmt.toc (envs: Envs): String {
             }
             error("TODO")
         }
+        is Stmt.User -> {
+            val ID = this.tk_.str
+            if (ID == "Int") {
+                return ""
+            }
+
+            // struct Bool;
+            // typedef struct Bool Bool;
+            val ret1 = """
+                struct $ID;
+                typedef struct $ID $ID;
+            """.trimIndent()
+
+            // enum { Bool_False, Bool_True } _Bool_;
+            val ret2 = "typedef enum { " + this.subs.map { ID + "_" + it.first.str }.joinToString(", ") + " } _${ID}_;"
+
+            return (ret1 + "\n" + ret2)
+        }
         else -> error("TODO")
     }
 }

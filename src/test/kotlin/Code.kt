@@ -17,7 +17,6 @@ class Code {
     @Test
     fun a02_type_tuple () {
         val tp = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(tp_unit,tp_unit))
-        println(tp.toce())
         assert(tp.toce() == "TUPLE__Unit__Unit")
     }
 
@@ -72,7 +71,6 @@ class Code {
     fun d01 () {
         val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
         val out = s.code(emptyList())
-        println(out)
         assert(out == """
             #include <assert.h>
             #include <stdio.h>
@@ -97,7 +95,7 @@ class Code {
         if (s == null) {
             return Pair(false, all.err)
         }
-        println(s)
+        //println(s)
         return Pair(true, s.toc(emptyList()))
     }
 
@@ -114,6 +112,10 @@ class Code {
     @Test
     fun e03_type () {
         val (ok, out) = toc("type Bool { False: () ; True: () }")
-        assert(ok && out == "stdo(a);\n")
+        assert(ok && out == """
+            struct Bool;
+            typedef struct Bool Bool;
+            typedef enum { Bool_False, Bool_True } _Bool_;
+        """.trimIndent())
     }
 }
