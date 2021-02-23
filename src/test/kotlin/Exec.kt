@@ -30,6 +30,14 @@ class Exec {
     @Test
     fun a01_output () {
         val out = all("output std ()")
+        assert("()\n" == out)
+    }
+    @Test
+    fun a02_var () {
+        val out = all("""
+            var x: () = ()
+            output std x
+        """.trimIndent())
         println(out)
         assert("()\n" == out)
     }

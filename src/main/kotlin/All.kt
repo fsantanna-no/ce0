@@ -14,10 +14,12 @@ fun All_inp2out (inp: String): Pair<Boolean,String> {
     val all = All_new(PushbackReader(StringReader(inp), 2))
     lexer(all)
     val s = parser_stmts(all, Pair(TK.EOF,null))
+    println(s)
     if (s == null) {
         return Pair(false, all.err)
     }
-    return Pair(true, s.code(emptyList()))
+    gUPS_set(s)
+    return Pair(true, s.code())
 }
 
 fun All_new (inp: PushbackReader): All {

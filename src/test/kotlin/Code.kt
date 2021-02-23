@@ -26,17 +26,17 @@ class Code {
     @Test
     fun b01_expr_unit () {
         val e = Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
-        assert(e.toc(emptyList()) == "")
+        assert(e.toc() == "")
     }
     @Test
     fun b02_expr_var () {
         val e = Expr.Var(Tk.Str(TK.XVAR,1,1,"xxx"))
-        assert(e.toc(emptyList()) == "xxx")
+        assert(e.toc() == "xxx")
     }
     @Test
     fun b03_expr_nat () {
         val e = Expr.Var(Tk.Str(TK.XNAT,1,1,"xxx"))
-        assert(e.toc(emptyList()) == "xxx")
+        assert(e.toc() == "xxx")
     }
     @Test
     fun b04_expr_tuple () {
@@ -47,7 +47,7 @@ class Code {
                 Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()")),
             )
         )
-        assert(e.toc(emptyList()) == "((TUPLE__Unit__Unit) { })")
+        assert(e.toc() == "((TUPLE__Unit__Unit) { })")
     }
     @Test
     fun b05_expr_index () {
@@ -55,7 +55,7 @@ class Code {
             Tk.Num(TK.XNUM,1,1,2),
             Expr.Var(Tk.Str(TK.XVAR,1,1,"x"))
         )
-        assert(e.toc(emptyList()) == "x._2")
+        assert(e.toc() == "x._2")
     }
 
     // STMT
@@ -63,7 +63,7 @@ class Code {
     @Test
     fun c01_stmt_pass () {
         val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
-        assert(s.toc(emptyList()) == "")
+        assert(s.toc() == "")
     }
 
     // CODE
@@ -71,7 +71,7 @@ class Code {
     @Test
     fun d01 () {
         val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
-        val out = s.code(emptyList())
+        val out = s.code()
         assert(out == """
             #include <assert.h>
             #include <stdio.h>
@@ -97,7 +97,7 @@ class Code {
             return Pair(false, all.err)
         }
         //println(s)
-        return Pair(true, s.toc(emptyList()))
+        return Pair(true, s.toc())
     }
 
     @Test

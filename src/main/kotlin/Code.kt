@@ -13,30 +13,30 @@ fun Type.toc (): String {
     }
 }
 
-fun Expr.toc (envs: Envs): String {
+fun Expr.toc (): String {
     return when (this) {
         is Expr.Unit  -> ""
         is Expr.Var   -> this.tk_.str
         is Expr.Nat   -> this.tk_.str
-        is Expr.Tuple -> "((${this.totype(envs).toc()}) { })"
-        is Expr.Index -> this.pre.toc(envs) + "._" + this.tk_.num
+        is Expr.Tuple -> "((${this.totype().toc()}) { })"
+        is Expr.Index -> this.pre.toc() + "._" + this.tk_.num
         is Expr.Call  ->  {
             val (pre,pos) = when {
                 (this.tk.enu != TK.OUT) -> Pair("","")
-                (this.pre is Expr.Var && this.pre.tk_.str=="std") -> Pair("output_","_"+this.pos.totype(envs).toce())
+                (this.pre is Expr.Var && this.pre.tk_.str=="std") -> Pair("output_","_"+this.pos.totype().toce())
                 else -> Pair("output_","")
             }
-            pre + this.pre.toc(envs) + pos + "(" + this.pos.toc(envs) + ")"
+            pre + this.pre.toc() + pos + "(" + this.pos.toc() + ")"
         }
         else -> error("TODO")
     }
 }
 
-fun Stmt.toc (envs: Envs): String {
+fun Stmt.toc (): String {
     return when (this) {
         is Stmt.Pass -> ""
-        is Stmt.Seq  -> this.s1.toc(envs) + this.s2.toc(envs)
-        is Stmt.Call -> this.call.toc(envs) + ";\n"
+        is Stmt.Seq  -> this.s1.toc() + this.s2.toc()
+        is Stmt.Call -> this.call.toc() + ";\n"
         is Stmt.Var  -> {
             if (this.type is Type.Unit) {
                 return ""
@@ -65,7 +65,7 @@ fun Stmt.toc (envs: Envs): String {
     }
 }
 
-fun Stmt.code (envs: Envs): String {
+fun Stmt.code (): String {
     return ("""
         #include <assert.h>
         #include <stdio.h>
@@ -76,7 +76,7 @@ fun Stmt.code (envs: Envs): String {
         #define output_std_Int_(x) printf("%d",x)
         #define output_std_Int(x)  (output_std_Int_(x), puts(""))
         int main (void) {
-    """ + this.toc(envs) + """
+    """ + this.toc() + """
         }
     """).trimIndent()
 }
