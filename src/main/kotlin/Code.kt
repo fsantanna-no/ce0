@@ -23,3 +23,10 @@ fun Expr.toc (envs: Envs): String {
         else -> error("TODO")
     }
 }
+
+fun Stmt.toc (envs: Envs): String {
+    return when (this) {
+        is Stmt.Pass -> ""
+        else -> error("TODO")
+    }
+}

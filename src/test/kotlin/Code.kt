@@ -55,4 +55,12 @@ class Code {
         )
         assert(e.toc(emptyList()) == "x._2")
     }
+
+    // STMT
+
+    @Test
+    fun c01_stmt_pass () {
+        val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
+        assert(s.toc(emptyList()) == "")
+    }
 }
