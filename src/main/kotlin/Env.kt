@@ -57,11 +57,12 @@ fun Any.id2type (id: String): Type? {
 fun Expr.totype (): Type {
     return when (this) {
         is Expr.Unit  -> Type.Unit(this.tk_)
+        is Expr.Int   -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col,"Int"))
         is Expr.Var   -> this.id2type(this.tk_.str)!!
         is Expr.Nat   -> Type.Nat(this.tk_)
         is Expr.Tuple -> Type.Tuple(this.tk_, this.vec.map{it.totype()}.toTypedArray())
-        is Expr.Index -> error("TODO")
-        else -> error("TODO")
+        is Expr.Call  -> if (this.pre is Expr.Nat) Type.Nat(this.pre.tk_) else (this.pre.totype() as Type.Func).out
+        else -> { println(this) ; error("TODO") }
     }
 }
 

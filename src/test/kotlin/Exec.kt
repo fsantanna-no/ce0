@@ -5,12 +5,16 @@ import java.io.File
 import java.io.PushbackReader
 import java.io.StringReader
 
-fun exec (cmd: String): String {
-    return ProcessBuilder(cmd.split(' '))
+fun exec (cmd: String): Pair<Boolean,String> {
+    val p = ProcessBuilder(cmd.split(' '))
         .redirectOutput(ProcessBuilder.Redirect.PIPE)
         .redirectError(ProcessBuilder.Redirect.PIPE)
         .start()
-        .inputStream.bufferedReader().readText()
+    val ret = p.waitFor()
+    return when (ret) {
+        0 -> Pair(true, p.inputStream.bufferedReader().readText())
+        else -> Pair(false, "error")
+    }
 }
 
 @TestMethodOrder(Alphanumeric::class)
@@ -22,9 +26,13 @@ class Exec {
             return out1
         }
         File("out.c").writeText(out1)
-        exec("gcc out.c -o out.exe")
-        val out2 = exec("./out.exe")
-        return out2
+        val (ok2,out2) = exec("gcc out.c -o out.exe")
+        if (!ok2) {
+            println(out2)
+            return out2
+        }
+        val (_,out3) = exec("./out.exe")
+        return out3
     }
 
     @Test
@@ -51,6 +59,12 @@ class Exec {
         assert(out == "(ln 1, col 12): undeclared variable \"x\"")
     }
     @Test
+    fun a04_undeclared_func () {
+        val out = all("call f ()")
+        println(out)
+        assert(out == "(ln 1, col 6): undeclared variable \"f\"")
+    }
+    @Test
     fun a05_int () {
         val out = all("""
             var x: Int = 10
@@ -60,7 +74,7 @@ class Exec {
     }
     @Test
     fun a06_undeclared_type () {
-        val out = all("func f: Nat -> () { return () }")
+        val out = all("var x: Nat = ()")
         println(out)
         assert(out == "(ln 1, col 9): undeclared type \"Nat\"")
     }

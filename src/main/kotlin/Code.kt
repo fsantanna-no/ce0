@@ -17,12 +17,13 @@ fun Type.toc (): String {
 }
 
 fun Expr.toc (): String {
+    val tp = this.totype()
     return when (this) {
         is Expr.Unit  -> ""
-        is Expr.Var   -> this.tk_.str
         is Expr.Nat   -> this.tk_.str
         is Expr.Int   -> this.tk_.num.toString()
-        is Expr.Tuple -> "((${this.totype().toc()}) { })"
+        is Expr.Var   -> if (tp is Type.Unit) "" else this.tk_.str
+        is Expr.Tuple -> "((${tp.toc()}) { })"
         is Expr.Index -> this.pre.toc() + "._" + this.tk_.num
         is Expr.Call  ->  {
             val (pre,pos) = when {
@@ -42,12 +43,7 @@ fun Stmt.toc (): String {
         is Stmt.Nat  -> this.tk_.str + "\n"
         is Stmt.Seq  -> this.s1.toc() + this.s2.toc()
         is Stmt.Call -> this.call.toc() + ";\n"
-        is Stmt.Var  -> {
-            if (this.type is Type.Unit) {
-                return ""
-            }
-            return "${this.type.toc()} ${this.tk_.str} = ${this.init.toc()};\n"
-        }
+        is Stmt.Var  -> if (this.type is Type.Unit) "" else "${this.type.toc()} ${this.tk_.str} = ${this.init.toc()};\n"
         is Stmt.User -> {
             val ID = this.tk_.str
             if (ID == "Int") {
