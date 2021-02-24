@@ -28,7 +28,7 @@ fun Expr.toc (): String {
             }
             pre + this.pre.toc() + pos + "(" + this.pos.toc() + ")"
         }
-        else -> error("TODO")
+        else -> { println(this) ; error("TODO") }
     }
 }
 
@@ -61,7 +61,13 @@ fun Stmt.toc (): String {
 
             return (ret1 + "\n" + ret2)
         }
-        else -> error("TODO")
+        is Stmt.Func -> {
+            if (this.tk_.str == "std") {
+                return ""
+            }
+            println(this) ; error("TODO")
+        }
+        else -> { println(this) ; error("TODO") }
     }
 }
 

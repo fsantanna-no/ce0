@@ -13,12 +13,13 @@ data class All(
 fun All_inp2out (inp: String): Pair<Boolean,String> {
     val all = All_new(PushbackReader(StringReader(inp), 2))
     lexer(all)
-    val s = parser_stmts(all, Pair(TK.EOF,null))
-    //println(s)
+    var s = parser_stmts(all, Pair(TK.EOF,null))
     if (s == null) {
         return Pair(false, all.err)
     }
-    gUPS_set(s)
+    s = env_prelude(s)
+    println(s)
+    env_PRV_set(s, null)
     val err = check_vars(s)
     if (err != null) {
         return Pair(false, err)

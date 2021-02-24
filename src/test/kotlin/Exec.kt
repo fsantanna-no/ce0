@@ -43,13 +43,12 @@ class Exec {
     @Test
     fun a03_error () {
         val out = all("//output std ()")
-        println(out)
         assert(out == "(ln 1, col 1): expected statement : have \"/\"")
     }
     @Test
     fun a04_undeclared () {
         val out = all("output std x")
         println(out)
-        assert(out == "(ln 1, col 1): expected statement : have \"/\"")
+        assert(out == "(ln 1, col 12): undeclared variable \"x\"")
     }
 }
