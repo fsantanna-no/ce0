@@ -1,8 +1,9 @@
 fun Type.toce (): String {
     return when (this) {
         is Type.Unit  -> "Unit"
+        is Type.User  -> this.tk_.str
         is Type.Tuple -> "TUPLE__" + this.vec.map { it.toce() }.joinToString("__")
-        else -> error("TODO")
+        else -> { println(this) ; error("TODO") }
     }
 }
 
@@ -38,6 +39,7 @@ fun Expr.toc (): String {
 fun Stmt.toc (): String {
     return when (this) {
         is Stmt.Pass -> ""
+        is Stmt.Nat  -> this.tk_.str + "\n"
         is Stmt.Seq  -> this.s1.toc() + this.s2.toc()
         is Stmt.Call -> this.call.toc() + ";\n"
         is Stmt.Var  -> {

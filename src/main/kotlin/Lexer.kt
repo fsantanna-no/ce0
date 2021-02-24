@@ -37,6 +37,7 @@ fun TK.toErr (chr: Char?): String {
     return when (this) {
         TK.EOF   -> "end of file"
         TK.CHAR  -> "`" + chr!! + "´"
+        TK.XNAT  -> "`_´"
         TK.XVAR  -> "variable identifier"
         TK.XUSER -> "type identifier"
         else -> { println(this) ; error("TODO") }

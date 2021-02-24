@@ -56,7 +56,6 @@ class Exec {
             var x: Int = 10
             output std x
         """.trimIndent())
-        println(out)
         assert(out == "10\n")
     }
     @Test
@@ -64,5 +63,24 @@ class Exec {
         val out = all("func f: Nat -> () { return () }")
         println(out)
         assert(out == "(ln 1, col 9): undeclared type \"Nat\"")
+    }
+    @Test
+    fun a07_syntax_error () {
+        val out = all("""
+            native {
+                putchar('A');
+            }
+        """.trimIndent())
+        assert(out == "(ln 1, col 8): expected `_´ : have `{´")
+    }
+    @Test
+    fun a08_nat () {
+        val out = all("""
+            native _{
+                putchar('A');
+            }
+        """.trimIndent())
+        println(out)
+        assert(out == "A")
     }
 }
