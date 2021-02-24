@@ -32,7 +32,7 @@ sealed class Stmt (val tk: Tk) {
     data class Call  (val tk_: Tk.Key, val call: Expr.Call) : Stmt(tk_)
     data class Seq   (val tk_: Tk, val s1: Stmt, val s2: Stmt) : Stmt(tk_)
     data class If    (val tk_: Tk.Key, val tst: Expr, val true_: Block, val false_: Block) : Stmt(tk_)
-    data class Func  (val tk_: Tk.Str, val type: Type.Func, val block: Block) : Stmt(tk_)
+    data class Func  (val tk_: Tk.Str, val type: Type.Func, val block: Block?) : Stmt(tk_)
     data class Ret   (val tk_: Tk.Key, val e: Expr) : Stmt(tk_)
     data class Loop  (val tk_: Tk.Key, val block: Block) : Stmt(tk_)
     data class Break (val tk_: Tk.Key) : Stmt(tk_)

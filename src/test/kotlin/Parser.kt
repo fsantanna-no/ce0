@@ -432,7 +432,7 @@ class Parser {
         val s = parser_stmt(all)
         assert (
             s is Stmt.Func && s.tk_.str=="f" && s.type.inp is Type.Unit &&
-            s.block.body is Stmt.Ret && (s.block.body as Stmt.Ret).e is Expr.Unit
+            s.block!!.body is Stmt.Ret && (s.block!!.body as Stmt.Ret).e is Expr.Unit
         )
     }
 

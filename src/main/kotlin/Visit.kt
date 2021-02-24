@@ -20,7 +20,7 @@ fun Stmt.visit (fs: ((Stmt)->Boolean)?, fe: ((Expr)->Boolean)?): Boolean {
         is Stmt.Call  -> this.call.visit(fe)
         is Stmt.Seq   -> this.s1.visit(fs,fe) && this.s2.visit(fs,fe)
         is Stmt.If    -> this.tst.visit(fe)  && this.true_.visit(fs,fe) && this.false_.visit(fs,fe)
-        is Stmt.Func  -> this.block.visit(fs,fe)
+        is Stmt.Func  -> this.block==null || this.block.visit(fs,fe)
         is Stmt.Ret   -> this.e.visit(fe)
         is Stmt.Loop  -> this.block.visit(fs,fe)
         is Stmt.Block -> this.body.visit(fs,fe)
