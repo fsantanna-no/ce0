@@ -122,8 +122,16 @@ class Code {
     @Test
     fun e04_output () {
         val (ok, out) = toc("output std ()")
-        println(out)
         assert(ok && out == "output_std_Unit();\n")
     }
-
+    @Test
+    fun e05_var_nat () {
+        val (ok, out) = toc("var x: _int = 10")
+        assert(ok && out == "int x = 10;\n")
+    }
+    @Test
+    fun e06_var_int () {
+        val (ok, out) = toc("var x: Int = 10")
+        assert(ok && out == "Int x = 10;\n")
+    }
 }

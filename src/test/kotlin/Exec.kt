@@ -46,9 +46,23 @@ class Exec {
         assert(out == "(ln 1, col 1): expected statement : have \"/\"")
     }
     @Test
-    fun a04_undeclared () {
+    fun a04_undeclared_var () {
         val out = all("output std x")
-        println(out)
         assert(out == "(ln 1, col 12): undeclared variable \"x\"")
+    }
+    @Test
+    fun a05_int () {
+        val out = all("""
+            var x: Int = 10
+            output std x
+        """.trimIndent())
+        println(out)
+        assert(out == "10\n")
+    }
+    @Test
+    fun a06_undeclared_type () {
+        val out = all("func f: Nat -> () { return () }")
+        println(out)
+        assert(out == "(ln 1, col 9): undeclared type \"Nat\"")
     }
 }

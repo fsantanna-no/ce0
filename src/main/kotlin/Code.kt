@@ -8,6 +8,8 @@ fun Type.toce (): String {
 
 fun Type.toc (): String {
     return when (this) {
+        is Type.Nat   -> this.tk_.str
+        is Type.User  -> this.tk_.str
         is Type.Tuple -> this.toce()
         else -> error("TODO")
     }
@@ -18,6 +20,7 @@ fun Expr.toc (): String {
         is Expr.Unit  -> ""
         is Expr.Var   -> this.tk_.str
         is Expr.Nat   -> this.tk_.str
+        is Expr.Int   -> this.tk_.num.toString()
         is Expr.Tuple -> "((${this.totype().toc()}) { })"
         is Expr.Index -> this.pre.toc() + "._" + this.tk_.num
         is Expr.Call  ->  {
@@ -41,7 +44,7 @@ fun Stmt.toc (): String {
             if (this.type is Type.Unit) {
                 return ""
             }
-            error("TODO")
+            return "${this.type.toc()} ${this.tk_.str} = ${this.init.toc()};\n"
         }
         is Stmt.User -> {
             val ID = this.tk_.str

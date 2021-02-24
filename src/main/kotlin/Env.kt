@@ -13,6 +13,13 @@ fun env_prelude (s: Stmt): Stmt {
     return Stmt.Seq(stdo.tk, stdo, s)
 }
 
+/*
+ * Environment of each Stmt/Expr based on backlinks to previous Stmt.Var/Stmt.Func.
+ * func f: ...
+ * var x: ...
+ * var y: ...
+ * return f(x,y)    // x+y -> y -> x -> f -> null
+ */
 fun env_PRV_set (s: Stmt, prv: Stmt?): Stmt? {
     fun fe (e: Expr): Boolean {
         if (prv != null) {
