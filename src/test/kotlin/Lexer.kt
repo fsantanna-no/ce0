@@ -127,18 +127,28 @@ class Lexer {
     fun b09_lexer_xnum () {
         val all = All_new(PushbackReader(StringReader(".1a"), 2))
         lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1 as Tk.Chr).chr== '.')
-        lexer(all) ; assert(all.tk1.enu==TK.ERR)
+        lexer(all) ; println(all.tk1) ; assert(all.tk1.enu==TK.ERR && (all.tk1 as Tk.Err).err=="1a")
     }
     @Test
     fun b10_lexer_xnum () {
         val all = All_new(PushbackReader(StringReader("10"), 2))
         lexer(all) ; assert(all.tk1.enu==TK.XNUM && (all.tk1 as Tk.Num).num==10)
     }
+    @Test
+    fun b11_lexer_xnum_neg_err () {
+        val all = All_new(PushbackReader(StringReader("-10a"), 2))
+        lexer(all) ; assert(all.tk1.enu==TK.ERR && (all.tk1 as Tk.Err).err=="-10a")
+    }
+    @Test
+    fun b12_lexer_xnum_neg_err () {
+        val all = All_new(PushbackReader(StringReader("-10\n"), 2))
+        lexer(all) ; assert(all.tk1.enu==TK.XNUM && (all.tk1 as Tk.Num).num==-10)
+    }
 
     // XEMPTY
 
     @Test
-    fun b11_lexer_xempty () {
+    fun b13_lexer_xempty () {
         val all = All_new(PushbackReader(StringReader("\$List"), 2))
         lexer(all) ; assert(all.tk1.enu==TK.XEMPTY && (all.tk1 as Tk.Str).str=="List")
     }

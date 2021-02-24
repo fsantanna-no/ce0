@@ -110,10 +110,25 @@ fun token (all: All) {
             }
             '-' -> {
                 val (_,x2) = all.read()
-                if (x2 == '>') {
-                    all.tk1 = Tk.Sym(TK.ARROW, LIN, COL, "->")
-                } else {
-                    error("TODO")
+                when {
+                    (x2 == '>')  -> all.tk1 = Tk.Sym(TK.ARROW, LIN, COL, "->")
+                    x2.isDigit() -> {
+                        var pay = ""+x1
+                        var c3 = 0
+                        var x3 = x2
+                        while (x3.isLetterOrDigit()) {
+                            pay += x3
+                            if (x3.isDigit()) {
+                                all.read().let { c3=it.first ; x3=it.second }
+                            } else {
+                                all.tk1 = Tk.Err(TK.ERR, LIN, COL, pay)
+                                return
+                            }
+                        }
+                        all.unread(c3)
+                        all.tk1 = Tk.Num(TK.XNUM, LIN, COL, pay.toInt())
+                    }
+                    else -> all.tk1 = Tk.Err(TK.ERR, LIN, COL, ""+x1+x2)
                 }
             }
             '_' -> {
@@ -157,8 +172,8 @@ fun token (all: All) {
 
                 if (!isdollar && x1.isDigit()) {
                     while (x1.isLetterOrDigit()) {
+                        pay += x1
                         if (x1.isDigit()) {
-                            pay += x1
                             all.read().let { c1=it.first ; x1=it.second }
                         } else {
                             all.tk1 = Tk.Err(TK.ERR, LIN, COL, pay)

@@ -80,7 +80,15 @@ class Exec {
                 putchar('A');
             }
         """.trimIndent())
-        println(out)
         assert(out == "A")
+    }
+    @Test
+    fun a09_nat_abs () {
+        val out = all("""
+            var x: Int = _abs(-1)
+            output std x
+        """.trimIndent())
+        println(out)
+        assert(out == "1\n")
     }
 }
