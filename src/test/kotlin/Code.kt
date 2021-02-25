@@ -160,6 +160,12 @@ class Code {
             call _stdout_Unit y
         """.trimIndent())
         assert(ok && out == """
+            #ifndef __TUPLE__Unit__Unit__
+            #define __TUPLE__Unit__Unit__
+            typedef struct {
+                
+            } TUPLE__Unit__Unit;
+            #endif
             TUPLE__Unit__Unit x = ((TUPLE__Unit__Unit) { });
             stdout_Unit();
 

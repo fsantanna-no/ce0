@@ -14,12 +14,14 @@ fun Type.pre (): String {
             val vec = this.vec
                 .filter { it !is Type.Unit }
                 .mapIndexed { i,sub -> sub.pos() + " _" + (i+1).toString() + ";\n" }
+                .joinToString()
             """
                 #ifndef __${ce}__
                 #define __${ce}__
                 typedef struct {
                     $vec
                 } $ce;
+                #endif
 
             """.trimIndent()
         }

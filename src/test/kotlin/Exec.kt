@@ -109,7 +109,7 @@ class Exec {
         val out = all("""
             var x: ((),()) = ((),())
             var y: () = x.1
-            call _stdout_Unit y
+            call _output_std_Unit y
         """.trimIndent())
         assert(out == "()\n")
     }
