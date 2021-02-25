@@ -8,7 +8,7 @@ fun Type.visit (ft: ((Type)->Boolean)?): Boolean {
 
 fun Expr.visit (fe: ((Expr)->Boolean)?): Boolean {
     return (fe==null || fe(this)) && when (this) {
-        is Expr.Unit, is Expr.Int, is Expr.Var, is Expr.Nat, is Expr.Empty -> true
+        is Expr.Unk, is Expr.Unit, is Expr.Int, is Expr.Var, is Expr.Nat, is Expr.Empty -> true
         is Expr.Tuple -> this.vec.all { it.visit(fe) }
         is Expr.Cons  -> this.pos.visit(fe)
         is Expr.Dnref -> this.pre.visit(fe)

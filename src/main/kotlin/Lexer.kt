@@ -44,17 +44,6 @@ fun TK.toErr (chr: Char?): String {
     }
 }
 
-fun Tk.toPay (): String {
-    return when {
-        (this.enu == TK.EOF) -> "end of file"
-        (this is Tk.Err)      -> '"' + this.err + '"'
-        (this is Tk.Chr)     -> "`" + this.chr + "´"
-        (this is Tk.Str)     -> '"' + this.str + '"'
-        (this is Tk.Key)     -> this.key
-        else -> { println(this); error("TODO") }
-    }
-}
-
 fun blanks (all: All) {
     while (true) {
         val (c1,x1) = all.read()

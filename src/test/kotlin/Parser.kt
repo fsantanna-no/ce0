@@ -377,7 +377,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("output std ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Call && s.call.pre is Expr.Var && (s.call.pre as Expr.Var).tk_.str=="std")
+        assert(s is Stmt.Call && s.call.pre is Expr.Var && (s.call.pre as Expr.Var).tk_.str=="output_std")
     }
 
     // STMT_SEQ
@@ -446,7 +446,20 @@ class Parser {
         val s = parser_stmt(all)
         assert (
             s is Stmt.Func && s.tk_.str=="f" && s.type.inp is Type.Unit &&
-            s.block!!.body is Stmt.Ret && (s.block!!.body as Stmt.Ret).e is Expr.Unit
+            s.block!!.body.let {
+                it is Stmt.Seq && it.s1 is Stmt.Var && it.s2 is Stmt.Seq
+            }
+        )
+    }
+    @Test
+    fun c13_parser_ret () {
+        val all = All_new(PushbackReader(StringReader("return"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert (
+            s is Stmt.Seq && s.s1 is Stmt.Set && s.s2.let {
+                it is Stmt.Ret && it.e is Expr.Unit
+            }
         )
     }
 

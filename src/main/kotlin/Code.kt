@@ -24,7 +24,7 @@ fun Type.pre (): String {
                 void output_std_${ce}_ ($ce v) {
                     printf("(");
                     ${this.vec
-                        .mapIndexed { i,sub -> if (sub is Type.Unit) "output_std_Unit_();\n" else "output_std_${sub.toce()}_(v._$i);\n" }
+                        .mapIndexed { i,sub -> if (sub is Type.Unit) "output_std_Unit_();\n" else "output_std_${sub.toce()}_(v._${i+1});\n" }
                         .joinToString("putchar(',');\n")
                     }
                     printf(")");
@@ -76,30 +76,41 @@ fun Expr.pos (): String {
             "((${tp.pos()}) { $vec })"
         }
         is Expr.Index -> this.pre.pos() + "._" + this.tk_.num
-        is Expr.Call  ->  {
-            val (pre,pos) = when {
-                (this.tk.enu != TK.OUT) -> Pair("","")
-                (this.pre is Expr.Var && this.pre.tk_.str=="std") -> Pair("output_","_"+this.pos.totype().toce())
-                else -> Pair("output_","")
+        is Expr.Call  -> this.pre.pos() + (
+            if (this.pre is Expr.Var && this.pre.tk_.str=="output_std") {
+                "_" + this.pos.totype().toce()
+            } else {
+                ""
             }
-            pre + this.pre.pos() + pos + "(" + this.pos.pos() + ")"
-        }
+        ) + "(" + this.pos.pos() + ")"
         else -> { println(this) ; error("TODO") }
     }
 }
 
 fun Stmt.pos (): String {
     return when (this) {
-        is Stmt.Pass -> ""
-        is Stmt.Nat  -> this.tk_.str + "\n"
-        is Stmt.Seq  -> this.s1.pos() + this.s2.pos()
-        is Stmt.Call -> this.call.pre() + this.call.pos() + ";\n"
+        is Stmt.Pass  -> ""
+        is Stmt.Nat   -> this.tk_.str + "\n"
+        is Stmt.Seq   -> this.s1.pos() + this.s2.pos()
+        is Stmt.Set   -> this.dst.pre() + this.src.pre() + (
+            (if (this.dst.totype() is Type.Unit) "" else (this.dst.pos()+" = ")) +
+            this.src.pos() + ";\n"
+        )
+        is Stmt.Call  -> this.call.pre() + this.call.pos() + ";\n"
+        is Stmt.Block -> "{\n" + this.body.pos() + "}\n"
+        is Stmt.Ret   -> "return" + if (this.e.totype() is Type.Unit) ";\n" else " _ret_;\n"
         is Stmt.Var  -> {
             this.init.pre() +
                 if (this.type is Type.Unit) {
                     ""
                 } else {
-                    "${this.type.pos()} ${this.tk_.str} = ${this.init.pos()};\n"
+                    "${this.type.pos()} ${this.tk_.str}" + (
+                        if (this.init is Expr.Unk) {
+                            ";\n"
+                        } else {
+                            " = " + this.init.pos() + ";\n"
+                        }
+                    )
                 }
         }
         is Stmt.User -> {
@@ -123,12 +134,19 @@ fun Stmt.pos (): String {
             return (ret1 + "\n" + ret2 + ret3 + "\n")
         }
         is Stmt.Func -> {
-            this.type.inp.pre() + this.type.out.pre() +
-                if (this.tk_.str == "std") {
-                    ""
-                } else {
-                    println(this); error("TODO")
+            this.type.inp.pre() + this.type.out.pre() + when (this.tk_.str) {
+                "output_std" -> ""
+                else -> {
+                    val out = this.type.out.let { if (it is Type.Unit) "void" else it.pos() }
+                    val inp = this.type.inp.let { if (it is Type.Unit) "void" else (it.pos()+" _arg_") }
+                    """
+                        auto $out ${this.tk_.str} ($inp) {
+                            ${this.block!!.pos()}
+                        }
+                        
+                    """.trimIndent()
                 }
+            }
         }
         else -> { println(this) ; error("TODO") }
     }

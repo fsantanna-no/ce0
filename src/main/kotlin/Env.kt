@@ -3,7 +3,7 @@ val env_PRV: MutableMap<Any,Stmt> = mutableMapOf()
 fun env_prelude (s: Stmt): Stmt {
     val int = Stmt.User(Tk.Str(TK.XUSER,1,1,"Int"), false, emptyArray())
     val stdo = Stmt.Func (
-        Tk.Str(TK.XVAR,1,1,"std"),
+        Tk.Str(TK.XVAR,1,1,"output_std"),
         Type.Func (
             Tk.Sym(TK.ARROW, 1, 1, "->"),
             Type.Unit(Tk.Sym(TK.UNIT,1,1,"()")),

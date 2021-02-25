@@ -56,7 +56,6 @@ class Exec {
     @Test
     fun a04_undeclared_func () {
         val out = all("call f ()")
-        println(out)
         assert(out == "(ln 1, col 6): undeclared variable \"f\"")
     }
     @Test
@@ -65,13 +64,11 @@ class Exec {
             var x: Int = 10
             output std x
         """.trimIndent())
-        println(out)
         assert(out == "10\n")
     }
     @Test
     fun a06_undeclared_type () {
         val out = all("var x: Nat = ()")
-        println(out)
         assert(out == "(ln 1, col 8): undeclared type \"Nat\"")
     }
     @Test
@@ -84,7 +81,7 @@ class Exec {
         assert(out == "(ln 1, col 8): expected `_´ : have `{´")
     }
     @Test
-    fun a08_nat () {
+    fun a08_int () {
         val out = all("""
             native _{
                 putchar('A');
@@ -93,13 +90,21 @@ class Exec {
         assert(out == "A")
     }
     @Test
-    fun a09_nat_abs () {
+    fun a09_int_abs () {
         val out = all("""
             var x: Int = _abs(-1)
             output std x
         """.trimIndent())
-        println(out)
         assert(out == "1\n")
+    }
+    @Test
+    fun a10_int_set () {
+        val out = all("""
+            var x: Int = 10
+            set x = 20
+            output std x
+        """.trimIndent())
+        assert(out == "20\n")
     }
 
     // TUPLES
@@ -118,7 +123,6 @@ class Exec {
         val out = all("""
             output std (((),()).1)
         """.trimIndent())
-        println(out)
         assert(out == "()\n")
     }
     @Test
@@ -155,21 +159,51 @@ class Exec {
         assert(out == "hello\n")
     }
 
+    // FUNC / CALL
+
+    @Test
+    fun d01_f_int () {
+        val out = all("""
+            func f: Int -> Int { return arg }
+            var x: Int = call f 10
+            output std x
+        """.trimIndent())
+        assert(out == "10\n")
+    }
+
+    @Test
+    fun d02_f_unit () {
+        val out = all("""
+            func f: () -> () { return }
+            var x: () = call f
+            output std x
+        """.trimIndent())
+        assert(out == "()\n")
+    }
+
     // OUTPUT
 
     @Test
-    fun d01_out () {
+    fun e01_out () {
         val out = all("""
             output () ()
         """.trimIndent())
         assert(out == "(ln 1, col 8): expected function")
     }
     @Test
-    fun d02_out () {
+    fun e02_out () {
         val out = all("""
             var x: ((),()) = ((),())
             output std x
         """.trimIndent())
         assert(out == "((),())\n")
+    }
+    @Test
+    fun e03_out () {
+        val out = all("""
+            func output_f: Int -> () { output std arg }
+            output f 10
+        """.trimIndent())
+        assert(out == "10\n")
     }
 }

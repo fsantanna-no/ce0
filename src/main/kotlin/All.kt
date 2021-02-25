@@ -87,6 +87,16 @@ fun All.consumed (tk: Tk): Boolean {
 }
 
 fun All.err_expected (str: String) {
+    fun Tk.toPay (): String {
+        return when {
+            (this.enu == TK.EOF) -> "end of file"
+            (this is Tk.Err)      -> '"' + this.err + '"'
+            (this is Tk.Chr)     -> "`" + this.chr + "´"
+            (this is Tk.Str)     -> '"' + this.str + '"'
+            (this is Tk.Key)     -> this.key
+            else -> { println(this); error("TODO") }
+        }
+    }
     this.err = "(ln ${this.tk1.lin}, col ${this.tk1.col}): expected $str : have ${this.tk1.toPay()}"
 }
 
