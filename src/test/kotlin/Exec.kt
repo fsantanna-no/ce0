@@ -121,5 +121,55 @@ class Exec {
         println(out)
         assert(out == "()\n")
     }
+    @Test
+    fun b03_tuple_tuples () {
+        val out = all("""
+            var v: ((),()) = ((),())
+            var x: ((),((),())) = ((),v)
+            var y: ((),()) = x.2
+            var z: () = y.2
+            output std z
+        """.trimIndent())
+        assert(out == "()\n")
+    }
 
+    // NATIVE
+
+    @Test
+    fun c01_nat () {
+        val out = all("""
+            native _{
+                void f (void) { putchar('a'); }
+            }
+            call _f
+        """.trimIndent())
+        assert(out == "a")
+    }
+    @Test
+    fun c02_nat () {
+        val out = all("""
+            var y: _(char*) = _("hello")
+            var x: (Int,_(char*)) = (10,y)
+            call _puts x.2
+        """.trimIndent())
+        assert(out == "hello\n")
+    }
+
+    // OUTPUT
+
+    @Test
+    fun d01_out () {
+        val out = all("""
+            output () ()
+        """.trimIndent())
+        assert(out == "(ln 1, col 8): expected function")
+    }
+    @Test
+    fun d02_out () {
+        val out = all("""
+            var x: ((),()) = ((),())
+            output std x
+        """.trimIndent())
+        assert(out == "((),())\n")
+    }
 }

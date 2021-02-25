@@ -1,6 +1,7 @@
 fun Type.toce (): String {
     return when (this) {
         is Type.Unit  -> "Unit"
+        is Type.Nat   -> this.tk_.str.replace('*','_')
         is Type.User  -> this.tk_.str
         is Type.Tuple -> "TUPLE__" + this.vec.map { it.toce() }.joinToString("__")
         else -> { println(this) ; error("TODO") }
@@ -11,16 +12,27 @@ fun Type.pre (): String {
     return when (this) {
         is Type.Tuple -> {
             val ce = this.toce()
-            val vec = this.vec
-                .filter { it !is Type.Unit }
-                .mapIndexed { i,sub -> sub.pos() + " _" + (i+1).toString() + ";\n" }
-                .joinToString()
             """
                 #ifndef __${ce}__
                 #define __${ce}__
                 typedef struct {
-                    $vec
+                    ${this.vec  // do not filter to keep correct i
+                        .mapIndexed { i,sub -> if (sub is Type.Unit) "" else { sub.pos() + " _" + (i+1).toString() + ";\n" } }
+                        .joinToString("")  
+                    }
                 } $ce;
+                void output_std_${ce}_ ($ce v) {
+                    printf("(");
+                    ${this.vec
+                        .mapIndexed { i,sub -> if (sub is Type.Unit) "output_std_Unit_();\n" else "output_std_${sub.toce()}_(v._$i);\n" }
+                        .joinToString("putchar(',');\n")
+                    }
+                    printf(")");
+                }
+                void output_std_$ce ($ce v) {
+                    output_std_${ce}_(v);
+                    puts("");
+                }
                 #endif
 
             """.trimIndent()
@@ -55,7 +67,14 @@ fun Expr.pos (): String {
         is Expr.Nat   -> this.tk_.str
         is Expr.Int   -> this.tk_.num.toString()
         is Expr.Var   -> if (tp is Type.Unit) "" else this.tk_.str
-        is Expr.Tuple -> "((${tp.pos()}) { })"
+        is Expr.Tuple -> {
+            val vec = this.vec
+                .filter { it.totype() !is Type.Unit }
+                .map { it.pos() }
+                .joinToString(", ")
+
+            "((${tp.pos()}) { $vec })"
+        }
         is Expr.Index -> this.pre.pos() + "._" + this.tk_.num
         is Expr.Call  ->  {
             val (pre,pos) = when {

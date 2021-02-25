@@ -57,7 +57,7 @@ class Code {
                 Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()")),
             )
         )
-        assert(e.pos() == "((TUPLE__Unit__Unit) { })")
+        assert(e.pos() == "((TUPLE__Unit__Unit) {  })")
     }
     @Test
     fun b05_expr_index () {
@@ -166,7 +166,7 @@ class Code {
                 
             } TUPLE__Unit__Unit;
             #endif
-            TUPLE__Unit__Unit x = ((TUPLE__Unit__Unit) { });
+            TUPLE__Unit__Unit x = ((TUPLE__Unit__Unit) {  });
             stdout_Unit();
 
         """.trimIndent())
