@@ -58,22 +58,28 @@ fun Expr.pre (): String {
 }
 
 fun Expr.pos (): String {
-    val tp = this.totype()
-    if ((tp is Type.Unit) && (this !is Expr.Call)) {
+    val TP = this.totype()
+    if ((TP is Type.Unit) && (this !is Expr.Call)) {
         return ""
     }
     return when (this) {
         is Expr.Unit  -> ""
         is Expr.Nat   -> this.tk_.str
         is Expr.Int   -> this.tk_.num.toString()
-        is Expr.Var   -> if (tp is Type.Unit) "" else this.tk_.str
+        is Expr.Var   -> if (TP is Type.Unit) "" else this.tk_.str
+        is Expr.Cons  -> {
+            val user = this.id2stmt(this.sup.str)!! as Stmt.User
+            val tp = user.subs.first { it.first.str==this.sub.str }.second
+            var arg = if (tp is Type.Unit) "" else (", " + this.arg.pos())
+            "((${this.sup.str}) { ${this.sup.str}_${this.sub.str}$arg })"
+        }
         is Expr.Tuple -> {
             val vec = this.vec
                 .filter { it.totype() !is Type.Unit }
                 .map { it.pos() }
                 .joinToString(", ")
 
-            "((${tp.pos()}) { $vec })"
+            "((${TP.pos()}) { $vec })"
         }
         is Expr.Index -> this.pre.pos() + "._" + this.tk_.num
         is Expr.Call  -> this.pre.pos() + (
@@ -124,14 +130,38 @@ fun Stmt.pos (): String {
             val ret1 = """
                 struct $ID;
                 typedef struct $ID $ID;
+
             """.trimIndent()
 
             val ret2 = "" //this.subs.map { it.second.pre() + "\n" }.joinToString()
 
             // enum { Bool_False, Bool_True } _Bool_;
-            val ret3 = "typedef enum { " + this.subs.map { ID + "_" + it.first.str }.joinToString(", ") + " } _${ID}_;"
+            val ret3 = """
+                typedef enum {
+                    ${ this.subs
+                        .map { ID + "_" + it.first.str }
+                        .joinToString(", ")
+                    }
+                } _${ID}_;
 
-            return (ret1 + "\n" + ret2 + ret3 + "\n")
+            """.trimIndent()
+
+            // struct Bool { _Bool_ sub; union { ... } };
+            val ret4 = """
+                struct $ID {
+                    _${ID}_ sub;
+                    union {
+                        ${ this.subs
+                            .filter { (_,tp) -> tp !is Type.Unit }
+                            .map { (sub,tp) -> tp.pos() + " _" + sub + ";\n" }
+                            .joinToString("")
+                        }
+                    };
+                };
+                
+            """.trimIndent()
+
+            return (ret1 + ret2 + ret3 + ret4)
         }
         is Stmt.Func -> {
             this.type.inp.pre() + this.type.out.pre() + when (this.tk_.str) {

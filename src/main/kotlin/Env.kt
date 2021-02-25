@@ -23,7 +23,7 @@ fun env_prelude (s: Stmt): Stmt {
  */
 fun env_PRV_set (s: Stmt, prv: Stmt?): Stmt? {
     fun fe (e: Expr): Boolean {
-        if (prv!=null && e is Expr.Var) {
+        if (prv!=null && (e is Expr.Var || e is Expr.Cons || e is Expr.Pred || e is Expr.Disc)) {
             env_PRV[e] = prv
         }
         return true
@@ -52,6 +52,14 @@ fun env_PRV_set (s: Stmt, prv: Stmt?): Stmt? {
     }
 }
 
+fun Any.env_dump () {
+    println(this)
+    val env = env_PRV[this]
+    if (env != null) {
+        env.env_dump()
+    }
+}
+
 fun Any.id2stmt (id: String): Stmt? {
     //println("$id: $this")
     return when {
@@ -72,6 +80,7 @@ fun Expr.totype (): Type {
         is Expr.Tuple -> Type.Tuple(this.tk_, this.vec.map{it.totype()}.toTypedArray())
         is Expr.Call  -> if (this.pre is Expr.Nat) Type.Nat(this.pre.tk_) else (this.pre.totype() as Type.Func).out
         is Expr.Index -> (this.pre.totype() as Type.Tuple).vec[this.tk_.num-1]
+        is Expr.Cons  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, this.sup.str))
         else -> { println(this) ; error("TODO") }
     }
 }

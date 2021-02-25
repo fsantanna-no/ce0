@@ -224,6 +224,7 @@ class Exec {
             var b : Bool = Bool.False()
             output std b
         """.trimIndent())
+        println(out)
         assert(out == "Bool.False\n")
     }
 }
