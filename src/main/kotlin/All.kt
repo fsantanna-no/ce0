@@ -18,9 +18,10 @@ fun All_inp2out (inp: String): Pair<Boolean,String> {
         return Pair(false, all.err)
     }
     s = env_prelude(s)
-    println(s)
     env_PRV_set(s, null)
-    val err = check_vars(s)
+    //println(env_PRV)
+    //println(s)
+    val err = check_dcls(s)
     if (err != null) {
         return Pair(false, err)
     }

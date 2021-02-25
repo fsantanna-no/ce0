@@ -31,11 +31,21 @@ class Code {
     @Test
     fun b02_expr_var () {
         val e = Expr.Var(Tk.Str(TK.XVAR,1,1,"xxx"))
+        env_PRV[e] = Stmt.Var (
+            Tk.Str(TK.XVAR,1,1,"xxx"),
+            Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
+            Expr.Nat(Tk.Str(TK.XNAT,1,1,"0"))
+        )
         assert(e.toc() == "xxx")
     }
     @Test
     fun b03_expr_nat () {
         val e = Expr.Var(Tk.Str(TK.XNAT,1,1,"xxx"))
+        env_PRV[e] = Stmt.Var (
+            Tk.Str(TK.XVAR,1,1,"xxx"),
+            Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
+            Expr.Nat(Tk.Str(TK.XNAT,1,1,"0"))
+        )
         assert(e.toc() == "xxx")
     }
     @Test
@@ -52,10 +62,15 @@ class Code {
     @Test
     fun b05_expr_index () {
         val e = Expr.Index (
-            Tk.Num(TK.XNUM,1,1,2),
+            Tk.Num(TK.XNUM,1,1,1),
             Expr.Var(Tk.Str(TK.XVAR,1,1,"x"))
         )
-        assert(e.toc() == "x._2")
+        env_PRV[e.pre] = Stmt.Var (
+            Tk.Str(TK.XVAR,1,1,"x"),
+            Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int")))),
+            Expr.Nat(Tk.Str(TK.XNAT,1,1,"0"))
+        )
+        assert(e.toc() == "x._1")
     }
 
     // STMT
@@ -92,23 +107,25 @@ class Code {
     fun toc (inp: String): Pair<Boolean,String> {
         val all = All_new(PushbackReader(StringReader(inp), 2))
         lexer(all)
-        val s = parser_stmts(all, Pair(TK.EOF,null))
+        var s = parser_stmts(all, Pair(TK.EOF,null))
         if (s == null) {
             return Pair(false, all.err)
         }
+        s = env_prelude(s)
+        env_PRV_set(s, null)
         //println(s)
         return Pair(true, s.toc())
     }
 
     @Test
     fun e01_call () {
-        val (ok, out) = toc("call _stdo a")
+        val (ok, out) = toc("call _stdo _a")
         assert(ok && out == "stdo(a);\n")
     }
     @Test
     fun e02_seq () {
         val (ok, out) = toc("var a : () = () ; call _stdo a")
-        assert(ok && out == "stdo(a);\n")
+        assert(ok && out == "stdo();\n")
     }
     @Test
     fun e03_type () {

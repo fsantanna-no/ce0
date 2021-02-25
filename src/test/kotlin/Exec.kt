@@ -11,10 +11,8 @@ fun exec (cmd: String): Pair<Boolean,String> {
         .redirectError(ProcessBuilder.Redirect.PIPE)
         .start()
     val ret = p.waitFor()
-    return when (ret) {
-        0 -> Pair(true, p.inputStream.bufferedReader().readText())
-        else -> Pair(false, "error")
-    }
+    val str = p.inputStream.bufferedReader().readText()
+    return Pair(ret==0, str)
 }
 
 @TestMethodOrder(Alphanumeric::class)
@@ -70,13 +68,14 @@ class Exec {
             var x: Int = 10
             output std x
         """.trimIndent())
+        println(out)
         assert(out == "10\n")
     }
     @Test
     fun a06_undeclared_type () {
         val out = all("var x: Nat = ()")
         println(out)
-        assert(out == "(ln 1, col 9): undeclared type \"Nat\"")
+        assert(out == "(ln 1, col 8): undeclared type \"Nat\"")
     }
     @Test
     fun a07_syntax_error () {
