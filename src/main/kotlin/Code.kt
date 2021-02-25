@@ -24,7 +24,9 @@ fun Type.pre (): String {
                 void output_std_${ce}_ ($ce v) {
                     printf("(");
                     ${this.vec
-                        .mapIndexed { i,sub -> if (sub is Type.Unit) "output_std_Unit_();\n" else "output_std_${sub.toce()}_(v._${i+1});\n" }
+                        .mapIndexed { i,sub ->
+                            "output_std_${sub.toce()}_(" + (if (sub is Type.Unit) "" else "v._${i+1}") + ");\n"
+                        }
                         .joinToString("putchar(',');\n")
                     }
                     printf(")");
@@ -70,7 +72,7 @@ fun Expr.pos (): String {
         is Expr.Cons  -> {
             val user = this.id2stmt(this.sup.str)!! as Stmt.User
             val tp = user.subs.first { it.first.str==this.sub.str }.second
-            var arg = if (tp is Type.Unit) "" else (", " + this.arg.pos())
+            val arg = if (tp is Type.Unit) "" else (", " + this.arg.pos())
             "((${this.sup.str}) { ${this.sup.str}_${this.sub.str}$arg })"
         }
         is Expr.Tuple -> {
@@ -161,7 +163,36 @@ fun Stmt.pos (): String {
                 
             """.trimIndent()
 
-            return (ret1 + ret2 + ret3 + ret4)
+            val ret5 = """
+                void output_std_${ID}_ ($ID v) {
+                    switch (v.sub) {
+                        ${this.subs
+                            .map { (sub,tp) -> """
+                                case ${ID}_${sub.str}:
+                                    printf("${sub.str}");
+                                    ${
+                                        if (tp is Type.Unit) {
+                                            ""
+                                        } else {
+                                            "output_std_${tp.toce()}_(v._$sub);"                                         
+                                        }
+                                    }
+                                    break;
+
+                            """.trimIndent()
+                            }
+                            .joinToString("")
+                        }
+                    }
+                }
+                void output_std_${ID} ($ID v) {
+                    output_std_${ID}_(v);
+                    puts("");
+                }
+                
+            """.trimIndent()
+
+            return (ret1 + ret2 + ret3 + ret4 + ret5)
         }
         is Stmt.Func -> {
             this.type.inp.pre() + this.type.out.pre() + when (this.tk_.str) {

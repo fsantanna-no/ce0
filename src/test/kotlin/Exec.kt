@@ -225,6 +225,6 @@ class Exec {
             output std b
         """.trimIndent())
         println(out)
-        assert(out == "Bool.False\n")
+        assert(out == "False\n")
     }
 }

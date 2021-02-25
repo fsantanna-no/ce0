@@ -128,25 +128,6 @@ class Code {
         assert(ok && out == "stdo();\n")
     }
     @Test
-    fun e03_type () {
-        val (ok, out) = toc("type Bool { False: () ; True: () }")
-        println(out+".")
-        assert(ok && out == """
-            struct Bool;
-            typedef struct Bool Bool;
-            typedef enum {
-                Bool_False, Bool_True
-            } _Bool_;
-            struct Bool {
-                _Bool_ sub;
-                union {
-                    
-                };
-            };
-
-        """.trimIndent())
-    }
-    @Test
     fun e04_output () {
         val (ok, out) = toc("output std ()")
         assert(ok && out == "output_std_Unit();\n")
@@ -160,25 +141,5 @@ class Code {
     fun e06_var_int () {
         val (ok, out) = toc("var x: Int = 10")
         assert(ok && out == "Int x = 10;\n")
-    }
-    @Test
-    fun e07_cons () {
-        val (ok, out) = toc("type Bool { False: () ; True: () } ; var t: Bool = Bool.True")
-        println(out)
-        assert(ok && out == """
-            struct Bool;
-            typedef struct Bool Bool;
-            typedef enum {
-                Bool_False, Bool_True
-            } _Bool_;
-            struct Bool {
-                _Bool_ sub;
-                union {
-                    
-                };
-            };
-            Bool t = ((Bool) { Bool_True });
-
-        """.trimIndent())
     }
 }
