@@ -72,6 +72,13 @@ class Parser {
         val tp = parser_type(all)
         assert(tp==null && all.err=="(ln 1, col 3): expected `,´ : have end of file")
     }
+    @Test
+    fun a08_parser_type_tuple () {
+        val all = All_new(PushbackReader(StringReader("((),())"), 2))
+        lexer(all)
+        val tp = parser_type(all)
+        assert(tp is Type.Tuple && tp.vec.size==2 && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Unit)
+    }
 
     // EXPR
 
@@ -319,6 +326,15 @@ class Parser {
         val s = parser_stmt(all)
         assert(s is Stmt.User && s.tk_.str=="Bool" && !s.isrec && s.subs.size==2 && s.subs[0].second is Type.Unit && s.subs[1].first.str=="True")
     }
+    @Test
+    fun c03_parser_stmt_var_tuple () {
+        val all = All_new(PushbackReader(StringReader("var x: ((),()) = ((),())"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        println(s)
+        println(all.err)
+        assert(s is Stmt.Var && s.type is Type.Tuple && s.init is Expr.Tuple)
+    }
 
     // STMT_CALL
 
@@ -446,7 +462,7 @@ class Parser {
         assert(s is Stmt.Nat && s.tk_.str=="xxx")
     }
 
-    // STMT_NAT
+    // STMT_LOOP
 
     @Test
     fun c15_parser_loop () {

@@ -104,4 +104,18 @@ class Exec {
         println(out)
         assert(out == "1\n")
     }
+
+    // TUPLES
+
+    @Test
+    fun b01_tuple_units () {
+        val out = all("""
+            var x: ((),()) = ((),())
+            var y: () = x.1
+            call _stdout_Unit y
+        """.trimIndent())
+        println(out)
+        assert(out == "()\n")
+    }
+
 }

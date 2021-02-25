@@ -64,6 +64,9 @@ fun parser_type (all: All): Type? {
                         break
                     }
                 }
+                if (!all.accept_err(TK.CHAR,')')) {
+                    return null
+                }
                 return Type.Tuple(tk0, tps.toTypedArray())
             }
             else -> { all.err_expected("type") ; null }
@@ -127,6 +130,9 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
                     if (!all.accept(TK.CHAR,',')) {
                         break
                     }
+                }
+                if (!all.accept_err(TK.CHAR,')')) {
+                    return null
                 }
                 return Expr.Tuple(tk0, es.toTypedArray())
             }
