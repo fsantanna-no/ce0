@@ -331,8 +331,6 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("var x: ((),()) = ((),())"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        println(s)
-        println(all.err)
         assert(s is Stmt.Var && s.type is Type.Tuple && s.init is Expr.Tuple)
     }
 

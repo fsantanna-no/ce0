@@ -2,13 +2,11 @@ import org.junit.jupiter.api.MethodOrderer.Alphanumeric
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
 import java.io.File
-import java.io.PushbackReader
-import java.io.StringReader
 
 fun exec (cmd: String): Pair<Boolean,String> {
     val p = ProcessBuilder(cmd.split(' '))
-        .redirectOutput(ProcessBuilder.Redirect.PIPE)
-        .redirectError(ProcessBuilder.Redirect.PIPE)
+        //.redirectOutput(ProcessBuilder.Redirect.PIPE)
+        .redirectErrorStream(true)
         .start()
     val ret = p.waitFor()
     val str = p.inputStream.bufferedReader().readText()
@@ -19,14 +17,13 @@ fun exec (cmd: String): Pair<Boolean,String> {
 class Exec {
 
     fun all (inp: String): String {
-        val (ok1,out1) = All_inp2out(inp)
+        val (ok1,out1) = All_inp2c(inp)
         if (!ok1) {
             return out1
         }
         File("out.c").writeText(out1)
         val (ok2,out2) = exec("gcc out.c -o out.exe")
         if (!ok2) {
-            println(out2)
             return out2
         }
         val (_,out3) = exec("./out.exe")
@@ -114,7 +111,6 @@ class Exec {
             var y: () = x.1
             call _stdout_Unit y
         """.trimIndent())
-        println(out)
         assert(out == "()\n")
     }
 

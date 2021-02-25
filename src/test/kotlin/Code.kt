@@ -26,7 +26,7 @@ class Code {
     @Test
     fun b01_expr_unit () {
         val e = Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
-        assert(e.toc() == "")
+        assert(e.pos() == "")
     }
     @Test
     fun b02_expr_var () {
@@ -36,7 +36,7 @@ class Code {
             Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
             Expr.Nat(Tk.Str(TK.XNAT,1,1,"0"))
         )
-        assert(e.toc() == "xxx")
+        assert(e.pos() == "xxx")
     }
     @Test
     fun b03_expr_nat () {
@@ -46,7 +46,7 @@ class Code {
             Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
             Expr.Nat(Tk.Str(TK.XNAT,1,1,"0"))
         )
-        assert(e.toc() == "xxx")
+        assert(e.pos() == "xxx")
     }
     @Test
     fun b04_expr_tuple () {
@@ -57,7 +57,7 @@ class Code {
                 Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()")),
             )
         )
-        assert(e.toc() == "((TUPLE__Unit__Unit) { })")
+        assert(e.pos() == "((TUPLE__Unit__Unit) { })")
     }
     @Test
     fun b05_expr_index () {
@@ -70,7 +70,7 @@ class Code {
             Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int")))),
             Expr.Nat(Tk.Str(TK.XNAT,1,1,"0"))
         )
-        assert(e.toc() == "x._1")
+        assert(e.pos() == "x._1")
     }
 
     // STMT
@@ -78,7 +78,7 @@ class Code {
     @Test
     fun c01_stmt_pass () {
         val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
-        assert(s.toc() == "")
+        assert(s.pos() == "")
     }
 
     // CODE
@@ -114,7 +114,7 @@ class Code {
         s = env_prelude(s)
         env_PRV_set(s, null)
         //println(s)
-        return Pair(true, s.toc())
+        return Pair(true, s.pos())
     }
 
     @Test
@@ -134,6 +134,7 @@ class Code {
             struct Bool;
             typedef struct Bool Bool;
             typedef enum { Bool_False, Bool_True } _Bool_;
+
         """.trimIndent())
     }
     @Test
@@ -158,7 +159,6 @@ class Code {
             var y: () = x.1
             call _stdout_Unit y
         """.trimIndent())
-        println(out)
         assert(ok && out == """
             TUPLE__Unit__Unit x = ((TUPLE__Unit__Unit) { });
             stdout_Unit();
