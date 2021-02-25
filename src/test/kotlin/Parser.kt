@@ -210,32 +210,48 @@ class Parser {
     // CONS
 
     @Test
-    fun b14_parser_expr_cons () {
+    fun b14_parser_expr_cons_err_1 () {
+        val all = All_new(PushbackReader(StringReader("X.Y ("), 2))
+        lexer(all)
+        val e = parser_expr(all,false)
+        assert(e==null && all.err=="(ln 1, col 6): expected expression : have end of file")
+    }
+    @Test
+    fun b14_parser_expr_cons_err_2 () {
         val all = All_new(PushbackReader(StringReader("X ("), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e==null && all.err=="(ln 1, col 4): expected expression : have end of file")
+        assert(e==null && all.err=="(ln 1, col 3): expected `.´ : have `(´")
+    }
+    @Test
+    fun b14_parser_expr_cons_err_3 () {
+        val all = All_new(PushbackReader(StringReader("X. ("), 2))
+        lexer(all)
+        val e = parser_expr(all,false)
+        assert(e==null && all.err=="(ln 1, col 4): expected type identifier : have `(´")
     }
     @Test
     fun b15_parser_expr_cons () {
-        val all = All_new(PushbackReader(StringReader("X ()"), 2))
+        val all = All_new(PushbackReader(StringReader("X.Y ()"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Cons && e.tk_.str=="X" && e.pos is Expr.Unit)
+        assert(e is Expr.Cons && e.tk_.chr=='.' && e.sup.str=="X" && e.sub.str=="Y" && e.arg is Expr.Unit)
     }
     @Test
     fun b16_parser_expr_cons () {
-        val all = All_new(PushbackReader(StringReader("X"), 2))
+        val all = All_new(PushbackReader(StringReader("X.Y"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Cons && e.tk_.str=="X" && e.pos is Expr.Unit)
+        println(e)
+        println(all.err)
+        assert(e is Expr.Cons && e.sup.str=="X" && e.sub.str=="Y" && e.arg is Expr.Unit)
     }
     @Test
     fun b17_parser_expr_cons () {
-        val all = All_new(PushbackReader(StringReader("Aa1 Bb1 ((),())"), 2))
+        val all = All_new(PushbackReader(StringReader("Aa1.Aa2 Bb1.Bb2 ((),())"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Cons && e.tk_.str=="Aa1" && e.pos is Expr.Cons && (e.pos as Expr.Cons).pos is Expr.Tuple)
+        assert(e is Expr.Cons && e.sup.str=="Aa1" && e.arg is Expr.Cons && (e.arg as Expr.Cons).arg is Expr.Tuple)
     }
 
     // INDEX
@@ -421,7 +437,7 @@ class Parser {
     }
     @Test
     fun c11_parser_stmt_if () {
-        val all = All_new(PushbackReader(StringReader("if (True) {}"), 2))
+        val all = All_new(PushbackReader(StringReader("if (Bool.True) {}"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert (

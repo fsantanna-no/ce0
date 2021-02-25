@@ -15,7 +15,7 @@ sealed class Expr (val tk: Tk) {
     data class Nat   (val tk_: Tk.Str): Expr(tk_)
     data class Empty (val tk_: Tk.Str): Expr(tk_)
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Expr>): Expr(tk_)
-    data class Cons  (val tk_: Tk.Str, val pos: Expr): Expr(tk_)
+    data class Cons  (val tk_: Tk.Chr, val sup: Tk.Str, val sub: Tk.Str, val arg: Expr): Expr(tk_)
     data class Dnref (val tk_: Tk, val pre: Expr): Expr(tk_)
     data class Upref (val tk_: Tk.Chr, val pos: Expr): Expr(tk_)
     data class Index (val tk_: Tk.Num, val pre: Expr): Expr(tk_)
@@ -96,11 +96,19 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
             all.accept(TK.XNAT)   -> Expr.Nat(all.tk0 as Tk.Str)
             all.accept(TK.XEMPTY) -> Expr.Empty(all.tk0 as Tk.Str)
             all.accept(TK.XUSER) -> {
+                val sup = all.tk0 as Tk.Str
+                if (!all.accept_err(TK.CHAR,'.')) {
+                    return null
+                }
+                val tk0 = all.tk0 as Tk.Chr
+                if (!all.accept_err(TK.XUSER)) {
+                    return null
+                }
                 val sub = all.tk0 as Tk.Str
                 val arg = parser_expr(all, false)
                 when {
-                    (arg != null) -> Expr.Cons(sub, arg)
-                    !all.consumed(sub) -> Expr.Cons(sub, Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()")))
+                    (arg != null) -> Expr.Cons(tk0, sup, sub, arg)
+                    !all.consumed(sub) -> Expr.Cons(tk0, sup, sub, Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()")))
                     else -> null
                 }
             }

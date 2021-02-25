@@ -170,7 +170,6 @@ class Exec {
         """.trimIndent())
         assert(out == "10\n")
     }
-
     @Test
     fun d02_f_unit () {
         val out = all("""
@@ -179,6 +178,15 @@ class Exec {
             output std x
         """.trimIndent())
         assert(out == "()\n")
+    }
+    @Test
+    fun d03_fg () {
+        val out = all("""
+            func f: () -> () { output std 10 }
+            func g: () -> () { return f () }
+            call g ()
+        """.trimIndent())
+        assert(out == "10\n")
     }
 
     // OUTPUT
@@ -205,5 +213,17 @@ class Exec {
             output f 10
         """.trimIndent())
         assert(out == "10\n")
+    }
+
+    // USER
+
+    @Test
+    fun f01_bool () {
+        val out = all("""
+            type Bool { False: () ; True: () }
+            var b : Bool = Bool.False()
+            output std b
+        """.trimIndent())
+        assert(out == "Bool.False\n")
     }
 }
