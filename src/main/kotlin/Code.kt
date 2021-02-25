@@ -47,6 +47,9 @@ fun Expr.pre (): String {
 
 fun Expr.pos (): String {
     val tp = this.totype()
+    if ((tp is Type.Unit) && (this !is Expr.Call)) {
+        return ""
+    }
     return when (this) {
         is Expr.Unit  -> ""
         is Expr.Nat   -> this.tk_.str

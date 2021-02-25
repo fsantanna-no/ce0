@@ -113,5 +113,13 @@ class Exec {
         """.trimIndent())
         assert(out == "()\n")
     }
+    @Test
+    fun b02_tuple_idx () {
+        val out = all("""
+            output std (((),()).1)
+        """.trimIndent())
+        println(out)
+        assert(out == "()\n")
+    }
 
 }
