@@ -55,6 +55,7 @@ fun Type.pos (): String {
 fun Expr.pre (): String {
     return when (this) {
         is Expr.Tuple -> this.totype().pre()
+        is Expr.Disc  -> "assert(${this.pos()}.sub == ${(this.e.totype() as Type.User).tk_.str}_${this.tk_.str});\n"
         else -> ""
     }
 }
@@ -69,6 +70,8 @@ fun Expr.pos (): String {
         is Expr.Nat   -> this.tk_.str
         is Expr.Int   -> this.tk_.num.toString()
         is Expr.Var   -> if (TP is Type.Unit) "" else this.tk_.str
+        is Expr.Index -> this.e.pos() + "._" + this.tk_.num
+        is Expr.Disc  -> this.e.pos() + "._" + this.tk_.str
         is Expr.Cons  -> {
             val user = this.id2stmt(this.sup.str)!! as Stmt.User
             val tp = user.subs.first { it.first.str==this.sub.str }.second
@@ -83,7 +86,6 @@ fun Expr.pos (): String {
 
             "((${TP.pos()}) { $vec })"
         }
-        is Expr.Index -> this.e.pos() + "._" + this.tk_.num
         is Expr.Call  -> this.f.pos() + (
             if (this.f is Expr.Var && this.f.tk_.str=="output_std") {
                 "_" + this.arg.totype().toce()
@@ -155,7 +157,7 @@ fun Stmt.pos (): String {
                     union {
                         ${ this.subs
                             .filter { (_,tp) -> tp !is Type.Unit }
-                            .map { (sub,tp) -> tp.pos() + " _" + sub + ";\n" }
+                            .map { (sub,tp) -> tp.pos() + " _" + sub.str + ";\n" }
                             .joinToString("")
                         }
                     };
@@ -174,7 +176,7 @@ fun Stmt.pos (): String {
                                         if (tp is Type.Unit) {
                                             ""
                                         } else {
-                                            "output_std_${tp.toce()}_(v._$sub);"                                         
+                                            "output_std_${tp.toce()}_(v._${sub.str});"                                         
                                         }
                                     }
                                     break;

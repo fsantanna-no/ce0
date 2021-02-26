@@ -239,7 +239,6 @@ class Exec {
             var zz: Z = yy.Y!
             output std zz
         """.trimIndent())
-        println(out)
-        assert(out == "False\n")
+        assert(out == "Z\n")
     }
 }
