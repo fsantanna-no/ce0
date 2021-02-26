@@ -8,7 +8,7 @@ fun env_prelude (s: Stmt): Stmt {
         Tk.Str(TK.XVAR,1,1,"output_std"),
         Type.Func (
             Tk.Sym(TK.ARROW, 1, 1, "->"),
-            Type.Unit(Tk.Sym(TK.UNIT,1,1,"()")),
+            Type.Any(Tk.Chr(TK.CHAR,1,1,'?')),
             Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
         ),
         null
@@ -82,12 +82,14 @@ fun Any.supSubToType (sup: String, sub: String): Type? {
     }
 }
 
-fun Expr.totype (): Type {
+fun Expr.toType (): Type {
     return when (this) {
         is Expr.Unk   -> Type.Any(this.tk_)
         is Expr.Unit  -> Type.Unit(this.tk_)
         is Expr.Int   -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col,"Int"))
         is Expr.Nat   -> Type.Nat(this.tk_)
+        is Expr.Upref -> Type.Ptr(this.tk_, this.e.toType())
+        is Expr.Dnref -> (this.e.toType() as Type.Ptr).tp
         is Expr.Var   -> {
             val s = this.idToStmt(this.tk_.str)!!
             when (s) {
@@ -96,11 +98,11 @@ fun Expr.totype (): Type {
                 else -> error("bug found")
             }
         }
-        is Expr.Tuple -> Type.Tuple(this.tk_, this.vec.map{it.totype()}.toTypedArray())
-        is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.totype() as Type.Func).out
-        is Expr.Index -> (this.e.totype() as Type.Tuple).vec[this.tk_.num-1]
+        is Expr.Tuple -> Type.Tuple(this.tk_, this.vec.map{it.toType()}.toTypedArray())
+        is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType() as Type.Func).out
+        is Expr.Index -> (this.e.toType() as Type.Tuple).vec[this.tk_.num-1]
         is Expr.Cons  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, this.sup.str))
-        is Expr.Disc  -> this.supSubToType((this.e.totype() as Type.User).tk_.str, this.tk_.str)!!
+        is Expr.Disc  -> this.supSubToType((this.e.toType() as Type.User).tk_.str, this.tk_.str)!!
         is Expr.Pred  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, "Bool"))
         else -> { println(this) ; error("TODO") }
     }
@@ -132,7 +134,7 @@ fun check_dcls (s: Stmt): String? {
                 }
             }
             is Expr.Cons -> {
-                val sup = (e.totype() as Type.User).tk_.str
+                val sup = (e.toType() as Type.User).tk_.str
                 when {
                     (e.idToStmt(sup) == null) -> {
                         ret = All_err_tk(e.tk, "undeclared type \"$sup\"")
@@ -146,7 +148,7 @@ fun check_dcls (s: Stmt): String? {
                 }
             }
             is Expr.Disc -> {
-                if (e.e.totype() !is Type.User) {
+                if (e.e.toType() !is Type.User) {
                     ret = All_err_tk(e.e.tk, "invalid discriminator : expected user type")
                     false
                 } else {
@@ -155,11 +157,11 @@ fun check_dcls (s: Stmt): String? {
             }
             is Expr.Pred -> {
                 when {
-                    (e.e.totype() !is Type.User) -> {
+                    (e.e.toType() !is Type.User) -> {
                         ret = All_err_tk(e.e.tk, "invalid predicate : expected user type")
                         false
                     }
-                    (e.supSubToType((e.e.totype() as Type.User).tk_.str, e.tk_.str) == null) -> {
+                    (e.supSubToType((e.e.toType() as Type.User).tk_.str, e.tk_.str) == null) -> {
                             ret = All_err_tk(e.tk, "undeclared subcase \"${e.tk_.str}\"")
                             false
                     }
@@ -178,25 +180,56 @@ fun Type.isSupOf (sub: Type): Boolean {
         (this is Type.Any || sub is Type.Any) -> true
         (this is Type.Nat || sub is Type.Nat) -> true
         (this::class != sub::class) -> false
+        (this is Type.Ptr && sub is Type.Ptr) -> this.tp.isSupOf(sub.tp)
         (this is Type.Tuple && sub is Type.Tuple) ->
             (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
         else -> true
     }
 }
 
-fun check_types (s: Stmt): String? {
+fun check_types (S: Stmt): String? {
     var ret: String? = null
+    fun fe (e: Expr): Boolean {
+        return when (e) {
+            is Expr.Upref -> {
+                if (e.e.toType() is Type.Ptr) {
+                    ret = All_err_tk(e.e.tk, "invalid `\\` : unexpected pointer type")
+                    false
+                } else {
+                    true
+                }
+            }
+            is Expr.Dnref -> {
+                if (e.e.toType() !is Type.Ptr) {
+                    ret = All_err_tk(e.tk, "invalid `\\` : expected pointer type")
+                    false
+                } else {
+                    true
+                }
+            }
+            is Expr.Call -> {
+                val inp = e.f.toType().let { if (it is Type.Func) it.inp else (it as Type.Nat) }
+                if (!inp.isSupOf(e.arg.toType())) {
+                    ret = All_err_tk(e.f.tk, "invalid call to \"${(e.f as Expr.Var).tk_.str}\" : type mismatch")
+                    false
+                } else {
+                    true
+                }
+            }
+            else -> true
+        }
+    }
     fun fs (s: Stmt): Boolean {
         return when (s) {
             is Stmt.Var ->
-                if (!s.type.isSupOf(s.init.totype())) {
+                if (!s.type.isSupOf(s.init.toType())) {
                     ret = All_err_tk(s.tk, "invalid assignment to \"${s.tk_.str}\" : type mismatch")
                     false
                 } else {
                     true
                 }
             is Stmt.Set ->
-                if (!s.dst.totype().isSupOf(s.src.totype())) {
+                if (!s.dst.toType().isSupOf(s.src.toType())) {
                     ret = when {
                         (s.dst !is Expr.Var) -> All_err_tk(s.tk, "invalid assignment : type mismatch")
                         (s.dst.tk_.str == "_ret_") -> All_err_tk(s.tk, "invalid return : type mismatch")
@@ -209,6 +242,6 @@ fun check_types (s: Stmt): String? {
             else -> true
         }
     }
-    s.visit(::fs, null, null)
+    S.visit(::fs, ::fe, null)
     return ret
 }

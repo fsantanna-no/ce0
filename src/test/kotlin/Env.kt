@@ -99,7 +99,79 @@ class Env {
             func f : ((),()) -> () { }
             call f()
         """.trimIndent())
-        println(out)
+        assert(out == "(ln 2, col 6): invalid call to \"f\" : type mismatch")
+    }
+    @Test
+    fun c05_type_idx () {
+        val out = all("""
+            var x: () = (1,2).1
+        """.trimIndent())
         assert(out == "(ln 1, col 5): invalid assignment to \"x\" : type mismatch")
+    }
+    @Test
+    fun c06_type_idx () {
+        val out = all("""
+            var x: (Int,Int) = (1,2)
+            set x.1 = ()
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 2, col 9): invalid assignment : type mismatch")
+    }
+    @Test
+    fun c07_type_upref () {
+        val out = all("""
+            var x: \Int = 10
+        """.trimIndent())
+        assert(out == "(ln 1, col 5): invalid assignment to \"x\" : type mismatch")
+    }
+    @Test
+    fun c08_type_upref () {
+        val out = all("""
+            var y: Int = 10
+            var x: Int = \y
+        """.trimIndent())
+        assert(out == "(ln 2, col 5): invalid assignment to \"x\" : type mismatch")
+    }
+    @Test
+    fun c09_type_upref () {
+        val out = all("""
+            var y: Int = 10
+            var x: \Int = \y
+        """.trimIndent())
+        assert(out == "OK")
+    }
+    @Test
+    fun c10_type_upref () {
+        val out = all("""
+            var y: () = ()
+            var x: \Int = \y
+        """.trimIndent())
+        assert(out == "(ln 2, col 5): invalid assignment to \"x\" : type mismatch")
+    }
+    @Test
+    fun c11_type_upref () {
+        val out = all("""
+            var y: Int = 10
+            var x: \Int = \y
+            var z: _x = \x
+        """.trimIndent())
+        assert(out == "(ln 3, col 14): invalid `\\` : unexpected pointer type")
+    }
+    @Test
+    fun c12_type_dnref () {
+        val out = all("""
+            var x: Int = 10
+            output std x\
+        """.trimIndent())
+        assert(out == "(ln 2, col 13): invalid `\\` : expected pointer type")
+    }
+    @Test
+    fun c13_type_dnref () {
+        val out = all("""
+            var x: Int = 10
+            var y: \Int = \x
+            var z: \Int = y\
+        """.trimIndent())
+        assert(out == "(ln 3, col 5): invalid assignment to \"z\" : type mismatch")
     }
 }

@@ -327,4 +327,17 @@ class Exec {
         """.trimIndent())
         assert(out == "()\n")
     }
+
+    // PTR
+
+    @Test
+    fun h01 () {
+        val out = all("""
+            var y: Int = 10
+            var x: \Int = \y
+            output std x\
+        """.trimIndent())
+        assert(out == "10\n")
+    }
+
 }
