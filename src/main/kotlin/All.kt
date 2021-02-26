@@ -21,9 +21,13 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
     env_PRV_set(s, null)
     //println(env_PRV)
     //println(s)
-    val err = check_dcls(s)
-    if (err != null) {
-        return Pair(false, err)
+    val err1 = check_dcls(s)
+    if (err1 != null) {
+        return Pair(false, err1)
+    }
+    val err2 = check_types(s)
+    if (err2 != null) {
+        return Pair(false, err2)
     }
     return Pair(true, s.code())
 }

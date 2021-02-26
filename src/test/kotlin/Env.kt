@@ -31,6 +31,7 @@ class Env {
         val out = all("var x: Nat = ()")
         assert(out == "(ln 1, col 8): undeclared type \"Nat\"")
     }
+
     // USER
 
     @Test
@@ -65,7 +66,17 @@ class Env {
         val out = all("""
             output std ().Z!
         """.trimIndent())
-        println(out)
         assert(out == "(ln 1, col 12): invalid discriminator : expected user type")
+    }
+
+    // TYPE
+
+    @Test
+    fun c01_unit_int () {
+        val out = all("""
+            var x: Int = ()
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 1, col 5): invalid assignment to \"x\" : type mismatch")
     }
 }

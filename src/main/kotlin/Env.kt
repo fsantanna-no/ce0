@@ -171,3 +171,31 @@ fun check_dcls (s: Stmt): String? {
     s.visit(null,::fe,::ft)
     return ret
 }
+
+fun Type.isSupOf (sub: Type): Boolean {
+    return when {
+        (this is Type.Nat || sub is Type.Nat) -> true
+        (this::class != sub::class) -> false
+        (this is Type.Tuple && sub is Type.Tuple) ->
+            (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
+        else -> true
+    }
+}
+
+fun check_types (s: Stmt): String? {
+    var ret: String? = null
+    fun fs (s: Stmt): Boolean {
+        return when (s) {
+            is Stmt.Var ->
+                if (!s.type.isSupOf(s.init.totype())) {
+                    ret = All_err_tk(s.tk, "invalid assignment to \"${s.tk_.str}\" : type mismatch")
+                    false
+                } else {
+                    true
+                }
+            else -> true
+        }
+    }
+    s.visit(::fs, null, null)
+    return ret
+}

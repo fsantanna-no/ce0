@@ -268,7 +268,6 @@ class Exec {
             var z: Z = Z.Z
             output std z.Z?
         """.trimIndent())
-        println(out)
         assert(out == "True\n")
     }
     @Test
@@ -326,7 +325,6 @@ class Exec {
             var x: Bool = Bool.True
             if x.False? { } else { output std }
         """.trimIndent())
-        println(out)
         assert(out == "()\n")
     }
 }
