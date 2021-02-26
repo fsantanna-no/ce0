@@ -144,6 +144,14 @@ fun check_dcls (s: Stmt): String? {
                     else -> true
                 }
             }
+            is Expr.Pred -> {
+                if (e.supsub2type((e.e.totype() as Type.User).tk_.str, e.tk_.str) == null) {
+                    ret = All_err_tk(e.tk, "undeclared subcase \"${e.tk_.str}\"")
+                    false
+                } else {
+                    true
+                }
+            }
             else -> true
         }
     }

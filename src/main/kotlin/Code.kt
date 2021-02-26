@@ -57,9 +57,15 @@ fun Type.pos (): String {
 
 fun Expr.pre (): String {
     return when (this) {
-        is Expr.Tuple -> this.totype().pre()
-        is Expr.Disc  -> "assert(${this.pos()}.sub == ${(this.e.totype() as Type.User).tk_.str}_${this.tk_.str});\n"
-        else -> ""
+        is Expr.Unk, is Expr.Unit, is Expr.Int, is Expr.Var, is Expr.Nat, is Expr.Empty -> ""
+        is Expr.Tuple -> this.totype().pre() + this.vec.map { it.pre() }.joinToString("")
+        is Expr.Cons  -> this.arg.pre()
+        is Expr.Dnref -> this.e.pre()
+        is Expr.Upref -> this.e.pre()
+        is Expr.Index -> this.e.pre()
+        is Expr.Pred  -> this.e.pre()
+        is Expr.Disc  -> "assert(${this.e.pos()}.sub == ${(this.e.totype() as Type.User).tk_.str}_${this.tk_.str});\n"
+        is Expr.Call  -> this.f.pre() + this.arg.pre()
     }
 }
 

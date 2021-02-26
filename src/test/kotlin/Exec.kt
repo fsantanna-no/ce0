@@ -295,4 +295,34 @@ class Exec {
         println(out)
         assert(out == "True\n")
     }
+    @Test
+    fun f08_user_pred_err () {
+        val out = all("""
+            type Bool { False: () ; True: () }
+            type Z { Y:() }
+            var z: Z = Z.Y
+            output std z.Z?
+        """.trimIndent())
+        assert(out == "(ln 4, col 14): undeclared subcase \"Z\"")
+    }
+    @Test
+    fun f09_user_disc () {
+        val out = all("""
+            type Bool { False: () ; True: () }
+            type Z { X:() Y:() }
+            var z: Z = Z.Y
+            output std z.Y!
+        """.trimIndent())
+        assert(out == "()\n")
+    }
+    @Test
+    fun f10_user_disc_err () {
+        val out = all("""
+            type Bool { False: () ; True: () }
+            type Z { X:() Y:() }
+            var z: Z = Z.Y
+            output std z.X!
+        """.trimIndent())
+        assert(out == "out.exe: out.c:71: main: Assertion `z.sub == Z_X' failed.\n")
+    }
 }
