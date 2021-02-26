@@ -84,6 +84,7 @@ fun Any.supsub2type (sup: String, sub: String): Type? {
 
 fun Expr.totype (): Type {
     return when (this) {
+        is Expr.Unk   -> Type.Any(this.tk_)
         is Expr.Unit  -> Type.Unit(this.tk_)
         is Expr.Int   -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col,"Int"))
         is Expr.Nat   -> Type.Nat(this.tk_)
@@ -174,6 +175,7 @@ fun check_dcls (s: Stmt): String? {
 
 fun Type.isSupOf (sub: Type): Boolean {
     return when {
+        (this is Type.Any || sub is Type.Any) -> true
         (this is Type.Nat || sub is Type.Nat) -> true
         (this::class != sub::class) -> false
         (this is Type.Tuple && sub is Type.Tuple) ->
@@ -189,6 +191,17 @@ fun check_types (s: Stmt): String? {
             is Stmt.Var ->
                 if (!s.type.isSupOf(s.init.totype())) {
                     ret = All_err_tk(s.tk, "invalid assignment to \"${s.tk_.str}\" : type mismatch")
+                    false
+                } else {
+                    true
+                }
+            is Stmt.Set ->
+                if (!s.dst.totype().isSupOf(s.src.totype())) {
+                    ret = when {
+                        (s.dst !is Expr.Var) -> All_err_tk(s.tk, "invalid assignment : type mismatch")
+                        (s.dst.tk_.str == "_ret_") -> All_err_tk(s.tk, "invalid return : type mismatch")
+                        else -> All_err_tk(s.tk, "invalid assignment to \"${s.dst.tk_.str}\" : type mismatch")
+                    }
                     false
                 } else {
                     true

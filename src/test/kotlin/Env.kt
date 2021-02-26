@@ -72,9 +72,32 @@ class Env {
     // TYPE
 
     @Test
-    fun c01_unit_int () {
+    fun c01_type_var () {
         val out = all("""
             var x: Int = ()
+        """.trimIndent())
+        assert(out == "(ln 1, col 5): invalid assignment to \"x\" : type mismatch")
+    }
+    @Test
+    fun c02_type_set () {
+        val out = all("""
+            var x: () = ()
+            set x = 10
+        """.trimIndent())
+        assert(out == "(ln 2, col 7): invalid assignment to \"x\" : type mismatch")
+    }
+    @Test
+    fun c03_type_func_ret () {
+        val out = all("""
+            func f : () -> () { return 10 }
+        """.trimIndent())
+        assert(out == "(ln 1, col 21): invalid return : type mismatch")
+    }
+    @Test
+    fun c04_type_func_arg () {
+        val out = all("""
+            func f : ((),()) -> () { }
+            call f()
         """.trimIndent())
         println(out)
         assert(out == "(ln 1, col 5): invalid assignment to \"x\" : type mismatch")
