@@ -100,6 +100,7 @@ fun Expr.totype (): Type {
         is Expr.Index -> (this.e.totype() as Type.Tuple).vec[this.tk_.num-1]
         is Expr.Cons  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, this.sup.str))
         is Expr.Disc  -> this.supsub2type((this.e.totype() as Type.User).tk_.str, this.tk_.str)!!
+        is Expr.Pred  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, "Bool"))
         else -> { println(this) ; error("TODO") }
     }
 }

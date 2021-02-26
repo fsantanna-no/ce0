@@ -242,7 +242,14 @@ class Exec {
         assert(out == "Z\n")
     }
     @Test
-    fun f03_user_sub_undeclared () {
+    fun f03_user_sup_undeclared () {
+        val out = all("""
+            var x: Bool = ()
+        """.trimIndent())
+        assert(out == "(ln 1, col 8): undeclared type \"Bool\"")
+    }
+    @Test
+    fun f04_user_sub_undeclared () {
         val out = all("""
             type Set {
                 X: ()
@@ -252,7 +259,7 @@ class Exec {
         assert(out == "(ln 4, col 15): undeclared subcase \"Set\"")
     }
     @Test
-    fun f04_user_big () {
+    fun f05_user_big () {
         val out = all("""
             type Set_ {
                 Size:     (_int,_int,_int,_int)
@@ -265,7 +272,27 @@ class Exec {
             var z: _int = _4
             output std(Set_.Size (x,y,w,x))
         """.trimIndent())
-        println(out)
         assert(out == "Size (_,_,_,_)\n")
+    }
+    @Test
+    fun f06_user_big () {
+        val out = all("""
+            type Z { Z:() }
+            type Y { Y:() }
+            type X { X:(Y,Z) }
+            output std (X.X (Y.Y,Z.Z))
+        """.trimIndent())
+        assert(out == "X (Y,Z)\n")
+    }
+    @Test
+    fun f07_user_pred () {
+        val out = all("""
+            type Bool { False: () ; True: () }
+            type Z { Z:() }
+            var z: Z = Z.Z
+            output std z.Z?
+        """.trimIndent())
+        println(out)
+        assert(out == "True\n")
     }
 }
