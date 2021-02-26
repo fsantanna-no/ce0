@@ -111,26 +111,22 @@ fun Expr.toType (): Type {
 fun check_dcls (s: Stmt): String? {
     var ret: String? = null
     fun ft (tp: Type): Boolean {
-        return when (tp) {
+        when (tp) {
             is Type.User -> {
                 if (tp.idToStmt(tp.tk_.str) == null) {
                     ret = All_err_tk(tp.tk, "undeclared type \"${tp.tk_.str}\"")
                     return false
                 }
-                return true
             }
-            else -> true
-
         }
+        return true
     }
     fun fe (e: Expr): Boolean {
-        return when (e) {
+        when (e) {
             is Expr.Var -> {
                 if (e.idToStmt(e.tk_.str) == null) {
                     ret = All_err_tk(e.tk, "undeclared variable \"${e.tk_.str}\"")
-                    false
-                } else {
-                    true
+                    return false
                 }
             }
             is Expr.Cons -> {
@@ -138,38 +134,34 @@ fun check_dcls (s: Stmt): String? {
                 when {
                     (e.idToStmt(sup) == null) -> {
                         ret = All_err_tk(e.tk, "undeclared type \"$sup\"")
-                        false
+                        return false
                     }
                     (e.supSubToType(sup,e.sub.str) == null) -> {
                         ret = All_err_tk(e.tk, "undeclared subcase \"${e.sub.str}\"")
-                        false
+                        return false
                     }
-                    else -> true
                 }
             }
             is Expr.Disc -> {
                 if (e.e.toType() !is Type.User) {
                     ret = All_err_tk(e.e.tk, "invalid discriminator : expected user type")
-                    false
-                } else {
-                    true
+                    return false
                 }
             }
             is Expr.Pred -> {
                 when {
                     (e.e.toType() !is Type.User) -> {
                         ret = All_err_tk(e.e.tk, "invalid predicate : expected user type")
-                        false
+                        return false
                     }
                     (e.supSubToType((e.e.toType() as Type.User).tk_.str, e.tk_.str) == null) -> {
-                            ret = All_err_tk(e.tk, "undeclared subcase \"${e.tk_.str}\"")
-                            false
+                        ret = All_err_tk(e.tk, "undeclared subcase \"${e.tk_.str}\"")
+                        return false
                     }
-                    else -> true
                 }
             }
-            else -> true
         }
+        return true
     }
     s.visit(null,::fe,::ft)
     return ret
@@ -190,57 +182,49 @@ fun Type.isSupOf (sub: Type): Boolean {
 fun check_types (S: Stmt): String? {
     var ret: String? = null
     fun fe (e: Expr): Boolean {
-        return when (e) {
+        when (e) {
             is Expr.Upref -> {
                 if (e.e.toType() is Type.Ptr) {
                     ret = All_err_tk(e.e.tk, "invalid `\\` : unexpected pointer type")
-                    false
-                } else {
-                    true
+                    return false
                 }
             }
             is Expr.Dnref -> {
                 if (e.e.toType() !is Type.Ptr) {
                     ret = All_err_tk(e.tk, "invalid `\\` : expected pointer type")
-                    false
-                } else {
-                    true
+                    return false
                 }
             }
             is Expr.Call -> {
                 val inp = e.f.toType().let { if (it is Type.Func) it.inp else (it as Type.Nat) }
                 if (!inp.isSupOf(e.arg.toType())) {
                     ret = All_err_tk(e.f.tk, "invalid call to \"${(e.f as Expr.Var).tk_.str}\" : type mismatch")
-                    false
-                } else {
-                    true
+                    return false
                 }
             }
-            else -> true
         }
+        return true
     }
     fun fs (s: Stmt): Boolean {
-        return when (s) {
-            is Stmt.Var ->
+        when (s) {
+            is Stmt.Var -> {
                 if (!s.type.isSupOf(s.init.toType())) {
                     ret = All_err_tk(s.tk, "invalid assignment to \"${s.tk_.str}\" : type mismatch")
-                    false
-                } else {
-                    true
+                    return false
                 }
-            is Stmt.Set ->
+            }
+            is Stmt.Set -> {
                 if (!s.dst.toType().isSupOf(s.src.toType())) {
                     ret = when {
                         (s.dst !is Expr.Var) -> All_err_tk(s.tk, "invalid assignment : type mismatch")
                         (s.dst.tk_.str == "_ret_") -> All_err_tk(s.tk, "invalid return : type mismatch")
                         else -> All_err_tk(s.tk, "invalid assignment to \"${s.dst.tk_.str}\" : type mismatch")
                     }
-                    false
-                } else {
-                    true
+                    return false
                 }
-            else -> true
+            }
         }
+        return true
     }
     S.visit(::fs, ::fe, null)
     return ret
