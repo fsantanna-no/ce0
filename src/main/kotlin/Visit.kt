@@ -1,6 +1,7 @@
 fun Type.visit (ft: ((Type)->Boolean)?): Boolean {
     return (ft==null || ft(this)) && when (this) {
         is Type.Any, is Type.Unit, is Type.Nat, is Type.User -> true
+        is Type.Ptr   -> this.tp.visit(ft)
         is Type.Tuple -> this.vec.all { it.visit(ft) }
         is Type.Func  -> this.inp.visit(ft) && this.out.visit(ft)
     }

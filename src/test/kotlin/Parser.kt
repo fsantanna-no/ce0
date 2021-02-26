@@ -79,7 +79,13 @@ class Parser {
         val tp = parser_type(all)
         assert(tp is Type.Tuple && tp.vec.size==2 && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Unit)
     }
-
+    @Test
+    fun a09_parser_type_ptr () {
+        val all = All_new(PushbackReader(StringReader("\\()"), 2))
+        lexer(all)
+        val tp = parser_type(all)
+        assert(tp is Type.Ptr && tp.tp is Type.Unit)
+    }
     // EXPR
 
     @Test

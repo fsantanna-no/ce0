@@ -5,6 +5,7 @@ sealed class Type (val tk: Tk) {
     data class User  (val tk_: Tk.Str): Type(tk_)
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_)
     data class Func  (val tk_: Tk.Sym, val inp: Type, val out: Type): Type(tk_)
+    data class Ptr   (val tk_: Tk.Chr, val tp: Type): Type(tk_)
 }
 
 sealed class Expr (val tk: Tk) {
@@ -46,6 +47,14 @@ fun parser_type (all: All): Type? {
             all.accept(TK.UNIT)  -> Type.Unit(all.tk0 as Tk.Sym)
             all.accept(TK.XNAT)  -> Type.Nat(all.tk0 as Tk.Str)
             all.accept(TK.XUSER) -> Type.User(all.tk0 as Tk.Str)
+            all.accept(TK.CHAR,'\\') -> {
+                val tk0 = all.tk0 as Tk.Chr
+                val tp = parser_type(all)
+                if (tp == null) {
+                    return null
+                }
+                return Type.Ptr(tk0, tp)
+            }
             all.accept(TK.CHAR,'(') -> { // Type.Tuple
                 val tk0 = all.tk0 as Tk.Chr
                 val tp = parser_type(all)
