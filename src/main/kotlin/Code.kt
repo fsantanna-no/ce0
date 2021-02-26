@@ -25,7 +25,10 @@ fun Type.pre (): String {
                     printf("(");
                     ${this.vec
                         .mapIndexed { i,sub ->
-                            "output_std_${sub.toce()}_(" + (if (sub is Type.Unit) "" else "v._${i+1}") + ");\n"
+                            when (sub) {
+                                is Type.Nat -> "putchar('_')"
+                                else -> "output_std_${sub.toce()}_(" + (if (sub is Type.Unit) "" else "v._${i + 1}") + ")"
+                            } + ";\n"
                         }
                         .joinToString("putchar(',');\n")
                     }
@@ -137,7 +140,7 @@ fun Stmt.pos (): String {
 
             """.trimIndent()
 
-            val ret2 = "" //this.subs.map { it.second.pre() + "\n" }.joinToString()
+            val ret2 = this.subs.map { it.second.pre() + "\n" }.joinToString("")
 
             // enum { Bool_False, Bool_True } _Bool_;
             val ret3 = """
@@ -173,11 +176,11 @@ fun Stmt.pos (): String {
                                 case ${ID}_${sub.str}:
                                     printf("${sub.str}");
                                     ${
-                                        if (tp is Type.Unit) {
-                                            ""
-                                        } else {
-                                            "output_std_${tp.toce()}_(v._${sub.str});"                                         
-                                        }
+                                        when (tp) {
+                                            is Type.Unit -> ""
+                                            is Type.Nat -> "putchar('_');"
+                                            else -> "output_std_${tp.toce()}_(v._${sub.str});"
+                                        }.let { if (it.isEmpty()) it else "putchar(' ');\n"+it }
                                     }
                                     break;
 

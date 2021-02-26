@@ -251,4 +251,21 @@ class Exec {
         """.trimIndent())
         assert(out == "(ln 4, col 15): undeclared subcase \"Set\"")
     }
+    @Test
+    fun f04_user_big () {
+        val out = all("""
+            type Set_ {
+                Size:     (_int,_int,_int,_int)
+                Color_BG: _int
+                Color_FG: _int
+            }
+            var x: _int = _1
+            var y: _int = _2
+            var w: _int = _3
+            var z: _int = _4
+            output std(Set_.Size (x,y,w,x))
+        """.trimIndent())
+        println(out)
+        assert(out == "Size (_,_,_,_)\n")
+    }
 }
