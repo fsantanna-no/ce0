@@ -224,6 +224,21 @@ class Exec {
             var b : Bool = Bool.False()
             output std b
         """.trimIndent())
+        assert(out == "False\n")
+    }
+    @Test
+    fun f02_xyz () {
+        val out = all("""
+            type Z { Z:() }
+            type Y { Y:Z }
+            type X { X:Y }
+            var z : Z = Z.Z()
+            var y : Y = Y.Y z
+            var x : X = X.X y
+            var yy: Y = x.X!
+            var zz: Z = yy.Y!
+            output std zz
+        """.trimIndent())
         println(out)
         assert(out == "False\n")
     }

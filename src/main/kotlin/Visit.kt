@@ -11,12 +11,12 @@ fun Expr.visit (fe: ((Expr)->Boolean)?): Boolean {
         is Expr.Unk, is Expr.Unit, is Expr.Int, is Expr.Var, is Expr.Nat, is Expr.Empty -> true
         is Expr.Tuple -> this.vec.all { it.visit(fe) }
         is Expr.Cons  -> this.arg.visit(fe)
-        is Expr.Dnref -> this.pre.visit(fe)
-        is Expr.Upref -> this.pos.visit(fe)
-        is Expr.Index -> this.pre.visit(fe)
-        is Expr.Pred  -> this.pre.visit(fe)
-        is Expr.Disc  -> this.pre.visit(fe)
-        is Expr.Call  -> this.pre.visit(fe) && this.pos.visit(fe)
+        is Expr.Dnref -> this.e.visit(fe)
+        is Expr.Upref -> this.e.visit(fe)
+        is Expr.Index -> this.e.visit(fe)
+        is Expr.Pred  -> this.e.visit(fe)
+        is Expr.Disc  -> this.e.visit(fe)
+        is Expr.Call  -> this.f.visit(fe) && this.arg.visit(fe)
     }
 }
 

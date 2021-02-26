@@ -92,6 +92,7 @@ fun All.err_expected (str: String) {
             (this.enu == TK.EOF) -> "end of file"
             (this is Tk.Err)      -> '"' + this.err + '"'
             (this is Tk.Chr)     -> "`" + this.chr + "´"
+            (this is Tk.Sym)     -> '`' + this.sym + '´'
             (this is Tk.Str)     -> '"' + this.str + '"'
             (this is Tk.Key)     -> this.key
             else -> { println(this); error("TODO") }

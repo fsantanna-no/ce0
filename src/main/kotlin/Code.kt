@@ -83,14 +83,14 @@ fun Expr.pos (): String {
 
             "((${TP.pos()}) { $vec })"
         }
-        is Expr.Index -> this.pre.pos() + "._" + this.tk_.num
-        is Expr.Call  -> this.pre.pos() + (
-            if (this.pre is Expr.Var && this.pre.tk_.str=="output_std") {
-                "_" + this.pos.totype().toce()
+        is Expr.Index -> this.e.pos() + "._" + this.tk_.num
+        is Expr.Call  -> this.f.pos() + (
+            if (this.f is Expr.Var && this.f.tk_.str=="output_std") {
+                "_" + this.arg.totype().toce()
             } else {
                 ""
             }
-        ) + "(" + this.pos.pos() + ")"
+        ) + "(" + this.arg.pos() + ")"
         else -> { println(this) ; error("TODO") }
     }
 }

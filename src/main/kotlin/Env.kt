@@ -75,12 +75,23 @@ fun Expr.totype (): Type {
     return when (this) {
         is Expr.Unit  -> Type.Unit(this.tk_)
         is Expr.Int   -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col,"Int"))
-        is Expr.Var   -> this.id2stmt(this.tk_.str)!!.let { if (it is Stmt.Var) it.type else (it as Stmt.Func).type }
         is Expr.Nat   -> Type.Nat(this.tk_)
+        is Expr.Var   -> {
+            val s = this.id2stmt(this.tk_.str)!!
+            when (s) {
+                is Stmt.Var -> s.type
+                is Stmt.Func -> s.type
+                else -> error("bug found")
+            }
+        }
         is Expr.Tuple -> Type.Tuple(this.tk_, this.vec.map{it.totype()}.toTypedArray())
-        is Expr.Call  -> if (this.pre is Expr.Nat) Type.Nat(this.pre.tk_) else (this.pre.totype() as Type.Func).out
-        is Expr.Index -> (this.pre.totype() as Type.Tuple).vec[this.tk_.num-1]
+        is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.totype() as Type.Func).out
+        is Expr.Index -> (this.e.totype() as Type.Tuple).vec[this.tk_.num-1]
         is Expr.Cons  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, this.sup.str))
+        is Expr.Disc  -> {
+            val user = this.id2stmt((this.e.totype() as Type.User).tk_.str) as Stmt.User
+            user.subs.first { (id,_) -> id.str==this.tk_.str }.second
+        }
         else -> { println(this) ; error("TODO") }
     }
 }

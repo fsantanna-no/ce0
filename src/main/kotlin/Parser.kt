@@ -16,12 +16,12 @@ sealed class Expr (val tk: Tk) {
     data class Empty (val tk_: Tk.Str): Expr(tk_)
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Expr>): Expr(tk_)
     data class Cons  (val tk_: Tk.Chr, val sup: Tk.Str, val sub: Tk.Str, val arg: Expr): Expr(tk_)
-    data class Dnref (val tk_: Tk, val pre: Expr): Expr(tk_)
-    data class Upref (val tk_: Tk.Chr, val pos: Expr): Expr(tk_)
-    data class Index (val tk_: Tk.Num, val pre: Expr): Expr(tk_)
-    data class Pred  (val tk_: Tk.Str, val pre: Expr): Expr(tk_)
-    data class Disc  (val tk_: Tk.Str, val pre: Expr): Expr(tk_)
-    data class Call  (val tk_: Tk.Key, val pre: Expr, val pos: Expr): Expr(tk_)
+    data class Dnref (val tk_: Tk, val e: Expr): Expr(tk_)
+    data class Upref (val tk_: Tk.Chr, val e: Expr): Expr(tk_)
+    data class Index (val tk_: Tk.Num, val e: Expr): Expr(tk_)
+    data class Pred  (val tk_: Tk.Str, val e: Expr): Expr(tk_)
+    data class Disc  (val tk_: Tk.Str, val e: Expr): Expr(tk_)
+    data class Call  (val tk_: Tk.Key, val f: Expr, val arg: Expr): Expr(tk_)
 }
 
 sealed class Stmt (val tk: Tk) {

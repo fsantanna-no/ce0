@@ -65,7 +65,7 @@ class Code {
             Tk.Num(TK.XNUM,1,1,1),
             Expr.Var(Tk.Str(TK.XVAR,1,1,"x"))
         )
-        env_PRV[e.pre] = Stmt.Var (
+        env_PRV[e.e] = Stmt.Var (
             Tk.Str(TK.XVAR,1,1,"x"),
             Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int")))),
             Expr.Nat(Tk.Str(TK.XNAT,1,1,"0"))
