@@ -241,4 +241,14 @@ class Exec {
         """.trimIndent())
         assert(out == "Z\n")
     }
+    @Test
+    fun f03_user_sub_undeclared () {
+        val out = all("""
+            type Set {
+                X: ()
+            }
+            output std(Set.Set)
+        """.trimIndent())
+        assert(out == "(ln 4, col 15): undeclared subcase \"Set\"")
+    }
 }

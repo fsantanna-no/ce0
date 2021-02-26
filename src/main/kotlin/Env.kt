@@ -1,3 +1,5 @@
+import java.lang.Exception
+
 val env_PRV: MutableMap<Any,Stmt> = mutableMapOf()
 
 fun env_prelude (s: Stmt): Stmt {
@@ -71,6 +73,15 @@ fun Any.id2stmt (id: String): Stmt? {
     }
 }
 
+fun Any.supsub2type (sup: String, sub: String): Type? {
+    try {
+        val user = this.id2stmt(sup) as Stmt.User
+        return user.subs.first { (id,_) -> id.str==sub }.second
+    } catch (_: Exception) {
+        return null
+    }
+}
+
 fun Expr.totype (): Type {
     return when (this) {
         is Expr.Unit  -> Type.Unit(this.tk_)
@@ -88,10 +99,7 @@ fun Expr.totype (): Type {
         is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.totype() as Type.Func).out
         is Expr.Index -> (this.e.totype() as Type.Tuple).vec[this.tk_.num-1]
         is Expr.Cons  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, this.sup.str))
-        is Expr.Disc  -> {
-            val user = this.id2stmt((this.e.totype() as Type.User).tk_.str) as Stmt.User
-            user.subs.first { (id,_) -> id.str==this.tk_.str }.second
-        }
+        is Expr.Disc  -> this.supsub2type((this.e.totype() as Type.User).tk_.str, this.tk_.str)!!
         else -> { println(this) ; error("TODO") }
     }
 }
@@ -101,7 +109,7 @@ fun check_dcls (s: Stmt): String? {
     fun ft (tp: Type): Boolean {
         return when (tp) {
             is Type.User -> {
-                if (env_PRV[tp]!=null && env_PRV[tp]!!.id2stmt(tp.tk_.str) == null) {
+                if (tp.id2stmt(tp.tk_.str) == null) {
                     ret = All_err_tk(tp.tk, "undeclared type \"${tp.tk_.str}\"")
                     return false
                 }
@@ -114,11 +122,26 @@ fun check_dcls (s: Stmt): String? {
     fun fe (e: Expr): Boolean {
         return when (e) {
             is Expr.Var -> {
-                if (env_PRV[e]!=null && env_PRV[e]!!.id2stmt(e.tk_.str) == null) {
+                if (e.id2stmt(e.tk_.str) == null) {
                     ret = All_err_tk(e.tk, "undeclared variable \"${e.tk_.str}\"")
-                    return false
+                    false
+                } else {
+                    true
                 }
-                return true
+            }
+            is Expr.Cons -> {
+                val sup = (e.totype() as Type.User).tk_.str
+                when {
+                    (e.id2stmt(sup) == null) -> {
+                        ret = All_err_tk(e.tk, "undeclared type \"$sup\"")
+                        false
+                    }
+                    (e.supsub2type(sup,e.sub.str) == null) -> {
+                        ret = All_err_tk(e.tk, "undeclared subcase \"${e.sub.str}\"")
+                        false
+                    }
+                    else -> true
+                }
             }
             else -> true
         }
