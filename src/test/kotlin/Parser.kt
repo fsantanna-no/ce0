@@ -242,8 +242,6 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("X.Y"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        println(e)
-        println(all.err)
         assert(e is Expr.Cons && e.sup.str=="X" && e.sub.str=="Y" && e.arg is Expr.Unit)
     }
     @Test

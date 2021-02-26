@@ -49,27 +49,12 @@ class Exec {
         assert(out == "(ln 1, col 1): expected statement : have \"/\"")
     }
     @Test
-    fun a04_undeclared_var () {
-        val out = all("output std x")
-        assert(out == "(ln 1, col 12): undeclared variable \"x\"")
-    }
-    @Test
-    fun a04_undeclared_func () {
-        val out = all("call f ()")
-        assert(out == "(ln 1, col 6): undeclared variable \"f\"")
-    }
-    @Test
     fun a05_int () {
         val out = all("""
             var x: Int = 10
             output std x
         """.trimIndent())
         assert(out == "10\n")
-    }
-    @Test
-    fun a06_undeclared_type () {
-        val out = all("var x: Nat = ()")
-        assert(out == "(ln 1, col 8): undeclared type \"Nat\"")
     }
     @Test
     fun a07_syntax_error () {
@@ -135,6 +120,14 @@ class Exec {
             output std z
         """.trimIndent())
         assert(out == "()\n")
+    }
+    @Test
+    fun b04_tuple_pp () {
+        val out = all("""
+            var x: ((Int,Int),(Int,Int)) = ((1,2),(3,4))
+            output std x
+        """.trimIndent())
+        assert(out == "((1,2),(3,4))\n")
     }
 
     // NATIVE
@@ -242,23 +235,6 @@ class Exec {
         assert(out == "Z\n")
     }
     @Test
-    fun f03_user_sup_undeclared () {
-        val out = all("""
-            var x: Bool = ()
-        """.trimIndent())
-        assert(out == "(ln 1, col 8): undeclared type \"Bool\"")
-    }
-    @Test
-    fun f04_user_sub_undeclared () {
-        val out = all("""
-            type Set {
-                X: ()
-            }
-            output std(Set.Set)
-        """.trimIndent())
-        assert(out == "(ln 4, col 15): undeclared subcase \"Set\"")
-    }
-    @Test
     fun f05_user_big () {
         val out = all("""
             type Set_ {
@@ -296,16 +272,6 @@ class Exec {
         assert(out == "True\n")
     }
     @Test
-    fun f08_user_pred_err () {
-        val out = all("""
-            type Bool { False: () ; True: () }
-            type Z { Y:() }
-            var z: Z = Z.Y
-            output std z.Z?
-        """.trimIndent())
-        assert(out == "(ln 4, col 14): undeclared subcase \"Z\"")
-    }
-    @Test
     fun f09_user_disc () {
         val out = all("""
             type Bool { False: () ; True: () }
@@ -324,5 +290,43 @@ class Exec {
             output std z.X!
         """.trimIndent())
         assert(out == "out.exe: out.c:71: main: Assertion `z.sub == Z_X' failed.\n")
+    }
+    @Test
+    fun f11_user_disc_pred_idx () {
+        val out = all("""
+            type Bool { False: () ; True: () }
+            type X { Z:() }
+            type A { B:(X,()) }
+            output std (A.B X.Z).B!.1.Z?
+        """.trimIndent())
+        assert(out == "True\n")
+    }
+    @Test
+    fun f12_user_disc_pred_err () {
+        val out = all("""
+            output std ().Z?
+        """.trimIndent())
+        assert(out == "(ln 1, col 12): invalid predicate : expected user type")
+    }
+
+    // IF
+
+    @Test
+    fun g01_if () {
+        val out = all("""
+            type Bool { False: () ; True: () }
+            if Bool.False { } else { output std }
+        """.trimIndent())
+        assert(out == "()\n")
+    }
+    @Test
+    fun g02_if_pred () {
+        val out = all("""
+            type Bool { False: () ; True: () }
+            var x: Bool = Bool.True
+            if x.False? { } else { output std }
+        """.trimIndent())
+        println(out)
+        assert(out == "()\n")
     }
 }

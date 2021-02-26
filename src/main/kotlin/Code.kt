@@ -11,8 +11,9 @@ fun Type.toce (): String {
 fun Type.pre (): String {
     return when (this) {
         is Type.Tuple -> {
+            val pre = this.vec.map { it.pre() }.joinToString("")
             val ce = this.toce()
-            """
+            pre + """
                 #ifndef __${ce}__
                 #define __${ce}__
                 typedef struct {
@@ -116,10 +117,17 @@ fun Stmt.pos (): String {
             (if (this.dst.totype() is Type.Unit) "" else (this.dst.pos()+" = ")) +
             this.src.pos() + ";\n"
         )
+        is Stmt.If    -> """
+            if (${this.tst.pos()}.sub) {
+                ${this.true_.pos()}
+            } else {
+                ${this.false_.pos()}
+            }
+        """.trimIndent()
         is Stmt.Call  -> this.call.pre() + this.call.pos() + ";\n"
         is Stmt.Block -> "{\n" + this.body.pos() + "}\n"
         is Stmt.Ret   -> "return" + if (this.e.totype() is Type.Unit) ";\n" else " _ret_;\n"
-        is Stmt.Var  -> {
+        is Stmt.Var   -> {
             this.init.pre() +
                 if (this.type is Type.Unit) {
                     ""
@@ -133,7 +141,7 @@ fun Stmt.pos (): String {
                     )
                 }
         }
-        is Stmt.User -> {
+        is Stmt.User  -> {
             val ID = this.tk_.str
             if (ID == "Int") {
                 return ""
@@ -206,7 +214,7 @@ fun Stmt.pos (): String {
 
             return (ret1 + ret2 + ret3 + ret4 + ret5)
         }
-        is Stmt.Func -> {
+        is Stmt.Func  -> {
             this.type.inp.pre() + this.type.out.pre() + when (this.tk_.str) {
                 "output_std" -> ""
                 else -> {

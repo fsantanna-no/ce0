@@ -144,12 +144,25 @@ fun check_dcls (s: Stmt): String? {
                     else -> true
                 }
             }
-            is Expr.Pred -> {
-                if (e.supsub2type((e.e.totype() as Type.User).tk_.str, e.tk_.str) == null) {
-                    ret = All_err_tk(e.tk, "undeclared subcase \"${e.tk_.str}\"")
+            is Expr.Disc -> {
+                if (e.e.totype() !is Type.User) {
+                    ret = All_err_tk(e.e.tk, "invalid discriminator : expected user type")
                     false
                 } else {
                     true
+                }
+            }
+            is Expr.Pred -> {
+                when {
+                    (e.e.totype() !is Type.User) -> {
+                        ret = All_err_tk(e.e.tk, "invalid predicate : expected user type")
+                        false
+                    }
+                    (e.supsub2type((e.e.totype() as Type.User).tk_.str, e.tk_.str) == null) -> {
+                            ret = All_err_tk(e.tk, "undeclared subcase \"${e.tk_.str}\"")
+                            false
+                    }
+                    else -> true
                 }
             }
             else -> true
