@@ -62,20 +62,20 @@ fun Any.env_dump () {
     }
 }
 
-fun Any.id2stmt (id: String): Stmt? {
+fun Any.idToStmt (id: String): Stmt? {
     //println("$id: $this")
     return when {
         (this is Stmt.Var  && this.tk_.str==id) -> this
         (this is Stmt.Func && this.tk_.str==id) -> this
         (this is Stmt.User && this.tk_.str==id) -> this
         (env_PRV[this] == null) -> null
-        else -> env_PRV[this]!!.id2stmt(id)
+        else -> env_PRV[this]!!.idToStmt(id)
     }
 }
 
-fun Any.supsub2type (sup: String, sub: String): Type? {
+fun Any.supSubToType (sup: String, sub: String): Type? {
     try {
-        val user = this.id2stmt(sup) as Stmt.User
+        val user = this.idToStmt(sup) as Stmt.User
         return user.subs.first { (id,_) -> id.str==sub }.second
     } catch (_: Exception) {
         return null
@@ -89,7 +89,7 @@ fun Expr.totype (): Type {
         is Expr.Int   -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col,"Int"))
         is Expr.Nat   -> Type.Nat(this.tk_)
         is Expr.Var   -> {
-            val s = this.id2stmt(this.tk_.str)!!
+            val s = this.idToStmt(this.tk_.str)!!
             when (s) {
                 is Stmt.Var -> s.type
                 is Stmt.Func -> s.type
@@ -100,7 +100,7 @@ fun Expr.totype (): Type {
         is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.totype() as Type.Func).out
         is Expr.Index -> (this.e.totype() as Type.Tuple).vec[this.tk_.num-1]
         is Expr.Cons  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, this.sup.str))
-        is Expr.Disc  -> this.supsub2type((this.e.totype() as Type.User).tk_.str, this.tk_.str)!!
+        is Expr.Disc  -> this.supSubToType((this.e.totype() as Type.User).tk_.str, this.tk_.str)!!
         is Expr.Pred  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, "Bool"))
         else -> { println(this) ; error("TODO") }
     }
@@ -111,7 +111,7 @@ fun check_dcls (s: Stmt): String? {
     fun ft (tp: Type): Boolean {
         return when (tp) {
             is Type.User -> {
-                if (tp.id2stmt(tp.tk_.str) == null) {
+                if (tp.idToStmt(tp.tk_.str) == null) {
                     ret = All_err_tk(tp.tk, "undeclared type \"${tp.tk_.str}\"")
                     return false
                 }
@@ -124,7 +124,7 @@ fun check_dcls (s: Stmt): String? {
     fun fe (e: Expr): Boolean {
         return when (e) {
             is Expr.Var -> {
-                if (e.id2stmt(e.tk_.str) == null) {
+                if (e.idToStmt(e.tk_.str) == null) {
                     ret = All_err_tk(e.tk, "undeclared variable \"${e.tk_.str}\"")
                     false
                 } else {
@@ -134,11 +134,11 @@ fun check_dcls (s: Stmt): String? {
             is Expr.Cons -> {
                 val sup = (e.totype() as Type.User).tk_.str
                 when {
-                    (e.id2stmt(sup) == null) -> {
+                    (e.idToStmt(sup) == null) -> {
                         ret = All_err_tk(e.tk, "undeclared type \"$sup\"")
                         false
                     }
-                    (e.supsub2type(sup,e.sub.str) == null) -> {
+                    (e.supSubToType(sup,e.sub.str) == null) -> {
                         ret = All_err_tk(e.tk, "undeclared subcase \"${e.sub.str}\"")
                         false
                     }
@@ -159,7 +159,7 @@ fun check_dcls (s: Stmt): String? {
                         ret = All_err_tk(e.e.tk, "invalid predicate : expected user type")
                         false
                     }
-                    (e.supsub2type((e.e.totype() as Type.User).tk_.str, e.tk_.str) == null) -> {
+                    (e.supSubToType((e.e.totype() as Type.User).tk_.str, e.tk_.str) == null) -> {
                             ret = All_err_tk(e.tk, "undeclared subcase \"${e.tk_.str}\"")
                             false
                     }

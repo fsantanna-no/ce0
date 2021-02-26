@@ -84,7 +84,7 @@ fun Expr.pos (): String {
         is Expr.Disc  -> this.e.pos() + "._" + this.tk_.str
         is Expr.Pred  -> "((${this.e.pos()}.sub == ${(this.e.totype() as Type.User).tk_.str}_${this.tk_.str}) ? (Bool){Bool_True} : (Bool){Bool_False})"
         is Expr.Cons  -> {
-            val user = this.id2stmt(this.sup.str)!! as Stmt.User
+            val user = this.idToStmt(this.sup.str)!! as Stmt.User
             val tp = user.subs.first { it.first.str==this.sub.str }.second
             val arg = if (tp is Type.Unit) "" else (", " + this.arg.pos())
             "((${this.sup.str}) { ${this.sup.str}_${this.sub.str}$arg })"
