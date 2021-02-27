@@ -116,30 +116,4 @@ class Code {
         //println(s)
         return Pair(true, s.pos())
     }
-
-    @Test
-    fun e01_call () {
-        val (ok, out) = toc("call _stdo _a")
-        assert(ok && out == "stdo(a);\n")
-    }
-    @Test
-    fun e02_seq () {
-        val (ok, out) = toc("var a : () = () ; call _stdo a")
-        assert(ok && out == "stdo();\n")
-    }
-    @Test
-    fun e04_output () {
-        val (ok, out) = toc("output std ()")
-        assert(ok && out == "output_std_Unit();\n")
-    }
-    @Test
-    fun e05_var_nat () {
-        val (ok, out) = toc("var x: _int = 10")
-        assert(ok && out == "int x = 10;\n")
-    }
-    @Test
-    fun e06_var_int () {
-        val (ok, out) = toc("var x: Int = 10")
-        assert(ok && out == "Int x = 10;\n")
-    }
 }

@@ -201,6 +201,19 @@ class Exec {
         """.trimIndent())
         assert(out == "10\n")
     }
+    @Test
+    fun d06_func_fg () {
+        val out = all("""
+            func f: Int->Int { return arg }
+            func g: (Int->Int, Int) -> Int {
+               var f: Int->Int = arg.1
+               var v: Int = call f arg.2
+               return v
+            }
+            output std g (f,10)
+        """.trimIndent())
+        assert(out == "10\n")
+    }
 
     // OUTPUT
 
@@ -308,7 +321,7 @@ class Exec {
             var z: Z = Z.Y
             output std z.X!
         """.trimIndent())
-        assert(out == "out.exe: out.c:71: main: Assertion `z.sub == Z_X' failed.\n")
+        assert(out == "out.exe: out.c:75: main: Assertion `z.sub == Z_X' failed.\n")
     }
     @Test
     fun f11_user_disc_pred_idx () {
@@ -371,6 +384,17 @@ class Exec {
         output std x
         """.trimIndent())
         assert(out == "2\n")
+    }
+    @Test
+    fun h03_ptr_func () {
+        val out = all("""
+            func f: \Int->Int { return arg\ }
+            var g: \Int->Int = f
+            var x: Int = 10
+            output std g (\x)
+        """.trimIndent())
+        println(out)
+        assert(out == "10\n")
     }
 
     // ALL
