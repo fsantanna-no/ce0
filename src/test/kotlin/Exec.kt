@@ -383,6 +383,7 @@ class Exec {
         call f \x
         output std x
         """.trimIndent())
+        println(out)
         assert(out == "2\n")
     }
     @Test

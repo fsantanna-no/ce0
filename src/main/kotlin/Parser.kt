@@ -158,13 +158,24 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
         }
     }
 
-    fun dnref (tk_dn: Tk.Chr?, e: Expr): Expr? {
-        if (tk_dn == null) {
+    fun dnref (tk: Tk.Chr?, e: Expr): Expr? {
+        if (tk == null) {
             return e
         }
         return when (e) {
-            is Expr.Nat, is Expr.Var, is Expr.Upref, is Expr.Dnref,
-            is Expr.Index, is Expr.Call -> Expr.Dnref(tk_dn, e)
+            is Expr.Var -> Expr.Dnref(tk, e)
+            else -> {
+                all.err_tk(e.tk, "unexpected operand to `\\´")
+                return null
+            }
+        }
+    }
+    fun upref (tk: Tk.Chr?, e: Expr): Expr? {
+        if (tk == null) {
+            return e
+        }
+        return when (e) {
+            is Expr.Var -> Expr.Upref(tk, e)
             else -> {
                 all.err_tk(e.tk, "unexpected operand to `\\´")
                 return null
@@ -178,11 +189,11 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
             return null
         }
 
-        var tk_dn = if (all.accept(TK.CHAR,'\\')) all.tk0 as Tk.Chr else null
+        var tk_slash = if (all.accept(TK.CHAR,'\\')) all.tk0 as Tk.Chr else null
 
         while (all.accept(TK.CHAR,'.')) {
-            ret = dnref(tk_dn, ret!!)
-            tk_dn = null
+            ret = dnref(tk_slash, ret!!)
+            tk_slash = null
 
             ret = when {
                 all.accept(TK.XNUM) -> Expr.Index(all.tk0 as Tk.Num, ret!!)
@@ -204,7 +215,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
             }
         }
 
-        return Pair(ret!!,tk_dn)
+        return Pair(ret!!,tk_slash)
     }
 
     fun call (ispre: Boolean): Expr? {
@@ -221,10 +232,18 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
             when {
                 all.consumed(tk_bef) -> return null // failed parser_expr and consumed input: error
                 !ispre -> return dnref(tk_dn,e1)
-                 ispre -> e2 = Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()")) // call f -> call f ()
+                 ispre -> {
+                     val x = dnref(tk_dn,e1)
+                     tk_dn = null
+                     if (x == null) {
+                         return null
+                     }
+                     e1 = x
+                     e2 = Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()")) // call f -> call f ()
+                 }
             }
         }
-        e2 = dnref(tk_dn, e2!!)
+        e2 = upref(tk_dn, e2!!)
         //tk_dn = null
 
         if (e1 is Expr.Var || (e1 is Expr.Nat && (!ispre || tk_pre.enu==TK.CALL))) {
