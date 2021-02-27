@@ -49,7 +49,7 @@ fun parser_type (all: All): Type? {
             all.accept(TK.XUSER) -> Type.User(all.tk0 as Tk.Str)
             all.accept(TK.CHAR,'\\') -> {
                 val tk0 = all.tk0 as Tk.Chr
-                val tp = parser_type(all)
+                val tp = one()
                 if (tp == null) {
                     return null
                 }

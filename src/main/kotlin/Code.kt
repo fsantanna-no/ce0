@@ -1,10 +1,12 @@
 fun Type.toce (): String {
     return when (this) {
+        is Type.Any   -> "Any"
         is Type.Unit  -> "Unit"
+        is Type.Ptr   -> this.tp.toce() + "_ptr"
         is Type.Nat   -> this.tk_.str.replace('*','_')
         is Type.User  -> this.tk_.str
         is Type.Tuple -> "TUPLE__" + this.vec.map { it.toce() }.joinToString("__")
-        else -> { println(this) ; error("TODO") }
+        is Type.Func  -> "FUNC__" + this.inp.toce() + "__" + this.out.toce()
     }
 }
 
@@ -43,17 +45,29 @@ fun Type.pre (): String {
 
             """.trimIndent()
         }
+        is Type.Func  -> {
+            val ce = this.toce()
+            this.out.pre() + this.inp.pre() +
+            """
+                #ifndef __${ce}__
+                #define __${ce}__
+                typedef ${this.out.pos()} $ce (${this.inp.pos()});
+                #endif
+
+            """.trimIndent()
+        }
         else -> ""
     }
 }
 
 fun Type.pos (): String {
     return when (this) {
+        is Type.Any, is Type.Unit  -> "void"
         is Type.Ptr   -> this.tp.pos() + "*"
         is Type.Nat   -> this.tk_.str
         is Type.User  -> this.tk_.str
         is Type.Tuple -> this.toce()
-        else -> { println(this) ; error("TODO") }
+        is Type.Func  -> this.toce() + "*"
     }
 }
 
@@ -218,7 +232,7 @@ fun Stmt.pos (): String {
             return (ret1 + ret2 + ret3 + ret4 + ret5)
         }
         is Stmt.Func  -> {
-            this.type.inp.pre() + this.type.out.pre() + when (this.tk_.str) {
+            this.type.pre() + when (this.tk_.str) {
                 "output_std" -> ""
                 else -> {
                     val out = this.type.out.let { if (it is Type.Unit) "void" else it.pos() }

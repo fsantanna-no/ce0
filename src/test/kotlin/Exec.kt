@@ -181,6 +181,26 @@ class Exec {
         """.trimIndent())
         assert(out == "10\n")
     }
+    @Test
+    fun d04_arg () {
+        val out = all("""
+        func f : Int -> Int {
+           set arg = _(arg+1)
+           return arg
+        }
+        output std f 1
+        """.trimIndent())
+        assert(out == "2\n")
+    }
+    @Test
+    fun d05_func_var () {
+        val out = all("""
+        func f: Int->Int { return arg }
+        var p: Int->Int = f
+        output std p 10
+        """.trimIndent())
+        assert(out == "10\n")
+    }
 
     // OUTPUT
 
@@ -331,7 +351,7 @@ class Exec {
     // PTR
 
     @Test
-    fun h01 () {
+    fun h01_ptr () {
         val out = all("""
             var y: Int = 10
             var x: \Int = \y
@@ -339,5 +359,45 @@ class Exec {
         """.trimIndent())
         assert(out == "10\n")
     }
+    @Test
+    fun h02_ptr_func () {
+        val out = all("""
+        func f : \Int -> () {
+           set arg\ = _(*arg+1)
+           return
+        }
+        var x: Int = 1
+        call f \x
+        output std x
+        """.trimIndent())
+        assert(out == "2\n")
+    }
+
+    // ALL
+
+    @Test
+    fun z01 () {
+        val out = all("""
+        type Bool {
+            False: ()
+            True:  ()
+        }
+        func inv : Bool -> Bool {
+            var tst: Bool = arg.True?
+            if tst {
+                var v: Bool = Bool.False()
+                return v
+            } else {
+                var v: Bool = Bool.True
+                return v
+            }
+        }
+        var a: Bool = Bool.True
+        var b: Bool = inv a
+        output std b
+        """.trimIndent())
+        assert(out == "False\n")
+    }
+
 
 }
