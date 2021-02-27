@@ -281,6 +281,7 @@ class Parser {
         val e = parser_expr(all,false)
         assert(e==null && all.err=="(ln 1, col 5): expected index or subtype : have `.´")
     }
+    // testar a.b.c
 
     // UPREF, DNREF
 
@@ -310,7 +311,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("()\\"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e==null && all.err=="(ln 1, col 3): unexpected operand to `\\´")
+        assert(e==null && all.err=="(ln 1, col 1): unexpected operand to `\\´")
     }
 
     // PRED, DISC

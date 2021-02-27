@@ -158,74 +158,93 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
         }
     }
 
-    var ispre = (canpre && (all.accept(TK.CALL) || all.accept(TK.OUT)))
-    val tk_pre = all.tk0
-
-    var ret = one()
-    if (ret == null) {
-        return null
-    }
-
-    while (true) {
-        val tk_bef = all.tk0
-        when {
-            // INDEX, DISC, PRED
-            !ispre && all.accept(TK.CHAR,'.') -> {
-                when {
-                    all.accept(TK.XNUM) -> {
-                        ret = Expr.Index(all.tk0 as Tk.Num, ret!!)
-                    }
-                    all.accept(TK.XUSER) || all.accept(TK.XEMPTY) -> {
-                        val tk = all.tk0 as Tk.Str
-                        when {
-                            all.accept(TK.CHAR,'?') -> ret = Expr.Pred(tk,ret!!)
-                            all.accept(TK.CHAR,'!') -> ret = Expr.Disc(tk,ret!!)
-                            else -> {
-                                all.err_expected("`?´ or `!´")
-                                return null
-                            }
-                        }
-                    }
-                    else -> {
-                        all.err_expected("index or subtype")
-                        return null
-                    }
-                }
-            }
-            // DNREF
-            !ispre && all.accept(TK.CHAR,'\\') -> when (ret) {
-                is Expr.Nat, is Expr.Var, is Expr.Upref, is Expr.Dnref, is Expr.Index, is Expr.Call -> ret = Expr.Dnref(all.tk0,ret)
-                else -> { all.err_tk(all.tk0, "unexpected operand to `\\´") ; return null }
-            }
-            // CALL
+    fun dnref (tk_dn: Tk.Chr?, e: Expr): Expr? {
+        if (tk_dn == null) {
+            return e
+        }
+        return when (e) {
+            is Expr.Nat, is Expr.Var, is Expr.Upref, is Expr.Dnref,
+            is Expr.Index, is Expr.Call -> Expr.Dnref(tk_dn, e)
             else -> {
-                var e = parser_expr(all, false)
-                if (e == null) {
-                    when {
-                        all.consumed(tk_bef) -> return null // failed parser_expr and consumed input: error
-                        ispre    -> e = Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()")) // call f -> call f ()
-                        !ispre   -> break // just e (not a call)
-                    }
-                }
-                if (ret is Expr.Var || (ret is Expr.Nat && (!ispre || tk_pre.enu==TK.CALL))) {
-                        // ok
-                } else {
-                    all.err_tk(ret!!.tk, "expected function")
-                    return null
-                }
-                val tk0 = if (ispre) tk_pre as Tk.Key else Tk.Key(TK.CALL,tk_pre.lin,tk_pre.col,"call")
-                if (ispre && tk_pre.enu==TK.OUT) {
-                    assert(ret is Expr.Var)
-                    ret = Expr.Var (
-                        Tk.Str(TK.XVAR,ret.tk.lin,ret.tk.col,"output_"+(ret.tk as Tk.Str).str)
-                    )
-                }
-                ret = Expr.Call(tk0, ret, e!!)
+                all.err_tk(e.tk, "unexpected operand to `\\´")
+                return null
             }
         }
-        ispre = false
     }
-    return ret
+
+    fun dots (): Pair<Expr,Tk.Chr?>? {
+        var ret = one()
+        if (ret == null) {
+            return null
+        }
+
+        var tk_dn = if (all.accept(TK.CHAR,'\\')) all.tk0 as Tk.Chr else null
+
+        while (all.accept(TK.CHAR,'.')) {
+            ret = dnref(tk_dn, ret!!)
+            tk_dn = null
+
+            ret = when {
+                all.accept(TK.XNUM) -> Expr.Index(all.tk0 as Tk.Num, ret!!)
+                all.accept(TK.XUSER) || all.accept(TK.XEMPTY) -> {
+                    val tk = all.tk0 as Tk.Str
+                    when {
+                        all.accept(TK.CHAR, '?') -> Expr.Pred(tk, ret!!)
+                        all.accept(TK.CHAR, '!') -> Expr.Disc(tk, ret!!)
+                        else -> {
+                            all.err_expected("`?´ or `!´")
+                            return null
+                        }
+                    }
+                }
+                else -> {
+                    all.err_expected("index or subtype")
+                    return null
+                }
+            }
+        }
+
+        return Pair(ret!!,tk_dn)
+    }
+
+    fun call (ispre: Boolean): Expr? {
+        val tk_pre = all.tk0
+        val ret = dots()
+        if (ret == null) {
+            return null
+        }
+        var (e1,tk_dn) = ret
+
+        val tk_bef = all.tk0
+        var e2 = parser_expr(all, false)
+        if (e2 == null) {
+            when {
+                all.consumed(tk_bef) -> return null // failed parser_expr and consumed input: error
+                !ispre -> return dnref(tk_dn,e1)
+                 ispre -> e2 = Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()")) // call f -> call f ()
+            }
+        }
+        e2 = dnref(tk_dn, e2!!)
+        //tk_dn = null
+
+        if (e1 is Expr.Var || (e1 is Expr.Nat && (!ispre || tk_pre.enu==TK.CALL))) {
+            // ok
+        } else {
+            all.err_tk(e1.tk, "expected function")
+            return null
+        }
+        val tk_pre2 = if (ispre) tk_pre as Tk.Key else Tk.Key(TK.CALL,tk_pre.lin,tk_pre.col,"call")
+        if (ispre && tk_pre2.enu==TK.OUT) {
+            assert(e1 is Expr.Var)
+            e1 = Expr.Var (
+                Tk.Str(TK.XVAR,e1.tk.lin,e1.tk.col,"output_"+(e1.tk as Tk.Str).str)
+            )
+        }
+        return Expr.Call(tk_pre2, e1, e2!!)
+    }
+
+    val ispre = (canpre && (all.accept(TK.CALL) || all.accept(TK.OUT)))
+    return call(ispre)
 }
 
 fun parser_stmt (all: All): Stmt? {
