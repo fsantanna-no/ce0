@@ -224,17 +224,17 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
         if (ret == null) {
             return null
         }
-        var (e1,tk_dn) = ret
+        var (e1,tk_slash) = ret
 
         val tk_bef = all.tk0
         var e2 = parser_expr(all, false)
         if (e2 == null) {
             when {
                 all.consumed(tk_bef) -> return null // failed parser_expr and consumed input: error
-                !ispre -> return dnref(tk_dn,e1)
+                !ispre -> return dnref(tk_slash,e1)
                  ispre -> {
-                     val x = dnref(tk_dn,e1)
-                     tk_dn = null
+                     val x = dnref(tk_slash,e1)
+                     tk_slash = null
                      if (x == null) {
                          return null
                      }
@@ -243,7 +243,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
                  }
             }
         }
-        e2 = upref(tk_dn, e2!!)
+        e2 = upref(tk_slash, e2!!)
         //tk_dn = null
 
         if (e1 is Expr.Var || (e1 is Expr.Nat && (!ispre || tk_pre.enu==TK.CALL))) {

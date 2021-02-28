@@ -95,6 +95,7 @@ fun Expr.pos (): String {
         is Expr.Nat   -> this.tk_.str
         is Expr.Int   -> this.tk_.num.toString()
         is Expr.Var   -> if (TP is Type.Unit) "" else this.tk_.str
+        is Expr.Empty -> "null"
         is Expr.Upref -> "&" + this.e.pos()
         is Expr.Dnref -> "*" + this.e.pos()
         is Expr.Index -> this.e.pos() + "._" + this.tk_.num

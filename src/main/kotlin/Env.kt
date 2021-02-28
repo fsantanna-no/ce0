@@ -104,7 +104,7 @@ fun Expr.toType (): Type {
         is Expr.Cons  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, this.sup.str))
         is Expr.Disc  -> this.supSubToType((this.e.toType() as Type.User).tk_.str, this.tk_.str)!!
         is Expr.Pred  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, "Bool"))
-        else -> { println(this) ; error("TODO") }
+        is Expr.Empty -> Type.User(this.tk_)
     }
 }
 
@@ -126,6 +126,13 @@ fun check_dcls (s: Stmt): String? {
             is Expr.Var -> {
                 if (e.idToStmt(e.tk_.str) == null) {
                     ret = All_err_tk(e.tk, "undeclared variable \"${e.tk_.str}\"")
+                    return false
+                }
+            }
+            is Expr.Empty -> {
+                val sup = (e.toType() as Type.User).tk_.str
+                if (e.idToStmt(sup) == null) {
+                    ret = All_err_tk(e.tk, "undeclared type \"$sup\"")
                     return false
                 }
             }

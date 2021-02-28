@@ -68,6 +68,15 @@ class Env {
         """.trimIndent())
         assert(out == "(ln 1, col 12): invalid discriminator : expected user type")
     }
+    @Test
+    fun b05_user_empty_err () {
+        val Z = "\$Z"
+        val out = all("""
+            output std $Z
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 1, col 12): undeclared type \"Z\"")
+    }
 
     // TYPE
 
