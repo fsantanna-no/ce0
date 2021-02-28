@@ -314,7 +314,25 @@ class Exec {
         assert(out == "True\n")
     }
     @Test
-    fun f09_user_disc () {
+    fun f08_user_pred_err () {
+        val out = all("""
+            type Bool { False: () ; True: () }
+            type Z { Z:() }
+            var z: Z = Z.Z
+            output std z.Err?
+        """.trimIndent())
+        assert(out == "(ln 4, col 14): undeclared subcase \"Err\"")
+    }
+    @Test
+    fun f09_user_disc_err () {
+        val out = all("""
+            type Z { Z:() }
+            var z: Z = Z.Z
+            output std z.Err!
+        """.trimIndent())
+        assert(out == "(ln 3, col 14): undeclared subcase \"Err\"")
+    }
+    fun f10_user_disc () {
         val out = all("""
             type Bool { False: () ; True: () }
             type Z { X:() Y:() }
@@ -324,7 +342,7 @@ class Exec {
         assert(out == "()\n")
     }
     @Test
-    fun f10_user_disc_err () {
+    fun f11_user_disc_err () {
         val out = all("""
             type Bool { False: () ; True: () }
             type Z { X:() Y:() }
@@ -334,7 +352,7 @@ class Exec {
         assert(out == "out.exe: out.c:75: main: Assertion `z.sub == Z_X' failed.\n")
     }
     @Test
-    fun f11_user_disc_pred_idx () {
+    fun f12_user_disc_pred_idx () {
         val out = all("""
             type Bool { False: () ; True: () }
             type X { Z:() }
@@ -344,11 +362,33 @@ class Exec {
         assert(out == "True\n")
     }
     @Test
-    fun f12_user_disc_pred_err () {
+    fun f13_user_disc_pred_err () {
         val out = all("""
             output std ().Z?
         """.trimIndent())
         assert(out == "(ln 1, col 12): invalid predicate : expected user type")
+    }
+    @Test
+    fun f14_user_dots_err () {
+        val out = all("""
+            type Z { Z:() }
+            type Y { Y:Z }
+            type X { X:Y }
+            var x: X = X.X Y.Y Z.Z
+            output std x.X!.Z!
+        """.trimIndent())
+        assert(out == "(ln 5, col 17): undeclared subcase \"Z\"")
+    }
+    @Test
+    fun f15_user_dots () {
+        val out = all("""
+            type Z { Z:() }
+            type Y { Y:Z }
+            type X { X:Y }
+            var x: X = X.X Y.Y Z.Z
+            output std x.X!.Y!.Z!
+        """.trimIndent())
+        assert(out == "()\n")
     }
 
     // IF

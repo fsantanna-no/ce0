@@ -150,9 +150,15 @@ fun check_dcls (s: Stmt): String? {
                 }
             }
             is Expr.Disc -> {
-                if (e.e.toType() !is Type.User) {
-                    ret = All_err_tk(e.e.tk, "invalid discriminator : expected user type")
-                    return false
+                when {
+                    (e.e.toType() !is Type.User) -> {
+                        ret = All_err_tk(e.e.tk, "invalid discriminator : expected user type")
+                        return false
+                    }
+                    (e.supSubToType((e.e.toType() as Type.User).tk_.str, e.tk_.str) == null) -> {
+                        ret = All_err_tk(e.tk, "undeclared subcase \"${e.tk_.str}\"")
+                        return false
+                    }
                 }
             }
             is Expr.Pred -> {
