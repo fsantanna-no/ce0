@@ -446,6 +446,27 @@ class Exec {
         """.trimIndent())
         assert(out == "False\n")
     }
-
-
+    @Test
+    fun z02 () {
+        val out = all("""
+        type Bool {
+            False: ()
+            True:  ()
+        }
+        func bool: Int -> Bool {
+            return _(arg ? (Bool){Bool_True} : (Bool){Bool_False})
+        }
+        var i: Int = 1
+        var n: Int = 0
+        loop {
+            set n = _(n + i)
+            set i = _(i + 1)
+            if bool _(i > 5) {
+                break
+            }
+        }
+        output std n
+        """.trimIndent())
+        assert(out == "15\n")
+    }
 }
