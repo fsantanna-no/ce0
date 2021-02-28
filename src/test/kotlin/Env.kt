@@ -74,9 +74,9 @@ class Env {
         val out = all("""
             output std $Z
         """.trimIndent())
-        println(out)
         assert(out == "(ln 1, col 12): undeclared type \"Z\"")
     }
+    // TODO: test if empty is part of isrec
 
     // TYPE
 
@@ -123,7 +123,6 @@ class Env {
             var x: (Int,Int) = (1,2)
             set x.1 = ()
         """.trimIndent())
-        println(out)
         assert(out == "(ln 2, col 9): invalid assignment : type mismatch")
     }
     @Test

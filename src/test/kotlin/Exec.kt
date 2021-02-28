@@ -86,10 +86,10 @@ class Exec {
     fun a10_int_set () {
         val out = all("""
             var x: Int = 10
-            set x = 20
+            set x = -20
             output std x
         """.trimIndent())
-        assert(out == "20\n")
+        assert(out == "-20\n")
     }
 
     // TUPLES
