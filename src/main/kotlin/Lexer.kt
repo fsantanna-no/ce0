@@ -2,7 +2,8 @@ enum class TK {
     ERR, EOF, CHAR,
     XVAR, XUSER, XNAT, XNUM, XEMPTY,
     UNIT, ARROW,
-    BREAK, CALL, ELSE, FUNC, IF, LOOP, NAT, OUT, RET, SET, TYPE, VAR
+    BREAK, CALL, ELSE, FUNC, IF, LOOP, NAT, OUT, RET, SET, TYPE, VAR,
+    AREC
 }
 
 val key2tk: HashMap<String, TK> = hashMapOf (
@@ -18,6 +19,7 @@ val key2tk: HashMap<String, TK> = hashMapOf (
     "set"    to TK.SET,
     "type"   to TK.TYPE,
     "var"    to TK.VAR,
+    "@rec"   to TK.AREC,
 )
 
 sealed class Tk (
@@ -150,6 +152,21 @@ fun token (all: All) {
                     all.unread(c2)
                 }
                 all.tk1 = Tk.Str(TK.XNAT, LIN, COL, pay)
+            }
+            '@' -> {
+                var pay = "@"
+                all.read().let { c1=it.first ; x1=it.second }
+                while (x1.isLowerCase()) {
+                    pay += x1
+                    all.read().let { c1=it.first ; x1=it.second }
+                }
+                all.unread(c1)
+                val key = key2tk[pay]
+                if (key == null) {
+                    all.tk1 = Tk.Err(TK.ERR, LIN, COL, pay)
+                } else {
+                    all.tk1 = Tk.Key(key, LIN, COL, pay)
+                }
             }
             else -> {
                 var pay = ""
