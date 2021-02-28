@@ -142,6 +142,12 @@ fun Stmt.pos (): String {
                 ${this.false_.pos()}
             }
         """.trimIndent()
+        is Stmt.Loop  -> """
+            while (1) {
+                ${this.block.pos()}
+            }
+        """.trimIndent()
+        is Stmt.Break -> "break;\n"
         is Stmt.Call  -> this.call.pre() + this.call.pos() + ";\n"
         is Stmt.Block -> "{\n" + this.body.pos() + "}\n"
         is Stmt.Ret   -> "return" + if (this.e.toType() is Type.Unit) ";\n" else " _ret_;\n"
@@ -247,7 +253,6 @@ fun Stmt.pos (): String {
                 }
             }
         }
-        else -> { println(this) ; error("TODO") }
     }
 }
 

@@ -371,10 +371,23 @@ class Exec {
         assert(out == "()\n")
     }
 
+    // LOOP
+
+    @Test
+    fun h01_loop () {
+        val out = all("""
+        loop {
+           break
+        }
+        output std
+        """.trimIndent())
+        assert(out == "()\n")
+    }
+
     // PTR
 
     @Test
-    fun h01_ptr () {
+    fun i01_ptr () {
         val out = all("""
             var y: Int = 10
             var x: \Int = \y
@@ -383,7 +396,7 @@ class Exec {
         assert(out == "10\n")
     }
     @Test
-    fun h02_ptr_func () {
+    fun i02_ptr_func () {
         val out = all("""
         func f : \Int -> () {
            set arg\ = _(*arg+1)
@@ -397,7 +410,7 @@ class Exec {
         assert(out == "2\n")
     }
     @Test
-    fun h03_ptr_func () {
+    fun i03_ptr_func () {
         val out = all("""
             func f: \Int->Int { return arg\ }
             var g: \Int->Int = f
