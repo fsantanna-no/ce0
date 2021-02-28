@@ -91,6 +91,16 @@ class Exec {
         """.trimIndent())
         assert(out == "-20\n")
     }
+    @Test
+    fun a11_unk () {
+        val out = all("""
+            var x: Int = ?
+            set x = -20
+            output std x
+        """.trimIndent())
+        println(out)
+        assert(out == "-20\n")
+    }
 
     // TUPLES
 

@@ -104,6 +104,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
             all.accept(TK.XVAR)   -> Expr.Var(all.tk0 as Tk.Str)
             all.accept(TK.XNAT)   -> Expr.Nat(all.tk0 as Tk.Str)
             all.accept(TK.XEMPTY) -> Expr.Empty(all.tk0 as Tk.Str)
+            all.accept(TK.CHAR,'?') -> Expr.Unk(all.tk0 as Tk.Chr)
             all.accept(TK.XUSER) -> {
                 val sup = all.tk0 as Tk.Str
                 if (!all.accept_err(TK.CHAR,'.')) {
