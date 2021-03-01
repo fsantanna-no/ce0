@@ -92,6 +92,15 @@ class Env {
         println(out)
         assert(out == "(ln 1, col 15): undeclared type \"Rec\"")
     }
+    @Test
+    fun b08_user_rec_err () {
+        val out = all("""
+            type @rec Rec1 { X: Rec1 ; Y: () }
+            type Rec2 { X: Rec1 ; Y: () }
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 2, col 6): invalid type declaration : expected `@rec´")
+    }
     // TODO: test if empty is part of isrec
     // TODO: test "invalid type declaration : expected `@rec´" (needs @rec previously)
 

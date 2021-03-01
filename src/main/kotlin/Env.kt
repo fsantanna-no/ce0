@@ -114,7 +114,7 @@ fun Stmt.User.isHasRec (): Boolean {
         return when (tp) {
             is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr -> false
             is Type.Tuple -> tp.vec.any { aux(it) }
-            is Type.User  -> (tp.idToStmt(tp.tk_.str) as Stmt.User).let { it.isHasRec() }
+            is Type.User  -> this.isrec || (tp.idToStmt(tp.tk_.str) as Stmt.User).let { it.isHasRec() }
             else -> false
         }
     }
@@ -193,7 +193,8 @@ fun check_dcls (s: Stmt): String? {
         when (s) {
             is Stmt.User -> {
                 if (s.isrec != s.isHasRec()) {
-                    ret = All_err_tk(s.tk, "invalid type declaration : unexpected `@rec´")
+                    val exun = if (s.isrec) "unexpected" else "expected"
+                    ret = All_err_tk(s.tk, "invalid type declaration : $exun `@rec´")
                     return false
                 }
             }
