@@ -24,6 +24,7 @@ fun env_prelude (s: Stmt): Stmt {
  * return f(x,y)    // x+y -> y -> x -> f -> null
  */
 fun env_PRV_set (s: Stmt, cur: Stmt?): Stmt? {
+    //var cur = cur_
     fun fe (e: Expr): Boolean {
         if (cur!=null && (e is Expr.Var || e is Expr.Cons || e is Expr.Pred || e is Expr.Disc)) {
             env_PRV[e] = cur
@@ -113,7 +114,7 @@ fun Stmt.User.isHasRec (): Boolean {
         return when (tp) {
             is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr -> false
             is Type.Tuple -> tp.vec.any { aux(it) }
-            is Type.User  -> (tp.tk_.str.idToStmt(this.tk_.str) as Stmt.User).let { it.isHasRec() }
+            is Type.User  -> (tp.idToStmt(tp.tk_.str) as Stmt.User).let { it.isHasRec() }
             else -> false
         }
     }
