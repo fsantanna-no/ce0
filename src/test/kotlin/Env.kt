@@ -76,15 +76,23 @@ class Env {
         """.trimIndent())
         assert(out == "(ln 1, col 12): undeclared type \"Z\"")
     }
-    // TODO: test if empty is part of isrec
     @Test
     fun b06_user_norec_err () {
         val out = all("""
             type @rec NoRec { X: () ; Y: () }
         """.trimIndent())
         println(out)
-        assert(out == "(ln 2, col 1): invalid type declaration : unexpected `@rec´")
+        assert(out == "(ln 1, col 11): invalid type declaration : unexpected `@rec´")
     }
+    @Test
+    fun b07_user_rec_err () {
+        val out = all("""
+            type Rec { X: Rec ; Y: () }
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 1, col 11): invalid type declaration : unexpected `@rec´")
+    }
+    // TODO: test if empty is part of isrec
 
     // TYPE
 

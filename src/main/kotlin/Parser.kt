@@ -218,7 +218,6 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
 
         return Pair(ret!!,tk_slash)
     }
-
     fun call (ispre: Boolean): Expr? {
         val tk_pre = all.tk0
         val ret = dots()
@@ -324,6 +323,7 @@ fun parser_stmt (all: All): Stmt? {
             return Stmt.Nat(all.tk0 as Tk.Str)
         }
         all.accept(TK.TYPE)  -> {
+            val isrec = all.accept(TK.AREC)
             if (!all.accept_err(TK.XUSER)) {
                 return null
             }
@@ -366,7 +366,7 @@ fun parser_stmt (all: All): Stmt? {
                 return null
             }
 
-            return Stmt.User(tk_id,false,subs.toTypedArray())
+            return Stmt.User(tk_id,isrec,subs.toTypedArray())
         }
         all.check(TK.CALL) || all.check(TK.OUT) -> {
             val tk0 = all.tk1 as Tk.Key

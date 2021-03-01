@@ -86,6 +86,7 @@ class Parser {
         val tp = parser_type(all)
         assert(tp is Type.Ptr && tp.tp is Type.Unit)
     }
+
     // EXPR
 
     @Test
@@ -353,6 +354,13 @@ class Parser {
         lexer(all)
         val s = parser_stmt(all)
         assert(s is Stmt.Var && s.type is Type.Tuple && s.init is Expr.Tuple)
+    }
+    @Test
+    fun c04_parser_stmt_user_rec () {
+        val all = All_new(PushbackReader(StringReader("type @rec Bool { False:() ; True:() }"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.User && s.isrec)
     }
 
     // STMT_CALL

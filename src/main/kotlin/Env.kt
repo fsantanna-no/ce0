@@ -23,34 +23,34 @@ fun env_prelude (s: Stmt): Stmt {
  * var y: ...
  * return f(x,y)    // x+y -> y -> x -> f -> null
  */
-fun env_PRV_set (s: Stmt, prv: Stmt?): Stmt? {
+fun env_PRV_set (s: Stmt, cur: Stmt?): Stmt? {
     fun fe (e: Expr): Boolean {
-        if (prv!=null && (e is Expr.Var || e is Expr.Cons || e is Expr.Pred || e is Expr.Disc)) {
-            env_PRV[e] = prv
+        if (cur!=null && (e is Expr.Var || e is Expr.Cons || e is Expr.Pred || e is Expr.Disc)) {
+            env_PRV[e] = cur
         }
         return true
     }
     fun ft (tp: Type): Boolean {
-        if (prv!=null && tp is Type.User) {
-            env_PRV[tp] = prv
+        if (cur!=null && tp is Type.User) {
+            env_PRV[tp] = cur
         }
         return true
     }
-    if (prv!=null && (s is Stmt.Var || s is Stmt.User || s is Stmt.Func)) {
-        env_PRV[s] = prv
+    if (cur!=null && (s is Stmt.Var || s is Stmt.User || s is Stmt.Func)) {
+        env_PRV[s] = cur
     }
     return when (s) {
-        is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> prv
+        is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> cur
         is Stmt.Var   -> { s.type.visit(::ft) ; s.init.visit(::fe) ; s }
         is Stmt.User  -> { s.subs.forEach { it.second.visit(::ft) } ; s }
-        is Stmt.Set   -> { s.dst.visit(::fe) ; s.src.visit(::fe) ; prv }
-        is Stmt.Call  -> { s.call.visit(::fe) ; prv }
-        is Stmt.Seq   -> { val prv2=env_PRV_set(s.s1,prv) ; env_PRV_set(s.s2, prv2) }
-        is Stmt.If    -> { s.tst.visit(::fe) ; env_PRV_set(s.true_,prv) ; env_PRV_set(s.false_,prv) ; prv }
-        is Stmt.Func  -> { if (s.block != null) { s.type.visit(::ft) ; env_PRV_set(s.block,prv) } ; s }
-        is Stmt.Ret   -> { s.e.visit(::fe) ; prv }
-        is Stmt.Loop  -> { env_PRV_set(s.block,prv) ; prv }
-        is Stmt.Block -> { env_PRV_set(s.body,prv) ; prv }
+        is Stmt.Set   -> { s.dst.visit(::fe) ; s.src.visit(::fe) ; cur }
+        is Stmt.Call  -> { s.call.visit(::fe) ; cur }
+        is Stmt.Seq   -> { val prv2=env_PRV_set(s.s1,cur) ; env_PRV_set(s.s2, prv2) }
+        is Stmt.If    -> { s.tst.visit(::fe) ; env_PRV_set(s.true_,cur) ; env_PRV_set(s.false_,cur) ; cur }
+        is Stmt.Func  -> { if (s.block != null) { s.type.visit(::ft) ; env_PRV_set(s.block,cur) } ; s }
+        is Stmt.Ret   -> { s.e.visit(::fe) ; cur }
+        is Stmt.Loop  -> { env_PRV_set(s.block,cur) ; cur }
+        is Stmt.Block -> { env_PRV_set(s.body,cur) ; cur }
     }
 }
 
@@ -106,6 +106,18 @@ fun Expr.toType (): Type {
         is Expr.Pred  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, "Bool"))
         is Expr.Empty -> Type.User(this.tk_)
     }
+}
+
+fun Stmt.User.isHasRec (): Boolean {
+    fun aux (tp: Type): Boolean {
+        return when (tp) {
+            is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr -> false
+            is Type.Tuple -> tp.vec.any { aux(it) }
+            is Type.User  -> (tp.tk_.str.idToStmt(this.tk_.str) as Stmt.User).let { it.isHasRec() }
+            else -> false
+        }
+    }
+    return this.subs.any { aux(it.second) }
 }
 
 fun check_dcls (s: Stmt): String? {
@@ -176,7 +188,18 @@ fun check_dcls (s: Stmt): String? {
         }
         return true
     }
-    s.visit(null,::fe,::ft)
+    fun fs (s: Stmt): Boolean {
+        when (s) {
+            is Stmt.User -> {
+                if (s.isrec != s.isHasRec()) {
+                    ret = All_err_tk(s.tk, "invalid type declaration : unexpected `@rec´")
+                    return false
+                }
+            }
+        }
+        return true
+    }
+    s.visit(::fs,::fe,::ft)
     return ret
 }
 
