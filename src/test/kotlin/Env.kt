@@ -90,9 +90,10 @@ class Env {
             type Rec { X: Rec ; Y: () }
         """.trimIndent())
         println(out)
-        assert(out == "(ln 1, col 11): invalid type declaration : unexpected `@rec´")
+        assert(out == "(ln 1, col 15): undeclared type \"Rec\"")
     }
     // TODO: test if empty is part of isrec
+    // TODO: test "invalid type declaration : expected `@rec´" (needs @rec previously)
 
     // TYPE
 

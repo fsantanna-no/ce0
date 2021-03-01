@@ -23,17 +23,17 @@ fun env_prelude (s: Stmt): Stmt {
  * var y: ...
  * return f(x,y)    // x+y -> y -> x -> f -> null
  */
-fun env_PRV_set (s: Stmt, cur: Stmt?): Stmt? {
-    //var cur = cur_
+fun env_PRV_set (s: Stmt, cur_: Stmt?): Stmt? {
+    var cur = cur_
     fun fe (e: Expr): Boolean {
         if (cur!=null && (e is Expr.Var || e is Expr.Cons || e is Expr.Pred || e is Expr.Disc)) {
-            env_PRV[e] = cur
+            env_PRV[e] = cur!!
         }
         return true
     }
     fun ft (tp: Type): Boolean {
         if (cur!=null && tp is Type.User) {
-            env_PRV[tp] = cur
+            env_PRV[tp] = cur!!
         }
         return true
     }
@@ -43,12 +43,12 @@ fun env_PRV_set (s: Stmt, cur: Stmt?): Stmt? {
     return when (s) {
         is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> cur
         is Stmt.Var   -> { s.type.visit(::ft) ; s.init.visit(::fe) ; s }
-        is Stmt.User  -> { s.subs.forEach { it.second.visit(::ft) } ; s }
+        is Stmt.User  -> { if (s.isrec) cur=s ; s.subs.forEach { it.second.visit(::ft) } ; s }
         is Stmt.Set   -> { s.dst.visit(::fe) ; s.src.visit(::fe) ; cur }
         is Stmt.Call  -> { s.call.visit(::fe) ; cur }
-        is Stmt.Seq   -> { val prv2=env_PRV_set(s.s1,cur) ; env_PRV_set(s.s2, prv2) }
+        is Stmt.Seq   -> { val prv2=env_PRV_set(s.s1,cur) ;  env_PRV_set(s.s2, prv2) }
         is Stmt.If    -> { s.tst.visit(::fe) ; env_PRV_set(s.true_,cur) ; env_PRV_set(s.false_,cur) ; cur }
-        is Stmt.Func  -> { if (s.block != null) { s.type.visit(::ft) ; env_PRV_set(s.block,cur) } ; s }
+        is Stmt.Func  -> { cur=s ; if (s.block != null) { s.type.visit(::ft) ; env_PRV_set(s.block,cur) } ; s }
         is Stmt.Ret   -> { s.e.visit(::fe) ; cur }
         is Stmt.Loop  -> { env_PRV_set(s.block,cur) ; cur }
         is Stmt.Block -> { env_PRV_set(s.body,cur) ; cur }
