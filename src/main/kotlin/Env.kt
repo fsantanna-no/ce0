@@ -26,7 +26,7 @@ fun env_prelude (s: Stmt): Stmt {
 fun env_PRV_set (s: Stmt, cur_: Stmt?): Stmt? {
     var cur = cur_
     fun fe (e: Expr): Boolean {
-        if (cur!=null && (e is Expr.Var || e is Expr.Cons || e is Expr.Pred || e is Expr.Disc)) {
+        if (cur!=null && (e is Expr.Int || e is Expr.Var || e is Expr.Empty || e is Expr.Cons || e is Expr.Pred || e is Expr.Disc)) {
             env_PRV[e] = cur!!
         }
         return true
@@ -56,8 +56,8 @@ fun env_PRV_set (s: Stmt, cur_: Stmt?): Stmt? {
 }
 
 fun Any.env_dump () {
-    println(this)
     val env = env_PRV[this]
+    println(env)
     if (env != null) {
         env.env_dump()
     }
@@ -84,10 +84,15 @@ fun Any.supSubToType (sup: String, sub: String): Type? {
 }
 
 fun Expr.toType (): Type {
+    val outer = this
+    fun Type.User.set_env (): Type.User {
+        env_PRV[this] = env_PRV[outer]!!
+        return this
+    }
     return when (this) {
         is Expr.Unk   -> Type.Any(this.tk_)
         is Expr.Unit  -> Type.Unit(this.tk_)
-        is Expr.Int   -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col,"Int"))
+        is Expr.Int   -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col,"Int")).set_env()
         is Expr.Nat   -> Type.Nat(this.tk_)
         is Expr.Upref -> Type.Ptr(this.tk_, this.e.toType())
         is Expr.Dnref -> (this.e.toType() as Type.Ptr).tp
@@ -102,23 +107,11 @@ fun Expr.toType (): Type {
         is Expr.Tuple -> Type.Tuple(this.tk_, this.vec.map{it.toType()}.toTypedArray())
         is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType() as Type.Func).out
         is Expr.Index -> (this.e.toType() as Type.Tuple).vec[this.tk_.num-1]
-        is Expr.Cons  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, this.sup.str))
+        is Expr.Cons  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, this.sup.str)).set_env()
         is Expr.Disc  -> this.supSubToType((this.e.toType() as Type.User).tk_.str, this.tk_.str)!!
-        is Expr.Pred  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, "Bool"))
-        is Expr.Empty -> Type.User(this.tk_)
+        is Expr.Pred  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, "Bool")).set_env()
+        is Expr.Empty -> Type.User(this.tk_).set_env()
     }
-}
-
-fun Stmt.User.isHasRec (): Boolean {
-    fun aux (tp: Type): Boolean {
-        return when (tp) {
-            is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr -> false
-            is Type.Tuple -> tp.vec.any { aux(it) }
-            is Type.User  -> this.isrec || (tp.idToStmt(tp.tk_.str) as Stmt.User).let { it.isHasRec() }
-            else -> false
-        }
-    }
-    return this.subs.any { aux(it.second) }
 }
 
 fun check_dcls (s: Stmt): String? {
@@ -190,6 +183,17 @@ fun check_dcls (s: Stmt): String? {
         return true
     }
     fun fs (s: Stmt): Boolean {
+        fun Stmt.User.isHasRec (): Boolean {
+            fun aux (tp: Type): Boolean {
+                return when (tp) {
+                    is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr -> false
+                    is Type.Tuple -> tp.vec.any { aux(it) }
+                    is Type.User  -> this.isrec || (tp.idToStmt(tp.tk_.str) as Stmt.User).let { it.isHasRec() }
+                    else -> false
+                }
+            }
+            return this.subs.any { aux(it.second) }
+        }
         when (s) {
             is Stmt.User -> {
                 if (s.isrec != s.isHasRec()) {
@@ -214,6 +218,14 @@ fun Type.isSupOf (sub: Type): Boolean {
         (this is Type.Tuple && sub is Type.Tuple) ->
             (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
         else -> true
+    }
+}
+
+fun Type.ishasrec (): Boolean {
+    return when (this) {
+        is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
+        is Type.Tuple -> this.vec.any { it.ishasrec() }
+        is Type.User  -> (this.idToStmt(this.tk_.str) as Stmt.User).isrec
     }
 }
 

@@ -461,6 +461,22 @@ class Exec {
         assert(out == "10\n")
     }
 
+    // REC
+
+    @Test
+    fun j01_list () {
+        val List = "\$List"
+        val out = all("""
+            type @rec List {
+               Item: List
+            }
+            var l: List = $List
+            output std \l
+        """.trimIndent())
+        println(out)
+        assert(out == "$\n")
+    }
+
     // ALL
 
     @Test

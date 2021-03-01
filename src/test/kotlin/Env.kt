@@ -102,7 +102,7 @@ class Env {
         assert(out == "(ln 2, col 6): invalid type declaration : expected `@rec´")
     }
     // TODO: test if empty is part of isrec
-    // TODO: test "invalid type declaration : expected `@rec´" (needs @rec previously)
+    // TODO: invalid type declaration : unmatching predeclaration
 
     // TYPE
 

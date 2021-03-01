@@ -65,7 +65,13 @@ fun Type.pos (): String {
         is Type.Any, is Type.Unit  -> "void"
         is Type.Ptr   -> this.tp.pos() + "*"
         is Type.Nat   -> this.tk_.str
-        is Type.User  -> this.tk_.str
+        is Type.User  -> (this.idToStmt(this.tk_.str) as Stmt.User).let {
+            if (it.isrec) {
+                "struct ${this.tk_.str}*"
+            } else {
+                this.tk_.str
+            }
+        }
         is Type.Tuple -> this.toce()
         is Type.Func  -> this.toce() + "*"
     }
@@ -95,7 +101,7 @@ fun Expr.pos (): String {
         is Expr.Nat   -> this.tk_.str
         is Expr.Int   -> this.tk_.num.toString()
         is Expr.Var   -> if (TP is Type.Unit) "" else this.tk_.str
-        is Expr.Empty -> "null"
+        is Expr.Empty -> "NULL"
         is Expr.Upref -> "&" + this.e.pos()
         is Expr.Dnref -> "*" + this.e.pos()
         is Expr.Index -> this.e.pos() + "._" + this.tk_.num
@@ -207,9 +213,22 @@ fun Stmt.pos (): String {
                 
             """.trimIndent()
 
+            // void outout_std_Bool_ (Bool v) { ... }
+            val (v,fn,ptr) = if (this.isrec) Triple("(*(*v))","_ptr","**") else Triple("v","","")
             val ret5 = """
-                void output_std_${ID}_ ($ID v) {
-                    switch (v.sub) {
+                void output_std_$ID${fn}_ ($ID$ptr v) {
+                    ${
+                        if (this.isrec) {
+                            """
+                            if (*v == NULL) {
+                                putchar('$');
+                                return;
+                            }
+    
+                            """
+                        } else { "" }
+                    }
+                    switch ($v.sub) {
                         ${this.subs
                             .map { (sub,tp) -> """
                                 case ${ID}_${sub.str}:
@@ -217,8 +236,11 @@ fun Stmt.pos (): String {
                                     ${
                                         when (tp) {
                                             is Type.Unit -> ""
-                                            is Type.Nat -> "putchar('_');"
-                                            else -> "output_std_${tp.toce()}_(v._${sub.str});"
+                                            is Type.Nat  -> "putchar('_');"
+                                            else -> {
+                                                val (op2,fn2) = if (tp.ishasrec()) Pair("&","_ptr") else Pair("","")
+                                                "output_std_${tp.toce()}${fn2}_($op2$v._${sub.str});"
+                                            }
                                         }.let { if (it.isEmpty()) it else "putchar(' ');\n"+it }
                                     }
                                     break;
@@ -229,8 +251,8 @@ fun Stmt.pos (): String {
                         }
                     }
                 }
-                void output_std_${ID} ($ID v) {
-                    output_std_${ID}_(v);
+                void output_std_$ID$fn ($ID$ptr v) {
+                    output_std_$ID${fn}_(v);
                     puts("");
                 }
                 
