@@ -81,7 +81,12 @@ fun Expr.pre (): String {
     return when (this) {
         is Expr.Unk, is Expr.Unit, is Expr.Int, is Expr.Var, is Expr.Nat, is Expr.Empty -> ""
         is Expr.Tuple -> this.toType().pre() + this.vec.map { it.pre() }.joinToString("")
-        is Expr.Cons  -> this.arg.pre()
+        is Expr.Cons  -> {
+            val user = this.idToStmt(this.sup.str)!! as Stmt.User
+            val tp = user.subs.first { it.first.str==this.sub.str }.second
+            val arg = if (tp is Type.Unit) "" else (", " + this.arg.pos())
+            this.arg.pre() + "${this.toType().pos()} _tmp_${this.hashCode()} = ((${this.sup.str}) { ${this.sup.str}_${this.sub.str}$arg });\n"
+        }
         is Expr.Dnref -> this.e.pre()
         is Expr.Upref -> this.e.pre()
         is Expr.Index -> this.e.pre()
@@ -107,12 +112,7 @@ fun Expr.pos (): String {
         is Expr.Index -> this.e.pos() + "._" + this.tk_.num
         is Expr.Disc  -> this.e.pos() + "._" + this.tk_.str
         is Expr.Pred  -> "((${this.e.pos()}.sub == ${(this.e.toType() as Type.User).tk_.str}_${this.tk_.str}) ? (Bool){Bool_True} : (Bool){Bool_False})"
-        is Expr.Cons  -> {
-            val user = this.idToStmt(this.sup.str)!! as Stmt.User
-            val tp = user.subs.first { it.first.str==this.sub.str }.second
-            val arg = if (tp is Type.Unit) "" else (", " + this.arg.pos())
-            "((${this.sup.str}) { ${this.sup.str}_${this.sub.str}$arg })"
-        }
+        is Expr.Cons  -> "_tmp_${this.hashCode()}"
         is Expr.Tuple -> {
             val vec = this.vec
                 .filter { it.toType() !is Type.Unit }
