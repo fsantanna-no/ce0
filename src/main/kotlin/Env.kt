@@ -108,7 +108,7 @@ fun Expr.toType (): Type {
         is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType() as Type.Func).out
         is Expr.Index -> (this.e.toType() as Type.Tuple).vec[this.tk_.num-1]
         is Expr.Cons  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, this.sup.str)).set_env()
-        is Expr.Disc  -> this.supSubToType((this.e.toType() as Type.User).tk_.str, this.tk_.str)!!
+        is Expr.Disc  -> if (this.tk.enu == TK.XEMPTY) Type.Unit(Tk.Sym(TK.UNIT,this.tk.lin,this.tk.col,"()")) else this.supSubToType((this.e.toType() as Type.User).tk_.str, this.tk_.str)!!
         is Expr.Pred  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, "Bool")).set_env()
         is Expr.Empty -> Type.User(this.tk_).set_env()
     }
@@ -155,26 +155,24 @@ fun check_dcls (s: Stmt): String? {
                     }
                 }
             }
-            is Expr.Disc -> {
+            is Expr.Disc, is Expr.Pred -> {
+                val ee = if (e is Expr.Disc) e.e else (e as Expr.Pred).e
+                val tk = if (e is Expr.Disc) e.tk_ else (e as Expr.Pred).tk_
+                val tpe = ee.toType()
+                val sup = if (tpe is Type.User) tpe.tk_.str else null
                 when {
-                    (e.e.toType() !is Type.User) -> {
-                        ret = All_err_tk(e.e.tk, "invalid discriminator : expected user type")
+                    (tpe !is Type.User) -> {
+                        ret = All_err_tk(ee.tk, "invalid `.´ : expected user type")
                         return false
                     }
-                    (e.supSubToType((e.e.toType() as Type.User).tk_.str, e.tk_.str) == null) -> {
-                        ret = All_err_tk(e.tk, "undeclared subcase \"${e.tk_.str}\"")
-                        return false
+                    (e.tk.enu == TK.XEMPTY) -> {
+                        if (tk.str != sup!!) {
+                            ret = All_err_tk(ee.tk, "invalid `.´ : expected \"\$${sup!!}\"")
+                            return false
+                        }
                     }
-                }
-            }
-            is Expr.Pred -> {
-                when {
-                    (e.e.toType() !is Type.User) -> {
-                        ret = All_err_tk(e.e.tk, "invalid predicate : expected user type")
-                        return false
-                    }
-                    (e.supSubToType((e.e.toType() as Type.User).tk_.str, e.tk_.str) == null) -> {
-                        ret = All_err_tk(e.tk, "undeclared subcase \"${e.tk_.str}\"")
+                    (e.supSubToType(sup!!, tk.str) == null) -> {
+                        ret = All_err_tk(e.tk, "invalid `.´ : undeclared subcase \"${tk.str}\"")
                         return false
                     }
                 }
@@ -217,6 +215,7 @@ fun Type.isSupOf (sub: Type): Boolean {
         (this is Type.Ptr && sub is Type.Ptr) -> this.tp.isSupOf(sub.tp)
         (this is Type.Tuple && sub is Type.Tuple) ->
             (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
+        (this is Type.User && sub is Type.User) -> (this.tk_.str == sub.tk_.str)
         else -> true
     }
 }
@@ -249,6 +248,12 @@ fun check_types (S: Stmt): String? {
                 val inp = e.f.toType().let { if (it is Type.Func) it.inp else (it as Type.Nat) }
                 if (!inp.isSupOf(e.arg.toType())) {
                     ret = All_err_tk(e.f.tk, "invalid call to \"${(e.f as Expr.Var).tk_.str}\" : type mismatch")
+                    return false
+                }
+            }
+            is Expr.Cons -> {
+                if (!e.supSubToType(e.sup.str,e.sub.str)!!.isSupOf(e.arg.toType())) {
+                    ret = All_err_tk(e.sub, "invalid constructor \"${e.sub.str}\" : type mismatch")
                     return false
                 }
             }

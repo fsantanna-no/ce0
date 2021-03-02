@@ -59,14 +59,14 @@ class Env {
             var z: Z = Z.Y
             output std z.Z?
         """.trimIndent())
-        assert(out == "(ln 4, col 14): undeclared subcase \"Z\"")
+        assert(out == "(ln 4, col 14): invalid `.´ : undeclared subcase \"Z\"")
     }
     @Test
     fun b04_user_disc_cons_err () {
         val out = all("""
             output std ().Z!
         """.trimIndent())
-        assert(out == "(ln 1, col 12): invalid discriminator : expected user type")
+        assert(out == "(ln 1, col 12): invalid `.´ : expected user type")
     }
     @Test
     fun b05_user_empty_err () {
@@ -81,7 +81,6 @@ class Env {
         val out = all("""
             type @rec NoRec { X: () ; Y: () }
         """.trimIndent())
-        println(out)
         assert(out == "(ln 1, col 11): invalid type declaration : unexpected `@rec´")
     }
     @Test
@@ -89,7 +88,6 @@ class Env {
         val out = all("""
             type Rec { X: Rec ; Y: () }
         """.trimIndent())
-        println(out)
         assert(out == "(ln 1, col 15): undeclared type \"Rec\"")
     }
     @Test
@@ -98,9 +96,61 @@ class Env {
             type @rec Rec1 { X: Rec1 ; Y: () }
             type Rec2 { X: Rec1 ; Y: () }
         """.trimIndent())
-        println(out)
         assert(out == "(ln 2, col 6): invalid type declaration : expected `@rec´")
     }
+    @Test
+    fun b09_user_empty_err () {
+        val Z = "\$Z"
+        val out = all("""
+            type Z { Z:() }
+            type @rec List {
+                Item: List
+            }
+            var l: List = $Z
+        """.trimIndent())
+        assert(out == "(ln 5, col 5): invalid assignment to \"l\" : type mismatch")
+    }
+    @Test
+    fun b10_user_empty_err () {
+        val Z = "\$Z"
+        val out = all("""
+            type Z { Z:() }
+            type @rec List {
+                Item: List
+            }
+            var l: List = List.Item $Z
+        """.trimIndent())
+        assert(out == "(ln 5, col 20): invalid constructor \"Item\" : type mismatch")
+    }
+    @Test
+    fun b11_user_empty_err () {
+        val Z = "\$Z"
+        val List = "\$List"
+        val out = all("""
+            type Z { Z:() }
+            type @rec List {
+                Item: List
+            }
+            var l: List = List.Item $List
+            output std \l.$Z!
+        """.trimIndent())
+        assert(out == "(ln 6, col 13): invalid `.´ : expected \"$List\"")
+    }
+    @Test
+    fun b12_user_empty_ok () {
+        val Z = "\$Z"
+        val List = "\$List"
+        val out = all("""
+            type Z { Z:() }
+            type @rec List {
+                Item: List
+            }
+            var l: List = List.Item $List
+            output std \l.$List!
+        """.trimIndent())
+        assert(out == "OK")
+    }
+
     // TODO: test if empty is part of isrec
     // TODO: invalid type declaration : unmatching predeclaration
 

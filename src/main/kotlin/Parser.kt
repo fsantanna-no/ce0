@@ -164,7 +164,8 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
             return e
         }
         return when (e) {
-            is Expr.Var -> Expr.Dnref(tk, e)
+            is Expr.Var, is Expr.Nat, is Expr.Upref,
+            is Expr.Index, is Expr.Call, is Expr.Disc -> Expr.Dnref(tk, e)
             else -> {
                 all.err_tk(e.tk, "unexpected operand to `\\´")
                 return null
@@ -176,7 +177,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
             return e
         }
         return when (e) {
-            is Expr.Var -> Expr.Upref(tk, e)
+            is Expr.Var, is Expr.Index, is Expr.Disc -> Expr.Upref(tk, e)
             else -> {
                 all.err_tk(e.tk, "unexpected operand to `\\´")
                 return null

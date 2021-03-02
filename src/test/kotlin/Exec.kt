@@ -172,7 +172,6 @@ class Exec {
             var x: Int = call f 10
             output std x
         """.trimIndent())
-        println(out)
         assert(out == "10\n")
     }
     @Test
@@ -323,7 +322,7 @@ class Exec {
             var z: Z = Z.Z
             output std z.Err?
         """.trimIndent())
-        assert(out == "(ln 4, col 14): undeclared subcase \"Err\"")
+        assert(out == "(ln 4, col 14): invalid `.´ : undeclared subcase \"Err\"")
     }
     @Test
     fun f09_user_disc_err () {
@@ -332,7 +331,7 @@ class Exec {
             var z: Z = Z.Z
             output std z.Err!
         """.trimIndent())
-        assert(out == "(ln 3, col 14): undeclared subcase \"Err\"")
+        assert(out == "(ln 3, col 14): invalid `.´ : undeclared subcase \"Err\"")
     }
     @Test
     fun f10_user_disc () {
@@ -353,7 +352,7 @@ class Exec {
             output std z.X!
         """.trimIndent())
         //println(out)
-        assert(out == "out.exe: out.c:81: main: Assertion `z.sub == Z_X' failed.\n")
+        assert(out == "out.exe: out.c:85: main: Assertion `z.sub == Z_X' failed.\n")
     }
     @Test
     fun f12_user_disc_pred_idx () {
@@ -361,7 +360,7 @@ class Exec {
             type Bool { False: () ; True: () }
             type X { Z:() }
             type A { B:(X,()) }
-            output std (A.B X.Z).B!.1.Z?
+            output std (A.B (X.Z,())).B!.1.Z?
         """.trimIndent())
         println(out)
         assert(out == "True\n")
@@ -371,7 +370,7 @@ class Exec {
         val out = all("""
             output std ().Z?
         """.trimIndent())
-        assert(out == "(ln 1, col 12): invalid predicate : expected user type")
+        assert(out == "(ln 1, col 12): invalid `.´ : expected user type")
     }
     @Test
     fun f14_user_dots_err () {
@@ -382,7 +381,7 @@ class Exec {
             var x: X = X.X Y.Y Z.Z
             output std x.X!.Z!
         """.trimIndent())
-        assert(out == "(ln 5, col 17): undeclared subcase \"Z\"")
+        assert(out == "(ln 5, col 17): invalid `.´ : undeclared subcase \"Z\"")
     }
     @Test
     fun f15_user_dots () {
@@ -508,10 +507,47 @@ class Exec {
             output std \l
         """.trimIndent())
         //println(out)
-        assert(out == "Item $\n")
+        assert(out == "Item ($)\n")
     }
-
-    //test fail valgrind, fix with free
+    @Test
+    fun j03_list () {
+        val List = "\$List"
+        val out = all("""
+            type @rec List {
+               Item: List
+            }
+            var l: List = List.Item List.Item $List
+            output std \l.Item!
+        """.trimIndent())
+        println(out)
+        assert(out == "Item ($)\n")
+    }
+    @Test
+    fun j04_list_disc_null_err () {
+        val List = "\$List"
+        val out = all("""
+            type @rec List {
+               Item: List
+            }
+            var l: List = List.Item $List
+            output std \l.$List!
+        """.trimIndent())
+        println(out)
+        assert(out == "ERROR\n")
+    }
+    @Test
+    fun j05_list_disc_null_err () {
+        val List = "\$List"
+        val out = all("""
+            type @rec List {
+               Item: List
+            }
+            var l: List = $List
+            output std \l.Item!
+        """.trimIndent())
+        println(out)
+        assert(out == "ERROR\n")
+    }
 
     // ALL
 
