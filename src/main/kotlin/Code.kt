@@ -179,14 +179,14 @@ fun Stmt.pos (): String {
         is Stmt.Ret   -> "return" + if (this.e.toType() is Type.Unit) ";\n" else " _ret_;\n"
         is Stmt.Var   -> {
             this.init.pre() +
-                if (this.type is Type.Unit) {
-                    ""
-                } else {
-                    "${this.type.pos()} ${this.tk_.str}" + (
-                        if (this.init is Expr.Unk) {
-                            ";\n"
-                        } else {
-                            " = " + this.init.pos() + ";\n"
+                if (this.type is Type.Unit) "" else {
+                    "${this.type.pos()} ${this.tk_.str}" + (    // List* l
+                        if (this.tk_.str == "_ret_") "" else {
+                            (if (!this.type.ishasrec()) "" else {
+                                " __attribute__ ((__cleanup__(${this.type.toce()}_free)))"
+                            }) + (if (this.init is Expr.Unk) "" else {
+                                " = " + this.init.pos()
+                            }) + ";\n"
                         }
                     )
                 }
@@ -233,7 +233,7 @@ fun Stmt.pos (): String {
                 
             """.trimIndent()
 
-            // void outout_std_Bool_ (Bool v) { ... }
+            // void output_std_Bool_ (Bool v) { ... }
             val (v,fn,ptr) = if (this.isrec) Triple("(*(*v))","_ptr","**") else Triple("v","","")
             val ret5 = """
                 void output_std_$ID${fn}_ ($ID$ptr v) {
@@ -278,7 +278,34 @@ fun Stmt.pos (): String {
                 
             """.trimIndent()
 
-            return (ret1 + ret2 + ret3 + ret4 + ret5)
+            // void List_free (List** p) { ... }
+            val ret6 = if (!this.isrec) "" else {
+                """
+                    void ${ID}_free ($ID** p) {
+                        if (*p == NULL) return;
+                        switch ((*p)->sub) {
+                            ${ this.subs
+                                .map { (id,tp) ->
+                                    if (!tp.ishasrec()) "" else    
+                                        """
+                                        case ${ID}_${id.str}:
+                                            ${tp.toce()}_free(&(*p)->_${id.str});
+                                            break;
+
+                                        """.trimIndent()
+                                }
+                                .joinToString("")
+                            }
+                            default:
+                                break;
+                        }
+                        free(*p);
+                    }
+                    
+                """.trimIndent()
+            }
+
+            return (ret1 + ret2 + ret3 + ret4 + ret5 + ret6)
         }
         is Stmt.Func  -> {
             this.type.pre() + when (this.tk_.str) {
