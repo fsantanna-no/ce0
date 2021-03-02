@@ -323,11 +323,17 @@ fun parser_stmt (all: All): Stmt? {
             return Stmt.Nat(all.tk0 as Tk.Str)
         }
         all.accept(TK.TYPE)  -> {
+            val ispre = all.accept(TK.APRE)
             val isrec = all.accept(TK.AREC)
             if (!all.accept_err(TK.XUSER)) {
                 return null
             }
             val tk_id = all.tk0 as Tk.Str
+
+            if (ispre) {
+                return Stmt.User(tk_id,isrec, emptyArray())
+            }
+
             if (!all.accept_err(TK.CHAR,'{')) {
                 return null
             }

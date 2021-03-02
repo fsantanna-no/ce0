@@ -3,7 +3,7 @@ enum class TK {
     XVAR, XUSER, XNAT, XNUM, XEMPTY,
     UNIT, ARROW,
     BREAK, CALL, ELSE, FUNC, IF, LOOP, NAT, OUT, RET, SET, TYPE, VAR,
-    AREC
+    APRE, AREC
 }
 
 val key2tk: HashMap<String, TK> = hashMapOf (
@@ -19,6 +19,7 @@ val key2tk: HashMap<String, TK> = hashMapOf (
     "set"    to TK.SET,
     "type"   to TK.TYPE,
     "var"    to TK.VAR,
+    "@pre"   to TK.APRE,
     "@rec"   to TK.AREC,
 )
 

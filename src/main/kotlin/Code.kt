@@ -205,10 +205,25 @@ fun Stmt.pos (): String {
 
             """.trimIndent()
 
-            val ret2 = this.subs.map { it.second.pre() + "\n" }.joinToString("")
+            val (v,fn,ptr) = if (this.isrec) Triple("(*(*v))","_ptr","**") else Triple("v","","")
+            val ret2 = """
+                ${
+                    if (!this.isrec) "" else {
+                        "auto void ${ID}_free ($ID** p);\n"
+                    }
+                }
+                auto void output_std_$ID${fn}_ ($ID$ptr v);
+                
+            """.trimIndent()
+
+            if (this.subs.isEmpty()) {
+                return ret1 + ret2
+            }
+
+            val ret3 = this.subs.map { it.second.pre() + "\n" }.joinToString("")
 
             // enum { Bool_False, Bool_True } _Bool_;
-            val ret3 = """
+            val ret4 = """
                 typedef enum {
                     ${ this.subs
                         .map { ID + "_" + it.first.str }
@@ -219,7 +234,7 @@ fun Stmt.pos (): String {
             """.trimIndent()
 
             // struct Bool { _Bool_ sub; union { ... } };
-            val ret4 = """
+            val ret5 = """
                 struct $ID {
                     _${ID}_ sub;
                     union {
@@ -234,8 +249,7 @@ fun Stmt.pos (): String {
             """.trimIndent()
 
             // void output_std_Bool_ (Bool v) { ... }
-            val (v,fn,ptr) = if (this.isrec) Triple("(*(*v))","_ptr","**") else Triple("v","","")
-            val ret5 = """
+            val ret6 = """
                 void output_std_$ID${fn}_ ($ID$ptr v) {
                     ${
                         if (this.isrec) {
@@ -254,14 +268,15 @@ fun Stmt.pos (): String {
                                 case ${ID}_${sub.str}:
                                     printf("${sub.str}");
                                     ${
-                                        when (tp) {
-                                            is Type.Unit -> ""
-                                            is Type.Nat  -> "putchar('_');"
-                                            else -> {
-                                                val (op2,fn2) = if (tp.ishasrec()) Pair("&","_ptr") else Pair("","")
-                                                "output_std_${tp.toce()}${fn2}_($op2$v._${sub.str});"
+                                        if (false) "" else {
+                                            val (op2,fn2) = if (tp.ishasrec()) Pair("&","_ptr") else Pair("","")
+                                            when (tp) {
+                                                is Type.Nat -> "putchar('_');"
+                                                is Type.Tuple -> "putchar(' '); output_std_${tp.toce()}${fn2}_($op2$v._${sub.str});"
+                                                is Type.User -> "putchar(' '); putchar('('); output_std_${tp.toce()}${fn2}_($op2$v._${sub.str}); putchar(')');"
+                                                else -> ""
                                             }
-                                        }.let { if (it.isEmpty()) it else "putchar(' ');\n"+it }
+                                        }
                                     }
                                     break;
 
@@ -279,7 +294,7 @@ fun Stmt.pos (): String {
             """.trimIndent()
 
             // void List_free (List** p) { ... }
-            val ret6 = if (!this.isrec) "" else {
+            val ret7 = if (!this.isrec) "" else {
                 """
                     void ${ID}_free ($ID** p) {
                         if (*p == NULL) return;
@@ -305,7 +320,7 @@ fun Stmt.pos (): String {
                 """.trimIndent()
             }
 
-            return (ret1 + ret2 + ret3 + ret4 + ret5 + ret6)
+            return (ret1 + ret2 + ret3 + ret4 + ret5 + ret6 + ret7)
         }
         is Stmt.Func  -> {
             this.type.pre() + when (this.tk_.str) {

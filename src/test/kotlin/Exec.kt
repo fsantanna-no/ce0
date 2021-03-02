@@ -26,8 +26,8 @@ class Exec {
         if (!ok2) {
             return out2
         }
-        //val (_,out3) = exec("./out.exe")
-        val (_,out3) = exec("valgrind ./out.exe")
+        val (_,out3) = exec("./out.exe")
+        //val (_,out3) = exec("valgrind ./out.exe")
         return out3
     }
 
@@ -464,6 +464,23 @@ class Exec {
         println(out)
         assert(out == "10\n")
     }
+    @Test
+    fun i04_ptr_pre () {
+        val Bb = "\$Bb"
+        val out = all("""
+            type @pre @rec Bb
+            type @rec Aa {
+               Aa1: Bb
+            }
+            type @rec Bb {
+               Bb1: Aa
+            }
+            var n: Aa = Aa.Aa1 Bb.Bb1 Aa.Aa1 $Bb
+            output std \n
+        """.trimIndent())
+        println(out)
+        assert(out == "Aa1 (Bb1 (Aa1 ($)))\n")
+    }
 
     // REC
 
@@ -489,7 +506,7 @@ class Exec {
             var l: List = List.Item $List
             output std \l
         """.trimIndent())
-        println(out)
+        //println(out)
         assert(out == "Item $\n")
     }
 

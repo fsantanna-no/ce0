@@ -196,7 +196,7 @@ fun check_dcls (s: Stmt): String? {
         }
         when (s) {
             is Stmt.User -> {
-                if (s.isrec != s.isHasRec()) {
+                if (s.subs.isNotEmpty() && s.isrec!=s.isHasRec()) {
                     val exun = if (s.isrec) "unexpected" else "expected"
                     ret = All_err_tk(s.tk, "invalid type declaration : $exun `@rec´")
                     return false
