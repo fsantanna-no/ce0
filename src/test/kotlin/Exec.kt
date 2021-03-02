@@ -172,6 +172,7 @@ class Exec {
             var x: Int = call f 10
             output std x
         """.trimIndent())
+        println(out)
         assert(out == "10\n")
     }
     @Test

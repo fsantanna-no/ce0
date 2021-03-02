@@ -186,9 +186,9 @@ fun Stmt.pos (): String {
                                 " __attribute__ ((__cleanup__(${this.type.toce()}_free)))"
                             }) + (if (this.init is Expr.Unk) "" else {
                                 " = " + this.init.pos()
-                            }) + ";\n"
+                            })
                         }
-                    )
+                    ) + ";\n"
                 }
         }
         is Stmt.User  -> {
