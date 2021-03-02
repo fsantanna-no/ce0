@@ -27,6 +27,7 @@ class Exec {
             return out2
         }
         val (_,out3) = exec("./out.exe")
+        //val (_,out3) = exec("valgrind ./out.exe")
         return out3
     }
 
@@ -332,6 +333,7 @@ class Exec {
         """.trimIndent())
         assert(out == "(ln 3, col 14): undeclared subcase \"Err\"")
     }
+    @Test
     fun f10_user_disc () {
         val out = all("""
             type Bool { False: () ; True: () }
@@ -339,6 +341,7 @@ class Exec {
             var z: Z = Z.Y
             output std z.Y!
         """.trimIndent())
+        //println(out)
         assert(out == "()\n")
     }
     @Test
