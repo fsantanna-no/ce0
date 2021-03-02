@@ -111,7 +111,7 @@ fun Expr.pre (): String {
         is Expr.Upref -> this.e.pre()
         is Expr.Index -> this.e.pre()
         is Expr.Pred  -> this.e.pre()
-        is Expr.Disc  -> "assert(${this.e.pos()}.sub == ${(this.e.toType() as Type.User).tk_.str}_${this.tk_.str});\n"
+        is Expr.Disc  -> this.e.pre() + "assert(${this.e.pos()}.sub == ${(this.e.toType() as Type.User).tk_.str}_${this.tk_.str});\n"
         is Expr.Call  -> this.f.pre() + this.arg.pre()
     }
 }
@@ -161,7 +161,7 @@ fun Stmt.pos (): String {
             (if (this.dst.toType() is Type.Unit) "" else (this.dst.pos()+" = ")) +
             this.src.pos() + ";\n"
         )
-        is Stmt.If    -> """
+        is Stmt.If    -> this.tst.pre() + """
             if (${this.tst.pos()}.sub) {
                 ${this.true_.pos()}
             } else {

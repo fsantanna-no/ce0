@@ -360,6 +360,7 @@ class Exec {
             type A { B:(X,()) }
             output std (A.B X.Z).B!.1.Z?
         """.trimIndent())
+        println(out)
         assert(out == "True\n")
     }
     @Test
