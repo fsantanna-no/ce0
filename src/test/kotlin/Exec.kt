@@ -349,7 +349,8 @@ class Exec {
             var z: Z = Z.Y
             output std z.X!
         """.trimIndent())
-        assert(out == "out.exe: out.c:75: main: Assertion `z.sub == Z_X' failed.\n")
+        //println(out)
+        assert(out == "out.exe: out.c:77: main: Assertion `z.sub == Z_X' failed.\n")
     }
     @Test
     fun f12_user_disc_pred_idx () {
