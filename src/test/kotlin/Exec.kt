@@ -350,7 +350,7 @@ class Exec {
             output std z.X!
         """.trimIndent())
         //println(out)
-        assert(out == "out.exe: out.c:77: main: Assertion `z.sub == Z_X' failed.\n")
+        assert(out == "out.exe: out.c:81: main: Assertion `z.sub == Z_X' failed.\n")
     }
     @Test
     fun f12_user_disc_pred_idx () {
@@ -489,6 +489,8 @@ class Exec {
         println(out)
         assert(out == "Item $\n")
     }
+
+    //test fail valgrind, fix with free
 
     // ALL
 
