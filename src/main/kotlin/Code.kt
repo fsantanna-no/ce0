@@ -93,9 +93,9 @@ fun Expr.pre (): String {
                 ${
                     if (user.isrec) {
                         """
-                        $sup* _tmp_$N = ($sup*) malloc(sizeof($sup);
-                        assert(_tmp_$N}!=NULL && "not enough memory");
-                        *_tmp_$N = "
+                        $sup* _tmp_$N = ($sup*) malloc(sizeof($sup));
+                        assert(_tmp_$N!=NULL && "not enough memory");
+                        *_tmp_$N = 
                         """
                     } else {
                         """
