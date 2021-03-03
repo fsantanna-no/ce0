@@ -26,7 +26,7 @@ class Code {
     @Test
     fun b01_expr_unit () {
         val e = Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
-        assert(e.pos() == "")
+        assert(e.pos(true) == "")
     }
     @Test
     fun b02_expr_var () {
@@ -36,7 +36,7 @@ class Code {
             Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
             Expr.Nat(Tk.Str(TK.XNAT,1,1,"0"))
         )
-        assert(e.pos() == "xxx")
+        assert(e.pos(false) == "xxx")
     }
     @Test
     fun b03_expr_nat () {
@@ -46,7 +46,7 @@ class Code {
             Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
             Expr.Nat(Tk.Str(TK.XNAT,1,1,"0"))
         )
-        assert(e.pos() == "xxx")
+        assert(e.pos(true) == "xxx")
     }
     @Test
     fun b04_expr_tuple () {
@@ -57,7 +57,7 @@ class Code {
                 Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()")),
             )
         )
-        assert(e.pos() == "((TUPLE__Unit__Unit) {  })")
+        assert(e.pos(false) == "((TUPLE__Unit__Unit) {  })")
     }
     @Test
     fun b05_expr_index () {
@@ -70,7 +70,7 @@ class Code {
             Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int")))),
             Expr.Nat(Tk.Str(TK.XNAT,1,1,"0"))
         )
-        assert(e.pos() == "x._1")
+        assert(e.pos(true) == "x._1")
     }
 
     // STMT

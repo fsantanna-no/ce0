@@ -86,7 +86,7 @@ fun Expr.pre (): String {
         is Expr.Cons  -> {
             val user = this.idToStmt(this.sup.str)!! as Stmt.User
             val tp   = this.supSubToType(this.sup.str,this.sub.str)
-            val arg  = if (tp is Type.Unit) "" else (", " + this.arg.pos())
+            val arg  = if (tp is Type.Unit) "" else (", " + this.arg.pos(false))
             val N    = this.hashCode().absoluteValue
             val sup  = this.sup.str
             this.arg.pre() + if (this.sub.str=="Nil") "" else """
@@ -111,12 +111,25 @@ fun Expr.pre (): String {
         is Expr.Upref -> this.e.pre()
         is Expr.Index -> this.e.pre()
         is Expr.Pred  -> this.e.pre()
-        is Expr.Disc  -> this.e.pre() + "assert(${this.e.pos()}.sub == ${(this.e.toType() as Type.User).tk_.str}_${this.tk_.str});\n"
+        is Expr.Disc  -> {
+            val tpe = this.e.toType() as Type.User
+            this.e.pre() + (
+                if (this.tk_.str == "Nil") {
+                    "assert(${this.e.pos(false)} == NULL);\n"
+                } else {
+                    (if (!tpe.ishasrec()) {
+                        ""
+                    } else {
+                        "assert(${this.e.pos(false)} != NULL);\n"
+                    }) + "assert(${this.e.pos(true)}.sub == ${tpe.tk_.str}_${this.tk_.str});\n"
+                }
+            )
+        }
         is Expr.Call  -> this.f.pre() + this.arg.pre()
     }
 }
 
-fun Expr.pos (): String {
+fun Expr.pos (deref: Boolean): String {
     val TP = this.toType()
     if ((TP is Type.Unit) && (this !is Expr.Call)) {
         return ""
@@ -126,28 +139,32 @@ fun Expr.pos (): String {
         is Expr.Nat   -> this.tk_.str
         is Expr.Int   -> this.tk_.num.toString()
         is Expr.Var   -> if (TP is Type.Unit) "" else this.tk_.str
-        is Expr.Upref -> "&" + this.e.pos()
-        is Expr.Dnref -> "*" + this.e.pos()
-        is Expr.Index -> this.e.pos() + "._" + this.tk_.num
-        is Expr.Disc  -> this.e.pos() + "._" + this.tk_.str
-        is Expr.Pred  -> "((${this.e.pos()}.sub == ${(this.e.toType() as Type.User).tk_.str}_${this.tk_.str}) ? (Bool){Bool_True} : (Bool){Bool_False})"
+        is Expr.Upref -> "&" + this.e.pos(false)
+        is Expr.Dnref -> "*" + this.e.pos(false)
+        is Expr.Index -> this.e.pos(true) + "._" + this.tk_.num
+        is Expr.Disc  -> this.e.pos(true) + "._" + this.tk_.str
+        is Expr.Pred  -> "((${this.e.pos(true)}.sub == ${(this.e.toType() as Type.User).tk_.str}_${this.tk_.str}) ? (Bool){Bool_True} : (Bool){Bool_False})"
         is Expr.Cons  -> if (this.sub.str=="Nil") "NULL" else "_tmp_${this.hashCode().absoluteValue}"
         is Expr.Tuple -> {
             val vec = this.vec
                 .filter { it.toType() !is Type.Unit }
-                .map { it.pos() }
+                .map { it.pos(false) }
                 .joinToString(", ")
 
             "((${TP.pos()}) { $vec })"
         }
-        is Expr.Call  -> this.f.pos() + (
-            if (this.f is Expr.Var && this.f.tk_.str=="output_std") {
-                "_" + this.arg.toType().toce()
-            } else {
-                ""
-            }
-        ) + "(" + this.arg.pos() + ")"
+        is Expr.Call  -> {
+            this.f.pos(true) + (
+                if (this.f is Expr.Var && this.f.tk_.str=="output_std") {
+                    "_" + this.arg.toType().toce()
+                } else {
+                    ""
+                }
+            ) + "(" + this.arg.pos(true) + ")"
+        }
         else -> { println(this) ; error("TODO") }
+    }.let {
+        if (deref && TP.ishasrec()) "(*($it))" else it
     }
 }
 
@@ -156,12 +173,14 @@ fun Stmt.pos (): String {
         is Stmt.Pass  -> ""
         is Stmt.Nat   -> this.tk_.str + "\n"
         is Stmt.Seq   -> this.s1.pos() + this.s2.pos()
-        is Stmt.Set   -> this.dst.pre() + this.src.pre() + (
-            (if (this.dst.toType() is Type.Unit) "" else (this.dst.pos()+" = ")) +
-            this.src.pos() + ";\n"
-        )
+        is Stmt.Set   -> {
+            this.dst.pre() + this.src.pre() + (
+                (if (this.dst.toType() is Type.Unit) "" else (this.dst.pos(false)+" = ")) +
+                    this.src.pos(false) + ";\n"
+            )
+        }
         is Stmt.If    -> this.tst.pre() + """
-            if (${this.tst.pos()}.sub) {
+            if (${this.tst.pos(true)}.sub) {
                 ${this.true_.pos()}
             } else {
                 ${this.false_.pos()}
@@ -173,7 +192,7 @@ fun Stmt.pos (): String {
             }
         """.trimIndent()
         is Stmt.Break -> "break;\n"
-        is Stmt.Call  -> this.call.pre() + this.call.pos() + ";\n"
+        is Stmt.Call  -> this.call.pre() + this.call.pos(true) + ";\n"
         is Stmt.Block -> "{\n" + this.body.pos() + "}\n"
         is Stmt.Ret   -> "return" + if (this.e.toType() is Type.Unit) ";\n" else " _ret_;\n"
         is Stmt.Var   -> {
@@ -184,7 +203,7 @@ fun Stmt.pos (): String {
                             (if (!this.type.ishasrec()) "" else {
                                 " __attribute__ ((__cleanup__(${this.type.toce()}_free)))"
                             }) + (if (this.init is Expr.Unk) "" else {
-                                " = " + this.init.pos()
+                                " = " + this.init.pos(false)
                             })
                         }
                     ) + ";\n"

@@ -276,6 +276,7 @@ class Exec {
             var zz: Z = yy.Y!
             output std zz
         """.trimIndent())
+        println(out)
         assert(out == "Z\n")
     }
     @Test
@@ -514,7 +515,6 @@ class Exec {
             var l: List = List.Item List.Item List.Nil
             output std \l.Item!
         """.trimIndent())
-        println(out)
         assert(out == "Item (Nil)\n")
     }
     @Test
@@ -524,10 +524,9 @@ class Exec {
                Item: List
             }
             var l: List = List.Item List.Nil
-            output std \l.Nil!
+            output std l.Nil!
         """.trimIndent())
-        println(out)
-        assert(out == "ERROR\n")
+        assert(out == "out.exe: out.c:71: main: Assertion `l == NULL' failed.\n")
     }
     @Test
     fun j05_list_disc_null_err () {
@@ -538,8 +537,7 @@ class Exec {
             var l: List = List.Nil
             output std \l.Item!
         """.trimIndent())
-        println(out)
-        assert(out == "ERROR\n")
+        assert(out == "out.exe: out.c:63: main: Assertion `l != NULL' failed.\n")
     }
 
     // ALL
