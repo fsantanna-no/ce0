@@ -466,7 +466,6 @@ class Exec {
     }
     @Test
     fun i04_ptr_pre () {
-        val Bb = "\$Bb"
         val out = all("""
             type @pre @rec Bb
             type @rec Aa {
@@ -475,74 +474,68 @@ class Exec {
             type @rec Bb {
                Bb1: Aa
             }
-            var n: Aa = Aa.Aa1 Bb.Bb1 Aa.Aa1 $Bb
+            var n: Aa = Aa.Aa1 Bb.Bb1 Aa.Aa1 Bb.Nil
             output std \n
         """.trimIndent())
-        println(out)
-        assert(out == "Aa1 (Bb1 (Aa1 ($)))\n")
+        assert(out == "Aa1 (Bb1 (Aa1 (Nil)))\n")
     }
 
     // REC
 
     @Test
     fun j01_list () {
-        val List = "\$List"
         val out = all("""
             type @rec List {
                Item: List
             }
-            var l: List = $List
+            var l: List = List.Nil
             output std \l
         """.trimIndent())
-        assert(out == "$\n")
+        assert(out == "Nil\n")
     }
     @Test
     fun j02_list () {
-        val List = "\$List"
         val out = all("""
             type @rec List {
                Item: List
             }
-            var l: List = List.Item $List
+            var l: List = List.Item List.Nil
             output std \l
         """.trimIndent())
         //println(out)
-        assert(out == "Item ($)\n")
+        assert(out == "Item (Nil)\n")
     }
     @Test
     fun j03_list () {
-        val List = "\$List"
         val out = all("""
             type @rec List {
                Item: List
             }
-            var l: List = List.Item List.Item $List
+            var l: List = List.Item List.Item List.Nil
             output std \l.Item!
         """.trimIndent())
         println(out)
-        assert(out == "Item ($)\n")
+        assert(out == "Item (Nil)\n")
     }
     @Test
     fun j04_list_disc_null_err () {
-        val List = "\$List"
         val out = all("""
             type @rec List {
                Item: List
             }
-            var l: List = List.Item $List
-            output std \l.$List!
+            var l: List = List.Item List.Nil
+            output std \l.Nil!
         """.trimIndent())
         println(out)
         assert(out == "ERROR\n")
     }
     @Test
     fun j05_list_disc_null_err () {
-        val List = "\$List"
         val out = all("""
             type @rec List {
                Item: List
             }
-            var l: List = $List
+            var l: List = List.Nil
             output std \l.Item!
         """.trimIndent())
         println(out)

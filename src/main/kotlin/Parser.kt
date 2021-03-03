@@ -14,7 +14,6 @@ sealed class Expr (val tk: Tk) {
     data class Int   (val tk_: Tk.Num): Expr(tk_)
     data class Var   (val tk_: Tk.Str): Expr(tk_)
     data class Nat   (val tk_: Tk.Str): Expr(tk_)
-    data class Empty (val tk_: Tk.Str): Expr(tk_)
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Expr>): Expr(tk_)
     data class Cons  (val tk_: Tk.Chr, val sup: Tk.Str, val sub: Tk.Str, val arg: Expr): Expr(tk_)
     data class Dnref (val tk_: Tk, val e: Expr): Expr(tk_)
@@ -103,7 +102,6 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
             all.accept(TK.XNUM)   -> Expr.Int(all.tk0 as Tk.Num)
             all.accept(TK.XVAR)   -> Expr.Var(all.tk0 as Tk.Str)
             all.accept(TK.XNAT)   -> Expr.Nat(all.tk0 as Tk.Str)
-            all.accept(TK.XEMPTY) -> Expr.Empty(all.tk0 as Tk.Str)
             all.accept(TK.CHAR,'?') -> Expr.Unk(all.tk0 as Tk.Chr)
             all.accept(TK.XUSER) -> {
                 val sup = all.tk0 as Tk.Str
@@ -198,8 +196,8 @@ fun parser_expr (all: All, canpre: Boolean): Expr? {
             tk_slash = null
 
             ret = when {
-                all.accept(TK.XNUM) -> Expr.Index(all.tk0 as Tk.Num, ret!!)
-                all.accept(TK.XUSER) || all.accept(TK.XEMPTY) -> {
+                all.accept(TK.XNUM)  -> Expr.Index(all.tk0 as Tk.Num, ret!!)
+                all.accept(TK.XUSER) -> {
                     val tk = all.tk0 as Tk.Str
                     when {
                         all.accept(TK.CHAR, '?') -> Expr.Pred(tk, ret!!)

@@ -145,12 +145,4 @@ class Lexer {
         val all = All_new(PushbackReader(StringReader("-10\n"), 2))
         lexer(all) ; assert(all.tk1.enu==TK.XNUM && (all.tk1 as Tk.Num).num==-10)
     }
-
-    // XEMPTY
-
-    @Test
-    fun b13_lexer_xempty () {
-        val all = All_new(PushbackReader(StringReader("\$List"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.XEMPTY && (all.tk1 as Tk.Str).str=="List")
-    }
 }

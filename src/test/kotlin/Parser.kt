@@ -111,13 +111,6 @@ class Parser {
         assert(e is Expr.Nat && e.tk_.str=="x")
     }
     @Test
-    fun b08_parser_expr_empty () {
-        val all = All_new(PushbackReader(StringReader("\$Nat"), 2))
-        lexer(all)
-        val e = parser_expr(all,false)
-        assert(e is Expr.Empty && e.tk_.str=="Nat")
-    }
-    @Test
     fun b08_parser_expr_int () {
         val all = All_new(PushbackReader(StringReader("10"), 2))
         lexer(all)

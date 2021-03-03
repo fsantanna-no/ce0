@@ -69,14 +69,6 @@ class Env {
         assert(out == "(ln 1, col 12): invalid `.´ : expected user type")
     }
     @Test
-    fun b05_user_empty_err () {
-        val Z = "\$Z"
-        val out = all("""
-            output std $Z
-        """.trimIndent())
-        assert(out == "(ln 1, col 12): undeclared type \"Z\"")
-    }
-    @Test
     fun b06_user_norec_err () {
         val out = all("""
             type @rec NoRec { X: () ; Y: () }
@@ -99,14 +91,14 @@ class Env {
         assert(out == "(ln 2, col 6): invalid type declaration : expected `@rec´")
     }
     @Test
-    fun b09_user_empty_err () {
+    fun b09_user_err () {
         val Z = "\$Z"
         val out = all("""
             type Z { Z:() }
             type @rec List {
                 Item: List
             }
-            var l: List = $Z
+            var l: List = Z.Z
         """.trimIndent())
         assert(out == "(ln 5, col 5): invalid assignment to \"l\" : type mismatch")
     }
@@ -118,35 +110,31 @@ class Env {
             type @rec List {
                 Item: List
             }
-            var l: List = List.Item $Z
+            var l: List = List.Item Z.Z
         """.trimIndent())
         assert(out == "(ln 5, col 20): invalid constructor \"Item\" : type mismatch")
     }
     @Test
     fun b11_user_empty_err () {
-        val Z = "\$Z"
-        val List = "\$List"
         val out = all("""
             type Z { Z:() }
             type @rec List {
                 Item: List
             }
-            var l: List = List.Item $List
-            output std \l.$Z!
+            var l: List = List.Item List.Nil
+            output std \l.Z!
         """.trimIndent())
-        assert(out == "(ln 6, col 13): invalid `.´ : expected \"$List\"")
+        assert(out == "(ln 6, col 15): invalid `.´ : undeclared subcase \"Z\"")
     }
     @Test
     fun b12_user_empty_ok () {
-        val Z = "\$Z"
-        val List = "\$List"
         val out = all("""
             type Z { Z:() }
             type @rec List {
                 Item: List
             }
-            var l: List = List.Item $List
-            output std \l.$List!
+            var l: List = List.Item List.Nil
+            output std \l.Nil!
         """.trimIndent())
         assert(out == "OK")
     }

@@ -81,15 +81,15 @@ fun Type.pos (): String {
 
 fun Expr.pre (): String {
     return when (this) {
-        is Expr.Unk, is Expr.Unit, is Expr.Int, is Expr.Var, is Expr.Nat, is Expr.Empty -> ""
+        is Expr.Unk, is Expr.Unit, is Expr.Int, is Expr.Var, is Expr.Nat -> ""
         is Expr.Tuple -> this.toType().pre() + this.vec.map { it.pre() }.joinToString("")
         is Expr.Cons  -> {
             val user = this.idToStmt(this.sup.str)!! as Stmt.User
-            val tp   = user.subs.first { it.first.str==this.sub.str }.second
+            val tp   = this.supSubToType(this.sup.str,this.sub.str)
             val arg  = if (tp is Type.Unit) "" else (", " + this.arg.pos())
             val N    = this.hashCode().absoluteValue
             val sup  = this.sup.str
-            this.arg.pre() + """
+            this.arg.pre() + if (this.sub.str=="Nil") "" else """
                 ${
                     if (user.isrec) {
                         """
@@ -126,13 +126,12 @@ fun Expr.pos (): String {
         is Expr.Nat   -> this.tk_.str
         is Expr.Int   -> this.tk_.num.toString()
         is Expr.Var   -> if (TP is Type.Unit) "" else this.tk_.str
-        is Expr.Empty -> "NULL"
         is Expr.Upref -> "&" + this.e.pos()
         is Expr.Dnref -> "*" + this.e.pos()
         is Expr.Index -> this.e.pos() + "._" + this.tk_.num
         is Expr.Disc  -> this.e.pos() + "._" + this.tk_.str
         is Expr.Pred  -> "((${this.e.pos()}.sub == ${(this.e.toType() as Type.User).tk_.str}_${this.tk_.str}) ? (Bool){Bool_True} : (Bool){Bool_False})"
-        is Expr.Cons  -> "_tmp_${this.hashCode().absoluteValue}"
+        is Expr.Cons  -> if (this.sub.str=="Nil") "NULL" else "_tmp_${this.hashCode().absoluteValue}"
         is Expr.Tuple -> {
             val vec = this.vec
                 .filter { it.toType() !is Type.Unit }
@@ -255,7 +254,7 @@ fun Stmt.pos (): String {
                         if (this.isrec) {
                             """
                             if (*v == NULL) {
-                                putchar('$');
+                                printf("Nil");
                                 return;
                             }
     

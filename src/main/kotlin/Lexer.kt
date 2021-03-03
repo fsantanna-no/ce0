@@ -1,6 +1,6 @@
 enum class TK {
     ERR, EOF, CHAR,
-    XVAR, XUSER, XNAT, XNUM, XEMPTY,
+    XVAR, XUSER, XNAT, XNUM,
     UNIT, ARROW,
     BREAK, CALL, ELSE, FUNC, IF, LOOP, NAT, OUT, RET, SET, TYPE, VAR,
     APRE, AREC
@@ -172,12 +172,7 @@ fun token (all: All) {
             else -> {
                 var pay = ""
 
-                val isdollar = (x1 == '$')
-                if (isdollar) {
-                    all.read().let { c1=it.first ; x1=it.second }
-                }
-
-                if (!isdollar && x1.isDigit()) {
+                if (x1.isDigit()) {
                     while (x1.isLetterOrDigit()) {
                         pay += x1
                         if (x1.isDigit()) {
@@ -189,7 +184,7 @@ fun token (all: All) {
                     }
                     all.unread(c1)
                     all.tk1 = Tk.Num(TK.XNUM, LIN, COL, pay.toInt())
-                } else if (x1.isUpperCase() || (x1.isLowerCase() && !isdollar)) {
+                } else if (x1.isUpperCase() || x1.isLowerCase()) {
                     while (x1.isLetterOrDigit() || x1=='_') {
                         pay += x1
                         all.read().let { c1=it.first ; x1=it.second }
@@ -198,7 +193,6 @@ fun token (all: All) {
                     val key = key2tk[pay]
                     all.tk1 = when {
                         (key != null) -> { assert(pay[0].isLowerCase()); Tk.Key(key, LIN, COL, pay) }
-                        isdollar -> Tk.Str(TK.XEMPTY, LIN, COL, pay)
                         pay[0].isLowerCase() -> Tk.Str(TK.XVAR, LIN, COL, pay)
                         pay[0].isUpperCase() -> Tk.Str(TK.XUSER, LIN, COL, pay)
                         else -> error("impossible case")

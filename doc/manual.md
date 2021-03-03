@@ -39,6 +39,7 @@ The following keywords are reserved:
     loop        -- loop statement
     move        -- move operation
     native      -- native statement
+    Nil         -- empty subcase
     output      -- output invocation
     pre         -- native/type pre declaration
     return      -- function return
@@ -63,7 +64,6 @@ The following symbols are valid:
     ,           -- tuple separator
     .           -- tuple index, type predicate & discriminator
     \           -- pointer type, upref & dnref operation
-    $           -- empty subcase
     !           -- type discriminator
     ?           -- type predicate, unknown initialization
 ```
@@ -271,8 +271,8 @@ The special operation `clone` make a deep copy of its argument of a
 recursive type:
 
 ```
-var y: List = Item Item $List
-var x: List = clone y           -- `x` becomes "Item Item $List"
+var y: List = List.Item List.Item List.Nil
+var x: List = clone y           -- `x` becomes "Item Item Nil"
 ```
 
 `TODO: move, types of both`
@@ -300,9 +300,9 @@ subcase identifier, and an exclamation mark `!`:
 ```
 (Bool.True ()).True!    -- yields ()
 
-x = Tree.Node ($Tree,(),$Tree)
-x.Node!.2               -- yields ()
-x.$True                 -- error: `x` is a `Node`
+x = Tree.Node (Tree.Nil,(),Tree.Nil)
+... x.Node!.2           -- yields ()
+... x.Nil!              -- error: `x` is a `Node`
 ```
 
 If the discriminated subcase does not match the actual value, the attempted
@@ -355,13 +355,13 @@ A recursive type requires a `@rec` modifier:
 
 ```
 type @rec Tree {
-    -- $Tree: ()        -- implicit empty subcase, always present
+    -- Nil: ()          -- implicit empty subcase, always present
     Node: (Tree,Tree)   -- subcase Node holds left/right subtrees
 }
 ```
 
-A recursive type always includes an implicit empty subcase, which is its name
-with the dollar prefix `$´, e.g., `$Tree` is the empty subcase of `Tree`.
+A recursive type always includes an implicit empty `Nil` subcase, e.g.,
+`Tree.Nil` is the empty subcase of `Tree`.
 
 A mutually recursive type requires a `@pre` declaration to signal its existence
 before its full declaration:
@@ -384,11 +384,11 @@ A variable declaration introduces a name of the given type and assigns a value
 to it:
 
 ```
-var x : () = ()                             -- `x` of type `()` holds `()`
-var y : Bool = Bool.True                    -- `y` of type `Bool` holds `True`
-var z : (Bool,()) = (Bool.False,())         -- `z` of tuple type holds tuple
-var n : List = List.Cons(List.Cons($List))  -- `n` of type `List` holds result of constructor
-var u : Int = ?                             -- `x` of type `Int` is not initialized
+var x : () = ()                                -- `x` of type `()` holds `()`
+var y : Bool = Bool.True                       -- `y` of type `Bool` holds `True`
+var z : (Bool,()) = (Bool.False,())            -- `z` of tuple type holds tuple
+var n : List = List.Cons(List.Cons(List.Nil))  -- `n` of type `List` holds result of constructor
+var u : Int = ?                                -- `x` of type `Int` is not initialized
 ```
 
 The assignment can be a question mark `?`, which keeps the name uninitialized.
@@ -524,7 +524,6 @@ Stmt ::= `var´ VAR `:´ Type                 -- variable declaration     var x:
 
 Expr ::= `(´ `)´                            -- unit value               ()
       |  NAT                                -- native expression        _printf
-      |  `$´ USER                           -- empty constructor        $List
       |  VAR                                -- variable identifier      i
       |  `\´ Expr                           -- upref                    \x
       |  Expr `\´                           -- dnref                    x\
@@ -533,8 +532,8 @@ Expr ::= `(´ `)´                            -- unit value               ()
       |  [`call´ | `input´ | `output´]      -- call                     f(x)
             (VAR|NAT) [Expr]                -- input & output           input std ; output std 10
       |  Expr `.´ NUM                       -- tuple index              x.1
-      |  Expr `.´ [`$´] USER `!´            -- discriminator            x.True!
-      |  Expr `.´ [`$´] USER `?´            -- predicate                x.False?
+      |  Expr `.´ USER `!´                  -- discriminator            x.True!
+      |  Expr `.´ USER `?´                  -- predicate                x.Nil?
       |  `(´ Expr `)´                       -- group                    (x)
 
 Type ::= `(´ `)´                            -- unit                     ()

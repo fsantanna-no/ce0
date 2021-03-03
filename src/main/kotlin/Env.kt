@@ -26,7 +26,7 @@ fun env_prelude (s: Stmt): Stmt {
 fun env_PRV_set (s: Stmt, cur_: Stmt?): Stmt? {
     var cur = cur_
     fun fe (e: Expr): Boolean {
-        if (cur!=null && (e is Expr.Int || e is Expr.Var || e is Expr.Empty || e is Expr.Cons || e is Expr.Pred || e is Expr.Disc)) {
+        if (cur!=null && (e is Expr.Int || e is Expr.Var || e is Expr.Cons || e is Expr.Pred || e is Expr.Disc)) {
             env_PRV[e] = cur!!
         }
         return true
@@ -77,7 +77,11 @@ fun Any.idToStmt (id: String): Stmt? {
 fun Any.supSubToType (sup: String, sub: String): Type? {
     try {
         val user = this.idToStmt(sup) as Stmt.User
-        return user.subs.first { (id,_) -> id.str==sub }.second
+        return if (user.isrec && sub=="Nil") {
+            Type.Unit(Tk.Sym(TK.UNIT,user.tk.lin,user.tk.col,"()"))
+        } else {
+            user.subs.first { (id, _) -> id.str == sub }.second
+        }
     } catch (_: Exception) {
         return null
     }
@@ -108,9 +112,8 @@ fun Expr.toType (): Type {
         is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType() as Type.Func).out
         is Expr.Index -> (this.e.toType() as Type.Tuple).vec[this.tk_.num-1]
         is Expr.Cons  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, this.sup.str)).set_env()
-        is Expr.Disc  -> if (this.tk.enu == TK.XEMPTY) Type.Unit(Tk.Sym(TK.UNIT,this.tk.lin,this.tk.col,"()")) else this.supSubToType((this.e.toType() as Type.User).tk_.str, this.tk_.str)!!
+        is Expr.Disc  -> this.supSubToType((this.e.toType() as Type.User).tk_.str, this.tk_.str)!!
         is Expr.Pred  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, "Bool")).set_env()
-        is Expr.Empty -> Type.User(this.tk_).set_env()
     }
 }
 
@@ -132,13 +135,6 @@ fun check_dcls (s: Stmt): String? {
             is Expr.Var -> {
                 if (e.idToStmt(e.tk_.str) == null) {
                     ret = All_err_tk(e.tk, "undeclared variable \"${e.tk_.str}\"")
-                    return false
-                }
-            }
-            is Expr.Empty -> {
-                val sup = (e.toType() as Type.User).tk_.str
-                if (e.idToStmt(sup) == null) {
-                    ret = All_err_tk(e.tk, "undeclared type \"$sup\"")
                     return false
                 }
             }
@@ -164,12 +160,6 @@ fun check_dcls (s: Stmt): String? {
                     (tpe !is Type.User) -> {
                         ret = All_err_tk(ee.tk, "invalid `.´ : expected user type")
                         return false
-                    }
-                    (e.tk.enu == TK.XEMPTY) -> {
-                        if (tk.str != sup!!) {
-                            ret = All_err_tk(ee.tk, "invalid `.´ : expected \"\$${sup!!}\"")
-                            return false
-                        }
                     }
                     (e.supSubToType(sup!!, tk.str) == null) -> {
                         ret = All_err_tk(e.tk, "invalid `.´ : undeclared subcase \"${tk.str}\"")
