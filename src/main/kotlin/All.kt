@@ -14,21 +14,24 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
     val all = All_new(PushbackReader(StringReader(inp), 2))
     lexer(all)
     var s = parser_stmts(all, Pair(TK.EOF,null))
-    println(s)
+    //println(s)
     if (s == null) {
         return Pair(false, all.err)
     }
     s = env_prelude(s)
-    env_PRV_set(s, null)
-    //println(env_PRV)
-    //println(s)
-    val err1 = check_dcls(s)
+    val (_,err1) = env_PRV_set(s, null)
     if (err1 != null) {
         return Pair(false, err1)
     }
-    val err2 = check_types(s)
+    //println(env_PRV)
+    //println(s)
+    val err2 = check_dcls(s)
     if (err2 != null) {
         return Pair(false, err2)
+    }
+    val err3 = check_types(s)
+    if (err3 != null) {
+        return Pair(false, err3)
     }
     return Pair(true, s.code())
 }

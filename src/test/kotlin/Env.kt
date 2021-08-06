@@ -32,6 +32,15 @@ class Env {
         assert(out == "(ln 1, col 8): undeclared type \"Nat\"")
     }
 
+    // REDECLARED
+
+    @Test
+    fun a04_redeclared () {
+        val out = all("var x: () = () ; var x: Int = 1")
+        println(out)
+        assert(out == "(ln 1, col 22): invalid declaration : \"x\" is already declared (ln 1)")
+    }
+
     // USER
 
     @Test
@@ -139,8 +148,29 @@ class Env {
         assert(out == "OK")
     }
 
+    @Test
+    fun b12_not_rec () {
+        val out = all("""
+            type @pre @rec List
+            type List {
+                Item: Int
+            }
+        """.trimIndent())
+        assert(out == "(ln 2, col 6): unmatching type declaration (ln 1)")
+    }
+    @Test
+    fun b13_not_rec () {
+        val out = all("""
+            type @pre @rec List
+            type @rec List {
+                Item: Int
+            }
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 2, col 11): invalid type declaration : unexpected `@rec´")
+    }
+
     // TODO: test if empty is part of isrec
-    // TODO: invalid type declaration : unmatching predeclaration
 
     // TYPE
 

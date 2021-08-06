@@ -223,6 +223,19 @@ class Exec {
             }
             output std g (f,10)
         """.trimIndent())
+        assert(out == "(ln 3, col 8): invalid declaration : \"f\" is already declared (ln 1)")
+    }
+    @Test
+    fun d07_func_fg () {
+        val out = all("""
+            func f: Int->Int { return arg }
+            func g: (Int->Int, Int) -> Int {
+               var fx: Int->Int = arg.1
+               var v: Int = call fx arg.2
+               return v
+            }
+            output std g (f,10)
+        """.trimIndent())
         assert(out == "10\n")
     }
 

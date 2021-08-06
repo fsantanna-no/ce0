@@ -23,35 +23,89 @@ fun env_prelude (s: Stmt): Stmt {
  * var y: ...
  * return f(x,y)    // x+y -> y -> x -> f -> null
  */
-fun env_PRV_set (s: Stmt, cur_: Stmt?): Stmt? {
-    var cur = cur_
-    fun fe (e: Expr): Boolean {
-        if (cur!=null && (e is Expr.Int || e is Expr.Var || e is Expr.Cons || e is Expr.Pred || e is Expr.Disc)) {
-            env_PRV[e] = cur!!
+fun env_PRV_set (s: Stmt, cur_: Stmt?): Pair<Stmt?,String?> {
+    var err: String? = null
+    fun aux (s: Stmt, cur_: Stmt?): Stmt? {
+        var cur = cur_
+        fun fe(e: Expr): Boolean {
+            if (cur != null && (e is Expr.Int || e is Expr.Var || e is Expr.Cons || e is Expr.Pred || e is Expr.Disc)) {
+                env_PRV[e] = cur!!
+            }
+            return true
         }
-        return true
-    }
-    fun ft (tp: Type): Boolean {
-        if (cur!=null && tp is Type.User) {
-            env_PRV[tp] = cur!!
+
+        fun ft(tp: Type): Boolean {
+            if (cur != null && tp is Type.User) {
+                env_PRV[tp] = cur!!
+            }
+            return true
         }
-        return true
+        if (cur != null && (s is Stmt.Var || s is Stmt.User || s is Stmt.Func)) {
+            val id = when (s) {
+                is Stmt.Var -> s.tk_.str
+                is Stmt.User -> s.tk_.str
+                is Stmt.Func -> s.tk_.str
+                else -> error("impossible case")
+            }
+            if (err == null) {
+                err = cur.idToStmt(id).let {
+                    when {
+                        (it == null) -> null
+                        (s is Stmt.User && it is Stmt.User && it.subs.isEmpty()) -> {
+                            // type predeclaration
+                            if (it.isrec != s.isrec) {
+                                All_err_tk(s.tk, "unmatching type declaration (ln ${it.tk.lin})")
+                            } else {
+                                null
+                            }
+                        }
+                        else -> All_err_tk(s.tk, "invalid declaration : \"$id\" is already declared (ln ${it.tk.lin})")
+                    }
+                }
+            }
+            env_PRV[s] = cur
+        }
+        return when (s) {
+            is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> cur
+            is Stmt.Var -> {
+                s.type.visit(::ft); s.init.visit(::fe); s
+            }
+            is Stmt.User -> {
+                if (s.isrec) cur = s; s.subs.forEach { it.second.visit(::ft) }; s
+            }
+            is Stmt.Set -> {
+                s.dst.visit(::fe); s.src.visit(::fe); cur
+            }
+            is Stmt.Call -> {
+                s.call.visit(::fe); cur
+            }
+            is Stmt.Seq -> {
+                val prv2 = aux(s.s1, cur); aux(s.s2, prv2)
+            }
+            is Stmt.If -> {
+                s.tst.visit(::fe); aux(s.true_, cur); aux(s.false_, cur); cur
+            }
+            is Stmt.Func -> {
+                cur = s; if (s.block != null) {
+                    s.type.visit(::ft); aux(s.block, cur)
+                }; s
+            }
+            is Stmt.Ret -> {
+                s.e.visit(::fe); cur
+            }
+            is Stmt.Loop -> {
+                aux(s.block, cur); cur
+            }
+            is Stmt.Block -> {
+                aux(s.body, cur); cur
+            }
+        }
     }
-    if (cur!=null && (s is Stmt.Var || s is Stmt.User || s is Stmt.Func)) {
-        env_PRV[s] = cur
-    }
-    return when (s) {
-        is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> cur
-        is Stmt.Var   -> { s.type.visit(::ft) ; s.init.visit(::fe) ; s }
-        is Stmt.User  -> { if (s.isrec) cur=s ; s.subs.forEach { it.second.visit(::ft) } ; s }
-        is Stmt.Set   -> { s.dst.visit(::fe) ; s.src.visit(::fe) ; cur }
-        is Stmt.Call  -> { s.call.visit(::fe) ; cur }
-        is Stmt.Seq   -> { val prv2=env_PRV_set(s.s1,cur) ;  env_PRV_set(s.s2, prv2) }
-        is Stmt.If    -> { s.tst.visit(::fe) ; env_PRV_set(s.true_,cur) ; env_PRV_set(s.false_,cur) ; cur }
-        is Stmt.Func  -> { cur=s ; if (s.block != null) { s.type.visit(::ft) ; env_PRV_set(s.block,cur) } ; s }
-        is Stmt.Ret   -> { s.e.visit(::fe) ; cur }
-        is Stmt.Loop  -> { env_PRV_set(s.block,cur) ; cur }
-        is Stmt.Block -> { env_PRV_set(s.body,cur) ; cur }
+    val ret = aux(s,cur_)
+    if (err != null) {
+        return Pair(null, err)
+    } else {
+        return Pair(ret, null)
     }
 }
 
@@ -176,7 +230,7 @@ fun check_dcls (s: Stmt): String? {
                 return when (tp) {
                     is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr -> false
                     is Type.Tuple -> tp.vec.any { aux(it) }
-                    is Type.User  -> this.isrec || (tp.idToStmt(tp.tk_.str) as Stmt.User).let { it.isHasRec() }
+                    is Type.User  -> (tp.idToStmt(tp.tk_.str) as Stmt.User).let { it.isrec || it.isHasRec() }
                     else -> false
                 }
             }
