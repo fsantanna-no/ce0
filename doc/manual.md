@@ -120,7 +120,7 @@ The unit type `()` only has the [single value](TODO) `()`.
 ## Native
 
 A native type holds external [values from the host language](TODO), i.e.,
-values which *Ce* do not create or manipulate directly.
+values which *Ce* does not create or manipulate directly.
 
 Native type identifiers follow the rules for [native tokens](TODO):
 
@@ -256,23 +256,24 @@ output std x                -- writes the value of `x` to stdout
 The `input` & `output` expressions can appear on assignments and statements,
 but not in the middle of expressions.
 
-The declarations for the I/O functions must prefix their identifiers `input_`
-or `output_`:
+The declarations for the I/O functions must prefix their identifiers with
+`input_` or `output_`:
 
 ```
-func output_libsdl: IO_Sdl -> () {
+func output_libsdl: IO_Sdl -> ()
+{
     ...
 }
 ```
 
 ## Recursive clone & move
 
-The special operation `clone` make a deep copy of its argument of a
+The special operation `clone` makes a deep copy of its argument of
 recursive type:
 
 ```
 var y: List = List.Item List.Item List.Nil
-var x: List = clone y           -- `x` becomes "Item Item Nil"
+var x: List = clone y    -- `x` becomes "Item Item Nil"
 ```
 
 `TODO: move, types of both`
@@ -391,7 +392,7 @@ var n : List = List.Cons(List.Cons(List.Nil))  -- `n` of type `List` holds resul
 var u : Int = ?                                -- `x` of type `Int` is not initialized
 ```
 
-The assignment can be a question mark `?`, which keeps the name uninitialized.
+The assignment can be a question mark `?`, which keeps the variable uninitialized.
 
 ## Assignments
 
@@ -461,7 +462,8 @@ The argument can be accessed through the identifier `arg`.
 A `return` exits a function with a value:
 
 ```
-func f : () -> () {
+func f : () -> ()
+{
     return arg
 }
 ```
@@ -541,5 +543,5 @@ Type ::= `(´ `)´                            -- unit                     ()
       |  USER                               -- user type                Bool
       |  `(´ Type {`,´ Type} `)´            -- tuple                    ((),())
       |  Type `->´ Type                     -- function                 () -> ()
-      |  `\` Type                           -- function                 \Int
+      |  `\` Type                           -- pointer                  \Int
 ```
