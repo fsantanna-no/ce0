@@ -2,6 +2,8 @@ import org.junit.jupiter.api.MethodOrderer.Alphanumeric
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
 import java.io.File
+import java.io.PushbackReader
+import java.io.StringReader
 
 @TestMethodOrder(Alphanumeric::class)
 class Env {
@@ -12,6 +14,17 @@ class Env {
             return out1
         }
         return "OK"
+    }
+
+    fun pre (inp: String): Stmt {
+        val all = All_new(PushbackReader(StringReader(inp), 2))
+        lexer(all)
+        var s = parser_stmts(all, Pair(TK.EOF,null))
+        //println(s)
+        assert (s != null)
+        //s = env_prelude(s!!)
+        env_PRV_set(s!!, null)
+        return s
     }
 
     // UNDECLARED
@@ -275,5 +288,30 @@ class Env {
             var z: \Int = y\
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment to \"z\" : type mismatch")
+    }
+
+    // DEPTH
+
+    @Test
+    fun d01_block () {
+        val s = pre("var x: Int = 10 ; { output std x }")
+        val blk = (s as Stmt.Seq).s2 as Stmt.Block
+        val x = (blk.body as Stmt.Call).call.arg
+        val X = x.idToStmt("x")
+        assert(X!!.getDepth() == 0)
+        assert(((s as Stmt.Seq).s2 as Stmt.Block).getDepth() == 1)
+        //println("<<<")
+    }
+
+    @Test
+    fun d02_func () {
+        val s = pre("var x: Int = 10 ; func f: ()->() { var y: Int = 10 ; output std x }")
+        val blk = ((s as Stmt.Seq).s2 as Stmt.Func).block as Stmt.Block
+        val seq = ((((blk.body as Stmt.Seq).s2 as Stmt.Seq).s2 as Stmt.Block).body as Stmt.Seq)
+        val call = (seq.s2 as Stmt.Call)
+        val x = call.call.arg
+        val X = x.idToStmt("x")
+        assert(X!!.getDepth() == 0)
+        assert(seq.s1.getDepth() == 2)
     }
 }

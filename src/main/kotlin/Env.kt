@@ -40,14 +40,15 @@ fun env_PRV_set (s: Stmt, cur_: Stmt?): Pair<Stmt?,String?> {
             }
             return true
         }
-        if (cur != null && (s is Stmt.Var || s is Stmt.User || s is Stmt.Func)) {
+        if (cur != null && (s is Stmt.Block || s is Stmt.Var || s is Stmt.User || s is Stmt.Func)) {
             val id = when (s) {
+                is Stmt.Block -> null
                 is Stmt.Var -> s.tk_.str
                 is Stmt.User -> s.tk_.str
                 is Stmt.Func -> s.tk_.str
                 else -> error("impossible case")
             }
-            if (err == null) {
+            if (err == null && id != null) {
                 err = cur.idToStmt(id).let {
                     when {
                         (it == null) -> null
@@ -97,7 +98,7 @@ fun env_PRV_set (s: Stmt, cur_: Stmt?): Pair<Stmt?,String?> {
                 aux(s.block, cur); cur
             }
             is Stmt.Block -> {
-                aux(s.body, cur); cur
+                aux(s.body, s); cur
             }
         }
     }
@@ -125,6 +126,16 @@ fun Any.idToStmt (id: String): Stmt? {
         (this is Stmt.User && this.tk_.str==id) -> this
         (env_PRV[this] == null) -> null
         else -> env_PRV[this]!!.idToStmt(id)
+    }
+}
+
+fun Stmt.getDepth (): Int {
+    return env_PRV[this].let {
+        when {
+            (it == null) -> 0
+            (this is Stmt.Block) -> 1 + it.getDepth()
+            else -> it.getDepth()
+        }
     }
 }
 
