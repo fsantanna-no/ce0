@@ -33,6 +33,10 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
     if (err3 != null) {
         return Pair(false, err3)
     }
+    val err4 = check_pointers(s)
+    if (err4 != null) {
+        return Pair(false, err4)
+    }
     return Pair(true, s.code())
 }
 

@@ -494,6 +494,25 @@ class Exec {
         assert(out == "Aa1 (Bb1 (Aa1 (Nil)))\n")
     }
 
+    @Test
+    fun i05_ptr_block_err () {
+        val out = all("""
+            var p1: \Int = ?
+            var p2: \Int = ?
+            {
+                var v: Int = 10
+                set p1 = \v
+            }
+            {
+                var v: Int = 20
+                set p2 = \v
+            }
+            output std p1\
+        """.trimIndent())
+        //println(out)
+        assert(out == "(ln 5, col 12): invalid assignment : cannot hold pointer to local \"v\" (ln 4) in outer scope")
+    }
+
     // REC
 
     @Test
@@ -551,6 +570,22 @@ class Exec {
             output std \l.Item!
         """.trimIndent())
         assert(out == "out.exe: out.c:63: main: Assertion `l != NULL' failed.\n")
+    }
+
+    // SET - TUPLE - DATA
+
+    @Test
+    fun k01_set_tuple () {
+        val out = all("""
+            var xy: (Int,Int) = (10,10)
+            set xy.1 = 20
+            var x: Int = xy.1
+            var y: Int = xy.2
+            var v: Int = _(x+y)
+            output std v
+        """.trimIndent())
+        println(out)
+        assert(out == "30\n")
     }
 
     // ALL
