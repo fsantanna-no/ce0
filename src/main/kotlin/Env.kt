@@ -352,12 +352,23 @@ fun check_pointers (S: Stmt): String? {
             is Stmt.Set -> {
                 if (s.dst.toType() is Type.Ptr) {
                     val dst = s.dst.idToStmt((s.dst as Expr.Var).tk_.str)!!.getDepth()
-                    val src_use = (s.src as Expr.Upref).e as Expr.Var
-                    val src_dcl = (src_use.idToStmt(src_use.tk_.str)!! as Stmt.Var)
-                    val src = src_dcl.getDepth()
-                    if (dst < src) {
-                        ret = All_err_tk(s.tk, "invalid assignment : cannot hold pointer to local \"${src_use.tk_.str}\" (ln ${src_dcl.tk.lin}) in outer scope")
-                        return false
+                    //println(s.src)
+                    val src_use = when (s.src) {
+                        is Expr.Var   -> s.src
+                        is Expr.Upref -> s.src.e as Expr.Var
+                        is Expr.Call  -> null
+                        else -> error("TODO")
+                    }
+                    if (src_use != null) {
+                        val src_dcl = (src_use.idToStmt(src_use.tk_.str)!! as Stmt.Var)
+                        val src = src_dcl.getDepth()
+                        if (dst < src) {
+                            ret = All_err_tk(
+                                s.tk,
+                                "invalid assignment : cannot hold pointer to local \"${src_use.tk_.str}\" (ln ${src_dcl.tk.lin}) in outer scope"
+                            )
+                            return false
+                        }
                     }
                 }
             }

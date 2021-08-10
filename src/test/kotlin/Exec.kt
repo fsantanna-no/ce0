@@ -513,6 +513,64 @@ class Exec {
         assert(out == "(ln 5, col 12): invalid assignment : cannot hold pointer to local \"v\" (ln 4) in outer scope")
     }
 
+    @Test
+    fun i06_ptr_block_err () {
+        val out = all("""
+            var x: Int = 10
+            var p: \Int = ?
+            {
+                var y: Int = 10
+                set p = \x
+                set p = \y
+            }
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 4) in outer scope")
+    }
+
+    @Test
+    fun i07_ptr_func_ok () {
+        val out = all("""
+            func f : \Int -> \Int {
+                return arg
+            }
+            var v: Int = 10
+            var p: \Int = f \v
+            output std p\
+        """.trimIndent())
+        //println(out)
+        assert(out == "10\n")
+    }
+
+    @Test
+    fun i08_ptr_func_ok () {
+        val out = all("""
+            var v: Int = 10
+            func f : () -> \Int {
+                return \v
+            }
+            var p: \Int = f ()
+            output std p\
+        """.trimIndent())
+        //println(out)
+        assert(out == "10\n")
+    }
+
+    @Test
+    fun i09_ptr_func_err () {
+        val out = all("""
+            func f : () -> \Int {
+                var v: Int = 10
+                return \v
+            }
+            var v: Int = 10
+            var p: \Int = f ()
+            output std p\
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"v\" (ln 2) in outer scope")
+    }
+
     // REC
 
     @Test
