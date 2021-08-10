@@ -355,6 +355,14 @@ class Parser {
         val s = parser_stmt(all)
         assert(s is Stmt.User && s.isrec)
     }
+    @Test
+    fun c05_parser_stmt_var_caret () {
+        val all = All_new(PushbackReader(StringReader("var x: ^Int = 10"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        println(all.err)
+        assert(s==null && all.err=="(ln 1, col 9): expected pointer type")
+    }
 
     // STMT_CALL
 

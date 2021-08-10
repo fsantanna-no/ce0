@@ -314,4 +314,115 @@ class Env {
         assert(X!!.getDepth() == 0)
         assert(seq.s1.getDepth() == 2)
     }
+
+    // POINTERS
+
+    @Test
+    fun e01_ptr_block_err () {
+        val out = all("""
+            var p1: \Int = ?
+            var p2: \Int = ?
+            {
+                var v: Int = 10
+                set p1 = \v
+            }
+            {
+                var v: Int = 20
+                set p2 = \v
+            }
+            output std p1\
+        """.trimIndent())
+        //println(out)
+        assert(out == "(ln 5, col 12): invalid assignment : cannot hold pointer to local \"v\" (ln 4) in outer scope")
+    }
+
+    @Test
+    fun e02_ptr_block_err () {
+        val out = all("""
+            var x: Int = 10
+            var p: \Int = ?
+            {
+                var y: Int = 10
+                set p = \x
+                set p = \y
+            }
+        """.trimIndent())
+        //println(out)
+        assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 4) in outer scope")
+    }
+
+    @Test
+    fun e03_ptr_func_ok () {
+        val out = all("""
+            func f : \Int -> \Int {
+                return arg
+            }
+            var v: Int = 10
+            var p: \Int = f \v
+            output std p\
+        """.trimIndent())
+        //println(out)
+        assert(out == "OK")
+    }
+
+    @Test
+    fun e04_ptr_func_ok () {
+        val out = all("""
+            var v: Int = 10
+            func f : () -> \Int {
+                return \v
+            }
+            var p: \Int = f ()
+            output std p\
+        """.trimIndent())
+        //println(out)
+        assert(out == "OK")
+    }
+
+    @Test
+    fun e05_ptr_func_err () {
+        val out = all("""
+            func f : () -> \Int {
+                var v: Int = 10
+                return \v
+            }
+            var v: Int = 10
+            var p: \Int = f ()
+            output std p\
+        """.trimIndent())
+        //println(out)
+        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"v\" (ln 2) in outer scope")
+    }
+
+    @Test
+    fun e06_ptr_func_err () {
+        val out = all("""
+            func f : \Int -> \Int {
+                var ptr: \Int = arg
+                return ptr
+            }
+            var v: Int = 10
+            var p: \Int = f \v
+            output std p\
+        """.trimIndent())
+        //println(out)
+        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 2) in outer scope")
+    }
+
+    @Test
+    fun e07_ptr_func_ok () {
+        val out = all("""
+            func f : \Int -> \Int {
+                var ptr: ^\Int = arg
+                return ptr
+            }
+            var v: Int = 10
+            var p: \Int = f \v
+            output std p\
+        """.trimIndent())
+        println(out)
+        assert(out == "OK")
+    }
+
+
 }

@@ -26,7 +26,7 @@ sealed class Expr (val tk: Tk) {
 
 sealed class Stmt (val tk: Tk) {
     data class Pass  (val tk_: Tk) : Stmt(tk_)
-    data class Var   (val tk_: Tk.Str, val type: Type, val init: Expr) : Stmt(tk_)
+    data class Var   (val tk_: Tk.Str, val outer: Boolean, val type: Type, val init: Expr) : Stmt(tk_)
     data class Set   (val tk_: Tk.Chr, val dst: Expr, val src: Expr) : Stmt(tk_)
     data class User  (val tk_: Tk.Str, val isrec: Boolean, val subs: Array<Pair<Tk.Str,Type>>) : Stmt(tk_)
     data class Nat   (val tk_: Tk.Str) : Stmt(tk_)
@@ -287,8 +287,13 @@ fun parser_stmt (all: All): Stmt? {
             if (!all.accept_err(TK.CHAR,':')) {
                 return null
             }
+            val outer = all.accept(TK.CHAR, '^')
             val tp = parser_type(all)
             if (tp == null) {
+                return null
+            }
+            if (outer && tp !is Type.Ptr) {
+                all.err_tk(tp.tk, "expected pointer type")
                 return null
             }
             if (!all.accept_err(TK.CHAR,'=')) {
@@ -298,7 +303,7 @@ fun parser_stmt (all: All): Stmt? {
             if (e == null) {
                 return null
             }
-            return Stmt.Var(tk_id, tp, e)
+            return Stmt.Var(tk_id, outer, tp, e)
         }
         all.accept(TK.SET)   -> {
             val dst = parser_expr(all, false)
@@ -425,12 +430,14 @@ fun parser_stmt (all: All): Stmt? {
                 Stmt.Seq(block.tk,
                     Stmt.Var (
                         Tk.Str(TK.XVAR,lin,col,"arg"),
+                        false,
                         (tp as Type.Func).inp,
                         Expr.Nat(Tk.Str(TK.XNAT,lin,col,"_arg_"))
                     ),
                     Stmt.Seq(block.tk,
                         Stmt.Var (
                             Tk.Str(TK.XVAR,lin,col,"_ret_"),
+                            false,
                             tp.out,
                             Expr.Unk(Tk.Chr(TK.CHAR,lin,col,'?'))
                         ),

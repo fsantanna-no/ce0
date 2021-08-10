@@ -64,6 +64,7 @@ The following symbols are valid:
     ,           -- tuple separator
     .           -- tuple index, type predicate & discriminator
     \           -- pointer type, upref & dnref operation
+    ^           -- outermost scope type declaration
     !           -- type discriminator
     ?           -- type predicate, unknown initialization
 ```
@@ -390,9 +391,13 @@ var y : Bool = Bool.True                       -- `y` of type `Bool` holds `True
 var z : (Bool,()) = (Bool.False,())            -- `z` of tuple type holds tuple
 var n : List = List.Cons(List.Cons(List.Nil))  -- `n` of type `List` holds result of constructor
 var u : Int = ?                                -- `x` of type `Int` is not initialized
+var p : ^ \Int = ?                             -- `p` of type `\Int` in outermost scope
 ```
 
 The assignment can be a question mark `?`, which keeps the variable uninitialized.
+
+The type of a pointer declaration can be prefixed with a caret `^` to indicate
+that it is bound to the function outermost scope.
 
 ## Assignments
 

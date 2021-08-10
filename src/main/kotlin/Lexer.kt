@@ -88,7 +88,7 @@ fun token (all: All) {
         all.tk1 = Tk.Sym(TK.EOF, LIN, COL, "")
     } else {
         when (x1) {
-            '{' , '}' , ')' , ';' , ':' , '=' , ',' , '.' , '\\' , '!' , '?' -> {
+            '{' , '}' , ')' , ';' , ':' , '=' , ',' , '.' , '\\' , '^', '!' , '?' -> {
                 all.tk1 = Tk.Chr(TK.CHAR, LIN, COL, x1)
             }
             '(' -> {

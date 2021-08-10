@@ -567,8 +567,38 @@ class Exec {
             var p: \Int = f ()
             output std p\
         """.trimIndent())
-        println(out)
+        //println(out)
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"v\" (ln 2) in outer scope")
+    }
+
+    @Test
+    fun i10_ptr_func_err () {
+        val out = all("""
+            func f : \Int -> \Int {
+                var ptr: \Int = arg
+                return ptr
+            }
+            var v: Int = 10
+            var p: \Int = f \v
+            output std p\
+        """.trimIndent())
+        //println(out)
+        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 2) in outer scope")
+    }
+
+    @Test
+    fun i11_ptr_func_ok () {
+        val out = all("""
+            func f : \Int -> \Int {
+                var ptr: ^\Int = arg
+                return ptr
+            }
+            var v: Int = 10
+            var p: \Int = f \v
+            output std p\
+        """.trimIndent())
+        //println(out)
+        assert(out == "10\n")
     }
 
     // REC

@@ -33,6 +33,7 @@ class Code {
         val e = Expr.Var(Tk.Str(TK.XVAR,1,1,"xxx"))
         env_PRV[e] = Stmt.Var (
             Tk.Str(TK.XVAR,1,1,"xxx"),
+            false,
             Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
             Expr.Nat(Tk.Str(TK.XNAT,1,1,"0"))
         )
@@ -43,6 +44,7 @@ class Code {
         val e = Expr.Var(Tk.Str(TK.XNAT,1,1,"xxx"))
         env_PRV[e] = Stmt.Var (
             Tk.Str(TK.XVAR,1,1,"xxx"),
+            false,
             Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
             Expr.Nat(Tk.Str(TK.XNAT,1,1,"0"))
         )
@@ -67,6 +69,7 @@ class Code {
         )
         env_PRV[e.e] = Stmt.Var (
             Tk.Str(TK.XVAR,1,1,"x"),
+            false,
             Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int")))),
             Expr.Nat(Tk.Str(TK.XNAT,1,1,"0"))
         )
