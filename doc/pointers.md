@@ -44,5 +44,26 @@ var p: \Int = f ()
 output std p\
 ```
 
-- TODO
-    - `var x: ^\Int` (pointer to outer scope declared in inner scope)
+- Functions can bind pointers to the outermost scope to manipulate `arg`:
+
+```
+func f : \Int -> \Int
+{
+    var ptr: ^\Int = arg    -- ok
+    return ptr
+}
+var v: Int = 10
+var p: \Int = f ()
+output std p\               -- 10
+```
+
+- But they cannot be assigned local pointers as expected:
+
+```
+func f : \Int -> \Int
+{
+    var v: Int = 10
+    var ptr: ^\Int = \v     -- (ln 4, col 9): invalid assignment : cannot hold pointer to local "v" (ln 3) in outer scope
+    return ptr
+}
+```

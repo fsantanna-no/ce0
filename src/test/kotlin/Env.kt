@@ -410,7 +410,7 @@ class Env {
     }
 
     @Test
-    fun e07_ptr_func_ok () {
+    fun e07_ptr_caret_ok () {
         val out = all("""
             func f : \Int -> \Int {
                 var ptr: ^\Int = arg
@@ -424,5 +424,29 @@ class Env {
         assert(out == "OK")
     }
 
+    @Test
+    fun e08_ptr_caret_err () {
+        val out = all("""
+            func f : \Int -> \Int {
+                var x: Int = 10
+                var ptr: ^\Int = \x
+                return ptr
+            }
+            var v: Int = 10
+            var p: \Int = f \v
+            output std p\
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 3, col 9): invalid assignment : cannot hold pointer to local \"x\" (ln 2) in outer scope")
+    }
 
+    // TODO: caret outside function in global scope
+    @Test
+    fun e09_ptr_caret_err () {
+        val out = all("""
+            var ptr: ^\Int = ?
+        """.trimIndent())
+        println(out)
+        assert(out == "OK")
+    }
 }
