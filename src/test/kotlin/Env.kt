@@ -449,4 +449,32 @@ class Env {
         println(out)
         assert(out == "OK")
     }
+
+    @Test
+    fun e10_ptr_tuple_err () {
+        val out = all("""
+            var p: \(Int,Int) = ?
+            {
+                var y: (Int,Int) = (10,20)
+                set p = \y
+            }
+        """.trimIndent())
+        //println(out)
+        assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 3) in outer scope")
+    }
+    @Test
+    fun e11_ptr_user_err () {
+        val out = all("""
+            type X {
+                Y: ()
+            }
+            var p: \X = ?
+            {
+                var y: X = X.Y
+                set p = \y
+            }
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 6) in outer scope")
+    }
 }

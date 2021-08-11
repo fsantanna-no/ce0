@@ -1,5 +1,7 @@
 # Pointers
 
+## Basic Rule
+
 - Cannot hold local pointer in outer scope:
 
 ```
@@ -9,6 +11,8 @@ var p: \Int = ?
     set p = \v      -- (ln 4, col 13): invalid assignment : cannot hold pointer to local "v" (ln 3) in outer scope
 }
 ```
+
+## Functions
 
 - Function can return pointer from outer scope or `arg`:
 
@@ -44,7 +48,9 @@ var p: \Int = f ()
 output std p\
 ```
 
-- Functions can bind pointers to the outermost scope to manipulate `arg`:
+## Scope Modifier
+
+- Caret `^` modifier binds variables to outermost scope, which can manipulate `arg`:
 
 ```
 func f : \Int -> \Int
@@ -57,7 +63,7 @@ var p: \Int = f ()
 output std p\               -- 10
 ```
 
-- But they cannot be assigned local pointers as expected:
+- But these variables cannot be assigned local pointers as expected:
 
 ```
 func f : \Int -> \Int
