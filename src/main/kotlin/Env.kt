@@ -351,11 +351,23 @@ fun check_pointers (S: Stmt): String? {
         return true
     }
     fun fs (s: Stmt): Boolean {
+        fun check (dst: Int, src_use: Expr.Var?): Boolean {
+            if (src_use != null) {
+                val src_dcl = (src_use.idToStmt(src_use.tk_.str)!! as Stmt.Var)
+                val src = src_dcl.getDepth()
+                if (dst < src) {
+                    ret = All_err_tk(
+                        s.tk,
+                        "invalid assignment : cannot hold pointer to local \"${src_use.tk_.str}\" (ln ${src_dcl.tk.lin}) in outer scope"
+                    )
+                    return false
+                }
+            }
+            return true
+        }
         when (s) {
             is Stmt.Var -> {
                 if (s.type is Type.Ptr) {
-                    val dst = s.getDepth()
-                    //println(s.init)
                     val src_use = when (s.init) {
                         is Expr.Var   -> s.init
                         is Expr.Upref -> s.init.e as Expr.Var
@@ -364,40 +376,19 @@ fun check_pointers (S: Stmt): String? {
                         is Expr.Nat   -> null
                         else -> error("TODO")
                     }
-                    if (src_use != null) {
-                        val src_dcl = (src_use.idToStmt(src_use.tk_.str)!! as Stmt.Var)
-                        val src = src_dcl.getDepth()
-                        if (dst < src) {
-                            ret = All_err_tk(
-                                s.tk,
-                                "invalid assignment : cannot hold pointer to local \"${src_use.tk_.str}\" (ln ${src_dcl.tk.lin}) in outer scope"
-                            )
-                            return false
-                        }
-                    }
+                    return check(s.getDepth(), src_use)
                 }
             }
             is Stmt.Set -> {
                 if (s.dst.toType() is Type.Ptr) {
                     val dst = s.dst.idToStmt((s.dst as Expr.Var).tk_.str)!!.getDepth()
-                    //println(s.src)
                     val src_use = when (s.src) {
                         is Expr.Var   -> s.src
                         is Expr.Upref -> s.src.e as Expr.Var
                         is Expr.Call  -> null
                         else -> error("TODO")
                     }
-                    if (src_use != null) {
-                        val src_dcl = (src_use.idToStmt(src_use.tk_.str)!! as Stmt.Var)
-                        val src = src_dcl.getDepth()
-                        if (dst < src) {
-                            ret = All_err_tk(
-                                s.tk,
-                                "invalid assignment : cannot hold pointer to local \"${src_use.tk_.str}\" (ln ${src_dcl.tk.lin}) in outer scope"
-                            )
-                            return false
-                        }
-                    }
+                    return check(dst, src_use)
                 }
             }
         }
