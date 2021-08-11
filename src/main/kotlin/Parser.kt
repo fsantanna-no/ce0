@@ -40,56 +40,50 @@ sealed class Stmt (val tk: Tk) {
     data class Block (val tk_: Tk.Chr, val body: Stmt) : Stmt(tk_)
 }
 
-fun parser_type (all: All): Type? {
-    fun one (): Type? { // Unit, Nat, User, Tuple
+fun parser_type (all: All): Type {
+    fun one (): Type { // Unit, Nat, User, Tuple
         return when {
             all.accept(TK.UNIT)  -> Type.Unit(all.tk0 as Tk.Sym)
             all.accept(TK.XNAT)  -> Type.Nat(all.tk0 as Tk.Str)
             all.accept(TK.XUSER) -> Type.User(all.tk0 as Tk.Str)
             all.accept(TK.CHAR,'\\') -> {
                 val tk0 = all.tk0 as Tk.Chr
-                val tp = one()
-                if (tp == null) {
-                    return null
-                }
-                return Type.Ptr(tk0, tp)
+                Type.Ptr(tk0, one())
             }
             all.accept(TK.CHAR,'(') -> { // Type.Tuple
                 val tk0 = all.tk0 as Tk.Chr
                 val tp = parser_type(all)
-                when {
-                    (tp == null)                      -> return null
-                    all.accept(TK.CHAR,')')      -> return tp
-                    !all.accept_err(TK.CHAR,',') -> return null
+                if (all.accept(TK.CHAR,')')) {
+                    return tp
                 }
-                val tps = arrayListOf(tp!!)
+                assert(all.accept_err(TK.CHAR,',')) { all.err }
+                val tps = arrayListOf(tp)
                 while (true) {
                     val tp2 = parser_type(all)
-                    if (tp2 == null) {
-                        return null
-                    }
                     tps.add(tp2)
                     if (!all.accept(TK.CHAR,',')) {
                         break
                     }
                 }
-                if (!all.accept_err(TK.CHAR,')')) {
-                    return null
+                assert(all.accept_err(TK.CHAR,')')) {
+                    all.err
                 }
-                return Type.Tuple(tk0, tps.toTypedArray())
+                Type.Tuple(tk0, tps.toTypedArray())
             }
-            else -> { all.err_expected("type") ; null }
+            else -> {
+                all.err_expected("type")
+                error(all.err)
+            }
         }
     }
 
     // Func: right associative
     val ret = one()
     return when {
-        (ret == null) -> null
         all.accept(TK.ARROW) -> {
             val tk0 = all.tk0 as Tk.Sym
             val oth = parser_type(all) // right associative
-            if (oth==null) null else Type.Func(tk0, ret, oth)
+            Type.Func(tk0, ret, oth)
         }
         else -> ret
     }
@@ -289,9 +283,6 @@ fun parser_stmt (all: All): Stmt? {
             }
             val outer = all.accept(TK.CHAR, '^')
             val tp = parser_type(all)
-            if (tp == null) {
-                return null
-            }
             if (outer && tp !is Type.Ptr) {
                 all.err_tk(tp.tk, "expected pointer type")
                 return null
@@ -351,9 +342,6 @@ fun parser_stmt (all: All): Stmt? {
                     return null
                 }
                 val tp = parser_type(all)
-                if (tp == null) {
-                    return null
-                }
                 return Pair(tk,tp)
             }
 
@@ -414,11 +402,10 @@ fun parser_stmt (all: All): Stmt? {
                 return null
             }
             val tp = parser_type(all)
-            when (tp) {
-                null -> return null
-                !is Type.Func -> { all.err_tk(all.tk0, "expected function type") ; return null}
+            assert(tp is Type.Func) {
+                all.err_tk(all.tk0, "expected function type")
+                all.err
             }
-            assert(tp is Type.Func)
             val block = parser_block()
             if (block == null) {
                 return null

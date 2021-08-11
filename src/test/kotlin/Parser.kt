@@ -13,8 +13,12 @@ class Parser {
     fun a01_parser_type () {
         val all = All_new(PushbackReader(StringReader("xxx"), 2))
         lexer(all)
-        val tp = parser_type(all)
-        assert(tp==null && all.err=="(ln 1, col 1): expected type : have \"xxx\"")
+        try {
+            parser_type(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 1): expected type : have \"xxx\"")
+        }
     }
     @Test
     fun a02_parser_type () {
@@ -48,8 +52,12 @@ class Parser {
     fun a05_parser_type_tuple_err () {
         val all = All_new(PushbackReader(StringReader("((),X,"), 2))
         lexer(all)
-        val tp = parser_type(all)
-        assert(tp==null && all.err=="(ln 1, col 7): expected type : have end of file")
+        try {
+            parser_type(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 7): expected type : have end of file")
+        }
     }
     @Test
     fun a06_parser_type_func () {
@@ -62,15 +70,23 @@ class Parser {
     fun a07_parser_type_err () {
         val all = All_new(PushbackReader(StringReader("("), 2))
         lexer(all)
-        val tp = parser_type(all)
-        assert(tp==null && all.err=="(ln 1, col 2): expected type : have end of file")
+        try {
+            parser_type(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 2): expected type : have end of file")
+        }
     }
     @Test
     fun a08_parser_type_err () {
         val all = All_new(PushbackReader(StringReader("(X"), 2))
         lexer(all)
-        val tp = parser_type(all)
-        assert(tp==null && all.err=="(ln 1, col 3): expected `,´ : have end of file")
+        try {
+            parser_type(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 3): expected `,´ : have end of file")
+        }
     }
     @Test
     fun a08_parser_type_tuple () {
@@ -466,8 +482,13 @@ class Parser {
     fun c12_parser_func () {
         val all = All_new(PushbackReader(StringReader("func f : () { }"), 2))
         lexer(all)
-        val s = parser_stmt(all)
-        assert(s==null && all.err=="(ln 1, col 10): expected function type")
+        try {
+            parser_stmt(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            println(e.message)
+            assert(e.message == "(ln 1, col 10): expected function type")
+        }
     }
     @Test
     fun c13_parser_func () {

@@ -1,5 +1,7 @@
 import java.io.PushbackReader
 import java.io.StringReader
+import java.lang.AssertionError
+import java.lang.Exception
 
 data class All(
     val inp: PushbackReader,
@@ -19,23 +21,13 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
         return Pair(false, all.err)
     }
     s = env_prelude(s)
-    val (_,err1) = env_PRV_set(s, null)
-    if (err1 != null) {
-        return Pair(false, err1)
-    }
-    //println(env_PRV)
-    //println(s)
-    val err2 = check_dcls(s)
-    if (err2 != null) {
-        return Pair(false, err2)
-    }
-    val err3 = check_types(s)
-    if (err3 != null) {
-        return Pair(false, err3)
-    }
-    val err4 = check_pointers(s)
-    if (err4 != null) {
-        return Pair(false, err4)
+    try {
+        env_PRV_set(s, null)
+        check_dcls(s)
+        check_types(s)
+        check_pointers(s)
+    } catch (e: Throwable) {
+        return Pair(false, e.message!!)
     }
     return Pair(true, s.code())
 }
