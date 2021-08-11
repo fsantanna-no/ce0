@@ -99,7 +99,6 @@ class Exec {
             set x = -20
             output std x
         """.trimIndent())
-        println(out)
         assert(out == "-20\n")
     }
 
@@ -289,7 +288,6 @@ class Exec {
             var zz: Z = yy.Y!
             output std zz
         """.trimIndent())
-        println(out)
         assert(out == "Z\n")
     }
     @Test
@@ -365,7 +363,6 @@ class Exec {
             var z: Z = Z.Y
             output std z.X!
         """.trimIndent())
-        //println(out)
         assert(out == "out.exe: out.c:85: main: Assertion `z.sub == Z_X' failed.\n")
     }
     @Test
@@ -376,7 +373,6 @@ class Exec {
             type A { B:(X,()) }
             output std (A.B (X.Z,())).B!.1.Z?
         """.trimIndent())
-        println(out)
         assert(out == "True\n")
     }
     @Test
@@ -464,7 +460,6 @@ class Exec {
         call f \x
         output std x
         """.trimIndent())
-        println(out)
         assert(out == "2\n")
     }
     @Test
@@ -475,7 +470,6 @@ class Exec {
             var x: Int = 10
             output std g (\x)
         """.trimIndent())
-        println(out)
         assert(out == "10\n")
     }
     @Test
@@ -509,7 +503,6 @@ class Exec {
             }
             output std p1\
         """.trimIndent())
-        //println(out)
         assert(out == "(ln 5, col 12): invalid assignment : cannot hold pointer to local \"v\" (ln 4) in outer scope")
     }
 
@@ -524,7 +517,6 @@ class Exec {
                 set p = \y
             }
         """.trimIndent())
-        println(out)
         assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 4) in outer scope")
     }
 
@@ -538,7 +530,6 @@ class Exec {
             var p: \Int = f \v
             output std p\
         """.trimIndent())
-        //println(out)
         assert(out == "10\n")
     }
 
@@ -552,7 +543,6 @@ class Exec {
             var p: \Int = f ()
             output std p\
         """.trimIndent())
-        //println(out)
         assert(out == "10\n")
     }
 
@@ -567,7 +557,6 @@ class Exec {
             var p: \Int = f ()
             output std p\
         """.trimIndent())
-        //println(out)
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"v\" (ln 2) in outer scope")
     }
 
@@ -582,7 +571,6 @@ class Exec {
             var p: \Int = f \v
             output std p\
         """.trimIndent())
-        //println(out)
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 2) in outer scope")
     }
 
@@ -597,7 +585,6 @@ class Exec {
             var p: \Int = f \v
             output std p\
         """.trimIndent())
-        //println(out)
         assert(out == "10\n")
     }
 
@@ -623,7 +610,6 @@ class Exec {
             var l: List = List.Item List.Nil
             output std \l
         """.trimIndent())
-        //println(out)
         assert(out == "Item (Nil)\n")
     }
     @Test
@@ -672,7 +658,6 @@ class Exec {
             var v: Int = _(x+y)
             output std v
         """.trimIndent())
-        println(out)
         assert(out == "30\n")
     }
 

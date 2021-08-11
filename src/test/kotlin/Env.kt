@@ -20,10 +20,7 @@ class Env {
         val all = All_new(PushbackReader(StringReader(inp), 2))
         lexer(all)
         var s = parser_stmts(all, Pair(TK.EOF,null))
-        //println(s)
-        assert (s != null)
-        //s = env_prelude(s!!)
-        env_PRV_set(s!!, null)
+        env_PRV_set(s, null)
         return s
     }
 
@@ -50,7 +47,6 @@ class Env {
     @Test
     fun a04_redeclared () {
         val out = all("var x: () = () ; var x: Int = 1")
-        println(out)
         assert(out == "(ln 1, col 22): invalid declaration : \"x\" is already declared (ln 1)")
     }
 
@@ -114,7 +110,6 @@ class Env {
     }
     @Test
     fun b09_user_err () {
-        val Z = "\$Z"
         val out = all("""
             type Z { Z:() }
             type @rec List {
@@ -126,7 +121,6 @@ class Env {
     }
     @Test
     fun b10_user_empty_err () {
-        val Z = "\$Z"
         val out = all("""
             type Z { Z:() }
             type @rec List {
@@ -179,7 +173,6 @@ class Env {
                 Item: Int
             }
         """.trimIndent())
-        println(out)
         assert(out == "(ln 2, col 11): invalid type declaration : unexpected `@rec´")
     }
 
@@ -299,7 +292,7 @@ class Env {
         val x = (blk.body as Stmt.Call).call.arg
         val X = x.idToStmt("x")
         assert(X!!.getDepth() == 0)
-        assert(((s as Stmt.Seq).s2 as Stmt.Block).getDepth() == 1)
+        assert((s.s2 as Stmt.Block).getDepth() == 1)
         //println("<<<")
     }
 
@@ -332,7 +325,6 @@ class Env {
             }
             output std p1\
         """.trimIndent())
-        //println(out)
         assert(out == "(ln 5, col 12): invalid assignment : cannot hold pointer to local \"v\" (ln 4) in outer scope")
     }
 
@@ -347,7 +339,6 @@ class Env {
                 set p = \y
             }
         """.trimIndent())
-        //println(out)
         assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 4) in outer scope")
     }
 
@@ -361,7 +352,6 @@ class Env {
             var p: \Int = f \v
             output std p\
         """.trimIndent())
-        //println(out)
         assert(out == "OK")
     }
 
@@ -375,7 +365,6 @@ class Env {
             var p: \Int = f ()
             output std p\
         """.trimIndent())
-        //println(out)
         assert(out == "OK")
     }
 
@@ -390,7 +379,6 @@ class Env {
             var p: \Int = f ()
             output std p\
         """.trimIndent())
-        //println(out)
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"v\" (ln 2) in outer scope")
     }
 
@@ -405,7 +393,6 @@ class Env {
             var p: \Int = f \v
             output std p\
         """.trimIndent())
-        //println(out)
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 2) in outer scope")
     }
 
@@ -420,7 +407,6 @@ class Env {
             var p: \Int = f \v
             output std p\
         """.trimIndent())
-        println(out)
         assert(out == "OK")
     }
 
@@ -436,7 +422,6 @@ class Env {
             var p: \Int = f \v
             output std p\
         """.trimIndent())
-        println(out)
         assert(out == "(ln 3, col 9): invalid assignment : cannot hold pointer to local \"x\" (ln 2) in outer scope")
     }
 
@@ -446,7 +431,6 @@ class Env {
         val out = all("""
             var ptr: ^\Int = ?
         """.trimIndent())
-        println(out)
         assert(out == "OK")
     }
 
@@ -459,7 +443,6 @@ class Env {
                 set p = \y
             }
         """.trimIndent())
-        //println(out)
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 3) in outer scope")
     }
     @Test
@@ -474,7 +457,6 @@ class Env {
                 set p = \y
             }
         """.trimIndent())
-        println(out)
         assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 6) in outer scope")
     }
 }
