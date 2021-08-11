@@ -107,16 +107,13 @@ class Code {
 
     // STRING -> C
 
-    fun toc (inp: String): Pair<Boolean,String> {
+    fun toc (inp: String): String {
         val all = All_new(PushbackReader(StringReader(inp), 2))
         lexer(all)
         var s = parser_stmts(all, Pair(TK.EOF,null))
-        if (s == null) {
-            return Pair(false, all.err)
-        }
         s = env_prelude(s)
         env_PRV_set(s, null)
         //println(s)
-        return Pair(true, s.pos())
+        return s.pos()
     }
 }

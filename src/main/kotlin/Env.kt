@@ -52,11 +52,13 @@ fun env_PRV_set (s: Stmt, cur_: Stmt?): Stmt? {
                     if (it != null) {
                         if (s is Stmt.User && it is Stmt.User && it.subs.isEmpty()) {
                             // type predeclaration
-                            assert(it.isrec == s.isrec) {
-                                All_err_tk(s.tk, "unmatching type declaration (ln ${it.tk.lin})")
+                            All_assert_tk(s.tk, it.isrec == s.isrec) {
+                                "unmatching type declaration (ln ${it.tk.lin})"
                             }
                         } else {
-                            error(All_err_tk(s.tk, "invalid declaration : \"$id\" is already declared (ln ${it.tk.lin})"))
+                            All_assert_tk(s.tk, false) {
+                                "invalid declaration : \"$id\" is already declared (ln ${it.tk.lin})"
+                            }
                         }
                     }
                 }
@@ -181,8 +183,8 @@ fun check_dcls (s: Stmt) {
     fun ft (tp: Type): Boolean {
         when (tp) {
             is Type.User -> {
-                assert(tp.idToStmt(tp.tk_.str) != null) {
-                    All_err_tk(tp.tk, "undeclared type \"${tp.tk_.str}\"")
+                All_assert_tk(tp.tk, tp.idToStmt(tp.tk_.str) != null) {
+                    "undeclared type \"${tp.tk_.str}\""
                 }
             }
         }
@@ -191,17 +193,17 @@ fun check_dcls (s: Stmt) {
     fun fe (e: Expr): Boolean {
         when (e) {
             is Expr.Var -> {
-                assert(e.idToStmt(e.tk_.str) != null) {
-                    All_err_tk(e.tk, "undeclared variable \"${e.tk_.str}\"")
+                All_assert_tk(e.tk, e.idToStmt(e.tk_.str) != null) {
+                    "undeclared variable \"${e.tk_.str}\""
                 }
             }
             is Expr.Cons -> {
                 val sup = (e.toType() as Type.User).tk_.str
-                assert(e.idToStmt(sup) != null) {
-                    All_err_tk(e.tk, "undeclared type \"$sup\"")
+                All_assert_tk(e.tk, e.idToStmt(sup) != null) {
+                    "undeclared type \"$sup\""
                 }
-                assert(e.supSubToType(sup,e.sub.str) != null) {
-                    All_err_tk(e.tk, "undeclared subcase \"${e.sub.str}\"")
+                All_assert_tk(e.tk, e.supSubToType(sup,e.sub.str) != null) {
+                    "undeclared subcase \"${e.sub.str}\""
                 }
             }
             is Expr.Disc, is Expr.Pred -> {
@@ -209,11 +211,11 @@ fun check_dcls (s: Stmt) {
                 val tk = if (e is Expr.Disc) e.tk_ else (e as Expr.Pred).tk_
                 val tpe = ee.toType()
                 val sup = if (tpe is Type.User) tpe.tk_.str else null
-                assert(tpe is Type.User) {
-                    All_err_tk(ee.tk, "invalid `.´ : expected user type")
+                All_assert_tk(ee.tk, tpe is Type.User) {
+                    "invalid `.´ : expected user type"
                 }
-                assert(e.supSubToType(sup!!, tk.str) != null) {
-                    All_err_tk(e.tk, "invalid `.´ : undeclared subcase \"${tk.str}\"")
+                All_assert_tk(e.tk, e.supSubToType(sup!!, tk.str) != null) {
+                    "invalid `.´ : undeclared subcase \"${tk.str}\""
                 }
             }
         }
@@ -233,9 +235,9 @@ fun check_dcls (s: Stmt) {
         }
         when (s) {
             is Stmt.User -> {
-                assert(s.subs.isEmpty() || s.isrec==s.isHasRec()) {
+                All_assert_tk(s.tk, s.subs.isEmpty() || s.isrec==s.isHasRec()) {
                     val exun = if (s.isrec) "unexpected" else "expected"
-                    All_err_tk(s.tk, "invalid type declaration : $exun `@rec´")
+                    "invalid type declaration : $exun `@rec´"
                 }
             }
         }
@@ -269,24 +271,24 @@ fun check_types (S: Stmt) {
     fun fe (e: Expr): Boolean {
         when (e) {
             is Expr.Upref -> {
-                assert(e.e.toType() !is Type.Ptr) {
-                    All_err_tk(e.e.tk, "invalid `\\` : unexpected pointer type")
+                All_assert_tk(e.e.tk, e.e.toType() !is Type.Ptr) {
+                    "invalid `\\` : unexpected pointer type"
                 }
             }
             is Expr.Dnref -> {
-                assert(e.e.toType() is Type.Ptr) {
-                    All_err_tk(e.tk, "invalid `\\` : expected pointer type")
+                All_assert_tk(e.tk, e.e.toType() is Type.Ptr) {
+                    "invalid `\\` : expected pointer type"
                 }
             }
             is Expr.Call -> {
                 val inp = e.f.toType().let { if (it is Type.Func) it.inp else (it as Type.Nat) }
-                assert(inp.isSupOf(e.arg.toType())) {
-                    All_err_tk(e.f.tk, "invalid call to \"${(e.f as Expr.Var).tk_.str}\" : type mismatch")
+                All_assert_tk(e.f.tk, inp.isSupOf(e.arg.toType())) {
+                    "invalid call to \"${(e.f as Expr.Var).tk_.str}\" : type mismatch"
                 }
             }
             is Expr.Cons -> {
-                assert(e.supSubToType(e.sup.str,e.sub.str)!!.isSupOf(e.arg.toType())) {
-                    All_err_tk(e.sub, "invalid constructor \"${e.sub.str}\" : type mismatch")
+                All_assert_tk(e.sub, e.supSubToType(e.sup.str,e.sub.str)!!.isSupOf(e.arg.toType())) {
+                    "invalid constructor \"${e.sub.str}\" : type mismatch"
                 }
             }
         }
@@ -295,16 +297,16 @@ fun check_types (S: Stmt) {
     fun fs (s: Stmt): Boolean {
         when (s) {
             is Stmt.Var -> {
-                assert(s.type.isSupOf(s.init.toType())) {
-                    All_err_tk(s.tk, "invalid assignment to \"${s.tk_.str}\" : type mismatch")
+                All_assert_tk(s.tk, s.type.isSupOf(s.init.toType())) {
+                    "invalid assignment to \"${s.tk_.str}\" : type mismatch"
                 }
             }
             is Stmt.Set -> {
-                assert(s.dst.toType().isSupOf(s.src.toType())) {
+                All_assert_tk(s.tk, s.dst.toType().isSupOf(s.src.toType())) {
                     when {
-                        (s.dst !is Expr.Var) -> All_err_tk(s.tk, "invalid assignment : type mismatch")
-                        (s.dst.tk_.str == "_ret_") -> All_err_tk(s.tk, "invalid return : type mismatch")
-                        else -> All_err_tk(s.tk, "invalid assignment to \"${s.dst.tk_.str}\" : type mismatch")
+                        (s.dst !is Expr.Var) -> "invalid assignment : type mismatch"
+                        (s.dst.tk_.str == "_ret_") -> "invalid return : type mismatch"
+                        else -> "invalid assignment to \"${s.dst.tk_.str}\" : type mismatch"
                     }
                 }
             }
@@ -325,11 +327,8 @@ fun check_pointers (S: Stmt) {
             if (src_use != null) {
                 val src_dcl = (src_use.idToStmt(src_use.tk_.str)!! as Stmt.Var)
                 val src = src_dcl.getDepth()
-                if (dst < src) {
-                    error(All_err_tk(
-                        s.tk,
-                        "invalid assignment : cannot hold pointer to local \"${src_use.tk_.str}\" (ln ${src_dcl.tk.lin}) in outer scope"
-                    ))
+                All_assert_tk(s.tk, dst >= src) {
+                    "invalid assignment : cannot hold pointer to local \"${src_use.tk_.str}\" (ln ${src_dcl.tk.lin}) in outer scope"
                 }
             }
         }

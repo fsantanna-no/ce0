@@ -9,7 +9,6 @@ data class All(
     var tk1: Tk,
     var lin: Int = 1,
     var col: Int = 1,
-    var err: String = "",
 )
 
 fun All_inp2c (inp: String): Pair<Boolean,String> {
@@ -98,13 +97,24 @@ fun All.err_expected (str: String) {
             else -> { println(this); error("TODO") }
         }
     }
-    this.err = "(ln ${this.tk1.lin}, col ${this.tk1.col}): expected $str : have ${this.tk1.toPay()}"
+    error("(ln ${this.tk1.lin}, col ${this.tk1.col}): expected $str : have ${this.tk1.toPay()}")
 }
 
 fun All_err_tk (tk: Tk, str: String): String {
-    return "(ln ${tk.lin}, col ${tk.col}): $str"
+    error("(ln ${tk.lin}, col ${tk.col}): $str")
 }
 
-fun All.err_tk (tk: Tk, str: String) {
-    this.err = All_err_tk(tk,str)
+inline fun All_assert_tk (tk: Tk, value: Boolean, lazyMessage: () -> String = {"Assertion failed"}) {
+    if (!value) {
+        val m1 = lazyMessage()
+        val m2 = All_err_tk(tk, m1)
+        throw AssertionError(m2)
+    }
+}
+inline fun All.assert_tk (tk: Tk, value: Boolean, lazyMessage: () -> String = {"Assertion failed"}) {
+    if (!value) {
+        val m1 = lazyMessage()
+        val m2 = All_err_tk(tk, m1)
+        throw AssertionError(m2)
+    }
 }
