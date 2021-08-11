@@ -147,15 +147,23 @@ class Parser {
     fun b04_parser_expr_parens () {
         val all = All_new(PushbackReader(StringReader("("), 2))
         lexer(all)
-        val e = parser_expr(all,true)
-        assert(e==null && all.err=="(ln 1, col 2): expected expression : have end of file")
+        try {
+            parser_expr(all, true)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 2): expected expression : have end of file")
+        }
     }
     @Test
     fun b05_parser_expr_parens () {
         val all = All_new(PushbackReader(StringReader("(x"), 2))
         lexer(all)
-        val e = parser_expr(all,false)
-        assert(e==null && all.err=="(ln 1, col 3): expected `,´ : have end of file")
+        try {
+            parser_expr(all, false)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 3): expected `,´ : have end of file")
+        }
     }
     @Test
     fun b06_parser_expr_tuple () {
@@ -168,8 +176,12 @@ class Parser {
     fun b07_parser_expr_tuple_err () {
         val all = All_new(PushbackReader(StringReader("((),x,"), 2))
         lexer(all)
-        val e = parser_expr(all,false)
-        assert(e==null && all.err=="(ln 1, col 7): expected expression : have end of file")
+        try {
+            parser_expr(all, false)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 7): expected expression : have end of file")
+        }
     }
 
     // CALL
@@ -192,15 +204,23 @@ class Parser {
     fun b10_parser_expr_call_err () {
         val all = All_new(PushbackReader(StringReader("call () ()"), 2))
         lexer(all)
-        val e = parser_expr(all,true)
-        assert(e==null && all.err=="(ln 1, col 6): expected function")
+        try {
+            parser_expr(all, true)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 6): expected function")
+        }
     }
     @Test
     fun b11_parser_expr_call () {
         val all = All_new(PushbackReader(StringReader("f()\n()\n()"), 2))
         lexer(all)
-        val e1 = parser_expr(all,true)
-        assert(e1==null && all.err=="(ln 2, col 1): expected function")
+        try {
+            parser_expr(all, true)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 2, col 1): expected function")
+        }
         /*
         val e2 = parser_expr(all,true)
         val e3 = parser_expr(all,true)
@@ -219,8 +239,12 @@ class Parser {
     fun b13_parser_expr_call () {
         val all = All_new(PushbackReader(StringReader("xxx ("), 2))
         lexer(all)
-        val e = parser_expr(all,true)
-        assert(e==null && all.err=="(ln 1, col 6): expected expression : have end of file")
+        try {
+            parser_expr(all, true)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 6): expected expression : have end of file")
+        }
     }
 
     // CONS
@@ -229,22 +253,34 @@ class Parser {
     fun b14_parser_expr_cons_err_1 () {
         val all = All_new(PushbackReader(StringReader("X.Y ("), 2))
         lexer(all)
-        val e = parser_expr(all,false)
-        assert(e==null && all.err=="(ln 1, col 6): expected expression : have end of file")
+        try {
+            parser_expr(all, false)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 6): expected expression : have end of file")
+        }
     }
     @Test
     fun b14_parser_expr_cons_err_2 () {
         val all = All_new(PushbackReader(StringReader("X ("), 2))
         lexer(all)
-        val e = parser_expr(all,false)
-        assert(e==null && all.err=="(ln 1, col 3): expected `.´ : have `(´")
+        try {
+            parser_expr(all, false)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 3): expected `.´ : have `(´")
+        }
     }
     @Test
     fun b14_parser_expr_cons_err_3 () {
         val all = All_new(PushbackReader(StringReader("X. ("), 2))
         lexer(all)
-        val e = parser_expr(all,false)
-        assert(e==null && all.err=="(ln 1, col 4): expected type identifier : have `(´")
+        try {
+            parser_expr(all, false)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 4): expected type identifier : have `(´")
+        }
     }
     @Test
     fun b15_parser_expr_cons () {
@@ -288,8 +324,12 @@ class Parser {
     fun b20_parser_expr_index () {
         val all = All_new(PushbackReader(StringReader("x().."), 2))
         lexer(all)  // x [() .10] ~()~
-        val e = parser_expr(all,false)
-        assert(e==null && all.err=="(ln 1, col 5): expected index or subtype : have `.´")
+        try {
+            parser_expr(all, false)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 5): expected index or subtype : have `.´")
+        }
     }
     // testar a.b.c
 
@@ -306,8 +346,12 @@ class Parser {
     fun b22_parser_expr_upref () {
         val all = All_new(PushbackReader(StringReader("\\()"), 2))
         lexer(all)
-        val e = parser_expr(all,false)
-        assert(e==null && all.err=="(ln 1, col 2): unexpected operand to `\\´")
+        try {
+            parser_expr(all, false)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 2): unexpected operand to `\\´")
+        }
     }
     @Test
     fun b23_parser_expr_dnref () {
@@ -320,8 +364,12 @@ class Parser {
     fun b24_parser_expr_dnref () {
         val all = All_new(PushbackReader(StringReader("()\\"), 2))
         lexer(all)
-        val e = parser_expr(all,false)
-        assert(e==null && all.err=="(ln 1, col 1): unexpected operand to `\\´")
+        try {
+            parser_expr(all, false)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 1): unexpected operand to `\\´")
+        }
     }
 
     // PRED, DISC
@@ -375,9 +423,12 @@ class Parser {
     fun c05_parser_stmt_var_caret () {
         val all = All_new(PushbackReader(StringReader("var x: ^Int = 10"), 2))
         lexer(all)
-        val s = parser_stmt(all)
-        println(all.err)
-        assert(s==null && all.err=="(ln 1, col 9): expected pointer type")
+        try {
+            parser_stmt(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 9): expected pointer type")
+        }
     }
 
     // STMT_CALL
@@ -386,16 +437,23 @@ class Parser {
     fun c03_parser_stmt_call () {
         val all = All_new(PushbackReader(StringReader("call ()"), 2))
         lexer(all)
-        val s = parser_stmt(all)
-        //assert(s==null && all.err=="(ln 1, col 8): expected expression : have end of file")
-        assert(s==null && all.err=="(ln 1, col 6): expected function")
+        try {
+            parser_stmt(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 6): expected function")
+        }
     }
     @Test
     fun c04_parser_stmt_call () {
         val all = All_new(PushbackReader(StringReader("call () ()"), 2))
         lexer(all)
-        val s = parser_stmt(all)
-        assert(s==null && all.err=="(ln 1, col 6): expected function")
+        try {
+            parser_stmt(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 6): expected function")
+        }
     }
     @Test
     fun c05_parser_stmt_call () {
@@ -486,7 +544,6 @@ class Parser {
             parser_stmt(all)
             error("impossible case")
         } catch (e: Throwable) {
-            println(e.message)
             assert(e.message == "(ln 1, col 10): expected function type")
         }
     }
