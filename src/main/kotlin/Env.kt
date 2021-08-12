@@ -26,19 +26,6 @@ fun env_prelude (s: Stmt): Stmt {
 fun env_PRV_set (s: Stmt, cur_: Stmt?): Stmt? {
     fun aux (s: Stmt, cur_: Stmt?): Stmt? {
         var cur = cur_
-        fun fe(e: Expr): Boolean {
-            if (cur != null && (e is Expr.Int || e is Expr.Var || e is Expr.Cons || e is Expr.Pred || e is Expr.Disc)) {
-                env_PRV[e] = cur!!
-            }
-            return true
-        }
-
-        fun ft(tp: Type): Boolean {
-            if (cur != null && tp is Type.User) {
-                env_PRV[tp] = cur!!
-            }
-            return true
-        }
         if (cur != null && (s is Stmt.Block || s is Stmt.Var || s is Stmt.User || s is Stmt.Func)) {
             val id = when (s) {
                 is Stmt.Block -> null
@@ -63,8 +50,25 @@ fun env_PRV_set (s: Stmt, cur_: Stmt?): Stmt? {
                     }
                 }
             }
+        }
+        if (cur != null) {
             env_PRV[s] = cur
         }
+
+        fun fe (e: Expr): Boolean {
+            if (cur != null && (e is Expr.Int || e is Expr.Var || e is Expr.Cons || e is Expr.Pred || e is Expr.Disc)) {
+                env_PRV[e] = cur!!
+            }
+            return true
+        }
+
+        fun ft (tp: Type): Boolean {
+            if (cur != null && tp is Type.User) {
+                env_PRV[tp] = cur!!
+            }
+            return true
+        }
+
         return when (s) {
             is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> cur
             is Stmt.Var -> {
@@ -327,6 +331,7 @@ fun Stmt.getDepth (): Int {
             when {
                 (it == null) -> 0
                 (it is Stmt.Block) -> 1 + aux(it)
+                //(it is Stmt.Func) -> 1 + aux(it)
                 else -> aux(it)
             }
         }
@@ -343,15 +348,15 @@ fun Stmt.getDepth (): Int {
     }
 }
 
-fun Expr.getDepth (hold: Boolean): Pair<Int,Stmt?> {
+fun Expr.getDepth (caller: Int, hold: Boolean): Pair<Int,Stmt?> {
     return when (this) {
-        is Expr.Int, is Expr.Unk, is Expr.Unit, is Expr.Nat -> Pair(0, null)
+        is Expr.Int, is Expr.Unk, is Expr.Unit, is Expr.Nat, is Expr.Pred -> Pair(0, null)
         is Expr.Var -> {
             val dcl = this.idToStmt(this.tk_.str)!!
             return if (hold) Pair(dcl.getDepth(), dcl) else Pair(0, null)
         }
         is Expr.Upref ->  {
-            val (depth,dcl) = this.e.getDepth(hold)
+            val (depth,dcl) = this.e.getDepth(caller, hold)
             if (dcl is Stmt.Var) {
                 val inc = if (dcl.tk_.str == "arg" || dcl.outer) 1 else 0
                 Pair(depth + inc, dcl)
@@ -359,22 +364,25 @@ fun Expr.getDepth (hold: Boolean): Pair<Int,Stmt?> {
                 Pair(depth, dcl)
             }
         }
-        is Expr.Dnref -> this.e.getDepth(hold)
-        is Expr.Index -> this.e.getDepth(hold)
-        is Expr.Disc -> this.e.getDepth(hold)
-        is Expr.Pred -> this.e.getDepth(false)
-        is Expr.Call -> this.arg.getDepth(hold)
-        is Expr.Tuple -> this.vec.map { it.getDepth(it.toType().ishasptr()) }.maxByOrNull { it.first }!!
-        is Expr.Cons -> this.arg.getDepth(this.subType()!!.ishasptr())
+        is Expr.Dnref -> this.e.getDepth(caller, hold)
+        is Expr.Index -> this.e.getDepth(caller, hold)
+        is Expr.Disc -> this.e.getDepth(caller, hold)
+        is Expr.Call -> this.f.toType().let {
+            when (it) {
+                is Type.Nat -> Pair(0, null)
+                is Type.Func -> if (!it.out.ishasptr()) Pair(0,null) else {
+                    // substitute args depth/id by caller depth/id
+                    Pair(caller, this.f.idToStmt((this.f as Expr.Var).tk_.str))
+                }
+                else -> error("bug found")
+            }
+        }
+        is Expr.Tuple -> this.vec.map { it.getDepth(caller,it.toType().ishasptr()) }.maxByOrNull { it.first }!!
+        is Expr.Cons -> this.arg.getDepth(caller, this.subType()!!.ishasptr())
     }
 }
 
 fun check_pointers (S: Stmt) {
-    fun fe (e: Expr): Boolean {
-        when (e) {
-        }
-        return true
-    }
     fun s2id (s: Stmt): String {
         return when (s) {
             is Stmt.Var -> s.tk_.str
@@ -385,19 +393,19 @@ fun check_pointers (S: Stmt) {
     fun fs (s: Stmt): Boolean {
         when (s) {
             is Stmt.Var -> {
-                val (src_depth, src_dcl) = s.init.getDepth(s.type.ishasptr())
+                val (src_depth, src_dcl) = s.init.getDepth(s.getDepth(), s.type.ishasptr())
                 All_assert_tk(s.tk, s.getDepth() >= src_depth) {
                     "invalid assignment : cannot hold pointer to local \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
                 }
             }
             is Stmt.Set -> {
-                val (src_depth, src_dcl) = s.src.getDepth(s.dst.toType().ishasptr())
-                All_assert_tk(s.tk, s.dst.getDepth(false).first >= src_depth) {
+                val (src_depth, src_dcl) = s.src.getDepth(s.getDepth(), s.dst.toType().ishasptr())
+                All_assert_tk(s.tk, s.dst.getDepth(s.getDepth(), false).first >= src_depth) {
                     "invalid assignment : cannot hold pointer to local \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
                 }
             }
         }
         return true
     }
-    S.visit(::fs, ::fe, null)
+    S.visit(::fs, null, null)
 }

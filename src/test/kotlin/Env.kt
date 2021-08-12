@@ -551,10 +551,35 @@ class Env {
             }
             var p: \Int = ?
             {
-                set p = f ()    -- ERRO!
+                set p = f ()
             }
         """.trimIndent())
-        assert(out == "ERR!")
+        assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"f\" (ln 2)")
+    }
+    @Test
+    fun g12_ptr_func () {
+        val out = inp2env("""
+            var v: Int = 10
+            func f : \Int -> \Int {
+                return \v
+            }
+            var p: \Int = ?
+            {
+                set p = f (\v)
+            }
+        """.trimIndent())
+        assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"f\" (ln 2)")
+    }
+    @Test
+    fun g13_ptr_func () {
+        val out = inp2env("""
+            var v: \Int = ?
+            func f : \Int -> () {
+                set v = arg
+            }
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"f\" (ln 2)")
     }
 
     // POINTERS - TUPLE - TYPE

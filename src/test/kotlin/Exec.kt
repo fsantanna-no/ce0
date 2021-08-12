@@ -81,6 +81,7 @@ class Exec {
             var x: Int = _abs(-1)
             output std x
         """.trimIndent())
+        println(out)
         assert(out == "1\n")
     }
     @Test
@@ -685,7 +686,6 @@ class Exec {
             set x1 = x2
             output std /x1.2
         """.trimIndent())
-        println(out)
         assert(out == "20\n")
     }
     @Test
@@ -703,6 +703,20 @@ class Exec {
         assert(out == "20\n")
     }
 
+    @Test
+    fun f10_ptr_func () {
+        val out = all("""
+            var v: Int = 10
+            func f : \Int -> \Int {
+                return \v
+            }
+            {
+                var p: \Int = f (\v)
+                output std /p
+            }
+        """.trimIndent())
+        assert(out == "10\n")
+    }
     // REC
 
     @Test
