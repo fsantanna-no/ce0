@@ -517,8 +517,7 @@ class Env {
                 return \arg
             }
         """.trimIndent())
-        println(out)
-        assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"z\" (ln 5) in outer scope")
+        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"arg\" (ln 2) in outer scope")
     }
     @Test
     fun e17_ptr_arg_err () {
@@ -529,8 +528,18 @@ class Env {
                 return ptr
             }
         """.trimIndent())
-        println(out)
-        assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"z\" (ln 5) in outer scope")
+        assert(out == "(ln 3, col 9): invalid assignment : cannot hold pointer to local \"arg\" (ln 2) in outer scope")
+    }
+    @Test
+    fun e17_ptr_out_err () {
+        val out = all("""
+            func f: \Int -> \\Int
+            {
+                var ptr: ^\Int = arg
+                return \ptr
+            }
+        """.trimIndent())
+        assert(out == "(ln 4, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 3) in outer scope")
     }
 
     // return \arg  <-- erro

@@ -335,7 +335,8 @@ fun Expr.getDepth (): Pair<Int,Stmt.Var?> {
         }
         is Expr.Upref -> (this.e as Expr.Var).let {
             val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
-            Pair(dcl.getDepth(), dcl)
+            val inc = if (it.tk_.str=="arg" || dcl.outer) 1 else 0
+            Pair(dcl.getDepth()+inc, dcl)
         }
         is Expr.Dnref -> (this.e as Expr.Var).let {
             val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)

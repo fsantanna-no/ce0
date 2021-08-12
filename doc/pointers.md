@@ -43,9 +43,15 @@ func f : () -> \Int
     var v: Int = 10
     return \v       -- (ln 3, col 5): invalid assignment : cannot hold pointer to local "v" (ln 2) in outer scope
 }
-var v: Int = 10
-var p: \Int = f ()
-output std p\
+```
+
+- Even if it is an upref to `arg`:
+
+```
+func f : Int -> \Int
+{
+    return \arg     -- (ln 3, col 5): invalid assignment : cannot hold pointer to local "arg" (ln 2) in outer scope
+}
 ```
 
 ## Scope Modifier
@@ -73,3 +79,21 @@ func f : \Int -> \Int
     return ptr
 }
 ```
+
+- And neither returned as uprefs:
+
+```
+func f: \Int -> \\Int
+{
+    var ptr: ^\Int = arg
+    return \ptr             -- (ln 4, col 5): invalid assignment : cannot hold pointer to local "ptr" (ln 3) in outer scope
+}
+```
+
+## Compound Types
+
+
+### Pointer
+
+- Tuples
+- User Types
