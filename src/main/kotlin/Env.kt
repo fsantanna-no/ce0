@@ -355,7 +355,7 @@ fun Expr.getDepth (hold: Boolean): Pair<Int,Stmt?> {
         is Expr.Call -> this.arg.getDepth(hold)
         is Expr.Tuple -> this.vec.map { it.getDepth(it.toType() is Type.Ptr) }.maxByOrNull { it.first }!!
         is Expr.Cons -> this.arg.getDepth(this.subType() is Type.Ptr)
-        else -> { println(this) ; Pair(0, null) ; error("TODO") }
+        else -> { println(this) ; Pair(0, null) ; error("TODO-4") }
     }
 }
 

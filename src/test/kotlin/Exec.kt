@@ -625,6 +625,57 @@ class Exec {
         assert(out == "X (20)\n")
     }
 
+    @Test
+    fun i15_ptr_tup () {
+        val out = all("""
+            var x: Int = 10
+            var p: (Int,\Int) = (10,\x)
+            var v: Int = 20
+            set p.2 = \v
+            output std /p.2
+        """.trimIndent())
+        assert(out == "20\n")
+    }
+    @Test
+    fun i16_ptr_tup () {
+        val out = all("""
+            var x: Int = 10
+            var p: (Int,\Int) = (10,\x)
+            var v: Int = 20
+            set p = (10,\v)
+            output std /p.2
+        """.trimIndent())
+        assert(out == "20\n")
+    }
+    @Test
+    fun i17_ptr_type () {
+        val out = all("""
+            type X {
+                X: \Int
+            }
+            var x: Int = 10
+            var p: X = X.X \x
+            var v: Int = 20
+            set p.X! = \v
+            output std /p.X!
+        """.trimIndent())
+        assert(out == "20\n")
+    }
+    @Test
+    fun i18_ptr_type () {
+        val out = all("""
+            type X {
+                X: \Int
+            }
+            var x: Int = 10
+            var p: X = X.X \x
+            var v: Int = 20
+            set p = X.X \v
+            output std /p.X!
+        """.trimIndent())
+        assert(out == "20\n")
+    }
+
     // REC
 
     @Test

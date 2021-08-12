@@ -43,7 +43,7 @@ fun TK.toErr (chr: Char?): String {
         TK.XNAT  -> "`_´"
         TK.XVAR  -> "variable identifier"
         TK.XUSER -> "type identifier"
-        else -> { println(this) ; error("TODO") }
+        else -> { println(this) ; error("TODO-3") }
     }
 }
 
