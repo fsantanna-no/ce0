@@ -1,19 +1,27 @@
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
-import java.io.File
 import java.io.PushbackReader
 import java.io.StringReader
 
 @TestMethodOrder(Alphanumeric::class)
 class Env {
 
-    fun all (inp: String): String {
-        val (ok1,out1) = All_inp2c(inp)
-        if (!ok1) {
-            return out1
+    fun inp2env (inp: String): String {
+        val all = All_new(PushbackReader(StringReader(inp), 2))
+        lexer(all)
+        try {
+            var s = parser_stmts(all, Pair(TK.EOF,null))
+            s = env_prelude(s)
+            env_PRV_set(s, null)
+            check_dcls(s)
+            check_types(s)
+            check_pointers(s)
+            return "OK"
+        } catch (e: Throwable) {
+            //throw e
+            return e.message!!
         }
-        return "OK"
     }
 
     fun pre (inp: String): Stmt {
@@ -28,18 +36,18 @@ class Env {
 
     @Test
     fun a01_undeclared_var () {
-        val out = all("output std x")
+        val out = inp2env("output std x")
         assert(out == "(ln 1, col 12): undeclared variable \"x\"")
     }
     @Test
     fun a02_undeclared_func () {
-        val out = all("call f ()")
+        val out = inp2env("call f ()")
         //println(out)
         assert(out == "(ln 1, col 6): undeclared variable \"f\"")
     }
     @Test
     fun a03_undeclared_type () {
-        val out = all("var x: Nat = ()")
+        val out = inp2env("var x: Nat = ()")
         assert(out == "(ln 1, col 8): undeclared type \"Nat\"")
     }
 
@@ -47,7 +55,7 @@ class Env {
 
     @Test
     fun a04_redeclared () {
-        val out = all("var x: () = () ; var x: Int = 1")
+        val out = inp2env("var x: () = () ; var x: Int = 1")
         assert(out == "(ln 1, col 22): invalid declaration : \"x\" is already declared (ln 1)")
     }
 
@@ -55,14 +63,14 @@ class Env {
 
     @Test
     fun b01_user_sup_undeclared () {
-        val out = all("""
+        val out = inp2env("""
             var x: Bool = ()
         """.trimIndent())
         assert(out == "(ln 1, col 8): undeclared type \"Bool\"")
     }
     @Test
     fun b02_user_sub_undeclared () {
-        val out = all("""
+        val out = inp2env("""
             type Set {
                 X: ()
             }
@@ -72,7 +80,7 @@ class Env {
     }
     @Test
     fun b03_user_pred_err () {
-        val out = all("""
+        val out = inp2env("""
             type Bool { False: () ; True: () }
             type Z { Y:() }
             var z: Z = Z.Y
@@ -82,28 +90,28 @@ class Env {
     }
     @Test
     fun b04_user_disc_cons_err () {
-        val out = all("""
+        val out = inp2env("""
             output std ().Z!
         """.trimIndent())
         assert(out == "(ln 1, col 12): invalid `.´ : expected user type")
     }
     @Test
     fun b06_user_norec_err () {
-        val out = all("""
+        val out = inp2env("""
             type @rec NoRec { X: () ; Y: () }
         """.trimIndent())
         assert(out == "(ln 1, col 11): invalid type declaration : unexpected `@rec´")
     }
     @Test
     fun b07_user_rec_err () {
-        val out = all("""
+        val out = inp2env("""
             type Rec { X: Rec ; Y: () }
         """.trimIndent())
         assert(out == "(ln 1, col 15): undeclared type \"Rec\"")
     }
     @Test
     fun b08_user_rec_err () {
-        val out = all("""
+        val out = inp2env("""
             type @rec Rec1 { X: Rec1 ; Y: () }
             type Rec2 { X: Rec1 ; Y: () }
         """.trimIndent())
@@ -111,7 +119,7 @@ class Env {
     }
     @Test
     fun b09_user_err () {
-        val out = all("""
+        val out = inp2env("""
             type Z { Z:() }
             type @rec List {
                 Item: List
@@ -122,7 +130,7 @@ class Env {
     }
     @Test
     fun b10_user_empty_err () {
-        val out = all("""
+        val out = inp2env("""
             type Z { Z:() }
             type @rec List {
                 Item: List
@@ -133,7 +141,7 @@ class Env {
     }
     @Test
     fun b11_user_empty_err () {
-        val out = all("""
+        val out = inp2env("""
             type Z { Z:() }
             type @rec List {
                 Item: List
@@ -145,7 +153,7 @@ class Env {
     }
     @Test
     fun b12_user_empty_ok () {
-        val out = all("""
+        val out = inp2env("""
             type Z { Z:() }
             type @rec List {
                 Item: List
@@ -158,7 +166,7 @@ class Env {
 
     @Test
     fun b12_not_rec () {
-        val out = all("""
+        val out = inp2env("""
             type @pre @rec List
             type List {
                 Item: Int
@@ -168,7 +176,7 @@ class Env {
     }
     @Test
     fun b13_not_rec () {
-        val out = all("""
+        val out = inp2env("""
             type @pre @rec List
             type @rec List {
                 Item: Int
@@ -183,14 +191,14 @@ class Env {
 
     @Test
     fun c01_type_var () {
-        val out = all("""
+        val out = inp2env("""
             var x: Int = ()
         """.trimIndent())
         assert(out == "(ln 1, col 5): invalid assignment to \"x\" : type mismatch")
     }
     @Test
     fun c02_type_set () {
-        val out = all("""
+        val out = inp2env("""
             var x: () = ()
             set x = 10
         """.trimIndent())
@@ -198,14 +206,14 @@ class Env {
     }
     @Test
     fun c03_type_func_ret () {
-        val out = all("""
+        val out = inp2env("""
             func f : () -> () { return 10 }
         """.trimIndent())
         assert(out == "(ln 1, col 21): invalid return : type mismatch")
     }
     @Test
     fun c04_type_func_arg () {
-        val out = all("""
+        val out = inp2env("""
             func f : ((),()) -> () { }
             call f()
         """.trimIndent())
@@ -213,14 +221,14 @@ class Env {
     }
     @Test
     fun c05_type_idx () {
-        val out = all("""
+        val out = inp2env("""
             var x: () = (1,2).1
         """.trimIndent())
         assert(out == "(ln 1, col 5): invalid assignment to \"x\" : type mismatch")
     }
     @Test
     fun c06_type_idx () {
-        val out = all("""
+        val out = inp2env("""
             var x: (Int,Int) = (1,2)
             set x.1 = ()
         """.trimIndent())
@@ -228,14 +236,14 @@ class Env {
     }
     @Test
     fun c07_type_upref () {
-        val out = all("""
+        val out = inp2env("""
             var x: \Int = 10
         """.trimIndent())
         assert(out == "(ln 1, col 5): invalid assignment to \"x\" : type mismatch")
     }
     @Test
     fun c08_type_upref () {
-        val out = all("""
+        val out = inp2env("""
             var y: Int = 10
             var x: Int = \y
         """.trimIndent())
@@ -243,7 +251,7 @@ class Env {
     }
     @Test
     fun c09_type_upref () {
-        val out = all("""
+        val out = inp2env("""
             var y: Int = 10
             var x: \Int = \y
         """.trimIndent())
@@ -251,7 +259,7 @@ class Env {
     }
     @Test
     fun c10_type_upref () {
-        val out = all("""
+        val out = inp2env("""
             var y: () = ()
             var x: \Int = \y
         """.trimIndent())
@@ -259,7 +267,7 @@ class Env {
     }
     @Test
     fun c11_type_upref () {
-        val out = all("""
+        val out = inp2env("""
             var y: Int = 10
             var x: \Int = \y
             var z: _x = \x
@@ -268,7 +276,7 @@ class Env {
     }
     @Test
     fun c12_type_dnref () {
-        val out = all("""
+        val out = inp2env("""
             var x: Int = 10
             output std /x
         """.trimIndent())
@@ -277,7 +285,7 @@ class Env {
     }
     @Test
     fun c13_type_dnref () {
-        val out = all("""
+        val out = inp2env("""
             var x: Int = 10
             var y: \Int = \x
             var z: \Int = /y
@@ -314,7 +322,7 @@ class Env {
 
     @Test
     fun e01_ptr_block_err () {
-        val out = all("""
+        val out = inp2env("""
             var p1: \Int = ?
             var p2: \Int = ?
             {
@@ -332,7 +340,7 @@ class Env {
 
     @Test
     fun e02_ptr_block_err () {
-        val out = all("""
+        val out = inp2env("""
             var x: Int = 10
             var p: \Int = ?
             {
@@ -346,7 +354,7 @@ class Env {
 
     @Test
     fun e03_ptr_func_ok () {
-        val out = all("""
+        val out = inp2env("""
             func f : \Int -> \Int {
                 return arg
             }
@@ -359,7 +367,7 @@ class Env {
 
     @Test
     fun e04_ptr_func_ok () {
-        val out = all("""
+        val out = inp2env("""
             var v: Int = 10
             func f : () -> \Int {
                 return \v
@@ -372,7 +380,7 @@ class Env {
 
     @Test
     fun e05_ptr_func_err () {
-        val out = all("""
+        val out = inp2env("""
             func f : () -> \Int {
                 var v: Int = 10
                 return \v
@@ -386,7 +394,7 @@ class Env {
 
     @Test
     fun e06_ptr_func_err () {
-        val out = all("""
+        val out = inp2env("""
             func f : \Int -> \Int {
                 var ptr: \Int = arg
                 return ptr
@@ -400,7 +408,7 @@ class Env {
 
     @Test
     fun e07_ptr_caret_ok () {
-        val out = all("""
+        val out = inp2env("""
             func f : \Int -> \Int {
                 var ptr: ^\Int = arg
                 return ptr
@@ -414,7 +422,7 @@ class Env {
 
     @Test
     fun e08_ptr_caret_err () {
-        val out = all("""
+        val out = inp2env("""
             func f : \Int -> \Int {
                 var x: Int = 10
                 var ptr: ^\Int = \x
@@ -430,7 +438,7 @@ class Env {
     // TODO: caret outside function in global scope
     @Test
     fun e09_ptr_caret_err () {
-        val out = all("""
+        val out = inp2env("""
             var ptr: ^\Int = ?
         """.trimIndent())
         assert(out == "OK")
@@ -438,7 +446,7 @@ class Env {
 
     @Test
     fun e10_ptr_tuple_err () {
-        val out = all("""
+        val out = inp2env("""
             var p: \(Int,Int) = ?
             {
                 var y: (Int,Int) = (10,20)
@@ -449,7 +457,7 @@ class Env {
     }
     @Test
     fun e11_ptr_user_err () {
-        val out = all("""
+        val out = inp2env("""
             type X {
                 Y: ()
             }
@@ -463,7 +471,7 @@ class Env {
     }
     @Test
     fun e12_ptr_ptr_err () {
-        val out = all("""
+        val out = inp2env("""
             var p: \\Int = ?
             {
                 var y: \Int = ?
@@ -475,7 +483,7 @@ class Env {
     }
     @Test
     fun e13_ptr_ptr_ok () {
-        val out = all("""
+        val out = inp2env("""
             var p: \\Int = ?
             var z: Int = 10
             var y: \Int = \z
@@ -486,7 +494,7 @@ class Env {
     }
     @Test
     fun e14_ptr_ptr_err () {
-        val out = all("""
+        val out = inp2env("""
             var p: \\Int = ?
             {
                 var z: Int = 10
@@ -498,7 +506,7 @@ class Env {
     }
     @Test
     fun e15_ptr_ptr_err () {
-        val out = all("""
+        val out = inp2env("""
             var p: \Int = ?
             {
                 var x: Int = 10
@@ -511,7 +519,7 @@ class Env {
     }
     @Test
     fun e16_ptr_arg_err () {
-        val out = all("""
+        val out = inp2env("""
             func f: Int -> \Int
             {
                 return \arg
@@ -521,7 +529,7 @@ class Env {
     }
     @Test
     fun e17_ptr_arg_err () {
-        val out = all("""
+        val out = inp2env("""
             func f: Int -> \Int
             {
                 var ptr: ^\Int = \arg
@@ -532,7 +540,7 @@ class Env {
     }
     @Test
     fun e17_ptr_out_err () {
-        val out = all("""
+        val out = inp2env("""
             func f: \Int -> \\Int
             {
                 var ptr: ^\Int = arg
@@ -544,7 +552,7 @@ class Env {
 
     @Test
     fun e18_ptr_err () {
-        val out = all("""
+        val out = inp2env("""
             var pout: \Int = ?
             {
                 var pin: \Int = ?
@@ -557,7 +565,7 @@ class Env {
 
     @Test
     fun e19_ptr_ok () {
-        val out = all("""
+        val out = inp2env("""
             var pout: \Int = ?
             {
                 var pin: \Int = ?
@@ -572,7 +580,7 @@ class Env {
 
     @Test
     fun f01_ptr_tup () {
-        val out = all("""
+        val out = inp2env("""
             var v: (Int,Int) = (10,20)
             var p: \Int = \v.1
             set /p = 20
@@ -583,7 +591,7 @@ class Env {
     }
     @Test
     fun f02_ptr_tup_err () {
-        val out = all("""
+        val out = inp2env("""
             var p: \Int = ?
             {
                 var v: (Int,Int) = (10,20)
@@ -595,7 +603,7 @@ class Env {
     }
     @Test
     fun f03_ptr_type_err () {
-        val out = all("""
+        val out = inp2env("""
             type X {
                 X: Int
             }
@@ -610,7 +618,7 @@ class Env {
     }
     @Test
     fun f04_ptr_tup_err () {
-        val out = all("""
+        val out = inp2env("""
             var p: (Int,\Int) = (10,?)
             {
                 var v: Int = 20
@@ -622,7 +630,7 @@ class Env {
     }
     @Test
     fun f05_ptr_tup_err () {
-        val out = all("""
+        val out = inp2env("""
             var p: (Int,\Int) = (10,?)
             {
                 var v: Int = 20
@@ -630,7 +638,36 @@ class Env {
             }
         """.trimIndent())
         println(out)
-        assert(out == "(ln 4, col 13): invalid assignment : cannot hold pointer to local \"v\" (ln 3) in outer scope")
+        assert(out == "ERR")
     }
-    // testar ptr para pedaco de tupla e user
+    @Test
+    fun f06_ptr_type_err () {
+        val out = inp2env("""
+            type X {
+                X: \Int
+            }
+            var p: X = X.X ?
+            {
+                var v: Int = 20
+                set p.X! = \v
+            }
+        """.trimIndent())
+        //println(out)
+        assert(out == "(ln 7, col 14): invalid assignment : cannot hold pointer to local \"v\" (ln 6) in outer scope")
+    }
+    @Test
+    fun f07_ptr_type_err () {
+        val out = inp2env("""
+            type X {
+                X: \Int
+            }
+            var p: X = X.X ?
+            {
+                var v: Int = 20
+                set p = X.X \v
+            }
+        """.trimIndent())
+        println(out)
+        assert(out == "ERR")
+    }
 }
