@@ -125,15 +125,24 @@ fun Any.idToStmt (id: String): Stmt? {
 
 fun Stmt.getDepth (): Int {
     fun aux (s: Stmt): Int {
-        return env_PRV[this].let {
+        return env_PRV[s].let {
             when {
                 (it == null) -> 0
-                (this is Stmt.Block) -> 1 + it.getDepth()
-                else -> it.getDepth()
+                (it is Stmt.Block) -> 1 + aux(it)
+                else -> aux(it)
             }
         }
     }
-    return if (this is Stmt.Var && this.outer) this.idToStmt("arg")!!.getDepth() else aux(this)
+    return when {
+        (this is Stmt.Var) ->
+            when {
+                this.outer -> this.idToStmt("arg")!!.getDepth()
+                (this.tk_.str == "_ret_") -> aux(this) - 1
+                (this.tk_.str == "arg") -> aux(this) - 1
+                else -> aux(this)
+            }
+        else -> aux(this)
+    }
 }
 
 fun Any.supSubToType (sup: String, sub: String): Type? {
@@ -340,10 +349,11 @@ fun check_pointers (S: Stmt) {
                     val src_use = when (s.init) {
                         is Expr.Var   -> s.init
                         is Expr.Upref -> s.init.e as Expr.Var
+                        is Expr.Dnref -> s.init.e as Expr.Var
                         is Expr.Call  -> null
                         is Expr.Unk   -> null
                         is Expr.Nat   -> null
-                        else -> error("TODO")
+                        else -> error("TODO-1")
                     }
                     check(s.getDepth(), src_use)
                 }
@@ -354,8 +364,9 @@ fun check_pointers (S: Stmt) {
                     val src_use = when (s.src) {
                         is Expr.Var   -> s.src
                         is Expr.Upref -> s.src.e as Expr.Var
+                        is Expr.Dnref -> s.src.e as Expr.Var
                         is Expr.Call  -> null
-                        else -> error("TODO")
+                        else -> error("TODO-2")
                     }
                     check(dst, src_use)
                 }

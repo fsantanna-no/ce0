@@ -294,7 +294,7 @@ class Env {
         val x = (blk.body as Stmt.Call).call.arg
         val X = x.idToStmt("x")
         assert(X!!.getDepth() == 0)
-        assert((s.s2 as Stmt.Block).getDepth() == 1)
+        assert((s.s2 as Stmt.Block).getDepth() == 0)
         //println("<<<")
     }
 
@@ -484,4 +484,55 @@ class Env {
         """.trimIndent())
         assert(out == "OK")
     }
+    @Test
+    fun e14_ptr_ptr_err () {
+        val out = all("""
+            var p: \\Int = ?
+            {
+                var z: Int = 10
+                var y: \Int = \z
+                set p = \y
+            }
+        """.trimIndent())
+        assert(out == "(ln 5, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 4) in outer scope")
+    }
+    @Test
+    fun e15_ptr_ptr_err () {
+        val out = all("""
+            var p: \Int = ?
+            {
+                var x: Int = 10
+                var y: \Int = \x
+                var z: \\Int = \y
+                set p = /z
+            }
+        """.trimIndent())
+        assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"z\" (ln 5) in outer scope")
+    }
+    @Test
+    fun e16_ptr_arg_err () {
+        val out = all("""
+            func f: Int -> \Int
+            {
+                return \arg
+            }
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"z\" (ln 5) in outer scope")
+    }
+    @Test
+    fun e17_ptr_arg_err () {
+        val out = all("""
+            func f: Int -> \Int
+            {
+                var ptr: ^\Int = \arg
+                return ptr
+            }
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"z\" (ln 5) in outer scope")
+    }
+
+    // return \arg  <-- erro
+    // testar ptr para pedaco de tupla e user
 }
