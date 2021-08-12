@@ -327,22 +327,22 @@ fun Stmt.getDepth (): Int {
     }
 }
 
-fun Expr.getDepth (): Int {
+fun Expr.getDepth (): Pair<Int,Stmt.Var?> {
     return when (this) {
         is Expr.Var -> this.let {
             val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
-            dcl.getDepth()
+            Pair(dcl.getDepth(), dcl)
         }
         is Expr.Upref -> (this.e as Expr.Var).let {
             val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
-            dcl.getDepth()
+            Pair(dcl.getDepth(), dcl)
         }
         is Expr.Dnref -> (this.e as Expr.Var).let {
             val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
-            dcl.getDepth()
+            Pair(dcl.getDepth(), dcl)
         }
         is Expr.Call -> this.arg.getDepth()
-        else -> 0
+        else -> Pair(0, null)
     }
 }
 
@@ -354,20 +354,9 @@ fun check_pointers (S: Stmt) {
     }
     fun fs (s: Stmt): Boolean {
         fun check (dst_depth: Int, src: Expr) {
-            All_assert_tk(s.tk, dst_depth >= src.getDepth()) {
-                val dcl = when (src) {
-                    is Expr.Var -> src.let {
-                        it.idToStmt(it.tk_.str)!! as Stmt.Var
-                    }
-                    is Expr.Upref -> (src.e as Expr.Var).let {
-                        it.idToStmt(it.tk_.str)!! as Stmt.Var
-                    }
-                    is Expr.Dnref -> (src.e as Expr.Var).let {
-                        it.idToStmt(it.tk_.str)!! as Stmt.Var
-                    }
-                    else -> error("TODO")
-                }
-                "invalid assignment : cannot hold pointer to local \"${dcl.tk_.str}\" (ln ${dcl.tk.lin}) in outer scope"
+            val (src_depth, src_dcl) = src.getDepth()
+            All_assert_tk(s.tk, dst_depth >= src_depth) {
+                "invalid assignment : cannot hold pointer to local \"${src_dcl!!.tk_.str}\" (ln ${src_dcl!!.tk.lin}) in outer scope"
             }
         }
         when (s) {
