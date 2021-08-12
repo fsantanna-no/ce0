@@ -279,7 +279,7 @@ fun check_types (S: Stmt) {
              */
             is Expr.Dnref -> {
                 All_assert_tk(e.tk, e.e.toType() is Type.Ptr) {
-                    "invalid `\\` : expected pointer type"
+                    "invalid `/` : expected pointer type"
                 }
             }
             is Expr.Call -> {

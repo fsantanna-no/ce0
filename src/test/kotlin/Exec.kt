@@ -47,7 +47,7 @@ class Exec {
     @Test
     fun a03_error () {
         val out = all("//output std ()")
-        assert(out == "(ln 1, col 1): expected statement : have \"/\"")
+        assert(out == "(ln 1, col 1): expected statement : have `/´")
     }
     @Test
     fun a05_int () {
@@ -445,7 +445,7 @@ class Exec {
         val out = all("""
             var y: Int = 10
             var x: \Int = \y
-            output std x\
+            output std /x
         """.trimIndent())
         assert(out == "10\n")
     }
@@ -453,7 +453,7 @@ class Exec {
     fun i02_ptr_func () {
         val out = all("""
         func f : \Int -> () {
-           set arg\ = _(*arg+1)
+           set /arg = _(*arg+1)
            return
         }
         var x: Int = 1
@@ -465,7 +465,7 @@ class Exec {
     @Test
     fun i03_ptr_func () {
         val out = all("""
-            func f: \Int->Int { return arg\ }
+            func f: \Int->Int { return /arg }
             var g: \Int->Int = f
             var x: Int = 10
             output std g (\x)
@@ -501,7 +501,7 @@ class Exec {
                 var v: Int = 20
                 set p2 = \v
             }
-            output std p1\
+            output std /p1
         """.trimIndent())
         assert(out == "(ln 5, col 12): invalid assignment : cannot hold pointer to local \"v\" (ln 4) in outer scope")
     }
@@ -528,7 +528,7 @@ class Exec {
             }
             var v: Int = 10
             var p: \Int = f \v
-            output std p\
+            output std /p
         """.trimIndent())
         assert(out == "10\n")
     }
@@ -541,7 +541,7 @@ class Exec {
                 return \v
             }
             var p: \Int = f ()
-            output std p\
+            output std /p
         """.trimIndent())
         assert(out == "10\n")
     }
@@ -555,7 +555,7 @@ class Exec {
             }
             var v: Int = 10
             var p: \Int = f ()
-            output std p\
+            output std /p
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"v\" (ln 2) in outer scope")
     }
@@ -569,7 +569,7 @@ class Exec {
             }
             var v: Int = 10
             var p: \Int = f \v
-            output std p\
+            output std /p
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 2) in outer scope")
     }
@@ -583,7 +583,19 @@ class Exec {
             }
             var v: Int = 10
             var p: \Int = f \v
-            output std p\
+            output std /p
+        """.trimIndent())
+        assert(out == "10\n")
+    }
+
+    @Test
+    fun i12_ptr_ptr_ok () {
+        val out = all("""
+            var p: \\Int = ?
+            var z: Int = 10
+            var y: \Int = \z
+            set p = \y
+            output std //p
         """.trimIndent())
         assert(out == "10\n")
     }

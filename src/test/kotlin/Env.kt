@@ -34,6 +34,7 @@ class Env {
     @Test
     fun a02_undeclared_func () {
         val out = all("call f ()")
+        //println(out)
         assert(out == "(ln 1, col 6): undeclared variable \"f\"")
     }
     @Test
@@ -269,16 +270,17 @@ class Env {
     fun c12_type_dnref () {
         val out = all("""
             var x: Int = 10
-            output std x\
+            output std /x
         """.trimIndent())
-        assert(out == "(ln 2, col 13): invalid `\\` : expected pointer type")
+        //println(out)
+        assert(out == "(ln 2, col 12): invalid `/` : expected pointer type")
     }
     @Test
     fun c13_type_dnref () {
         val out = all("""
             var x: Int = 10
             var y: \Int = \x
-            var z: \Int = y\
+            var z: \Int = /y
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment to \"z\" : type mismatch")
     }
@@ -323,7 +325,7 @@ class Env {
                 var v: Int = 20
                 set p2 = \v
             }
-            output std p1\
+            output std /p1
         """.trimIndent())
         assert(out == "(ln 5, col 12): invalid assignment : cannot hold pointer to local \"v\" (ln 4) in outer scope")
     }
@@ -350,7 +352,7 @@ class Env {
             }
             var v: Int = 10
             var p: \Int = f \v
-            output std p\
+            output std /p
         """.trimIndent())
         assert(out == "OK")
     }
@@ -363,7 +365,7 @@ class Env {
                 return \v
             }
             var p: \Int = f ()
-            output std p\
+            output std /p
         """.trimIndent())
         assert(out == "OK")
     }
@@ -377,7 +379,7 @@ class Env {
             }
             var v: Int = 10
             var p: \Int = f ()
-            output std p\
+            output std /p
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"v\" (ln 2) in outer scope")
     }
@@ -391,7 +393,7 @@ class Env {
             }
             var v: Int = 10
             var p: \Int = f \v
-            output std p\
+            output std /p
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 2) in outer scope")
     }
@@ -405,7 +407,7 @@ class Env {
             }
             var v: Int = 10
             var p: \Int = f \v
-            output std p\
+            output std /p
         """.trimIndent())
         assert(out == "OK")
     }
@@ -420,7 +422,7 @@ class Env {
             }
             var v: Int = 10
             var p: \Int = f \v
-            output std p\
+            output std /p
         """.trimIndent())
         assert(out == "(ln 3, col 9): invalid assignment : cannot hold pointer to local \"x\" (ln 2) in outer scope")
     }
@@ -478,9 +480,8 @@ class Env {
             var z: Int = 10
             var y: \Int = \z
             set p = \y
-            output std p\\
+            output std //p
         """.trimIndent())
-        println(out)
-        assert(out == "10\n")
+        assert(out == "OK")
     }
 }

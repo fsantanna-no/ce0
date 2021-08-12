@@ -114,10 +114,18 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
             all.accept(TK.CHAR,'\\') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val e = parser_expr(all,false)
-                all.assert_tk(all.tk0, e is Expr.Nat || e is Expr.Var || e is Expr.Index) {
+                all.assert_tk(all.tk0, e is Expr.Nat || e is Expr.Var || e is Expr.Index || e is Expr.Dnref || e is Expr.Upref || e is Expr.Disc) {
                     "unexpected operand to `\\´"
                 }
                 Expr.Upref(tk0,e)
+            }
+            all.accept(TK.CHAR,'/') -> {
+                val tk0 = all.tk0 as Tk.Chr
+                val e = parser_expr(all,false)
+                all.assert_tk(all.tk0, e is Expr.Nat || e is Expr.Var || e is Expr.Index || e is Expr.Dnref || e is Expr.Upref || e is Expr.Disc || e is Expr.Call) {
+                    "unexpected operand to `/´"
+                }
+                Expr.Dnref(tk0,e)
             }
             all.accept(TK.CHAR,'(') -> { // Expr.Tuple
                 val tk0 = all.tk0 as Tk.Chr
@@ -144,34 +152,9 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
         }
     }
 
-    fun dnref (tk: Tk.Chr?, e: Expr): Expr {
-        if (tk == null) {
-            return e
-        }
-        all.assert_tk(e.tk, e is Expr.Var || e is Expr.Nat || e is Expr.Dnref || e is Expr.Upref || e is Expr.Index || e is Expr.Call || e is Expr.Disc) {
-            "unexpected operand to `\\´"
-        }
-        return Expr.Dnref(tk, e)
-    }
-    fun upref (tk: Tk.Chr?, e: Expr): Expr {
-        if (tk == null) {
-            return e
-        }
-        all.assert_tk (e.tk, e is Expr.Var || e is Expr.Index || e is Expr.Disc) {
-            "unexpected operand to `\\´"
-        }
-        return Expr.Upref(tk, e)
-    }
-
-    fun dots (): Pair<Expr,Tk.Chr?> {
+    fun dots (): Expr {
         var ret = one()
-
-        var tk_slash = if (all.accept(TK.CHAR,'\\')) all.tk0 as Tk.Chr else null
-
         while (all.accept(TK.CHAR,'.')) {
-            ret = dnref(tk_slash, ret)
-            tk_slash = null
-
             ret = when {
                 all.accept(TK.XNUM)  -> Expr.Index(all.tk0 as Tk.Num, ret)
                 all.accept(TK.XUSER) -> {
@@ -191,29 +174,24 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 }
             }
         }
-
-        return Pair(ret,tk_slash)
+        return ret
     }
     fun call (ispre: Boolean): Expr {
         val tk_pre = all.tk0
-        var (e1,tk_slash) = dots()
+        var e1 = dots()
 
         val tk_bef = all.tk0
-        var e2 = try {
+        val e2 = try {
             parser_expr(all, false)
         } catch (e: Throwable) {
             assert(!all.consumed(tk_bef)) {
                 e.message!! // failed parser_expr and consumed input: error)
             }
-            val dn = dnref(tk_slash, e1)
             if (!ispre) {
-                return dn
+                return e1
             }
-            tk_slash = null
-            e1 = dn
             Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()")) // call f -> call f ()
         }
-        e2 = upref(tk_slash, e2)
 
         all.assert_tk(e1.tk, e1 is Expr.Var || (e1 is Expr.Nat && (!ispre || tk_pre.enu==TK.CALL))) {
             "expected function"

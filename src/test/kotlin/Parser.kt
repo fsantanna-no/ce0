@@ -355,25 +355,25 @@ class Parser {
     }
     @Test
     fun b23_parser_expr_dnref () {
-        val all = All_new(PushbackReader(StringReader("x\\.1"), 2))
+        val all = All_new(PushbackReader(StringReader("(/x).1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
         assert(e is Expr.Index && e.e is Expr.Dnref && (e.e as Expr.Dnref).e is Expr.Var)
     }
     @Test
     fun b24_parser_expr_dnref () {
-        val all = All_new(PushbackReader(StringReader("()\\"), 2))
+        val all = All_new(PushbackReader(StringReader("/()"), 2))
         lexer(all)
         try {
             parser_expr(all, false)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 1): unexpected operand to `\\´")
+            assert(e.message == "(ln 1, col 2): unexpected operand to `/´")
         }
     }
     @Test
     fun b25_parser_expr_dnref () {
-        val all = All_new(PushbackReader(StringReader("x\\\\"), 2))
+        val all = All_new(PushbackReader(StringReader("//x"), 2))
         lexer(all)
         val e = parser_expr(all,false)
         //println(e)
