@@ -259,6 +259,21 @@ fun Type.ishasrec (): Boolean {
     }
 }
 
+fun Type.ishasptr (): Boolean {
+    return when (this) {
+        is Type.Any, is Type.Unit, is Type.Nat, is Type.Func -> false
+        is Type.Ptr   -> true
+        is Type.Tuple -> this.vec.any { it.ishasptr() }
+        is Type.User  -> (this.idToStmt(this.tk_.str) as Stmt.User).let {
+            !it.isrec && it.subs.map { it.second }.any { it.ishasptr() }.let {
+                println(this)
+                println(it)
+                it
+            }
+        }
+    }
+}
+
 fun check_types (S: Stmt) {
     fun fe (e: Expr): Boolean {
         when (e) {
@@ -353,9 +368,8 @@ fun Expr.getDepth (hold: Boolean): Pair<Int,Stmt?> {
         is Expr.Disc -> this.e.getDepth(hold)
         is Expr.Pred -> this.e.getDepth(false)
         is Expr.Call -> this.arg.getDepth(hold)
-        is Expr.Tuple -> this.vec.map { it.getDepth(it.toType() is Type.Ptr) }.maxByOrNull { it.first }!!
-        is Expr.Cons -> this.arg.getDepth(this.subType() is Type.Ptr)
-        else -> { println(this) ; Pair(0, null) ; error("TODO-4") }
+        is Expr.Tuple -> this.vec.map { it.getDepth(it.toType().ishasptr()) }.maxByOrNull { it.first }!!
+        is Expr.Cons -> this.arg.getDepth(this.subType()!!.ishasptr())
     }
 }
 
@@ -375,13 +389,13 @@ fun check_pointers (S: Stmt) {
     fun fs (s: Stmt): Boolean {
         when (s) {
             is Stmt.Var -> {
-                val (src_depth, src_dcl) = s.init.getDepth(s.type is Type.Ptr)
+                val (src_depth, src_dcl) = s.init.getDepth(s.type.ishasptr())
                 All_assert_tk(s.tk, s.getDepth() >= src_depth) {
                     "invalid assignment : cannot hold pointer to local \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
                 }
             }
             is Stmt.Set -> {
-                val (src_depth, src_dcl) = s.src.getDepth(s.dst.toType() is Type.Ptr)
+                val (src_depth, src_dcl) = s.src.getDepth(s.dst.toType().ishasptr())
                 All_assert_tk(s.tk, s.dst.getDepth(false).first >= src_depth) {
                     "invalid assignment : cannot hold pointer to local \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
                 }

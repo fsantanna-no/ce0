@@ -42,7 +42,6 @@ class Env {
     @Test
     fun a02_undeclared_func () {
         val out = inp2env("call f ()")
-        //println(out)
         assert(out == "(ln 1, col 6): undeclared variable \"f\"")
     }
     @Test
@@ -161,6 +160,7 @@ class Env {
             var l: List = List.Item List.Nil
             output std \l.Nil!
         """.trimIndent())
+        println(out)
         assert(out == "OK")
     }
 
@@ -255,7 +255,6 @@ class Env {
             var y: Int = 10
             var x: \Int = \y
         """.trimIndent())
-        println(out)
         assert(out == "OK")
     }
     @Test
@@ -281,7 +280,6 @@ class Env {
             var x: Int = 10
             output std /x
         """.trimIndent())
-        //println(out)
         assert(out == "(ln 2, col 12): invalid `/` : expected pointer type")
     }
     @Test
@@ -479,7 +477,6 @@ class Env {
                 set p = \y
             }
         """.trimIndent())
-        //println(out)
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 3)")
     }
     @Test
@@ -560,7 +557,6 @@ class Env {
                 set pout = pin
             }
         """.trimIndent())
-        println(out)
         assert(out == "(ln 4, col 14): invalid assignment : cannot hold pointer to local \"pin\" (ln 3)")
     }
 
@@ -573,7 +569,6 @@ class Env {
                 set pin = pout
             }
         """.trimIndent())
-        println(out)
         assert(out == "OK")
     }
 
@@ -587,7 +582,6 @@ class Env {
             set /p = 20
             output std v
         """.trimIndent())
-        //println(out)
         assert(out == "OK")
     }
     @Test
@@ -599,7 +593,6 @@ class Env {
                 set p = \v.1
             }
         """.trimIndent())
-        //println(out)
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 3)")
     }
     @Test
@@ -614,7 +607,6 @@ class Env {
                 set p = \v.X!
             }
         """.trimIndent())
-        //println(out)
         assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 6)")
     }
     @Test
@@ -626,7 +618,6 @@ class Env {
                 set p.2 = \v
             }
         """.trimIndent())
-        //println(out)
         assert(out == "(ln 4, col 13): invalid assignment : cannot hold pointer to local \"v\" (ln 3)")
     }
     @Test
@@ -638,7 +629,6 @@ class Env {
                 set p = (10,\v)
             }
         """.trimIndent())
-        println(out)
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 3)")
     }
     @Test
@@ -653,7 +643,6 @@ class Env {
                 set p.X! = \v
             }
         """.trimIndent())
-        //println(out)
         assert(out == "(ln 7, col 14): invalid assignment : cannot hold pointer to local \"v\" (ln 6)")
     }
     @Test
@@ -668,7 +657,22 @@ class Env {
                 set p = X.X \v
             }
         """.trimIndent())
-        println(out)
         assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 6)")
+    }
+
+    @Test
+    fun f08_ptr_type_err () {
+        val out = inp2env("""
+            type X {
+                X: \Int
+            }
+            var x1: X = ?
+            {
+                var v: Int = 20
+                var x2: X = X.X \v
+                set x1 = x2
+            }
+        """.trimIndent())
+        assert(out == "(ln 8, col 12): invalid assignment : cannot hold pointer to local \"x2\" (ln 7)")
     }
 }
