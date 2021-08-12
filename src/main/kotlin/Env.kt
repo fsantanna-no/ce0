@@ -123,28 +123,6 @@ fun Any.idToStmt (id: String): Stmt? {
     }
 }
 
-fun Stmt.getDepth (): Int {
-    fun aux (s: Stmt): Int {
-        return env_PRV[s].let {
-            when {
-                (it == null) -> 0
-                (it is Stmt.Block) -> 1 + aux(it)
-                else -> aux(it)
-            }
-        }
-    }
-    return when {
-        (this is Stmt.Var) ->
-            when {
-                this.outer -> this.idToStmt("arg")!!.getDepth()
-                (this.tk_.str == "_ret_") -> aux(this) - 1
-                (this.tk_.str == "arg") -> aux(this) - 1
-                else -> aux(this)
-            }
-        else -> aux(this)
-    }
-}
-
 fun Any.supSubToType (sup: String, sub: String): Type? {
     try {
         val user = this.idToStmt(sup) as Stmt.User
@@ -327,6 +305,47 @@ fun check_types (S: Stmt) {
     S.visit(::fs, ::fe, null)
 }
 
+fun Stmt.getDepth (): Int {
+    fun aux (s: Stmt): Int {
+        return env_PRV[s].let {
+            when {
+                (it == null) -> 0
+                (it is Stmt.Block) -> 1 + aux(it)
+                else -> aux(it)
+            }
+        }
+    }
+    return when {
+        (this is Stmt.Var) ->
+            when {
+                this.outer -> this.idToStmt("arg")!!.getDepth()
+                (this.tk_.str == "_ret_") -> aux(this) - 1
+                (this.tk_.str == "arg") -> aux(this) - 1
+                else -> aux(this)
+            }
+        else -> aux(this)
+    }
+}
+
+fun Expr.getDepth (): Int {
+    return when (this) {
+        is Expr.Var -> this.let {
+            val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
+            dcl.getDepth()
+        }
+        is Expr.Upref -> (this.e as Expr.Var).let {
+            val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
+            dcl.getDepth()
+        }
+        is Expr.Dnref -> (this.e as Expr.Var).let {
+            val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
+            dcl.getDepth()
+        }
+        is Expr.Call -> this.arg.getDepth()
+        else -> 0
+    }
+}
+
 fun check_pointers (S: Stmt) {
     fun fe (e: Expr): Boolean {
         when (e) {
@@ -335,29 +354,20 @@ fun check_pointers (S: Stmt) {
     }
     fun fs (s: Stmt): Boolean {
         fun check (dst_depth: Int, src: Expr) {
-            when (src) {
-                is Expr.Var -> src.let {
-                    val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
-                    All_assert_tk(s.tk, dst_depth >= dcl.getDepth()) {
-                        "invalid assignment : cannot hold pointer to local \"${it.tk_.str}\" (ln ${dcl.tk.lin}) in outer scope"
+            All_assert_tk(s.tk, dst_depth >= src.getDepth()) {
+                val dcl = when (src) {
+                    is Expr.Var -> src.let {
+                        it.idToStmt(it.tk_.str)!! as Stmt.Var
                     }
-                }
-                is Expr.Upref -> (src.e as Expr.Var).let {
-                    val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
-                    All_assert_tk(s.tk, dst_depth >= dcl.getDepth()) {
-                        "invalid assignment : cannot hold pointer to local \"${it.tk_.str}\" (ln ${dcl.tk.lin}) in outer scope"
+                    is Expr.Upref -> (src.e as Expr.Var).let {
+                        it.idToStmt(it.tk_.str)!! as Stmt.Var
                     }
-                }
-                is Expr.Dnref -> (src.e as Expr.Var).let {
-                    val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
-                    All_assert_tk(s.tk, dst_depth >= dcl.getDepth()) {
-                        "invalid assignment : cannot hold pointer to local \"${it.tk_.str}\" (ln ${dcl.tk.lin}) in outer scope"
+                    is Expr.Dnref -> (src.e as Expr.Var).let {
+                        it.idToStmt(it.tk_.str)!! as Stmt.Var
                     }
+                    else -> error("TODO")
                 }
-                is Expr.Call  -> {}
-                is Expr.Unk   -> {}
-                is Expr.Nat   -> {}
-                else -> error("TODO")
+                "invalid assignment : cannot hold pointer to local \"${dcl.tk_.str}\" (ln ${dcl.tk.lin}) in outer scope"
             }
         }
         when (s) {
@@ -368,8 +378,8 @@ fun check_pointers (S: Stmt) {
             }
             is Stmt.Set -> {
                 if (s.dst.toType() is Type.Ptr) {
-                    val dst = s.dst.idToStmt((s.dst as Expr.Var).tk_.str)!!.getDepth()
-                    check(dst, s.src)
+                    val dst_depth = s.dst.idToStmt((s.dst as Expr.Var).tk_.str)!!.getDepth()
+                    check(dst_depth, s.src)
                 }
             }
         }
