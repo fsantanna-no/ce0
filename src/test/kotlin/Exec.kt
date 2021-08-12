@@ -676,6 +676,33 @@ class Exec {
         assert(out == "20\n")
     }
 
+    @Test
+    fun i19_ptr_tup () {
+        val out = all("""
+            var x1: (Int,\Int) = ?
+            var v: Int = 20
+            var x2: (Int,\Int) = (10,\v)
+            set x1 = x2
+            output std /x1.2
+        """.trimIndent())
+        println(out)
+        assert(out == "20\n")
+    }
+    @Test
+    fun f09_ptr_type_err () {
+        val out = all("""
+            type X {
+                X: \Int
+            }
+            var x1: X = ?
+            var v: Int = 20
+            var x2: X = X.X \v
+            set x1 = x2
+            output std /x1.X!
+        """.trimIndent())
+        assert(out == "20\n")
+    }
+
     // REC
 
     @Test

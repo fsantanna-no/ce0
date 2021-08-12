@@ -265,11 +265,7 @@ fun Type.ishasptr (): Boolean {
         is Type.Ptr   -> true
         is Type.Tuple -> this.vec.any { it.ishasptr() }
         is Type.User  -> (this.idToStmt(this.tk_.str) as Stmt.User).let {
-            !it.isrec && it.subs.map { it.second }.any { it.ishasptr() }.let {
-                println(this)
-                println(it)
-                it
-            }
+            !it.isrec && it.subs.map { it.second }.any { it.ishasptr() }
         }
     }
 }

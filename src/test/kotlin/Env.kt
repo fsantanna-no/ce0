@@ -160,7 +160,6 @@ class Env {
             var l: List = List.Item List.Nil
             output std \l.Nil!
         """.trimIndent())
-        println(out)
         assert(out == "OK")
     }
 
@@ -661,7 +660,19 @@ class Env {
     }
 
     @Test
-    fun f08_ptr_type_err () {
+    fun f08_ptr_tup_err () {
+        val out = inp2env("""
+            var x1: (Int,\Int) = ?
+            {
+                var v: Int = 20
+                var x2: (Int,\Int) = (10,\v)
+                set x1 = x2
+            }
+        """.trimIndent())
+        assert(out == "(ln 5, col 12): invalid assignment : cannot hold pointer to local \"x2\" (ln 4)")
+    }
+    @Test
+    fun f09_ptr_type_err () {
         val out = inp2env("""
             type X {
                 X: \Int

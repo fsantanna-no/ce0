@@ -99,9 +99,9 @@ func f: \Int -> \\Int
 }
 ```
 
-## Tuples and User Types
+## Tuples and User Types Compounds
 
-- An upref to a subpart counts as an upref to whole value:
+- An upref to a subpart of a compound counts as an upref to the compound:
 
 ```
 var p: \Int = ?
@@ -119,5 +119,68 @@ var p: \Int = ?
 {
     var v: X = X.X 10
     set p = \v.X!           -- (ln 7, col 11): invalid assignment : cannot hold pointer to local "v" (ln 6) in outer scope
+}
+```
+
+- A compound counts as a pointer if it contains a pointer subpart:
+
+```
+var x1: (Int,\Int) = ?
+{
+    var v: Int = 20
+    var x2: (Int,\Int) = (10,\v)
+    set x1 = x2             -- (ln 5, col 12): invalid assignment : cannot hold pointer to local "x2" (ln 4)
+}
+```
+
+```
+type X {
+    X: \Int
+}
+var x1: X = ?
+{
+    var v: Int = 20
+    var x2: X = X.X \v
+    set x1 = x2             -- (ln 8, col 12): invalid assignment : cannot hold pointer to local "x2" (ln 7)
+}
+```
+
+- A pointer subpart of an outer compound cannot hold a local upref:
+
+```
+var p: (Int,\Int) = (10,?)
+{
+    var v: Int = 20
+    set p = (10,\v)         -- (ln 4, col 11): invalid assignment : cannot hold pointer to local "v" (ln 3)
+}
+```
+
+```
+var p: (Int,\Int) = (10,?)
+{
+    var v: Int = 20
+    set p.2 = \v            -- (ln 4, col 13): invalid assignment : cannot hold pointer to local "v" (ln 3)
+}
+```
+
+```
+type X {
+    X: \Int
+}
+var p: X = X.X ?
+{
+    var v: Int = 20
+    set p = X.X \v          -- (ln 7, col 11): invalid assignment : cannot hold pointer to local "v" (ln 6)
+}
+```
+
+```
+type X {
+    X: \Int
+}
+var p: X = X.X ?
+{
+    var v: Int = 20
+    set p.X! = \v           -- (ln 7, col 14): invalid assignment : cannot hold pointer to local "v" (ln 6)
 }
 ```
