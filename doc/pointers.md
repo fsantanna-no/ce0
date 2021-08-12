@@ -8,7 +8,7 @@
 var p: \Int = ?
 {
     var v: Int = 10
-    set p = \v      -- (ln 4, col 13): invalid assignment : cannot hold pointer to local "v" (ln 3) in outer scope
+    set p = \v      -- (ln 4, col 13): invalid assignment : cannot hold local pointer "v" (ln 3)
 }
 ```
 
@@ -18,12 +18,12 @@ var pout: \Int = ?
     var pin: \Int = ?
     set pout = pin
 }
-        assert(out == "(ln 5, col 11): invalid assignment : cannot hold pointer to local \"pp\" (ln 4) in outer scope")
+        assert(out == "(ln 5, col 11): invalid assignment : cannot hold local pointer "pin" (ln 4)
 ```
 
 ## Functions
 
-- Function can return pointer from outer scope or `arg`:
+- A function can return a pointer from outer scope or `arg`:
 
 ```
 func f : \Int -> \Int
@@ -44,13 +44,26 @@ var p: \Int = f ()
 output std p\       -- 10
 ```
 
-- Function cannot return local pointer:
+- But the return counts as being from the caller scope:
+
+```
+var v: Int = 10
+func f : () -> \Int {
+    return \v
+}
+var p: \Int = ?
+{
+    set p = f ()    -- (ln 7, col 11): invalid assignment : cannot hold local pointer "f" (ln 2)
+}
+```
+
+- A function cannot return a local pointer:
 
 ```
 func f : () -> \Int
 {
     var v: Int = 10
-    return \v       -- (ln 3, col 5): invalid assignment : cannot hold pointer to local "v" (ln 2) in outer scope
+    return \v       -- (ln 3, col 5): invalid assignment : cannot hold local pointer "v" (ln 2)
 }
 ```
 
@@ -59,13 +72,15 @@ func f : () -> \Int
 ```
 func f : Int -> \Int
 {
-    return \arg     -- (ln 3, col 5): invalid assignment : cannot hold pointer to local "arg" (ln 2) in outer scope
+    return \arg     -- (ln 3, col 5): invalid assignment : cannot hold local pointer "arg" (ln 2)
 }
 ```
 
-## Scope Modifier
+- A function cannot hold `arg` in an outer scope:
 
-- Caret `^` modifier binds variables to outermost scope, which can manipulate `arg`:
+### Outermost Scope Modifier
+
+- The caret `^` modifier binds a variable to the function outermost scope, which can manipulate `arg`:
 
 ```
 func f : \Int -> \Int
@@ -84,7 +99,7 @@ output std p\               -- 10
 func f : \Int -> \Int
 {
     var v: Int = 10
-    var ptr: ^\Int = \v     -- (ln 4, col 9): invalid assignment : cannot hold pointer to local "v" (ln 3) in outer scope
+    var ptr: ^\Int = \v     -- (ln 4, col 9): invalid assignment : cannot hold local pointer "v" (ln 3)
     return ptr
 }
 ```
@@ -95,9 +110,13 @@ func f : \Int -> \Int
 func f: \Int -> \\Int
 {
     var ptr: ^\Int = arg
-    return \ptr             -- (ln 4, col 5): invalid assignment : cannot hold pointer to local "ptr" (ln 3) in outer scope
+    return \ptr             -- (ln 4, col 5): invalid assignment : cannot hold local pointer "ptr" (ln 3)
 }
 ```
+
+### Calls
+
+- A call that returns 
 
 ## Tuples and User Types Compounds
 
@@ -107,7 +126,7 @@ func f: \Int -> \\Int
 var p: \Int = ?
 {
     var v: (Int,Int) = (10,20)
-    set p = \v.1            -- (ln 4, col 11): invalid assignment : cannot hold pointer to local "v" (ln 3) in outer scope
+    set p = \v.1            -- (ln 4, col 11): invalid assignment : cannot hold local pointer "v" (ln 3)
 }
 ```
 
@@ -118,7 +137,7 @@ type X {
 var p: \Int = ?
 {
     var v: X = X.X 10
-    set p = \v.X!           -- (ln 7, col 11): invalid assignment : cannot hold pointer to local "v" (ln 6) in outer scope
+    set p = \v.X!           -- (ln 7, col 11): invalid assignment : cannot hold local pointer "v" (ln 6)
 }
 ```
 
@@ -129,7 +148,7 @@ var x1: (Int,\Int) = ?
 {
     var v: Int = 20
     var x2: (Int,\Int) = (10,\v)
-    set x1 = x2             -- (ln 5, col 12): invalid assignment : cannot hold pointer to local "x2" (ln 4)
+    set x1 = x2             -- (ln 5, col 12): invalid assignment : cannot hold local pointer "x2" (ln 4)
 }
 ```
 
@@ -141,7 +160,7 @@ var x1: X = ?
 {
     var v: Int = 20
     var x2: X = X.X \v
-    set x1 = x2             -- (ln 8, col 12): invalid assignment : cannot hold pointer to local "x2" (ln 7)
+    set x1 = x2             -- (ln 8, col 12): invalid assignment : cannot hold local pointer "x2" (ln 7)
 }
 ```
 
@@ -151,7 +170,7 @@ var x1: X = ?
 var p: (Int,\Int) = (10,?)
 {
     var v: Int = 20
-    set p = (10,\v)         -- (ln 4, col 11): invalid assignment : cannot hold pointer to local "v" (ln 3)
+    set p = (10,\v)         -- (ln 4, col 11): invalid assignment : cannot hold local pointer "v" (ln 3)
 }
 ```
 
@@ -159,7 +178,7 @@ var p: (Int,\Int) = (10,?)
 var p: (Int,\Int) = (10,?)
 {
     var v: Int = 20
-    set p.2 = \v            -- (ln 4, col 13): invalid assignment : cannot hold pointer to local "v" (ln 3)
+    set p.2 = \v            -- (ln 4, col 13): invalid assignment : cannot hold local pointer "v" (ln 3)
 }
 ```
 
@@ -170,7 +189,7 @@ type X {
 var p: X = X.X ?
 {
     var v: Int = 20
-    set p = X.X \v          -- (ln 7, col 11): invalid assignment : cannot hold pointer to local "v" (ln 6)
+    set p = X.X \v          -- (ln 7, col 11): invalid assignment : cannot hold local pointer "v" (ln 6)
 }
 ```
 
@@ -181,6 +200,6 @@ type X {
 var p: X = X.X ?
 {
     var v: Int = 20
-    set p.X! = \v           -- (ln 7, col 14): invalid assignment : cannot hold pointer to local "v" (ln 6)
+    set p.X! = \v           -- (ln 7, col 14): invalid assignment : cannot hold local pointer "v" (ln 6)
 }
 ```

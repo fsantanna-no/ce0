@@ -395,13 +395,13 @@ fun check_pointers (S: Stmt) {
             is Stmt.Var -> {
                 val (src_depth, src_dcl) = s.init.getDepth(s.getDepth(), s.type.ishasptr())
                 All_assert_tk(s.tk, s.getDepth() >= src_depth) {
-                    "invalid assignment : cannot hold pointer to local \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
+                    "invalid assignment : cannot hold local pointer \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
                 }
             }
             is Stmt.Set -> {
                 val (src_depth, src_dcl) = s.src.getDepth(s.getDepth(), s.dst.toType().ishasptr())
                 All_assert_tk(s.tk, s.dst.getDepth(s.getDepth(), false).first >= src_depth) {
-                    "invalid assignment : cannot hold pointer to local \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
+                    "invalid assignment : cannot hold local pointer \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
                 }
             }
         }
