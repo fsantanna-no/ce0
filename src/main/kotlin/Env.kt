@@ -334,22 +334,30 @@ fun check_pointers (S: Stmt) {
         return true
     }
     fun fs (s: Stmt): Boolean {
-        fun check (dst: Int, src: Expr) {
-            val src_use = when (src) {
-                is Expr.Var   -> src
-                is Expr.Upref -> src.e as Expr.Var
-                is Expr.Dnref -> src.e as Expr.Var
-                is Expr.Call  -> null
-                is Expr.Unk   -> null
-                is Expr.Nat   -> null
-                else -> error("TODO-1")
-            }
-            if (src_use != null) {
-                val src_dcl = (src_use.idToStmt(src_use.tk_.str)!! as Stmt.Var)
-                val src = src_dcl.getDepth()
-                All_assert_tk(s.tk, dst >= src) {
-                    "invalid assignment : cannot hold pointer to local \"${src_use.tk_.str}\" (ln ${src_dcl.tk.lin}) in outer scope"
+        fun check (dst_depth: Int, src: Expr) {
+            when (src) {
+                is Expr.Var -> src.let {
+                    val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
+                    All_assert_tk(s.tk, dst_depth >= dcl.getDepth()) {
+                        "invalid assignment : cannot hold pointer to local \"${it.tk_.str}\" (ln ${dcl.tk.lin}) in outer scope"
+                    }
                 }
+                is Expr.Upref -> (src.e as Expr.Var).let {
+                    val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
+                    All_assert_tk(s.tk, dst_depth >= dcl.getDepth()) {
+                        "invalid assignment : cannot hold pointer to local \"${it.tk_.str}\" (ln ${dcl.tk.lin}) in outer scope"
+                    }
+                }
+                is Expr.Dnref -> (src.e as Expr.Var).let {
+                    val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
+                    All_assert_tk(s.tk, dst_depth >= dcl.getDepth()) {
+                        "invalid assignment : cannot hold pointer to local \"${it.tk_.str}\" (ln ${dcl.tk.lin}) in outer scope"
+                    }
+                }
+                is Expr.Call  -> {}
+                is Expr.Unk   -> {}
+                is Expr.Nat   -> {}
+                else -> error("TODO")
             }
         }
         when (s) {
