@@ -335,7 +335,6 @@ class Env {
         """.trimIndent())
         assert(out == "(ln 5, col 12): invalid assignment : cannot hold pointer to local \"v\" (ln 4)")
     }
-
     @Test
     fun e02_ptr_block_err () {
         val out = inp2env("""
@@ -349,9 +348,83 @@ class Env {
         """.trimIndent())
         assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 4)")
     }
+    @Test
+    fun e03_ptr_err () {
+        val out = inp2env("""
+            var pout: \Int = ?
+            {
+                var pin: \Int = ?
+                set pout = pin
+            }
+        """.trimIndent())
+        assert(out == "(ln 4, col 14): invalid assignment : cannot hold pointer to local \"pin\" (ln 3)")
+    }
+    @Test
+    fun e04_ptr_ok () {
+        val out = inp2env("""
+            var pout: \Int = ?
+            {
+                var pin: \Int = ?
+                set pin = pout
+            }
+        """.trimIndent())
+        assert(out == "OK")
+    }
+
+    // POINTERS - DOUBLE
 
     @Test
-    fun e03_ptr_func_ok () {
+    fun f01_ptr_ptr_err () {
+        val out = inp2env("""
+            var p: \\Int = ?
+            {
+                var y: \Int = ?
+                set p = \y
+            }
+        """.trimIndent())
+        assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 3)")
+    }
+    @Test
+    fun f02_ptr_ptr_ok () {
+        val out = inp2env("""
+            var p: \\Int = ?
+            var z: Int = 10
+            var y: \Int = \z
+            set p = \y
+            output std //p
+        """.trimIndent())
+        assert(out == "OK")
+    }
+    @Test
+    fun f03_ptr_ptr_err () {
+        val out = inp2env("""
+            var p: \\Int = ?
+            {
+                var z: Int = 10
+                var y: \Int = \z
+                set p = \y
+            }
+        """.trimIndent())
+        assert(out == "(ln 5, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 4)")
+    }
+    @Test
+    fun f04_ptr_ptr_err () {
+        val out = inp2env("""
+            var p: \Int = ?
+            {
+                var x: Int = 10
+                var y: \Int = \x
+                var z: \\Int = \y
+                set p = /z
+            }
+        """.trimIndent())
+        assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"z\" (ln 5)")
+    }
+
+    // POINTERS - FUNC - CALL
+
+    @Test
+    fun g01_ptr_func_ok () {
         val out = inp2env("""
             func f : \Int -> \Int {
                 return arg
@@ -362,9 +435,8 @@ class Env {
         """.trimIndent())
         assert(out == "OK")
     }
-
     @Test
-    fun e04_ptr_func_ok () {
+    fun g02_ptr_func_ok () {
         val out = inp2env("""
             var v: Int = 10
             func f : () -> \Int {
@@ -375,9 +447,8 @@ class Env {
         """.trimIndent())
         assert(out == "OK")
     }
-
     @Test
-    fun e05_ptr_func_err () {
+    fun g03_ptr_func_err () {
         val out = inp2env("""
             func f : () -> \Int {
                 var v: Int = 10
@@ -389,9 +460,8 @@ class Env {
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"v\" (ln 2)")
     }
-
     @Test
-    fun e06_ptr_func_err () {
+    fun g04_ptr_func_err () {
         val out = inp2env("""
             func f : \Int -> \Int {
                 var ptr: \Int = arg
@@ -403,9 +473,8 @@ class Env {
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 2)")
     }
-
     @Test
-    fun e07_ptr_caret_ok () {
+    fun g05_ptr_caret_ok () {
         val out = inp2env("""
             func f : \Int -> \Int {
                 var ptr: ^\Int = arg
@@ -417,9 +486,8 @@ class Env {
         """.trimIndent())
         assert(out == "OK")
     }
-
     @Test
-    fun e08_ptr_caret_err () {
+    fun g06_ptr_caret_err () {
         val out = inp2env("""
             func f : \Int -> \Int {
                 var x: Int = 10
@@ -435,7 +503,7 @@ class Env {
 
     // TODO: caret outside function in global scope
     @Test
-    fun e09_ptr_caret_err () {
+    fun g07_ptr_caret_err () {
         val out = inp2env("""
             var ptr: ^\Int = ?
         """.trimIndent())
@@ -443,7 +511,56 @@ class Env {
     }
 
     @Test
-    fun e10_ptr_tuple_err () {
+    fun g08_ptr_arg_err () {
+        val out = inp2env("""
+            func f: Int -> \Int
+            {
+                return \arg
+            }
+        """.trimIndent())
+        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"arg\" (ln 2)")
+    }
+    @Test
+    fun g09_ptr_arg_err () {
+        val out = inp2env("""
+            func f: Int -> \Int
+            {
+                var ptr: ^\Int = \arg
+                return ptr
+            }
+        """.trimIndent())
+        assert(out == "(ln 3, col 9): invalid assignment : cannot hold pointer to local \"arg\" (ln 2)")
+    }
+    @Test
+    fun g10_ptr_out_err () {
+        val out = inp2env("""
+            func f: \Int -> \\Int
+            {
+                var ptr: ^\Int = arg
+                return \ptr
+            }
+        """.trimIndent())
+        assert(out == "(ln 4, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 3)")
+    }
+    @Test
+    fun g11_ptr_func () {
+        val out = inp2env("""
+            var v: Int = 10
+            func f : () -> \Int {
+                return \v
+            }
+            var p: \Int = ?
+            {
+                set p = f ()    -- ERRO!
+            }
+        """.trimIndent())
+        assert(out == "ERR!")
+    }
+
+    // POINTERS - TUPLE - TYPE
+
+    @Test
+    fun h01_ptr_tuple_err () {
         val out = inp2env("""
             var p: \(Int,Int) = ?
             {
@@ -454,7 +571,7 @@ class Env {
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 3)")
     }
     @Test
-    fun e11_ptr_user_err () {
+    fun h02_ptr_user_err () {
         val out = inp2env("""
             type X {
                 Y: ()
@@ -468,113 +585,7 @@ class Env {
         assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 6)")
     }
     @Test
-    fun e12_ptr_ptr_err () {
-        val out = inp2env("""
-            var p: \\Int = ?
-            {
-                var y: \Int = ?
-                set p = \y
-            }
-        """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 3)")
-    }
-    @Test
-    fun e13_ptr_ptr_ok () {
-        val out = inp2env("""
-            var p: \\Int = ?
-            var z: Int = 10
-            var y: \Int = \z
-            set p = \y
-            output std //p
-        """.trimIndent())
-        assert(out == "OK")
-    }
-    @Test
-    fun e14_ptr_ptr_err () {
-        val out = inp2env("""
-            var p: \\Int = ?
-            {
-                var z: Int = 10
-                var y: \Int = \z
-                set p = \y
-            }
-        """.trimIndent())
-        assert(out == "(ln 5, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 4)")
-    }
-    @Test
-    fun e15_ptr_ptr_err () {
-        val out = inp2env("""
-            var p: \Int = ?
-            {
-                var x: Int = 10
-                var y: \Int = \x
-                var z: \\Int = \y
-                set p = /z
-            }
-        """.trimIndent())
-        assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"z\" (ln 5)")
-    }
-    @Test
-    fun e16_ptr_arg_err () {
-        val out = inp2env("""
-            func f: Int -> \Int
-            {
-                return \arg
-            }
-        """.trimIndent())
-        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"arg\" (ln 2)")
-    }
-    @Test
-    fun e17_ptr_arg_err () {
-        val out = inp2env("""
-            func f: Int -> \Int
-            {
-                var ptr: ^\Int = \arg
-                return ptr
-            }
-        """.trimIndent())
-        assert(out == "(ln 3, col 9): invalid assignment : cannot hold pointer to local \"arg\" (ln 2)")
-    }
-    @Test
-    fun e17_ptr_out_err () {
-        val out = inp2env("""
-            func f: \Int -> \\Int
-            {
-                var ptr: ^\Int = arg
-                return \ptr
-            }
-        """.trimIndent())
-        assert(out == "(ln 4, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 3)")
-    }
-
-    @Test
-    fun e18_ptr_err () {
-        val out = inp2env("""
-            var pout: \Int = ?
-            {
-                var pin: \Int = ?
-                set pout = pin
-            }
-        """.trimIndent())
-        assert(out == "(ln 4, col 14): invalid assignment : cannot hold pointer to local \"pin\" (ln 3)")
-    }
-
-    @Test
-    fun e19_ptr_ok () {
-        val out = inp2env("""
-            var pout: \Int = ?
-            {
-                var pin: \Int = ?
-                set pin = pout
-            }
-        """.trimIndent())
-        assert(out == "OK")
-    }
-
-    // POINTERS - TUPLES
-
-    @Test
-    fun f01_ptr_tup () {
+    fun h03_ptr_tup () {
         val out = inp2env("""
             var v: (Int,Int) = (10,20)
             var p: \Int = \v.1
@@ -584,7 +595,7 @@ class Env {
         assert(out == "OK")
     }
     @Test
-    fun f02_ptr_tup_err () {
+    fun h04_ptr_tup_err () {
         val out = inp2env("""
             var p: \Int = ?
             {
@@ -595,7 +606,7 @@ class Env {
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 3)")
     }
     @Test
-    fun f03_ptr_type_err () {
+    fun h05_ptr_type_err () {
         val out = inp2env("""
             type X {
                 X: Int
@@ -609,7 +620,7 @@ class Env {
         assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 6)")
     }
     @Test
-    fun f04_ptr_tup_err () {
+    fun h06_ptr_tup_err () {
         val out = inp2env("""
             var p: (Int,\Int) = (10,?)
             {
@@ -620,7 +631,7 @@ class Env {
         assert(out == "(ln 4, col 13): invalid assignment : cannot hold pointer to local \"v\" (ln 3)")
     }
     @Test
-    fun f05_ptr_tup_err () {
+    fun h07_ptr_tup_err () {
         val out = inp2env("""
             var p: (Int,\Int) = (10,?)
             {
@@ -631,7 +642,7 @@ class Env {
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 3)")
     }
     @Test
-    fun f06_ptr_type_err () {
+    fun h08_ptr_type_err () {
         val out = inp2env("""
             type X {
                 X: \Int
@@ -645,7 +656,7 @@ class Env {
         assert(out == "(ln 7, col 14): invalid assignment : cannot hold pointer to local \"v\" (ln 6)")
     }
     @Test
-    fun f07_ptr_type_err () {
+    fun h09_ptr_type_err () {
         val out = inp2env("""
             type X {
                 X: \Int
@@ -658,9 +669,8 @@ class Env {
         """.trimIndent())
         assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 6)")
     }
-
     @Test
-    fun f08_ptr_tup_err () {
+    fun h10_ptr_tup_err () {
         val out = inp2env("""
             var x1: (Int,\Int) = ?
             {
@@ -672,7 +682,7 @@ class Env {
         assert(out == "(ln 5, col 12): invalid assignment : cannot hold pointer to local \"x2\" (ln 4)")
     }
     @Test
-    fun f09_ptr_type_err () {
+    fun h11_ptr_type_err () {
         val out = inp2env("""
             type X {
                 X: \Int
