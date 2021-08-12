@@ -123,7 +123,13 @@ fun Any.idToStmt (id: String): Stmt? {
     }
 }
 
-fun Any.supSubToType (sup: String, sub: String): Type? {
+fun Expr.subType (): Type? {
+    val (sup,sub) = when (this) {
+        is Expr.Cons -> Pair(this.sup.str,this.sub.str)
+        is Expr.Disc -> Pair((this.e.toType() as Type.User).tk_.str, this.tk_.str)
+        is Expr.Pred -> Pair((this.e.toType() as Type.User).tk_.str, this.tk_.str)
+        else -> error("bug found")
+    }
     try {
         val user = this.idToStmt(sup) as Stmt.User
         return if (user.isrec && sub=="Nil") {
@@ -161,7 +167,7 @@ fun Expr.toType (): Type {
         is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType() as Type.Func).out
         is Expr.Index -> (this.e.toType() as Type.Tuple).vec[this.tk_.num-1]
         is Expr.Cons  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, this.sup.str)).set_env()
-        is Expr.Disc  -> this.supSubToType((this.e.toType() as Type.User).tk_.str, this.tk_.str)!!
+        is Expr.Disc  -> this.subType()!!
         is Expr.Pred  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, "Bool")).set_env()
     }
 }
@@ -189,7 +195,7 @@ fun check_dcls (s: Stmt) {
                 All_assert_tk(e.tk, e.idToStmt(sup) != null) {
                     "undeclared type \"$sup\""
                 }
-                All_assert_tk(e.tk, e.supSubToType(sup,e.sub.str) != null) {
+                All_assert_tk(e.tk, e.subType() != null) {
                     "undeclared subcase \"${e.sub.str}\""
                 }
             }
@@ -197,11 +203,10 @@ fun check_dcls (s: Stmt) {
                 val ee = if (e is Expr.Disc) e.e else (e as Expr.Pred).e
                 val tk = if (e is Expr.Disc) e.tk_ else (e as Expr.Pred).tk_
                 val tpe = ee.toType()
-                val sup = if (tpe is Type.User) tpe.tk_.str else null
                 All_assert_tk(ee.tk, tpe is Type.User) {
                     "invalid `.´ : expected user type"
                 }
-                All_assert_tk(e.tk, e.supSubToType(sup!!, tk.str) != null) {
+                All_assert_tk(e.tk, e.subType() != null) {
                     "invalid `.´ : undeclared subcase \"${tk.str}\""
                 }
             }
@@ -276,7 +281,7 @@ fun check_types (S: Stmt) {
                 }
             }
             is Expr.Cons -> {
-                All_assert_tk(e.sub, e.supSubToType(e.sup.str,e.sub.str)!!.isSupOf(e.arg.toType())) {
+                All_assert_tk(e.sub, e.subType()!!.isSupOf(e.arg.toType())) {
                     "invalid constructor \"${e.sub.str}\" : type mismatch"
                 }
             }
@@ -329,29 +334,24 @@ fun Stmt.getDepth (): Int {
 
 fun Expr.getDepth (hold: Boolean): Pair<Int,Stmt?> {
     return when (this) {
+        is Expr.Int, is Expr.Unk, is Expr.Unit, is Expr.Nat -> Pair(0, null)
         is Expr.Var -> {
-            fun s2ptr (s: Stmt): Boolean {
-                return when (s) {
-                    is Stmt.Var -> s.type is Type.Ptr
-                    is Stmt.Func -> true
-                    else -> error("bug found")
-                }
-            }
             val dcl = this.idToStmt(this.tk_.str)!!
-            return if (hold || s2ptr(dcl)) Pair(dcl.getDepth(), dcl) else Pair(0,null)
+            return if (hold) Pair(dcl.getDepth(), dcl) else Pair(0, null)
         }
         is Expr.Upref ->  {
-            val (depth,dcl_) = this.e.getDepth(true)
+            val (depth,dcl_) = this.e.getDepth(hold)
             val dcl = (dcl_ as Stmt.Var)
             val inc = if (dcl.tk_.str=="arg" || dcl.outer) 1 else 0
             Pair(depth+inc, dcl)
         }
-        is Expr.Dnref -> this.e.getDepth(false)
+        is Expr.Dnref -> this.e.getDepth(hold)
         is Expr.Index -> this.e.getDepth(hold)
         is Expr.Disc -> this.e.getDepth(hold)
         is Expr.Call -> this.arg.getDepth(hold)
-        is Expr.Tuple -> this.vec.map { it.getDepth(hold) }.maxByOrNull { it.first }!!
-        else -> Pair(0, null)
+        is Expr.Tuple -> this.vec.map { it.getDepth(it.toType() is Type.Ptr) }.maxByOrNull { it.first }!!
+        //is Expr.Cons -> this.xxx
+        else -> { println(this) ; Pair(0, null) ; error("TODO") }
     }
 }
 

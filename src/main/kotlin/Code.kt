@@ -85,7 +85,7 @@ fun Expr.pre (): String {
         is Expr.Tuple -> this.toType().pre() + this.vec.map { it.pre() }.joinToString("")
         is Expr.Cons  -> {
             val user = this.idToStmt(this.sup.str)!! as Stmt.User
-            val tp   = this.supSubToType(this.sup.str,this.sub.str)
+            val tp   = this.subType()
             val arg  = if (tp is Type.Unit) "" else (", " + this.arg.pos(false))
             val N    = this.hashCode().absoluteValue
             val sup  = this.sup.str
