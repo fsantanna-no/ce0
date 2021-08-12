@@ -263,7 +263,7 @@ class Env {
             var x: \Int = \y
             var z: _x = \x
         """.trimIndent())
-        assert(out == "(ln 3, col 14): invalid `\\` : unexpected pointer type")
+        assert(out == "OK")
     }
     @Test
     fun c12_type_dnref () {
@@ -458,5 +458,29 @@ class Env {
             }
         """.trimIndent())
         assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 6) in outer scope")
+    }
+    @Test
+    fun e12_ptr_ptr_err () {
+        val out = all("""
+            var p: \\Int = ?
+            {
+                var y: \Int = ?
+                set p = \y
+            }
+        """.trimIndent())
+        //println(out)
+        assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 3) in outer scope")
+    }
+    @Test
+    fun e13_ptr_ptr_ok () {
+        val out = all("""
+            var p: \\Int = ?
+            var z: Int = 10
+            var y: \Int = \z
+            set p = \y
+            output std p\\
+        """.trimIndent())
+        println(out)
+        assert(out == "10\n")
     }
 }

@@ -371,6 +371,14 @@ class Parser {
             assert(e.message == "(ln 1, col 1): unexpected operand to `\\´")
         }
     }
+    @Test
+    fun b25_parser_expr_dnref () {
+        val all = All_new(PushbackReader(StringReader("x\\\\"), 2))
+        lexer(all)
+        val e = parser_expr(all,false)
+        //println(e)
+        assert(e is Expr.Dnref && e.e is Expr.Dnref)
+    }
 
     // PRED, DISC
 

@@ -270,11 +270,13 @@ fun Type.ishasrec (): Boolean {
 fun check_types (S: Stmt) {
     fun fe (e: Expr): Boolean {
         when (e) {
+            /*
             is Expr.Upref -> {
                 All_assert_tk(e.e.tk, e.e.toType() !is Type.Ptr) {
                     "invalid `\\` : unexpected pointer type"
                 }
             }
+             */
             is Expr.Dnref -> {
                 All_assert_tk(e.tk, e.e.toType() is Type.Ptr) {
                     "invalid `\\` : expected pointer type"
