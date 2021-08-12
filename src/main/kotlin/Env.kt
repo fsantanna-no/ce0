@@ -371,8 +371,7 @@ fun check_pointers (S: Stmt) {
             }
             is Stmt.Set -> {
                 if (s.dst.toType() is Type.Ptr) {
-                    val dst_depth = s.dst.idToStmt((s.dst as Expr.Var).tk_.str)!!.getDepth()
-                    check(dst_depth, s.src)
+                    check(s.dst.getDepth().first, s.src)
                 }
             }
         }

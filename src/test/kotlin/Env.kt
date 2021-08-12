@@ -581,7 +581,6 @@ class Env {
         //println(out)
         assert(out == "OK")
     }
-
     @Test
     fun f02_ptr_tup_err () {
         val out = all("""
@@ -594,7 +593,6 @@ class Env {
         //println(out)
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 3) in outer scope")
     }
-
     @Test
     fun f03_ptr_type_err () {
         val out = all("""
@@ -610,6 +608,29 @@ class Env {
         //println(out)
         assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 6) in outer scope")
     }
-
+    @Test
+    fun f04_ptr_tup_err () {
+        val out = all("""
+            var p: (Int,\Int) = (10,?)
+            {
+                var v: Int = 20
+                set p.2 = \v
+            }
+        """.trimIndent())
+        //println(out)
+        assert(out == "(ln 4, col 13): invalid assignment : cannot hold pointer to local \"v\" (ln 3) in outer scope")
+    }
+    @Test
+    fun f05_ptr_tup_err () {
+        val out = all("""
+            var p: (Int,\Int) = (10,?)
+            {
+                var v: Int = 20
+                set p = (10,\v)
+            }
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 4, col 13): invalid assignment : cannot hold pointer to local \"v\" (ln 3) in outer scope")
+    }
     // testar ptr para pedaco de tupla e user
 }
