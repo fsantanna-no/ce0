@@ -340,17 +340,21 @@ fun Expr.getDepth (hold: Boolean): Pair<Int,Stmt?> {
             return if (hold) Pair(dcl.getDepth(), dcl) else Pair(0, null)
         }
         is Expr.Upref ->  {
-            val (depth,dcl_) = this.e.getDepth(hold)
-            val dcl = (dcl_ as Stmt.Var)
-            val inc = if (dcl.tk_.str=="arg" || dcl.outer) 1 else 0
-            Pair(depth+inc, dcl)
+            val (depth,dcl) = this.e.getDepth(hold)
+            if (dcl is Stmt.Var) {
+                val inc = if (dcl.tk_.str == "arg" || dcl.outer) 1 else 0
+                Pair(depth + inc, dcl)
+            } else {
+                Pair(depth, dcl)
+            }
         }
         is Expr.Dnref -> this.e.getDepth(hold)
         is Expr.Index -> this.e.getDepth(hold)
         is Expr.Disc -> this.e.getDepth(hold)
+        is Expr.Pred -> this.e.getDepth(false)
         is Expr.Call -> this.arg.getDepth(hold)
         is Expr.Tuple -> this.vec.map { it.getDepth(it.toType() is Type.Ptr) }.maxByOrNull { it.first }!!
-        //is Expr.Cons -> this.xxx
+        is Expr.Cons -> this.arg.getDepth(this.subType() is Type.Ptr)
         else -> { println(this) ; Pair(0, null) ; error("TODO") }
     }
 }
@@ -373,13 +377,13 @@ fun check_pointers (S: Stmt) {
             is Stmt.Var -> {
                 val (src_depth, src_dcl) = s.init.getDepth(s.type is Type.Ptr)
                 All_assert_tk(s.tk, s.getDepth() >= src_depth) {
-                    "invalid assignment : cannot hold pointer to local \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin}) in outer scope"
+                    "invalid assignment : cannot hold pointer to local \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
                 }
             }
             is Stmt.Set -> {
                 val (src_depth, src_dcl) = s.src.getDepth(s.dst.toType() is Type.Ptr)
                 All_assert_tk(s.tk, s.dst.getDepth(false).first >= src_depth) {
-                    "invalid assignment : cannot hold pointer to local \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin}) in outer scope"
+                    "invalid assignment : cannot hold pointer to local \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
                 }
             }
         }
