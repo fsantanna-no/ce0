@@ -336,15 +336,10 @@ fun Stmt.getDepth (): Int {
             }
         }
     }
-    return when {
-        (this is Stmt.Var) ->
-            when {
-                this.outer -> this.idToStmt("arg")!!.getDepth()
-                (this.tk_.str == "_ret_") -> aux(this) - 1
-                (this.tk_.str == "arg") -> aux(this) - 1
-                else -> aux(this)
-            }
-        else -> aux(this)
+    return if (this is Stmt.Var && this.outer) {
+        this.idToStmt("arg")!!.getDepth()
+    } else {
+        aux(this)
     }
 }
 
@@ -400,7 +395,7 @@ fun check_pointers (S: Stmt) {
             }
             is Stmt.Set -> {
                 val (src_depth, src_dcl) = s.src.getDepth(s.getDepth(), s.dst.toType().ishasptr())
-                All_assert_tk(s.tk, s.dst.getDepth(s.getDepth(), false).first >= src_depth) {
+                All_assert_tk(s.tk, s.dst.getDepth(s.getDepth(), s.dst.toType().ishasptr()).first >= src_depth) {
                     "invalid assignment : cannot hold local pointer \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
                 }
             }

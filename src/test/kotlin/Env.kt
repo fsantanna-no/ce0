@@ -578,8 +578,7 @@ class Env {
                 set v = arg
             }
         """.trimIndent())
-        println(out)
-        assert(out == "(ln 7, col 11): invalid assignment : cannot hold local pointer \"f\" (ln 2)")
+        assert(out == "(ln 3, col 11): invalid assignment : cannot hold local pointer \"arg\" (ln 2)")
     }
 
     // POINTERS - TUPLE - TYPE

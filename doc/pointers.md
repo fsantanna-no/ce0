@@ -23,7 +23,7 @@ var pout: \Int = ?
 
 ## Functions
 
-- A function can return a pointer from outer scope or `arg`:
+- A function can return `arg` or a pointer from an outer scope:
 
 ```
 func f : \Int -> \Int
@@ -76,7 +76,14 @@ func f : Int -> \Int
 }
 ```
 
-- A function cannot hold `arg` in an outer scope:
+- A function cannot hold `arg` (or any other local pointer) in the outer scope:
+
+```
+var v: \Int = ?
+func f : \Int -> () {
+    set v = arg     -- (ln 3, col 11): invalid assignment : cannot hold local pointer "arg" (ln 2)
+}
+```
 
 ### Outermost Scope Modifier
 
