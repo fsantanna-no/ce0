@@ -334,7 +334,16 @@ fun check_pointers (S: Stmt) {
         return true
     }
     fun fs (s: Stmt): Boolean {
-        fun check (dst: Int, src_use: Expr.Var?) {
+        fun check (dst: Int, src: Expr) {
+            val src_use = when (src) {
+                is Expr.Var   -> src
+                is Expr.Upref -> src.e as Expr.Var
+                is Expr.Dnref -> src.e as Expr.Var
+                is Expr.Call  -> null
+                is Expr.Unk   -> null
+                is Expr.Nat   -> null
+                else -> error("TODO-1")
+            }
             if (src_use != null) {
                 val src_dcl = (src_use.idToStmt(src_use.tk_.str)!! as Stmt.Var)
                 val src = src_dcl.getDepth()
@@ -346,29 +355,13 @@ fun check_pointers (S: Stmt) {
         when (s) {
             is Stmt.Var -> {
                 if (s.type is Type.Ptr) {
-                    val src_use = when (s.init) {
-                        is Expr.Var   -> s.init
-                        is Expr.Upref -> s.init.e as Expr.Var
-                        is Expr.Dnref -> s.init.e as Expr.Var
-                        is Expr.Call  -> null
-                        is Expr.Unk   -> null
-                        is Expr.Nat   -> null
-                        else -> error("TODO-1")
-                    }
-                    check(s.getDepth(), src_use)
+                    check(s.getDepth(), s.init)
                 }
             }
             is Stmt.Set -> {
                 if (s.dst.toType() is Type.Ptr) {
                     val dst = s.dst.idToStmt((s.dst as Expr.Var).tk_.str)!!.getDepth()
-                    val src_use = when (s.src) {
-                        is Expr.Var   -> s.src
-                        is Expr.Upref -> s.src.e as Expr.Var
-                        is Expr.Dnref -> s.src.e as Expr.Var
-                        is Expr.Call  -> null
-                        else -> error("TODO-2")
-                    }
-                    check(dst, src_use)
+                    check(dst, s.src)
                 }
             }
         }
