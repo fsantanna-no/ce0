@@ -336,7 +336,7 @@ class Env {
             }
             output std /p1
         """.trimIndent())
-        assert(out == "(ln 5, col 12): invalid assignment : cannot hold pointer to local \"v\" (ln 4) in outer scope")
+        assert(out == "(ln 5, col 12): invalid assignment : cannot hold pointer to local \"v\" (ln 4)")
     }
 
     @Test
@@ -350,7 +350,7 @@ class Env {
                 set p = \y
             }
         """.trimIndent())
-        assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 4) in outer scope")
+        assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 4)")
     }
 
     @Test
@@ -390,7 +390,7 @@ class Env {
             var p: \Int = f ()
             output std /p
         """.trimIndent())
-        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"v\" (ln 2) in outer scope")
+        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"v\" (ln 2)")
     }
 
     @Test
@@ -404,7 +404,7 @@ class Env {
             var p: \Int = f \v
             output std /p
         """.trimIndent())
-        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 2) in outer scope")
+        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 2)")
     }
 
     @Test
@@ -433,7 +433,7 @@ class Env {
             var p: \Int = f \v
             output std /p
         """.trimIndent())
-        assert(out == "(ln 3, col 9): invalid assignment : cannot hold pointer to local \"x\" (ln 2) in outer scope")
+        assert(out == "(ln 3, col 9): invalid assignment : cannot hold pointer to local \"x\" (ln 2)")
     }
 
     // TODO: caret outside function in global scope
@@ -454,7 +454,7 @@ class Env {
                 set p = \y
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 3) in outer scope")
+        assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 3)")
     }
     @Test
     fun e11_ptr_user_err () {
@@ -468,7 +468,7 @@ class Env {
                 set p = \y
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 6) in outer scope")
+        assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 6)")
     }
     @Test
     fun e12_ptr_ptr_err () {
@@ -480,7 +480,7 @@ class Env {
             }
         """.trimIndent())
         //println(out)
-        assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 3) in outer scope")
+        assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 3)")
     }
     @Test
     fun e13_ptr_ptr_ok () {
@@ -503,7 +503,7 @@ class Env {
                 set p = \y
             }
         """.trimIndent())
-        assert(out == "(ln 5, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 4) in outer scope")
+        assert(out == "(ln 5, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 4)")
     }
     @Test
     fun e15_ptr_ptr_err () {
@@ -516,7 +516,7 @@ class Env {
                 set p = /z
             }
         """.trimIndent())
-        assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"z\" (ln 5) in outer scope")
+        assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"z\" (ln 5)")
     }
     @Test
     fun e16_ptr_arg_err () {
@@ -526,7 +526,7 @@ class Env {
                 return \arg
             }
         """.trimIndent())
-        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"arg\" (ln 2) in outer scope")
+        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"arg\" (ln 2)")
     }
     @Test
     fun e17_ptr_arg_err () {
@@ -537,7 +537,7 @@ class Env {
                 return ptr
             }
         """.trimIndent())
-        assert(out == "(ln 3, col 9): invalid assignment : cannot hold pointer to local \"arg\" (ln 2) in outer scope")
+        assert(out == "(ln 3, col 9): invalid assignment : cannot hold pointer to local \"arg\" (ln 2)")
     }
     @Test
     fun e17_ptr_out_err () {
@@ -548,7 +548,7 @@ class Env {
                 return \ptr
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 3) in outer scope")
+        assert(out == "(ln 4, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 3)")
     }
 
     @Test
@@ -561,7 +561,7 @@ class Env {
             }
         """.trimIndent())
         println(out)
-        assert(out == "(ln 4, col 14): invalid assignment : cannot hold pointer to local \"pin\" (ln 3) in outer scope")
+        assert(out == "(ln 4, col 14): invalid assignment : cannot hold pointer to local \"pin\" (ln 3)")
     }
 
     @Test
@@ -600,7 +600,7 @@ class Env {
             }
         """.trimIndent())
         //println(out)
-        assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 3) in outer scope")
+        assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 3)")
     }
     @Test
     fun f03_ptr_type_err () {
@@ -615,7 +615,7 @@ class Env {
             }
         """.trimIndent())
         //println(out)
-        assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 6) in outer scope")
+        assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 6)")
     }
     @Test
     fun f04_ptr_tup_err () {
@@ -627,7 +627,7 @@ class Env {
             }
         """.trimIndent())
         //println(out)
-        assert(out == "(ln 4, col 13): invalid assignment : cannot hold pointer to local \"v\" (ln 3) in outer scope")
+        assert(out == "(ln 4, col 13): invalid assignment : cannot hold pointer to local \"v\" (ln 3)")
     }
     @Test
     fun f05_ptr_tup_err () {
@@ -639,7 +639,7 @@ class Env {
             }
         """.trimIndent())
         println(out)
-        assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 3) in outer scope")
+        assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 3)")
     }
     @Test
     fun f06_ptr_type_err () {
@@ -654,7 +654,7 @@ class Env {
             }
         """.trimIndent())
         //println(out)
-        assert(out == "(ln 7, col 14): invalid assignment : cannot hold pointer to local \"v\" (ln 6) in outer scope")
+        assert(out == "(ln 7, col 14): invalid assignment : cannot hold pointer to local \"v\" (ln 6)")
     }
     @Test
     fun f07_ptr_type_err () {
@@ -669,6 +669,6 @@ class Env {
             }
         """.trimIndent())
         println(out)
-        assert(out == "ERR")
+        assert(out == "(ln 7, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 6)")
     }
 }

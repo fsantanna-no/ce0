@@ -503,7 +503,7 @@ class Exec {
             }
             output std /p1
         """.trimIndent())
-        assert(out == "(ln 5, col 12): invalid assignment : cannot hold pointer to local \"v\" (ln 4) in outer scope")
+        assert(out == "(ln 5, col 12): invalid assignment : cannot hold pointer to local \"v\" (ln 4)")
     }
 
     @Test
@@ -517,7 +517,7 @@ class Exec {
                 set p = \y
             }
         """.trimIndent())
-        assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 4) in outer scope")
+        assert(out == "(ln 6, col 11): invalid assignment : cannot hold pointer to local \"y\" (ln 4)")
     }
 
     @Test
@@ -557,7 +557,7 @@ class Exec {
             var p: \Int = f ()
             output std /p
         """.trimIndent())
-        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"v\" (ln 2) in outer scope")
+        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"v\" (ln 2)")
     }
 
     @Test
@@ -571,7 +571,7 @@ class Exec {
             var p: \Int = f \v
             output std /p
         """.trimIndent())
-        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 2) in outer scope")
+        assert(out == "(ln 3, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 2)")
     }
 
     @Test
