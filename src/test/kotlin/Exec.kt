@@ -612,6 +612,21 @@ class Exec {
         assert(out == "(20,20)\n")
     }
 
+    @Test
+    fun i14_ptr_type () {
+        val out = all("""
+            type X {
+                X: Int
+            }
+            var v: X = X.X 10
+            var p: \Int = \v.X!
+            set /p = 20
+            output std v
+        """.trimIndent())
+        //println(out)
+        assert(out == "X (20)\n")
+    }
+
     // REC
 
     @Test

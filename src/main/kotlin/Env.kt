@@ -344,6 +344,7 @@ fun Expr.getDepth (): Pair<Int,Stmt.Var?> {
             Pair(dcl.getDepth(), dcl)
         }
         is Expr.Index -> this.e.getDepth()
+        is Expr.Disc -> this.e.getDepth()
         is Expr.Call -> this.arg.getDepth()
         else -> Pair(0, null)
     }

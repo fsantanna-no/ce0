@@ -111,3 +111,13 @@ var p: \Int = ?
 }
 ```
 
+```
+type X {
+    X: Int
+}
+var p: \Int = ?
+{
+    var v: X = X.X 10
+    set p = \v.X!           -- (ln 7, col 11): invalid assignment : cannot hold pointer to local "v" (ln 6) in outer scope
+}
+```
