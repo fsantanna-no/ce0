@@ -542,6 +542,45 @@ class Env {
         assert(out == "(ln 4, col 5): invalid assignment : cannot hold pointer to local \"ptr\" (ln 3) in outer scope")
     }
 
-    // return \arg  <-- erro
+    @Test
+    fun e18_ptr_err () {
+        val out = all("""
+            var pout: \Int = ?
+            {
+                var pin: \Int = ?
+                set pout = pin
+            }
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 4, col 14): invalid assignment : cannot hold pointer to local \"pin\" (ln 3) in outer scope")
+    }
+
+    @Test
+    fun e19_ptr_ok () {
+        val out = all("""
+            var pout: \Int = ?
+            {
+                var pin: \Int = ?
+                set pin = pout
+            }
+        """.trimIndent())
+        println(out)
+        assert(out == "OK")
+    }
+
+    // POINTERS - TUPLES
+
+    @Test
+    fun f01_ptr_tup () {
+        val out = all("""
+            var v: (Int,Int) = (10,20)
+            var p: \Int = \v.1
+            set /p = 20
+            output std v
+        """.trimIndent())
+        //println(out)
+        assert(out == "OK")
+    }
+
     // testar ptr para pedaco de tupla e user
 }

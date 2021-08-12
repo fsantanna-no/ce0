@@ -600,6 +600,18 @@ class Exec {
         assert(out == "10\n")
     }
 
+    @Test
+    fun i13_ptr_tup () {
+        val out = all("""
+            var v: (Int,Int) = (10,20)
+            var p: \Int = \v.1
+            set /p = 20
+            output std v
+        """.trimIndent())
+        //println(out)
+        assert(out == "(20,20)\n")
+    }
+
     // REC
 
     @Test

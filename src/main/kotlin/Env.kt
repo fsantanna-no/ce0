@@ -329,19 +329,21 @@ fun Stmt.getDepth (): Int {
 
 fun Expr.getDepth (): Pair<Int,Stmt.Var?> {
     return when (this) {
-        is Expr.Var -> this.let {
-            val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
+        is Expr.Var -> {
+            val dcl = (this.idToStmt(this.tk_.str)!! as Stmt.Var)
             Pair(dcl.getDepth(), dcl)
         }
-        is Expr.Upref -> (this.e as Expr.Var).let {
-            val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
-            val inc = if (it.tk_.str=="arg" || dcl.outer) 1 else 0
-            Pair(dcl.getDepth()+inc, dcl)
+        is Expr.Upref ->  {
+            val (depth,dcl_) = this.e.getDepth()
+            val dcl = (dcl_ as Stmt.Var)
+            val inc = if (dcl.tk_.str=="arg" || dcl.outer) 1 else 0
+            Pair(depth+inc, dcl)
         }
         is Expr.Dnref -> (this.e as Expr.Var).let {
             val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
             Pair(dcl.getDepth(), dcl)
         }
+        is Expr.Index -> this.e.getDepth()
         is Expr.Call -> this.arg.getDepth()
         else -> Pair(0, null)
     }

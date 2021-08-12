@@ -2,7 +2,7 @@
 
 ## Basic Rule
 
-- Cannot hold local pointer in outer scope:
+- Cannot hold local upref or pointer in outer scope:
 
 ```
 var p: \Int = ?
@@ -10,6 +10,15 @@ var p: \Int = ?
     var v: Int = 10
     set p = \v      -- (ln 4, col 13): invalid assignment : cannot hold pointer to local "v" (ln 3) in outer scope
 }
+```
+
+```
+var pout: \Int = ?
+{
+    var pin: \Int = ?
+    set pout = pin
+}
+        assert(out == "(ln 5, col 11): invalid assignment : cannot hold pointer to local \"pp\" (ln 4) in outer scope")
 ```
 
 ## Functions
@@ -90,10 +99,15 @@ func f: \Int -> \\Int
 }
 ```
 
-## Compound Types
+## Tuples and User Types
 
+- An upref to a subpart counts as an upref to whole value:
 
-### Pointer
+```
+var p: \Int = ?
+{
+    var v: (Int,Int) = (10,20)
+    set p = \v.1            -- (ln 4, col 11): invalid assignment : cannot hold pointer to local "v" (ln 3) in outer scope
+}
+```
 
-- Tuples
-- User Types
