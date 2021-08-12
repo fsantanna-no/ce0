@@ -255,6 +255,7 @@ class Env {
             var y: Int = 10
             var x: \Int = \y
         """.trimIndent())
+        println(out)
         assert(out == "OK")
     }
     @Test
@@ -638,7 +639,7 @@ class Env {
             }
         """.trimIndent())
         println(out)
-        assert(out == "ERR")
+        assert(out == "(ln 4, col 11): invalid assignment : cannot hold pointer to local \"v\" (ln 3) in outer scope")
     }
     @Test
     fun f06_ptr_type_err () {

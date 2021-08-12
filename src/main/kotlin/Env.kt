@@ -327,25 +327,30 @@ fun Stmt.getDepth (): Int {
     }
 }
 
-fun Expr.getDepth (): Pair<Int,Stmt.Var?> {
+fun Expr.getDepth (isptr: Boolean = false): Pair<Int,Stmt?> {
     return when (this) {
         is Expr.Var -> {
-            val dcl = (this.idToStmt(this.tk_.str)!! as Stmt.Var)
-            Pair(dcl.getDepth(), dcl)
+            fun s2ptr (s: Stmt): Boolean {
+                return when (s) {
+                    is Stmt.Var -> s.type is Type.Ptr
+                    is Stmt.Func -> true
+                    else -> error("bug found")
+                }
+            }
+            val dcl = this.idToStmt(this.tk_.str)!!
+            return if (isptr || s2ptr(dcl)) Pair(dcl.getDepth(), dcl) else Pair(0,null)
         }
         is Expr.Upref ->  {
-            val (depth,dcl_) = this.e.getDepth()
+            val (depth,dcl_) = this.e.getDepth(true)
             val dcl = (dcl_ as Stmt.Var)
             val inc = if (dcl.tk_.str=="arg" || dcl.outer) 1 else 0
             Pair(depth+inc, dcl)
         }
-        is Expr.Dnref -> (this.e as Expr.Var).let {
-            val dcl = (it.idToStmt(it.tk_.str)!! as Stmt.Var)
-            Pair(dcl.getDepth(), dcl)
-        }
-        is Expr.Index -> this.e.getDepth()
-        is Expr.Disc -> this.e.getDepth()
+        is Expr.Dnref -> this.e.getDepth(false)
+        is Expr.Index -> this.e.getDepth(isptr)
+        is Expr.Disc -> this.e.getDepth(isptr)
         is Expr.Call -> this.arg.getDepth()
+        is Expr.Tuple -> this.vec.map { it.getDepth(isptr) }.maxByOrNull { it.first }!!
         else -> Pair(0, null)
     }
 }
@@ -356,24 +361,23 @@ fun check_pointers (S: Stmt) {
         }
         return true
     }
+    fun s2id (s: Stmt): String {
+        return when (s) {
+            is Stmt.Var -> s.tk_.str
+            is Stmt.Func -> s.tk_.str
+            else -> error("bug found")
+        }
+    }
     fun fs (s: Stmt): Boolean {
         fun check (dst_depth: Int, src: Expr) {
             val (src_depth, src_dcl) = src.getDepth()
             All_assert_tk(s.tk, dst_depth >= src_depth) {
-                "invalid assignment : cannot hold pointer to local \"${src_dcl!!.tk_.str}\" (ln ${src_dcl!!.tk.lin}) in outer scope"
+                "invalid assignment : cannot hold pointer to local \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin}) in outer scope"
             }
         }
         when (s) {
-            is Stmt.Var -> {
-                if (s.type is Type.Ptr) {
-                    check(s.getDepth(), s.init)
-                }
-            }
-            is Stmt.Set -> {
-                if (s.dst.toType() is Type.Ptr) {
-                    check(s.dst.getDepth().first, s.src)
-                }
-            }
+            is Stmt.Var -> check(s.getDepth(), s.init)
+            is Stmt.Set -> check(s.dst.getDepth().first, s.src)
         }
         return true
     }

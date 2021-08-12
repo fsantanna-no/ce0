@@ -608,7 +608,6 @@ class Exec {
             set /p = 20
             output std v
         """.trimIndent())
-        //println(out)
         assert(out == "(20,20)\n")
     }
 
@@ -623,7 +622,6 @@ class Exec {
             set /p = 20
             output std v
         """.trimIndent())
-        //println(out)
         assert(out == "X (20)\n")
     }
 
