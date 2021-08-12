@@ -327,7 +327,7 @@ fun Stmt.getDepth (): Int {
     }
 }
 
-fun Expr.getDepth (hold: Boolean = false): Pair<Int,Stmt?> {
+fun Expr.getDepth (hold: Boolean): Pair<Int,Stmt?> {
     return when (this) {
         is Expr.Var -> {
             fun s2ptr (s: Stmt): Boolean {
@@ -349,7 +349,7 @@ fun Expr.getDepth (hold: Boolean = false): Pair<Int,Stmt?> {
         is Expr.Dnref -> this.e.getDepth(false)
         is Expr.Index -> this.e.getDepth(hold)
         is Expr.Disc -> this.e.getDepth(hold)
-        is Expr.Call -> this.arg.getDepth()
+        is Expr.Call -> this.arg.getDepth(hold)
         is Expr.Tuple -> this.vec.map { it.getDepth(hold) }.maxByOrNull { it.first }!!
         else -> Pair(0, null)
     }
@@ -371,14 +371,14 @@ fun check_pointers (S: Stmt) {
     fun fs (s: Stmt): Boolean {
         when (s) {
             is Stmt.Var -> {
-                val (src_depth, src_dcl) = s.init.getDepth()
+                val (src_depth, src_dcl) = s.init.getDepth(s.type is Type.Ptr)
                 All_assert_tk(s.tk, s.getDepth() >= src_depth) {
                     "invalid assignment : cannot hold pointer to local \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin}) in outer scope"
                 }
             }
             is Stmt.Set -> {
-                val (src_depth, src_dcl) = s.src.getDepth()
-                All_assert_tk(s.tk, s.dst.getDepth().first >= src_depth) {
+                val (src_depth, src_dcl) = s.src.getDepth(s.dst.toType() is Type.Ptr)
+                All_assert_tk(s.tk, s.dst.getDepth(false).first >= src_depth) {
                     "invalid assignment : cannot hold pointer to local \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin}) in outer scope"
                 }
             }
