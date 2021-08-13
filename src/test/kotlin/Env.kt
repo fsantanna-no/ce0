@@ -296,7 +296,7 @@ class Env {
     fun d01_block () {
         val s = pre("var x: Int = 10 ; { output std x }")
         val blk = (s as Stmt.Seq).s2 as Stmt.Block
-        val x = (blk.body as Stmt.Call).call.arg
+        val x = (blk.body as Stmt.Call).call.arg.e
         val X = x.idToStmt("x")
         assert(X!!.getDepth() == 0)
         assert((s.s2 as Stmt.Block).getDepth() == 0)
@@ -308,7 +308,7 @@ class Env {
         val blk = ((s as Stmt.Seq).s2 as Stmt.Func).block as Stmt.Block
         val seq = ((((blk.body as Stmt.Seq).s2 as Stmt.Seq).s2 as Stmt.Block).body as Stmt.Seq)
         val call = (seq.s2 as Stmt.Call)
-        val x = call.call.arg
+        val x = call.call.arg.e
         val X = x.idToStmt("x")
         assert(X!!.getDepth() == 0)
         assert(seq.s1.getDepth() == 2)

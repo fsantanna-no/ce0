@@ -35,7 +35,7 @@ class Code {
             Tk.Str(TK.XVAR,1,1,"xxx"),
             false,
             Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
-            Expr.Nat(Tk.Str(TK.XNAT,1,1,"0"))
+            XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
         )
         assert(e.pos(false) == "xxx")
     }
@@ -46,7 +46,7 @@ class Code {
             Tk.Str(TK.XVAR,1,1,"xxx"),
             false,
             Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
-            Expr.Nat(Tk.Str(TK.XNAT,1,1,"0"))
+            XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
         )
         assert(e.pos(true) == "xxx")
     }
@@ -55,8 +55,8 @@ class Code {
         val e = Expr.Tuple (
             Tk.Chr(TK.CHAR,0, 0, '('),
             arrayOf (
-                Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()")),
-                Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()")),
+                XExpr(null, Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))),
+                XExpr(null, Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))),
             )
         )
         assert(e.pos(false) == "((TUPLE__Unit__Unit) {  })")
@@ -71,7 +71,7 @@ class Code {
             Tk.Str(TK.XVAR,1,1,"x"),
             false,
             Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int")))),
-            Expr.Nat(Tk.Str(TK.XNAT,1,1,"0"))
+            XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
         )
         assert(e.pos(true) == "x._1")
     }

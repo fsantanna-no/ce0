@@ -72,13 +72,13 @@ fun env_PRV_set (s: Stmt, cur_: Stmt?): Stmt? {
         return when (s) {
             is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> cur
             is Stmt.Var -> {
-                s.type.visit(::ft); s.init.visit(::fe); s
+                s.type.visit(::ft); s.init.e.visit(::fe); s
             }
             is Stmt.User -> {
                 if (s.isrec) cur = s; s.subs.forEach { it.second.visit(::ft) }; s
             }
             is Stmt.Set -> {
-                s.dst.toExpr().visit(::fe); s.src.visit(::fe); cur
+                s.dst.toExpr().visit(::fe); s.src.e.visit(::fe); cur
             }
             is Stmt.Call -> {
                 s.call.visit(::fe); cur
@@ -95,7 +95,7 @@ fun env_PRV_set (s: Stmt, cur_: Stmt?): Stmt? {
                 }; s
             }
             is Stmt.Ret -> {
-                s.e.visit(::fe); cur
+                s.e.e.visit(::fe); cur
             }
             is Stmt.Loop -> {
                 aux(s.block, cur); cur
@@ -167,7 +167,7 @@ fun Expr.toType (): Type {
                 else -> error("bug found")
             }
         }
-        is Expr.Tuple -> Type.Tuple(this.tk_, this.vec.map{it.toType()}.toTypedArray())
+        is Expr.Tuple -> Type.Tuple(this.tk_, this.vec.map{it.e.toType()}.toTypedArray())
         is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType() as Type.Func).out
         is Expr.Index -> (this.e.toType() as Type.Tuple).vec[this.tk_.num-1]
         is Expr.Cons  -> Type.User(Tk.Str(TK.XUSER,this.tk.lin,this.tk.col, this.sup.str)).set_env()
@@ -291,7 +291,7 @@ fun check_types (S: Stmt) {
             }
             is Expr.Call -> {
                 val inp = e.f.toType().let { if (it is Type.Func) it.inp else (it as Type.Nat) }
-                All_assert_tk(e.f.tk, inp.isSupOf(e.arg.toType())) {
+                All_assert_tk(e.f.tk, inp.isSupOf(e.arg.e.toType())) {
                     "invalid call to \"${(e.f as Expr.Var).tk_.str}\" : type mismatch"
                 }
             }
@@ -306,12 +306,12 @@ fun check_types (S: Stmt) {
     fun fs (s: Stmt): Boolean {
         when (s) {
             is Stmt.Var -> {
-                All_assert_tk(s.tk, s.type.isSupOf(s.init.toType())) {
+                All_assert_tk(s.tk, s.type.isSupOf(s.init.e.toType())) {
                     "invalid assignment to \"${s.tk_.str}\" : type mismatch"
                 }
             }
             is Stmt.Set -> {
-                All_assert_tk(s.tk, s.dst.toExpr().toType().isSupOf(s.src.toType())) {
+                All_assert_tk(s.tk, s.dst.toExpr().toType().isSupOf(s.src.e.toType())) {
                     when {
                         (s.dst !is Attr.Var) -> "invalid assignment : type mismatch"
                         (s.dst.tk_.str == "_ret_") -> "invalid return : type mismatch"
@@ -372,7 +372,7 @@ fun Expr.getDepth (caller: Int, hold: Boolean): Pair<Int,Stmt?> {
                 else -> error("bug found")
             }
         }
-        is Expr.Tuple -> this.vec.map { it.getDepth(caller,it.toType().ishasptr()) }.maxByOrNull { it.first }!!
+        is Expr.Tuple -> this.vec.map { it.e.getDepth(caller,it.e.toType().ishasptr()) }.maxByOrNull { it.first }!!
         is Expr.Cons -> this.arg.getDepth(caller, this.subType()!!.ishasptr())
     }
 }
@@ -388,13 +388,13 @@ fun check_pointers (S: Stmt) {
     fun fs (s: Stmt): Boolean {
         when (s) {
             is Stmt.Var -> {
-                val (src_depth, src_dcl) = s.init.getDepth(s.getDepth(), s.type.ishasptr())
+                val (src_depth, src_dcl) = s.init.e.getDepth(s.getDepth(), s.type.ishasptr())
                 All_assert_tk(s.tk, s.getDepth() >= src_depth) {
                     "invalid assignment : cannot hold local pointer \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
                 }
             }
             is Stmt.Set -> {
-                val (src_depth, src_dcl) = s.src.getDepth(s.getDepth(), s.dst.toExpr().toType().ishasptr())
+                val (src_depth, src_dcl) = s.src.e.getDepth(s.getDepth(), s.dst.toExpr().toType().ishasptr())
                 All_assert_tk(s.tk, s.dst.toExpr().getDepth(s.getDepth(), s.dst.toExpr().toType().ishasptr()).first >= src_depth) {
                     "invalid assignment : cannot hold local pointer \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
                 }
