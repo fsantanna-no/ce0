@@ -1,4 +1,4 @@
-# Ce
+# Ce - Recursive Data Types
 
 A simple language with algebraic data types, ownership semantics, and scoped
 memory management.
@@ -28,7 +28,7 @@ Pools enable to the following properties for recursive types:
 - no garbage collection
 -->
 
-# Memory management
+## Memory management
 
 Recursive data types, such as lists and trees, rely on dynamic memory
 allocation since they typically represent complex data structures that evolve
@@ -72,24 +72,24 @@ type Character {
 }
 ```
 
-These composite types are also known as algebraic data types because they are
+These composite types are also known as *algebraic data types* because they are
 composed of sums (variants) and products (tuples).
 
 A new type declaration with the `@rec` modifier is recursive and can use itself
 in one of its subcases:
 
 ```
-type rec List {         -- a list is either empty (Nil) or
-    Item: (Int,List)    -- an item that holds a number and a sublist
+type @rec List {        -- a List is either empty (Nil) or
+    Item: (Int,List)    -- an Item that holds a number and a sublist
 }
 var l: List = Item (1, Item (2,Nil))   -- list `1 -> 2 -> empty`
 ```
 
 All recursive types have an implicit `Nil` empty subcase.
 
-A variable of a recursive type holds a *strong reference* to its value, but not
-the actual value, since constructors are always dynamically allocated in the
-heap:
+A variable of a recursive type holds a *strong reference (ref)* to its value,
+but not the actual value.
+Constructors always dynamically allocate recursive values in the heap:
 
 ```
 var x: List = Item(1, Nil)
@@ -115,7 +115,7 @@ automatically deallocated when the enclosing scope terminates:
 
 ## Pointers
 
-A variable can be shared, or pointed, or borrowed with the prefix backslash
+A variable can be shared (or pointed, or borrowed) with the prefix backslash
 `\`.
 In this case, both the owner and the pointer refer to the same allocated value:
 
@@ -136,9 +136,13 @@ var y: \List = \x    ^
    \_/
 ```
 
-We distinguish an owned reference from a pointer in the sense that the latter
-does not own the actual value and requires [pointer operations](TODO) to
-manipulate it.
+A pointer to a recursive type holds a *weak reference (ptr)* to its value and
+distinguishes from a reference (ref) as follows:
+
+- A pointer does not own the allocated value.
+- A pointer requires [pointer operations](TODO) to manipulate the allocated value.
+
+## Mutation Modes
 
 A recursive type that contains pointers to itself is classified as
 *append only* (as opposed to the default *movable*):
