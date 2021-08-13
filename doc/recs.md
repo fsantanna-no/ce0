@@ -142,6 +142,10 @@ distinguishes from a reference (ref) as follows:
 - A pointer does not own the allocated value.
 - A pointer requires [pointer operations](TODO) to manipulate the allocated value.
 
+`TODO: pointers.md`
+`general rules for mutation`
+`mutation in description`
+
 ## Mutation Modes
 
 A recursive type that contains pointers to itself is classified as
