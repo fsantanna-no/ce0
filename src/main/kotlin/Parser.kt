@@ -24,10 +24,28 @@ sealed class Expr (val tk: Tk) {
     data class Call  (val tk_: Tk.Key, val f: Expr, val arg: Expr): Expr(tk_)
 }
 
+sealed class Attr (val tk: Tk) {
+    data class Var   (val tk_: Tk.Str): Attr(tk_)
+    data class Nat   (val tk_: Tk.Str): Attr(tk_)
+    data class Dnref (val tk_: Tk, val e: Attr): Attr(tk_)
+    data class Index (val tk_: Tk.Num, val e: Attr): Attr(tk_)
+    data class Disc  (val tk_: Tk.Str, val e: Attr): Attr(tk_)
+}
+
+fun Attr.toExpr (): Expr {
+    return when (this) {
+        is Attr.Var   -> Expr.Var(this.tk_)
+        is Attr.Nat   -> Expr.Nat(this.tk_)
+        is Attr.Dnref -> Expr.Dnref(this.tk_,this.e.toExpr())
+        is Attr.Index -> Expr.Index(this.tk_,this.e.toExpr())
+        is Attr.Disc  -> Expr.Disc(this.tk_,this.e.toExpr())
+    }
+}
+
 sealed class Stmt (val tk: Tk) {
     data class Pass  (val tk_: Tk) : Stmt(tk_)
     data class Var   (val tk_: Tk.Str, val outer: Boolean, val type: Type, val init: Expr) : Stmt(tk_)
-    data class Set   (val tk_: Tk.Chr, val dst: Expr, val src: Expr) : Stmt(tk_)
+    data class Set   (val tk_: Tk.Chr, val dst: Attr, val src: Expr) : Stmt(tk_)
     data class User  (val tk_: Tk.Str, val isrec: Boolean, val subs: Array<Pair<Tk.Str,Type>>) : Stmt(tk_)
     data class Nat   (val tk_: Tk.Str) : Stmt(tk_)
     data class Call  (val tk_: Tk.Key, val call: Expr.Call) : Stmt(tk_)
@@ -210,6 +228,52 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
     return call(ispre)
 }
 
+fun parser_attr (all: All): Attr {
+    fun one (): Attr {
+        return when {
+            all.accept(TK.XVAR) -> Attr.Var(all.tk0 as Tk.Str)
+            all.accept(TK.XNAT) -> Attr.Nat(all.tk0 as Tk.Str)
+            all.accept(TK.CHAR,'/') -> {
+                val tk0 = all.tk0 as Tk.Chr
+                val e = parser_attr(all)
+                all.assert_tk(all.tk0, e is Attr.Nat || e is Attr.Var || e is Attr.Index || e is Attr.Dnref || e is Attr.Disc) {
+                    "unexpected operand to `/´"
+                }
+                Attr.Dnref(tk0,e)
+            }
+            else -> {
+                all.err_expected("expression")
+                error("unreachable")
+            }
+        }
+    }
+
+    fun dots (): Attr {
+        var ret = one()
+        while (all.accept(TK.CHAR,'.')) {
+            ret = when {
+                all.accept(TK.XNUM)  -> Attr.Index(all.tk0 as Tk.Num, ret)
+                all.accept(TK.XUSER) -> {
+                    val tk = all.tk0 as Tk.Str
+                    when {
+                        all.accept(TK.CHAR, '!') -> Attr.Disc(tk, ret)
+                        else -> {
+                            all.err_expected("`!´")
+                            error("unreachable")
+                        }
+                    }
+                }
+                else -> {
+                    all.err_expected("index or subtype")
+                    error("unreachable")
+                }
+            }
+        }
+        return ret
+    }
+    return dots()
+}
+
 fun parser_stmt (all: All): Stmt {
     fun parser_block (): Stmt.Block {
         all.accept_err(TK.CHAR,'{')
@@ -233,7 +297,7 @@ fun parser_stmt (all: All): Stmt {
             Stmt.Var(tk_id, outer, tp, e)
         }
         all.accept(TK.SET)   -> {
-            val dst = parser_expr(all, false)
+            val dst = parser_attr(all)
             all.accept_err(TK.CHAR,'=')
             val tk0 = all.tk0 as Tk.Chr
             val src = parser_expr(all, true)
@@ -339,7 +403,7 @@ fun parser_stmt (all: All): Stmt {
             Stmt.Seq (tk0,
                 Stmt.Set (
                     Tk.Chr(TK.CHAR,tk0.lin,tk0.col,'='),
-                    Expr.Var(Tk.Str(TK.XVAR,tk0.lin,tk0.col,"_ret_")),
+                    Attr.Var(Tk.Str(TK.XVAR,tk0.lin,tk0.col,"_ret_")),
                     e
                 ),
                 Stmt.Ret(tk0, e)

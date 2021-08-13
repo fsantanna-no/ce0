@@ -78,7 +78,7 @@ fun env_PRV_set (s: Stmt, cur_: Stmt?): Stmt? {
                 if (s.isrec) cur = s; s.subs.forEach { it.second.visit(::ft) }; s
             }
             is Stmt.Set -> {
-                s.dst.visit(::fe); s.src.visit(::fe); cur
+                s.dst.toExpr().visit(::fe); s.src.visit(::fe); cur
             }
             is Stmt.Call -> {
                 s.call.visit(::fe); cur
@@ -311,9 +311,9 @@ fun check_types (S: Stmt) {
                 }
             }
             is Stmt.Set -> {
-                All_assert_tk(s.tk, s.dst.toType().isSupOf(s.src.toType())) {
+                All_assert_tk(s.tk, s.dst.toExpr().toType().isSupOf(s.src.toType())) {
                     when {
-                        (s.dst !is Expr.Var) -> "invalid assignment : type mismatch"
+                        (s.dst !is Attr.Var) -> "invalid assignment : type mismatch"
                         (s.dst.tk_.str == "_ret_") -> "invalid return : type mismatch"
                         else -> "invalid assignment to \"${s.dst.tk_.str}\" : type mismatch"
                     }
@@ -394,8 +394,8 @@ fun check_pointers (S: Stmt) {
                 }
             }
             is Stmt.Set -> {
-                val (src_depth, src_dcl) = s.src.getDepth(s.getDepth(), s.dst.toType().ishasptr())
-                All_assert_tk(s.tk, s.dst.getDepth(s.getDepth(), s.dst.toType().ishasptr()).first >= src_depth) {
+                val (src_depth, src_dcl) = s.src.getDepth(s.getDepth(), s.dst.toExpr().toType().ishasptr())
+                All_assert_tk(s.tk, s.dst.toExpr().getDepth(s.getDepth(), s.dst.toExpr().toType().ishasptr()).first >= src_depth) {
                     "invalid assignment : cannot hold local pointer \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
                 }
             }

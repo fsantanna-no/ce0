@@ -174,8 +174,8 @@ fun Stmt.pos (): String {
         is Stmt.Nat   -> this.tk_.str + "\n"
         is Stmt.Seq   -> this.s1.pos() + this.s2.pos()
         is Stmt.Set   -> {
-            this.dst.pre() + this.src.pre() + (
-                (if (this.dst.toType() is Type.Unit) "" else (this.dst.pos(false)+" = ")) +
+            this.dst.toExpr().pre() + this.src.pre() + (
+                (if (this.dst.toExpr().toType() is Type.Unit) "" else (this.dst.toExpr().pos(false)+" = ")) +
                     this.src.pos(false) + ";\n"
             )
         }

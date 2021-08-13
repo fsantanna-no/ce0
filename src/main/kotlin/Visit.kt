@@ -26,7 +26,7 @@ fun Stmt.visit (fs: ((Stmt)->Boolean)?, fe: ((Expr)->Boolean)?, ft: ((Type)->Boo
         is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> true
         is Stmt.Var   -> this.type.visit(ft) && this.init.visit(fe)
         is Stmt.User  -> this.subs.all { it.second.visit(ft) }
-        is Stmt.Set   -> this.dst.visit(fe) && this.src.visit(fe)
+        is Stmt.Set   -> this.dst.toExpr().visit(fe) && this.src.visit(fe)
         is Stmt.Call  -> this.call.visit(fe)
         is Stmt.Seq   -> this.s1.visit(fs,fe,ft) && this.s2.visit(fs,fe,ft)
         is Stmt.If    -> this.tst.visit(fe)  && this.true_.visit(fs,fe,ft) && this.false_.visit(fs,fe,ft)

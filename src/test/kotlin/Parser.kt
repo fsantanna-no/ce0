@@ -606,6 +606,6 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("set s = ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Set && s.dst is Expr.Var && s.src is Expr.Unit)
+        assert(s is Stmt.Set && s.dst is Attr.Var && s.src is Expr.Unit)
     }
 }

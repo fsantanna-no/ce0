@@ -743,7 +743,36 @@ class Env {
                 X: ()
             }
         """.trimIndent())
-        println(out)
         assert(out == "(ln 1, col 11): invalid type declaration : unexpected `@rec´")
+    }
+    @Test
+    fun i03_rec_pre_err () {
+        val out = inp2env("""
+            type @pre List
+            type @rec List {
+                Item: List
+            }
+        """.trimIndent())
+        assert(out == "(ln 2, col 11): unmatching type declaration (ln 1)")
+    }
+    @Test
+    fun i04_rec_pre_err () {
+        val out = inp2env("""
+            type @pre @rec List
+            type List {
+                Item: List
+            }
+        """.trimIndent())
+        assert(out == "(ln 2, col 6): unmatching type declaration (ln 1)")
+    }
+    @Test
+    fun i05_rec_pre_ok () {
+        val out = inp2env("""
+            type @pre @rec List
+            type @rec List {
+                Item: List
+            }
+        """.trimIndent())
+        assert(out == "OK")
     }
 }
