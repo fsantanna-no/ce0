@@ -488,7 +488,6 @@ class Exec {
         """.trimIndent())
         assert(out == "Aa1 (Bb1 (Aa1 (Nil)))\n")
     }
-
     @Test
     fun i05_ptr_block_err () {
         val out = all("""
@@ -506,7 +505,6 @@ class Exec {
         """.trimIndent())
         assert(out == "(ln 5, col 12): invalid assignment : cannot hold local pointer \"v\" (ln 4)")
     }
-
     @Test
     fun i06_ptr_block_err () {
         val out = all("""
@@ -520,7 +518,6 @@ class Exec {
         """.trimIndent())
         assert(out == "(ln 6, col 11): invalid assignment : cannot hold local pointer \"y\" (ln 4)")
     }
-
     @Test
     fun i07_ptr_func_ok () {
         val out = all("""
@@ -533,7 +530,6 @@ class Exec {
         """.trimIndent())
         assert(out == "10\n")
     }
-
     @Test
     fun i08_ptr_func_ok () {
         val out = all("""
@@ -546,7 +542,6 @@ class Exec {
         """.trimIndent())
         assert(out == "10\n")
     }
-
     @Test
     fun i09_ptr_func_err () {
         val out = all("""
@@ -560,7 +555,6 @@ class Exec {
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold local pointer \"v\" (ln 2)")
     }
-
     @Test
     fun i10_ptr_func_err () {
         val out = all("""
@@ -574,7 +568,6 @@ class Exec {
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold local pointer \"ptr\" (ln 2)")
     }
-
     @Test
     fun i11_ptr_func_ok () {
         val out = all("""
@@ -588,7 +581,6 @@ class Exec {
         """.trimIndent())
         assert(out == "10\n")
     }
-
     @Test
     fun i12_ptr_ptr_ok () {
         val out = all("""
@@ -600,7 +592,6 @@ class Exec {
         """.trimIndent())
         assert(out == "10\n")
     }
-
     @Test
     fun i13_ptr_tup () {
         val out = all("""
@@ -611,7 +602,6 @@ class Exec {
         """.trimIndent())
         assert(out == "(20,20)\n")
     }
-
     @Test
     fun i14_ptr_type () {
         val out = all("""
@@ -625,7 +615,6 @@ class Exec {
         """.trimIndent())
         assert(out == "X (20)\n")
     }
-
     @Test
     fun i15_ptr_tup () {
         val out = all("""
@@ -676,7 +665,6 @@ class Exec {
         """.trimIndent())
         assert(out == "20\n")
     }
-
     @Test
     fun i19_ptr_tup () {
         val out = all("""
@@ -702,7 +690,6 @@ class Exec {
         """.trimIndent())
         assert(out == "20\n")
     }
-
     @Test
     fun f10_ptr_func () {
         val out = all("""
@@ -717,6 +704,7 @@ class Exec {
         """.trimIndent())
         assert(out == "10\n")
     }
+
     // REC
 
     @Test
@@ -773,6 +761,21 @@ class Exec {
             output std \l.Item!
         """.trimIndent())
         assert(out == "out.exe: out.c:63: main: Assertion `l != NULL' failed.\n")
+    }
+    @Test
+    fun j06_list () {
+        val out = all("""
+            type @rec List {
+               Item: List
+            }
+            var l: List = List.Item List.Item List.Nil
+            var p: \List = ?
+            {
+                set p = \l.Item!
+            }
+            output std p
+        """.trimIndent())
+        assert(out == "Item (Nil)\n")
     }
 
     // SET - TUPLE - DATA

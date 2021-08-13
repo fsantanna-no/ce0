@@ -162,7 +162,6 @@ class Env {
         """.trimIndent())
         assert(out == "OK")
     }
-
     @Test
     fun b12_not_rec () {
         val out = inp2env("""
@@ -303,7 +302,6 @@ class Env {
         assert((s.s2 as Stmt.Block).getDepth() == 0)
         //println("<<<")
     }
-
     @Test
     fun d02_func () {
         val s = pre("var x: Int = 10 ; func f: ()->() { var y: Int = 10 ; output std x }")
@@ -719,5 +717,33 @@ class Env {
             }
         """.trimIndent())
         assert(out == "(ln 8, col 12): invalid assignment : cannot hold local pointer \"x2\" (ln 7)")
+    }
+
+    // TYPE - REC - MOVE - CLONE - BORROW
+
+    @Test
+    fun i01_list () {
+        val out = inp2env("""
+            type @rec List {
+               Item: List
+            }
+            var p: \List = ?
+            {
+                var l: List = List.Item List.Item List.Nil
+                set p = \l
+            }
+            output std p
+        """.trimIndent())
+        assert(out == "(ln 7, col 11): invalid assignment : cannot hold local pointer \"l\" (ln 6)")
+    }
+    @Test
+    fun i02_rec_err () {
+        val out = inp2env("""
+            type @rec X {
+                X: ()
+            }
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 1, col 11): invalid type declaration : unexpected `@rec´")
     }
 }

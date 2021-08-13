@@ -142,9 +142,21 @@ distinguishes from a reference (ref) as follows:
 - A pointer does not own the allocated value.
 - A pointer requires [pointer operations](TODO) to manipulate the allocated value.
 
+<!--
 `TODO: pointers.md`
 `general rules for mutation`
 `mutation in description`
+
+`type @rec`         <- sem-1: move, clone
+`type @rec @ptr`    <- sem-2: growonly, no clone/move
+`type @rec @imm`    <- sem-0: share w/ refs (no pointers)
+
+- the three are incompatible
+    - sem-1:
+        - nao pode nem pegar ponteiro
+        - a move would compromise internal pointers (sem-2)
+        - a move could dealloc some (root) shared data leading to wild pointer (sem-3)
+-->
 
 ## Mutation Modes
 
