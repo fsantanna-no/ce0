@@ -10,7 +10,7 @@ memory management.
     3. [Expressions](TODO)
     4. [Statements](TODO)
     5. [Syntax](TODO)
-- [Memory management](memory.md)
+- [Recursive Data Types](recs.md)
 - [Comparison with Rust](rust.md)
 
 # 1. LEXICAL RULES

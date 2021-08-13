@@ -5,7 +5,7 @@ memory management.
 
 - [Install & Use](../README.md)
 - [Manual](manual.md)
-- [Memory management](memory.md)
+- [Recursive Data Types](recs.md)
 - Comparison with Rust
 
 # Comparison with Rust
