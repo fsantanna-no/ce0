@@ -1,4 +1,4 @@
-# Ce
+# Ce - Manual
 
 A simple language with algebraic data types, ownership semantics, and scoped
 memory management.
