@@ -34,7 +34,7 @@ Recursive data types, such as lists and trees, rely on dynamic memory
 allocation since they typically represent complex data structures that evolve
 over time.
 They are also manipulated by different parts of the program, even outside
-the scope in which they are fisrt instantiated.
+the scope in which they are first instantiated.
 These two characteristics, dynamic allocation and scope portability, need to be
 managed by the language somehow.
 
@@ -72,28 +72,27 @@ type Character {
 }
 ```
 
-Such composite types are also known as algebraic data types because they are
+These composite types are also known as algebraic data types because they are
 composed of sums (variants) and products (tuples).
 
-A new type declaration with the `rec` keyword is recursive and can use itself
+A new type declaration with the `@rec` modifier is recursive and can use itself
 in one of its subcases:
 
 ```
-type rec List {         -- a list is either empty ($List) or
+type rec List {         -- a list is either empty (Nil) or
     Item: (Int,List)    -- an item that holds a number and a sublist
 }
-var l: List = Item (1, Item (2,$List))   -- list `1 -> 2 -> empty`
+var l: List = Item (1, Item (2,Nil))   -- list `1 -> 2 -> empty`
 ```
 
-All recursive types have an implicit empty subcase, with its name prefixed with
-the dollar prefix `$`, e.g., `$List` is the empty subcase of `List`.
+All recursive types have an implicit `Nil` empty subcase.
 
 A variable of a recursive type holds a *strong reference* to its value, but not
 the actual value, since constructors are always dynamically allocated in the
 heap:
 
 ```
-var x: List = Item(1, $List)
+var x: List = Item(1, Nil)
     ^                ^
     |              __|__
    / \            /     \
@@ -109,7 +108,7 @@ automatically deallocated when the enclosing scope terminates:
 
 ```
 {
-    var x: List = Item(1, $List)
+    var x: List = Item(1, Nil)
 }
 -- scope terminates, memory pointed by `x` is deallocated
 ```
@@ -121,7 +120,7 @@ A variable can be shared, or pointed, or borrowed with the prefix backslash
 In this case, both the owner and the pointer refer to the same allocated value:
 
 ```
-var x: List  = Item(1, $List)
+var x: List  = Item(1, Nil)
 var y: \List = \x    ^
     ^                |
     |              __|__
@@ -153,9 +152,9 @@ type List_With_Tail {
 Append-only values can only grow and cannot move its subparts:
 
 ```
-var lt: List_With_Tail = List_WT (Item (1,$List), ?)
+var lt: List_With_Tail = List_WT (Item (1,Nil), ?)
 set lt.List_WT!.2 = \lt.List_WT!.1  -- lt.1 is held in a pointer
-set lt.List_WT!.1 = $List           -- cannot free it or the pointer becomes dangling
+set lt.List_WT!.1 = Nil             -- cannot free it or the pointer becomes dangling
 ```
 
 ## Ownership and Borrowing
@@ -190,10 +189,10 @@ rejects further accesses to it:
 
 ```
 {
-    var x: List = Item(1, $List)    -- `x` is the original owner
-    var y: List = x                 -- `y` is the new owner
-    ... x ...                       -- error: `x` cannot be referred again
-    ... y ...                       -- ok
+    var x: List = Item(1, Nil)  -- `x` is the original owner
+    var y: List = x             -- `y` is the new owner
+    ... x ...                   -- error: `x` cannot be referred again
+    ... y ...                   -- ok
 }
 ```
 
@@ -204,10 +203,10 @@ owner:
 
 ```
 {
-    var x: List = Item(1, $List)    -- `x` is the original owner
+    var x: List = Item(1, Nil)      -- `x` is the original owner
     var y: List = x                 -- `y` is the new owner
-    ... x ...                       -- `x` now holds $List
-    ... y ...                       -- `y` holds `Item(1, $List)`
+    ... x ...                       -- `x` now holds Nil
+    ... y ...                       -- `y` holds `Item(1, Nil)`
 }
 ```
 -->
@@ -218,11 +217,11 @@ cause a double free, since owners could be in different scopes:
 
 ```
 {
-    var x: List = Item(1, $List)    -- `x` is the original owner
+    var x: List = Item(1, Nil)  -- `x` is the original owner
     {
-        var y: List = x             -- `y` is the new owner
-    }                               -- deallocate here?
-}                                   -- or here or both?
+        var y: List = x         -- `y` is the new owner
+    }                           -- deallocate here?
+}                               -- or here or both?
 ```
 
 Ownership transfer is particularly important when the value must survive the
@@ -242,7 +241,7 @@ This also takes into account pointers to the subtree.
 This rule prevents cycles, which also ensures that rule 1 is preserved:
 
 ```
-var l: List = Item $List
+var l: List = Item Nil
 var p: \List = \l.Item!     -- `p` points to the end of `l`
 set p\ = l                  -- error: cannot transfer `l` to the end of itself
 ```
@@ -253,8 +252,8 @@ It is possible to transfer only part of a recursive value.
 In this case, the removed part will be automatically reset to the empty subcase:
 
 ```
-var x: List = Item(1, Item(2, $List))   -- after: Item(1,$List)
-var y: List = x.Item!                   -- after: Item(2,$List)
+var x: List = Item(1, Item(2, Nil)) -- after: Item(1,Nil)
+var y: List = x.Item!               -- after: Item(2,Nil)
 ```
 -->
 
@@ -263,8 +262,8 @@ statement. <!--(`movable` can also make it for subparts)-->
 In this case, the value with lost ownership will be deallocated immediately:
 
 ```
-var x: List = Item(1, $List)    -- previous value
-set x = $List                   -- previous value is deallocated
+var x: List = Item(1, Nil)  -- previous value
+set x = Nil                 -- previous value is deallocated
 ```
 
 ## Borrowing
@@ -432,7 +431,7 @@ Illustrative example:
 
 ```
 func f: () -> Nat {
-    var x: Nat = Succ(Succ($Nat))
+    var x: Nat = Succ(Succ(Nil))
     return x
 }
 var y[]: Nat = f()    -- y[] or y[N]
@@ -470,7 +469,7 @@ void f (Pool* pool) {
 1. Check the root assignment for dependencies in nested scopes:
 
 ```
-var y: Nat = Succ(Succ($Nat))   -- same scope: static allocation
+var y: Nat = Succ(Succ(Nil))    -- same scope: static allocation
 ```
 
 ```
@@ -484,14 +483,14 @@ return x                        -- check `x`
 ```
 
 ```
-var x: Nat = Succ(Succ($Nat))   -- constructor must be allocated in the received pool
+var x: Nat = Succ(Succ(Nil))    -- constructor must be allocated in the received pool
 ```
 
 ### TODO
 
 ```
 -- OK
-call show(Succ($Nat))     -- ok stack
+call show(Succ(Nil))        -- ok stack
 
 -- ERR
 -- `f` returns `Nat` but have no pool to allocated it
