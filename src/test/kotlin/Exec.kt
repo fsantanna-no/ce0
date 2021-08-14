@@ -777,6 +777,20 @@ class Exec {
         """.trimIndent())
         assert(out == "Item (Nil)\n")
     }
+    @Test
+    fun j07_list_move () {
+        val out = all("""
+            type @rec List {
+               Item: List
+            }
+            var l1: List = List.Item List.Nil
+            var l2: List = move l1
+            output std \l1
+            output std \l2
+        """.trimIndent())
+        //println(out)
+        assert(out == "Nil\nItem (Nil)\n")
+    }
 
     // SET - TUPLE - DATA
 

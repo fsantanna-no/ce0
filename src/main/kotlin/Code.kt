@@ -79,6 +79,27 @@ fun Type.pos (): String {
     }
 }
 
+fun XExpr.pre (): String {
+    val ismove = (this.x!=null && this.x.enu==TK.MOVE)
+    val pre = if (!ismove) "" else {
+        """
+       typeof(${this.e.pos(false)}) _tmp_${this.hashCode().absoluteValue} = ${this.e.pos(false)};
+       ${this.e.pos(false)} = NULL;
+        """
+    }
+    return pre + this.e.pre()
+}
+
+fun XExpr.pos (deref: Boolean): String {
+    val ismove = (this.x!=null && this.x.enu==TK.MOVE)
+    return if (ismove) {
+        assert(!deref)  // TODO: i'm not sure
+        "_tmp_${this.hashCode().absoluteValue}"
+    } else {
+        this.e.pos(deref)
+    }
+}
+
 fun Expr.pre (): String {
     return when (this) {
         is Expr.Unk, is Expr.Unit, is Expr.Int, is Expr.Var, is Expr.Nat -> ""
@@ -174,9 +195,9 @@ fun Stmt.pos (): String {
         is Stmt.Nat   -> this.tk_.str + "\n"
         is Stmt.Seq   -> this.s1.pos() + this.s2.pos()
         is Stmt.Set   -> {
-            this.dst.toExpr().pre() + this.src.e.pre() + (
+            this.dst.toExpr().pre() + this.src.pre() + (
                 (if (this.dst.toExpr().toType() is Type.Unit) "" else (this.dst.toExpr().pos(false)+" = ")) +
-                    this.src.e.pos(false) + ";\n"
+                    this.src.pos(false) + ";\n"
             )
         }
         is Stmt.If    -> this.tst.pre() + """
@@ -196,14 +217,14 @@ fun Stmt.pos (): String {
         is Stmt.Block -> "{\n" + this.body.pos() + "}\n"
         is Stmt.Ret   -> "return" + if (this.e.e.toType() is Type.Unit) ";\n" else " _ret_;\n"
         is Stmt.Var   -> {
-            this.init.e.pre() +
+            this.init.pre() +
                 if (this.type is Type.Unit) "" else {
                     "${this.type.pos()} ${this.tk_.str}" + (    // List* l
                         if (this.tk_.str == "_ret_") "" else {
                             (if (!this.type.ishasrec()) "" else {
                                 " __attribute__ ((__cleanup__(${this.type.toce()}_free)))"
                             }) + (if (this.init.e is Expr.Unk) "" else {
-                                " = " + this.init.e.pos(false)
+                                " = " + this.init.pos(false)
                             })
                         }
                     ) + ";\n"

@@ -339,7 +339,6 @@ fun check_xexprs (S: Stmt) {
     fun aux (e: XExpr) {
         val isrec = e.e.toType().ishasrec()
         val iscst = e.e.isconst()
-        println(e.e.toType())
         when {
             (e.x == null) -> All_assert_tk(e.e.tk, !isrec || iscst) {
                 "invalid expression : expected operation modifier"
