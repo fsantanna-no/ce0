@@ -45,143 +45,78 @@ class Env {
         val out = inp2env("call f ()")
         assert(out == "(ln 1, col 6): undeclared variable \"f\"")
     }
-    @Test
-    fun a03_undeclared_type () {
-        val out = inp2env("var x: Nat = ()")
-        assert(out == "(ln 1, col 8): undeclared type \"Nat\"")
-    }
 
-    // REDECLARED
+    // CONS
 
     @Test
-    fun a04_redeclared () {
-        val out = inp2env("var x: () = () ; var x: Int = 1")
-        assert(out == "(ln 1, col 22): invalid declaration : \"x\" is already declared (ln 1)")
-    }
-
-    // USER
-
-    @Test
-    fun b01_user_sup_undeclared () {
+    fun b01_user_tuple_out () {
         val out = inp2env("""
-            var x: Bool = ()
+            var x: [(),()] = ?
+            output std(x.3)
         """.trimIndent())
-        assert(out == "(ln 1, col 8): undeclared type \"Bool\"")
+        assert(out == "(ln 2, col 13): invalid index : out of bounds")
     }
     @Test
     fun b02_user_sub_undeclared () {
         val out = inp2env("""
-            type Set {
-                X: ()
-            }
-            output std(Set.Set)
+            var x: <(),()> = ?
+            output std(x.0)
         """.trimIndent())
-        assert(out == "(ln 4, col 15): undeclared subcase \"Set\"")
-    }
-    @Test
-    fun b03_user_pred_err () {
-        val out = inp2env("""
-            type Bool { False: () ; True: () }
-            type Z { Y:() }
-            var z: Z = Z.Y
-            output std z.Z?
-        """.trimIndent())
-        assert(out == "(ln 4, col 14): invalid `.´ : undeclared subcase \"Z\"")
+        println(out)
+        assert(out == "(ln 2, col 13): invalid index : out of bounds")
     }
     @Test
     fun b04_user_disc_cons_err () {
         val out = inp2env("""
-            output std ().Z!
+            output std ().1!
         """.trimIndent())
-        assert(out == "(ln 1, col 12): invalid `.´ : expected user type")
+        assert(out == "(ln 1, col 14): invalid index : type mismatch")
     }
     @Test
-    fun b06_user_norec_err () {
+    fun b07_user_out_err1 () {
         val out = inp2env("""
-            type @rec NoRec { X: () ; Y: () }
+            var x: ^
         """.trimIndent())
-        assert(out == "(ln 1, col 11): invalid type declaration : unexpected `@rec´")
+        assert(out == "(ln 1, col 9): expected type : have end of file")
     }
     @Test
-    fun b07_user_rec_err () {
+    fun b07_user_rec_up () {
         val out = inp2env("""
-            type Rec { X: Rec ; Y: () }
-        """.trimIndent())
-        assert(out == "(ln 1, col 15): undeclared type \"Rec\"")
-    }
-    @Test
-    fun b08_user_rec_err () {
-        val out = inp2env("""
-            type @rec Rec1 { X: Rec1 ; Y: () }
-            type Rec2 { X: Rec1 ; Y: () }
-        """.trimIndent())
-        assert(out == "(ln 2, col 6): invalid type declaration : expected `@rec´")
-    }
-    @Test
-    fun b09_user_err () {
-        val out = inp2env("""
-            type Z { Z:() }
-            type @rec List {
-                Item: List
-            }
-            var l: List = Z.Z
-        """.trimIndent())
-        assert(out == "(ln 5, col 5): invalid assignment to \"l\" : type mismatch")
-    }
-    @Test
-    fun b10_user_empty_err () {
-        val out = inp2env("""
-            type Z { Z:() }
-            type @rec List {
-                Item: List
-            }
-            var l: List = List.Item Z.Z
-        """.trimIndent())
-        assert(out == "(ln 5, col 20): invalid constructor \"Item\" : type mismatch")
-    }
-    @Test
-    fun b11_user_empty_err () {
-        val out = inp2env("""
-            type Z { Z:() }
-            type @rec List {
-                Item: List
-            }
-            var l: List = List.Item List.Nil
-            output std \l.Z!
-        """.trimIndent())
-        assert(out == "(ln 6, col 15): invalid `.´ : undeclared subcase \"Z\"")
-    }
-    @Test
-    fun b12_user_empty_ok () {
-        val out = inp2env("""
-            type Z { Z:() }
-            type @rec List {
-                Item: List
-            }
-            var l: List = List.Item List.Nil
-            output std \l.Nil!
+            var x: (^) = ?
         """.trimIndent())
         assert(out == "OK")
     }
     @Test
-    fun b12_not_rec () {
+    fun b09_user_err () {
         val out = inp2env("""
-            type @pre @rec List
-            type List {
-                Item: Int
-            }
+            var x: <()> = ?
+            var y: <^> = x
         """.trimIndent())
-        assert(out == "(ln 2, col 6): unmatching type declaration (ln 1)")
+        assert(out == "(ln 2, col 5): invalid assignment to \"y\" : type mismatch")
     }
     @Test
-    fun b13_not_rec () {
+    fun b10_user_empty_err () {
         val out = inp2env("""
-            type @pre @rec List
-            type @rec List {
-                Item: Int
-            }
+            var l: <^> = .1 ()
         """.trimIndent())
-        assert(out == "(ln 2, col 11): invalid type declaration : unexpected `@rec´")
+        assert(out == "(ln 1, col 5): invalid assignment to \"l\" : type mismatch")
+    }
+    @Test
+    fun b11_user_empty_err () {
+        val out = inp2env("""
+            var l: <()> = .1
+            output std \l.2!
+        """.trimIndent())
+        assert(out == "(ln 2, col 14): invalid index : out of bounds")
+    }
+    @Test
+    fun b12_user_empty_ok () {
+        val out = inp2env("""
+            var l: <^> = .1 .0
+            output std \l.0!
+        """.trimIndent())
+        println(out)
+        assert(out == "OK")
     }
 
     // TODO: test if empty is part of isrec
@@ -191,7 +126,7 @@ class Env {
     @Test
     fun c01_type_var () {
         val out = inp2env("""
-            var x: Int = ()
+            var x: [()] = ()
         """.trimIndent())
         assert(out == "(ln 1, col 5): invalid assignment to \"x\" : type mismatch")
     }
@@ -199,21 +134,21 @@ class Env {
     fun c02_type_set () {
         val out = inp2env("""
             var x: () = ()
-            set x = 10
+            set x = [()]
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment to \"x\" : type mismatch")
     }
     @Test
     fun c03_type_func_ret () {
         val out = inp2env("""
-            func f : () -> () { return 10 }
+            func f : () -> () { return [()] }
         """.trimIndent())
         assert(out == "(ln 1, col 21): invalid return : type mismatch")
     }
     @Test
     fun c04_type_func_arg () {
         val out = inp2env("""
-            func f : ((),()) -> () { }
+            func f : [(),()] -> () { }
             call f()
         """.trimIndent())
         assert(out == "(ln 2, col 6): invalid call to \"f\" : type mismatch")
@@ -221,7 +156,7 @@ class Env {
     @Test
     fun c05_type_idx () {
         val out = inp2env("""
-            var x: () = (1,2).1
+            var x: () = [[()],[()]].1
         """.trimIndent())
         assert(out == "(ln 1, col 5): invalid assignment to \"x\" : type mismatch")
     }
@@ -297,7 +232,7 @@ class Env {
     fun d01_block () {
         val s = pre("var x: Int = 10 ; { output std x }")
         val blk = (s as Stmt.Seq).s2 as Stmt.Block
-        val x = (blk.body as Stmt.Call).call.arg.e
+        val x = (blk.body as Stmt.Call).call.e.e
         val X = x.idToStmt("x")
         assert(X!!.getDepth() == 0)
         assert((s.s2 as Stmt.Block).getDepth() == 0)
@@ -309,7 +244,7 @@ class Env {
         val blk = ((s as Stmt.Seq).s2 as Stmt.Func).block as Stmt.Block
         val seq = ((((blk.body as Stmt.Seq).s2 as Stmt.Seq).s2 as Stmt.Block).body as Stmt.Seq)
         val call = (seq.s2 as Stmt.Call)
-        val x = call.call.arg.e
+        val x = call.call.e.e
         val X = x.idToStmt("x")
         assert(X!!.getDepth() == 0)
         assert(seq.s1.getDepth() == 2)

@@ -2,19 +2,20 @@ import kotlin.math.absoluteValue
 
 fun Type.toce (): String {
     return when (this) {
-        is Type.Any   -> "Any"
-        is Type.Unit  -> "Unit"
-        is Type.Ptr   -> this.tp.toce() + "_ptr"
-        is Type.Nat   -> this.tk_.str.replace('*','_')
-        is Type.User  -> this.tk_.str
-        is Type.Tuple -> "TUPLE__" + this.vec.map { it.toce() }.joinToString("__")
-        is Type.Func  -> "FUNC__" + this.inp.toce() + "__" + this.out.toce()
+        is Type.Any  -> "Any"
+        is Type.Unit -> "Unit"
+        is Type.Ptr  -> this.tp.toce() + "_ptr"
+        is Type.Nat  -> this.tk_.str.replace('*','_')
+        is Type.Cons -> "CONS__" + this.vec.map { it.toce() }.joinToString("__")
+        is Type.Func -> "FUNC__" + this.inp.toce() + "__" + this.out.toce()
+        is Type.Rec  -> error("TODO")
+        is Type.Varia -> error("TODO")
     }
 }
 
 fun Type.pre (): String {
     return when (this) {
-        is Type.Tuple -> {
+        is Type.Cons -> {
             val pre = this.vec.map { it.pre() }.joinToString("")
             val ce = this.toce()
             pre + """
@@ -65,17 +66,12 @@ fun Type.pre (): String {
 fun Type.pos (): String {
     return when (this) {
         is Type.Any, is Type.Unit  -> "void"
-        is Type.Ptr   -> this.tp.pos() + "*"
-        is Type.Nat   -> this.tk_.str
-        is Type.User  -> (this.idToStmt(this.tk_.str) as Stmt.User).let {
-            if (it.isrec) {
-                "struct ${this.tk_.str}*"
-            } else {
-                this.tk_.str
-            }
-        }
-        is Type.Tuple -> this.toce()
-        is Type.Func  -> this.toce() + "*"
+        is Type.Ptr  -> this.tp.pos() + "*"
+        is Type.Nat  -> this.tk_.str
+        is Type.Cons -> this.toce()
+        is Type.Func -> this.toce() + "*"
+        is Type.Rec  -> error("TODO")
+        is Type.Varia -> error("TODO")
     }
 }
 
@@ -102,9 +98,11 @@ fun XExpr.pos (deref: Boolean): String {
 
 fun Expr.pre (): String {
     return when (this) {
-        is Expr.Unk, is Expr.Unit, is Expr.Int, is Expr.Var, is Expr.Nat -> ""
+        is Expr.Unk, is Expr.Unit, is Expr.Var, is Expr.Nat -> ""
         is Expr.Tuple -> this.toType().pre() + this.vec.map { it.pre() }.joinToString("")
-        is Expr.Cons  -> {
+        is Expr.Varia -> error("TODO")
+        /*
+        is Expr.Union  -> {
             val user = this.idToStmt(this.sup.str)!! as Stmt.User
             val tp   = this.subType()
             val arg  = if (tp is Type.Unit) "" else (", " + this.arg.pos(false))
@@ -128,9 +126,11 @@ fun Expr.pre (): String {
                 
             """
         }
+         */
         is Expr.Dnref -> this.e.pre()
         is Expr.Upref -> this.e.pre()
         is Expr.Index -> this.e.pre()
+        /*
         is Expr.Pred  -> this.e.pre()
         is Expr.Disc  -> {
             val tpe = this.e.toType() as Type.User
@@ -146,7 +146,8 @@ fun Expr.pre (): String {
                 }
             )
         }
-        is Expr.Call  -> this.f.pre() + this.arg.pre()
+         */
+        is Expr.Call  -> this.f.pre() + this.e.pre()
     }
 }
 
@@ -158,14 +159,15 @@ fun Expr.pos (deref: Boolean): String {
     return when (this) {
         is Expr.Unit  -> ""
         is Expr.Nat   -> this.tk_.str
-        is Expr.Int   -> this.tk_.num.toString()
         is Expr.Var   -> if (TP is Type.Unit) "" else this.tk_.str
         is Expr.Upref -> "&" + this.e.pos(false)
         is Expr.Dnref -> "*" + this.e.pos(false)
-        is Expr.Index -> this.e.pos(true) + "._" + this.tk_.num
+        is Expr.Index -> this.e.pos(true) + "._" + this.tk_.idx
+        /*
         is Expr.Disc  -> this.e.pos(true) + "._" + this.tk_.str
         is Expr.Pred  -> "((${this.e.pos(true)}.sub == ${(this.e.toType() as Type.User).tk_.str}_${this.tk_.str}) ? (Bool){Bool_True} : (Bool){Bool_False})"
-        is Expr.Cons  -> if (this.sub.str=="Nil") "NULL" else "_tmp_${this.hashCode().absoluteValue}"
+        is Expr.Union  -> if (this.sub.str=="Nil") "NULL" else "_tmp_${this.hashCode().absoluteValue}"
+         */
         is Expr.Tuple -> {
             val vec = this.vec
                 .filter { it.e.toType() !is Type.Unit }
@@ -177,15 +179,15 @@ fun Expr.pos (deref: Boolean): String {
         is Expr.Call  -> {
             this.f.pos(true) + (
                 if (this.f is Expr.Var && this.f.tk_.str=="output_std") {
-                    "_" + this.arg.e.toType().toce()
+                    "_" + this.e.e.toType().toce()
                 } else {
                     ""
                 }
-            ) + "(" + this.arg.e.pos(true) + ")"
+            ) + "(" + this.e.e.pos(true) + ")"
         }
         else -> { println(this) ; error("TODO-2") }
     }.let {
-        if (deref && TP.ishasrec()) "(*($it))" else it
+        if (deref && TP.containsRec()) "(*($it))" else it
     }
 }
 
@@ -221,7 +223,7 @@ fun Stmt.pos (): String {
                 if (this.type is Type.Unit) "" else {
                     "${this.type.pos()} ${this.tk_.str}" + (    // List* l
                         if (this.tk_.str == "_ret_") "" else {
-                            (if (!this.type.ishasrec()) "" else {
+                            (if (!this.type.containsRec()) "" else {
                                 " __attribute__ ((__cleanup__(${this.type.toce()}_free)))"
                             }) + (if (this.init.e is Expr.Unk) "" else {
                                 " = " + this.init.pos(false)
@@ -230,7 +232,7 @@ fun Stmt.pos (): String {
                     ) + ";\n"
                 }
         }
-        is Stmt.User  -> {
+        /*is Stmt.User  -> {
             val ID = this.tk_.str
             if (ID == "Int") {
                 return ""
@@ -311,7 +313,7 @@ fun Stmt.pos (): String {
                                             val (op2,fn2) = if (tp.ishasrec()) Pair("&","_ptr") else Pair("","")
                                             when (tp) {
                                                 is Type.Nat -> "putchar('_');"
-                                                is Type.Tuple -> "putchar(' '); output_std_${tp.toce()}${fn2}_($op2$v._${sub.str});"
+                                                is Type.Cons -> "putchar(' '); output_std_${tp.toce()}${fn2}_($op2$v._${sub.str});"
                                                 is Type.User -> "putchar(' '); putchar('('); output_std_${tp.toce()}${fn2}_($op2$v._${sub.str}); putchar(')');"
                                                 else -> ""
                                             }
@@ -360,7 +362,7 @@ fun Stmt.pos (): String {
             }
 
             return (ret1 + ret2 + ret3 + ret4 + ret5 + ret6 + ret7)
-        }
+        } */
         is Stmt.Func  -> {
             this.type.pre() + when (this.tk_.str) {
                 "output_std" -> ""

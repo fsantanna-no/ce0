@@ -35,28 +35,21 @@ class Parser {
         assert(tp is Type.Nat && tp.tk_.str=="char")
     }
     @Test
-    fun a04_parser_type () {
-        val all = All_new(PushbackReader(StringReader("Nat"), 2))
-        lexer(all)
-        val tp = parser_type(all)
-        assert(tp is Type.User && tp.tk_.str=="Nat")
-    }
-    @Test
     fun a05_parser_type () {
-        val all = All_new(PushbackReader(StringReader("((),_char)"), 2))
+        val all = All_new(PushbackReader(StringReader("[(),_char]"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Tuple && tp.vec.size==2 && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Nat && (tp.vec[1].tk as Tk.Str).str=="char")
+        assert(tp is Type.Cons && tp.vec.size==2 && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Nat && (tp.vec[1].tk as Tk.Str).str=="char")
     }
     @Test
     fun a05_parser_type_tuple_err () {
-        val all = All_new(PushbackReader(StringReader("((),X,"), 2))
+        val all = All_new(PushbackReader(StringReader("[(),(),"), 2))
         lexer(all)
         try {
             parser_type(all)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 7): expected type : have end of file")
+            assert(e.message == "(ln 1, col 8): expected type : have end of file")
         }
     }
     @Test
@@ -79,21 +72,21 @@ class Parser {
     }
     @Test
     fun a08_parser_type_err () {
-        val all = All_new(PushbackReader(StringReader("(X"), 2))
+        val all = All_new(PushbackReader(StringReader("[()"), 2))
         lexer(all)
         try {
             parser_type(all)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 3): expected `,´ : have end of file")
+            assert(e.message == "(ln 1, col 4): expected `]´ : have end of file")
         }
     }
     @Test
     fun a08_parser_type_tuple () {
-        val all = All_new(PushbackReader(StringReader("((),())"), 2))
+        val all = All_new(PushbackReader(StringReader("[(),()]"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Tuple && tp.vec.size==2 && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Unit)
+        assert(tp is Type.Cons && tp.vec.size==2 && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Unit)
     }
     @Test
     fun a09_parser_type_ptr () {
@@ -126,13 +119,6 @@ class Parser {
         val e = parser_expr(all,true)
         assert(e is Expr.Nat && e.tk_.str=="x")
     }
-    @Test
-    fun b08_parser_expr_int () {
-        val all = All_new(PushbackReader(StringReader("10"), 2))
-        lexer(all)
-        val e = parser_expr(all,false)
-        assert(e is Expr.Int && e.tk_.num==10)
-    }
 
     // PARENS, TUPLE
 
@@ -162,19 +148,19 @@ class Parser {
             parser_expr(all, false)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 3): expected `,´ : have end of file")
+            assert(e.message == "(ln 1, col 3): expected `)´ : have end of file")
         }
     }
     @Test
     fun b06_parser_expr_tuple () {
-        val all = All_new(PushbackReader(StringReader("((),x,())"), 2))
+        val all = All_new(PushbackReader(StringReader("[(),x,()]"), 2))
         lexer(all)
         val e = parser_expr(all,true)
         assert(e is Expr.Tuple && e.vec.size==3 && e.vec[0].e is Expr.Unit && e.vec[1].e is Expr.Var && (e.vec[1].e.tk as Tk.Str).str=="x")
     }
     @Test
     fun b07_parser_expr_tuple_err () {
-        val all = All_new(PushbackReader(StringReader("((),x,"), 2))
+        val all = All_new(PushbackReader(StringReader("[(),x,"), 2))
         lexer(all)
         try {
             parser_expr(all, false)
@@ -191,14 +177,14 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("xxx ()"), 2))
         lexer(all)
         val e = parser_expr(all,true)
-        assert(e is Expr.Call && e.f is Expr.Var && (e.f.tk as Tk.Str).str=="xxx" && e.arg.e is Expr.Unit)
+        assert(e is Expr.Call && e.f is Expr.Var && (e.f.tk as Tk.Str).str=="xxx" && e.e.e is Expr.Unit)
     }
     @Test
     fun b10_parser_expr_call () {
         val all = All_new(PushbackReader(StringReader("call xxx ()"), 2))
         lexer(all)
         val e = parser_expr(all,true)
-        assert(e is Expr.Call && e.f is Expr.Var && (e.f.tk as Tk.Str).str=="xxx" && e.arg.e is Expr.Unit)
+        assert(e is Expr.Call && e.f is Expr.Var && (e.f.tk as Tk.Str).str=="xxx" && e.e.e is Expr.Unit)
     }
     @Test
     fun b10_parser_expr_call_err () {
@@ -233,7 +219,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("f1 f2\nf3\n()"), 2)) // f1 (f2 (f3 ()))
         lexer(all)
         val e = parser_expr(all,true)
-        assert(e is Expr.Call && e.arg.e is Expr.Call && (e.arg.e as Expr.Call).arg.e is Expr.Call && ((e.arg.e as Expr.Call).arg.e as Expr.Call).arg.e is Expr.Unit)
+        assert(e is Expr.Call && e.e.e is Expr.Call && (e.e.e as Expr.Call).e.e is Expr.Call && ((e.e.e as Expr.Call).e.e as Expr.Call).e.e is Expr.Unit)
     }
     @Test
     fun b13_parser_expr_call () {
@@ -251,57 +237,35 @@ class Parser {
 
     @Test
     fun b14_parser_expr_cons_err_1 () {
-        val all = All_new(PushbackReader(StringReader("X.Y ("), 2))
+        val all = All_new(PushbackReader(StringReader(".0 ("), 2))
         lexer(all)
         try {
             parser_expr(all, false)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 6): expected expression : have end of file")
-        }
-    }
-    @Test
-    fun b14_parser_expr_cons_err_2 () {
-        val all = All_new(PushbackReader(StringReader("X ("), 2))
-        lexer(all)
-        try {
-            parser_expr(all, false)
-            error("impossible case")
-        } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 3): expected `.´ : have `(´")
-        }
-    }
-    @Test
-    fun b14_parser_expr_cons_err_3 () {
-        val all = All_new(PushbackReader(StringReader("X. ("), 2))
-        lexer(all)
-        try {
-            parser_expr(all, false)
-            error("impossible case")
-        } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 4): expected type identifier : have `(´")
+            assert(e.message == "(ln 1, col 5): expected expression : have end of file")
         }
     }
     @Test
     fun b15_parser_expr_cons () {
-        val all = All_new(PushbackReader(StringReader("X.Y ()"), 2))
+        val all = All_new(PushbackReader(StringReader(".0 ()"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Cons && e.tk_.chr=='.' && e.sup.str=="X" && e.sub.str=="Y" && e.arg.e is Expr.Unit)
+        assert(e is Expr.Varia && e.tk_.idx==0 && e.e.e is Expr.Unit)
     }
     @Test
     fun b16_parser_expr_cons () {
-        val all = All_new(PushbackReader(StringReader("X.Y"), 2))
+        val all = All_new(PushbackReader(StringReader(".1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Cons && e.sup.str=="X" && e.sub.str=="Y" && e.arg.e is Expr.Unit)
+        assert(e is Expr.Varia && e.tk_.idx==1 && e.e.e is Expr.Unit)
     }
     @Test
     fun b17_parser_expr_cons () {
-        val all = All_new(PushbackReader(StringReader("Aa1.Aa2 Bb1.Bb2 ((),())"), 2))
+        val all = All_new(PushbackReader(StringReader(".2 .1 [(),()]"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Cons && e.sup.str=="Aa1" && e.arg.e is Expr.Cons && (e.arg.e as Expr.Cons).arg.e is Expr.Tuple)
+        assert(e is Expr.Varia && e.tk_.idx==2 && e.e.e is Expr.Varia && (e.e.e as Expr.Varia).e.e is Expr.Tuple)
     }
 
     // INDEX
@@ -311,27 +275,15 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("x.1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Index && e.tk_.num==1 && e.e is Expr.Var)
+        assert(e is Expr.Index && e.tk_.idx==1 && e.e is Expr.Var)
     }
     @Test
     fun b19_parser_expr_index () {
         val all = All_new(PushbackReader(StringReader("x () .10"), 2))
         lexer(all)  // x [() .10]
         val e = parser_expr(all,false)
-        assert(e is Expr.Call && e.arg.e is Expr.Index)
+        assert(e is Expr.Call && e.e.e is Expr.Index)
     }
-    @Test
-    fun b20_parser_expr_index () {
-        val all = All_new(PushbackReader(StringReader("x().."), 2))
-        lexer(all)  // x [() .10] ~()~
-        try {
-            parser_expr(all, false)
-            error("impossible case")
-        } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 5): expected index or subtype : have `.´")
-        }
-    }
-    // testar a.b.c
 
     // UPREF, DNREF
 
@@ -384,17 +336,24 @@ class Parser {
 
     @Test
     fun b25_parser_expr_disc () {
-        val all = All_new(PushbackReader(StringReader("x.Item!"), 2))
+        val all = All_new(PushbackReader(StringReader("x.1!"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Disc && e.tk_.str=="Item" && e.e is Expr.Var)
+        assert(e is Expr.Index && e.tk_.idx==1 && e.e is Expr.Var && e.op!!.chr=='!')
     }
     @Test
     fun b26_parser_expr_pred () {
-        val all = All_new(PushbackReader(StringReader("x.Item?"), 2))
+        val all = All_new(PushbackReader(StringReader("x.0?"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Pred && e.tk_.str=="Item" && e.e is Expr.Var)
+        assert(e is Expr.Index && e.tk_.idx==0 && e.e is Expr.Var && e.op!!.chr=='?')
+    }
+    @Test
+    fun b27_parser_expr_idx () {
+        val all = All_new(PushbackReader(StringReader("x.10"), 2))
+        lexer(all)
+        val e = parser_expr(all,false)
+        assert(e is Expr.Index && e.tk_.idx==10 && e.e is Expr.Var && e.op==null)
     }
 
     // STMT
@@ -407,34 +366,21 @@ class Parser {
         assert(s is Stmt.Var && s.type is Type.Unit && s.init.e is Expr.Unit)
     }
     @Test
-    fun c02_parser_stmt_user () {
-        val all = All_new(PushbackReader(StringReader("type Bool { False:() ; True:() }"), 2))
-        lexer(all)
-        val s = parser_stmt(all)
-        assert(s is Stmt.User && s.tk_.str=="Bool" && !s.isrec && s.subs.size==2 && s.subs[0].second is Type.Unit && s.subs[1].first.str=="True")
-    }
-    @Test
     fun c03_parser_stmt_var_tuple () {
-        val all = All_new(PushbackReader(StringReader("var x: ((),()) = ((),())"), 2))
+        val all = All_new(PushbackReader(StringReader("var x: [(),()] = [(),()]"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Var && s.type is Type.Tuple && s.init.e is Expr.Tuple)
-    }
-    @Test
-    fun c04_parser_stmt_user_rec () {
-        val all = All_new(PushbackReader(StringReader("type @rec Bool { False:() ; True:() }"), 2))
-        lexer(all)
-        val s = parser_stmt(all)
-        assert(s is Stmt.User && s.isrec)
+        assert(s is Stmt.Var && s.type is Type.Cons && s.init.e is Expr.Tuple)
     }
     @Test
     fun c05_parser_stmt_var_caret () {
-        val all = All_new(PushbackReader(StringReader("var x: ^Int = 10"), 2))
+        val all = All_new(PushbackReader(StringReader("var x: ^() = ())"), 2))
         lexer(all)
         try {
             parser_stmt(all)
             error("impossible case")
         } catch (e: Throwable) {
+            println(e.message)
             assert(e.message == "(ln 1, col 9): expected pointer type")
         }
     }
@@ -468,21 +414,21 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("call f ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Call && s.call.f is Expr.Var && s.call.arg.e is Expr.Unit)
+        assert(s is Stmt.Call && s.call.f is Expr.Var && s.call.e.e is Expr.Unit)
     }
     @Test
     fun c06_parser_stmt_call () {
         val all = All_new(PushbackReader(StringReader("call f"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Call && s.call.f is Expr.Var && s.call.arg.e is Expr.Unit)
+        assert(s is Stmt.Call && s.call.f is Expr.Var && s.call.e.e is Expr.Unit)
     }
     @Test
     fun c07_parser_stmt_call () {
         val all = All_new(PushbackReader(StringReader("call _printf ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Call && s.call.f is Expr.Nat && s.call.arg.e is Expr.Unit)
+        assert(s is Stmt.Call && s.call.f is Expr.Nat && s.call.e.e is Expr.Unit)
     }
     @Test
     fun c07_parser_stmt_output () {
@@ -533,11 +479,11 @@ class Parser {
     }
     @Test
     fun c11_parser_stmt_if () {
-        val all = All_new(PushbackReader(StringReader("if (Bool.True) {}"), 2))
+        val all = All_new(PushbackReader(StringReader("if (.2) {}"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert (
-            s is Stmt.If && s.tst is Expr.Cons &&
+            s is Stmt.If && s.tst is Expr.Varia &&
             s.true_.body is Stmt.Pass && s.false_.body is Stmt.Pass
         )
     }
@@ -613,14 +559,13 @@ class Parser {
 
     @Test
     fun c17_stmt_xexpr () {
-        val all = All_new(PushbackReader(StringReader("set s = (move 1)"), 2))
+        val all = All_new(PushbackReader(StringReader("set s = (move ())"), 2))
         lexer(all)
         try {
             parser_stmt(all)
             error("impossible case")
         } catch (e: Throwable) {
-            //println(e.message)
-            assert(e.message == "(ln 1, col 10): unexpected modifier")
+            assert(e.message == "(ln 1, col 10): unexpected operation modifier")
         }
     }
 }

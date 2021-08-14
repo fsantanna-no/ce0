@@ -17,7 +17,7 @@ class Code {
     }
     @Test
     fun a02_type_tuple () {
-        val tp = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(tp_unit,tp_unit))
+        val tp = Type.Cons(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(tp_unit,tp_unit))
         assert(tp.toce() == "TUPLE__Unit__Unit")
     }
 
@@ -64,13 +64,14 @@ class Code {
     @Test
     fun b05_expr_index () {
         val e = Expr.Index (
-            Tk.Num(TK.XNUM,1,1,1),
-            Expr.Var(Tk.Str(TK.XVAR,1,1,"x"))
+            Tk.Idx(TK.XIDX,1,1,1),
+            Expr.Var(Tk.Str(TK.XVAR,1,1,"x")),
+            null
         )
         env_PRV[e.e] = Stmt.Var (
             Tk.Str(TK.XVAR,1,1,"x"),
             false,
-            Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int")))),
+            Type.Cons(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int")))),
             XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
         )
         assert(e.pos(true) == "x._1")
