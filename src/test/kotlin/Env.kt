@@ -163,47 +163,47 @@ class Env {
     @Test
     fun c06_type_idx () {
         val out = inp2env("""
-            var x: (Int,Int) = (1,2)
-            set x.1 = ()
+            var x: [(),()] = [(),()]
+            set x.1 = [()]
         """.trimIndent())
         assert(out == "(ln 2, col 9): invalid assignment : type mismatch")
     }
     @Test
     fun c07_type_upref () {
         val out = inp2env("""
-            var x: \Int = 10
+            var x: \() = ()
         """.trimIndent())
         assert(out == "(ln 1, col 5): invalid assignment to \"x\" : type mismatch")
     }
     @Test
     fun c08_type_upref () {
         val out = inp2env("""
-            var y: Int = 10
-            var x: Int = \y
+            var y: () = ()
+            var x: () = \y
         """.trimIndent())
         assert(out == "(ln 2, col 5): invalid assignment to \"x\" : type mismatch")
     }
     @Test
     fun c09_type_upref () {
         val out = inp2env("""
-            var y: Int = 10
-            var x: \Int = \y
+            var y: () = ()
+            var x: \() = \y
         """.trimIndent())
         assert(out == "OK")
     }
     @Test
     fun c10_type_upref () {
         val out = inp2env("""
-            var y: () = ()
-            var x: \Int = \y
+            var y: [()] = [()]
+            var x: \() = \y
         """.trimIndent())
         assert(out == "(ln 2, col 5): invalid assignment to \"x\" : type mismatch")
     }
     @Test
     fun c11_type_upref () {
         val out = inp2env("""
-            var y: Int = 10
-            var x: \Int = \y
+            var y: () = ()
+            var x: \() = \y
             var z: _x = \x
         """.trimIndent())
         assert(out == "OK")
@@ -211,7 +211,7 @@ class Env {
     @Test
     fun c12_type_dnref () {
         val out = inp2env("""
-            var x: Int = 10
+            var x: () = ()
             output std /x
         """.trimIndent())
         assert(out == "(ln 2, col 12): invalid `/` : expected pointer type")
@@ -219,9 +219,9 @@ class Env {
     @Test
     fun c13_type_dnref () {
         val out = inp2env("""
-            var x: Int = 10
-            var y: \Int = \x
-            var z: \Int = /y
+            var x: () = ()
+            var y: \() = \x
+            var z: \() = /y
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment to \"z\" : type mismatch")
     }
@@ -230,7 +230,7 @@ class Env {
 
     @Test
     fun d01_block () {
-        val s = pre("var x: Int = 10 ; { output std x }")
+        val s = pre("var x: () = () ; { output std x }")
         val blk = (s as Stmt.Seq).s2 as Stmt.Block
         val x = (blk.body as Stmt.Call).call.e.e
         val X = x.idToStmt("x")
@@ -240,7 +240,7 @@ class Env {
     }
     @Test
     fun d02_func () {
-        val s = pre("var x: Int = 10 ; func f: ()->() { var y: Int = 10 ; output std x }")
+        val s = pre("var x: () = () ; func f: ()->() { var y: () = () ; output std x }")
         val blk = ((s as Stmt.Seq).s2 as Stmt.Func).block as Stmt.Block
         val seq = ((((blk.body as Stmt.Seq).s2 as Stmt.Seq).s2 as Stmt.Block).body as Stmt.Seq)
         val call = (seq.s2 as Stmt.Call)
@@ -255,14 +255,14 @@ class Env {
     @Test
     fun e01_ptr_block_err () {
         val out = inp2env("""
-            var p1: \Int = ?
-            var p2: \Int = ?
+            var p1: \() = ?
+            var p2: \() = ?
             {
-                var v: Int = 10
+                var v: () = ()
                 set p1 = \v
             }
             {
-                var v: Int = 20
+                var v: () = ()
                 set p2 = \v
             }
             output std /p1
@@ -272,10 +272,10 @@ class Env {
     @Test
     fun e02_ptr_block_err () {
         val out = inp2env("""
-            var x: Int = 10
-            var p: \Int = ?
+            var x: () = ()
+            var p: \() = ?
             {
-                var y: Int = 10
+                var y: () = ()
                 set p = \x
                 set p = \y
             }
@@ -285,9 +285,9 @@ class Env {
     @Test
     fun e03_ptr_err () {
         val out = inp2env("""
-            var pout: \Int = ?
+            var pout: \_Int = ?
             {
-                var pin: \Int = ?
+                var pin: \_Int = ?
                 set pout = pin
             }
         """.trimIndent())
@@ -296,9 +296,9 @@ class Env {
     @Test
     fun e04_ptr_ok () {
         val out = inp2env("""
-            var pout: \Int = ?
+            var pout: \_Int = ?
             {
-                var pin: \Int = ?
+                var pin: \_Int = ?
                 set pin = pout
             }
         """.trimIndent())
@@ -310,9 +310,9 @@ class Env {
     @Test
     fun f01_ptr_ptr_err () {
         val out = inp2env("""
-            var p: \\Int = ?
+            var p: \\_Int = ?
             {
-                var y: \Int = ?
+                var y: \_Int = ?
                 set p = \y
             }
         """.trimIndent())
@@ -321,9 +321,9 @@ class Env {
     @Test
     fun f02_ptr_ptr_ok () {
         val out = inp2env("""
-            var p: \\Int = ?
-            var z: Int = 10
-            var y: \Int = \z
+            var p: \\_Int = ?
+            var z: _Int = _10
+            var y: \_Int = \z
             set p = \y
             output std //p
         """.trimIndent())
@@ -332,10 +332,10 @@ class Env {
     @Test
     fun f03_ptr_ptr_err () {
         val out = inp2env("""
-            var p: \\Int = ?
+            var p: \\_Int = ?
             {
-                var z: Int = 10
-                var y: \Int = \z
+                var z: _Int = _10
+                var y: \_Int = \z
                 set p = \y
             }
         """.trimIndent())
@@ -344,11 +344,11 @@ class Env {
     @Test
     fun f04_ptr_ptr_err () {
         val out = inp2env("""
-            var p: \Int = ?
+            var p: \_Int = ?
             {
-                var x: Int = 10
-                var y: \Int = \x
-                var z: \\Int = \y
+                var x: _Int = _10
+                var y: \_Int = \x
+                var z: \\_Int = \y
                 set p = /z
             }
         """.trimIndent())
@@ -360,11 +360,11 @@ class Env {
     @Test
     fun g01_ptr_func_ok () {
         val out = inp2env("""
-            func f : \Int -> \Int {
+            func f : \_Int -> \_Int {
                 return arg
             }
-            var v: Int = 10
-            var p: \Int = f \v
+            var v: _Int = _10
+            var p: \_Int = f \v
             output std /p
         """.trimIndent())
         assert(out == "OK")
@@ -372,11 +372,11 @@ class Env {
     @Test
     fun g02_ptr_func_ok () {
         val out = inp2env("""
-            var v: Int = 10
-            func f : () -> \Int {
+            var v: _Int = _10
+            func f : () -> \_Int {
                 return \v
             }
-            var p: \Int = f ()
+            var p: \_Int = f ()
             output std /p
         """.trimIndent())
         assert(out == "OK")
@@ -384,12 +384,12 @@ class Env {
     @Test
     fun g03_ptr_func_err () {
         val out = inp2env("""
-            func f : () -> \Int {
-                var v: Int = 10
+            func f : () -> \_Int {
+                var v: _Int = _10
                 return \v
             }
-            var v: Int = 10
-            var p: \Int = f ()
+            var v: _Int = _10
+            var p: \_Int = f ()
             output std /p
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold local pointer \"v\" (ln 2)")
@@ -397,12 +397,12 @@ class Env {
     @Test
     fun g04_ptr_func_err () {
         val out = inp2env("""
-            func f : \Int -> \Int {
-                var ptr: \Int = arg
+            func f : \_Int -> \_Int {
+                var ptr: \_Int = arg
                 return ptr
             }
-            var v: Int = 10
-            var p: \Int = f \v
+            var v: _Int = _10
+            var p: \_Int = f \v
             output std /p
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold local pointer \"ptr\" (ln 2)")
@@ -410,12 +410,12 @@ class Env {
     @Test
     fun g05_ptr_caret_ok () {
         val out = inp2env("""
-            func f : \Int -> \Int {
-                var ptr: ^\Int = arg
+            func f : \_Int -> \_Int {
+                var ptr: ^\_Int = arg
                 return ptr
             }
-            var v: Int = 10
-            var p: \Int = f \v
+            var v: _Int = _10
+            var p: \_Int = f \v
             output std /p
         """.trimIndent())
         assert(out == "OK")
@@ -423,13 +423,13 @@ class Env {
     @Test
     fun g06_ptr_caret_err () {
         val out = inp2env("""
-            func f : \Int -> \Int {
-                var x: Int = 10
-                var ptr: ^\Int = \x
+            func f : \_Int -> \_Int {
+                var x: _Int = _10
+                var ptr: ^\_Int = \x
                 return ptr
             }
-            var v: Int = 10
-            var p: \Int = f \v
+            var v: _Int = _10
+            var p: \_Int = f \v
             output std /p
         """.trimIndent())
         assert(out == "(ln 3, col 9): invalid assignment : cannot hold local pointer \"x\" (ln 2)")
@@ -439,7 +439,7 @@ class Env {
     @Test
     fun g07_ptr_caret_err () {
         val out = inp2env("""
-            var ptr: ^\Int = ?
+            var ptr: ^\_Int = ?
         """.trimIndent())
         assert(out == "OK")
     }
@@ -447,7 +447,7 @@ class Env {
     @Test
     fun g08_ptr_arg_err () {
         val out = inp2env("""
-            func f: Int -> \Int
+            func f: _Int -> \_Int
             {
                 return \arg
             }
@@ -457,9 +457,9 @@ class Env {
     @Test
     fun g09_ptr_arg_err () {
         val out = inp2env("""
-            func f: Int -> \Int
+            func f: _Int -> \_Int
             {
-                var ptr: ^\Int = \arg
+                var ptr: ^\_Int = \arg
                 return ptr
             }
         """.trimIndent())
@@ -468,9 +468,9 @@ class Env {
     @Test
     fun g10_ptr_out_err () {
         val out = inp2env("""
-            func f: \Int -> \\Int
+            func f: \_Int -> \\_Int
             {
-                var ptr: ^\Int = arg
+                var ptr: ^\_Int = arg
                 return \ptr
             }
         """.trimIndent())
@@ -479,11 +479,11 @@ class Env {
     @Test
     fun g11_ptr_func () {
         val out = inp2env("""
-            var v: Int = 10
-            func f : () -> \Int {
+            var v: _Int = _10
+            func f : () -> \_Int {
                 return \v
             }
-            var p: \Int = ?
+            var p: \_Int = ?
             {
                 set p = f ()
             }
@@ -493,11 +493,11 @@ class Env {
     @Test
     fun g12_ptr_func () {
         val out = inp2env("""
-            var v: Int = 10
-            func f : \Int -> \Int {
+            var v: _Int = _10
+            func f : \_Int -> \_Int {
                 return \v
             }
-            var p: \Int = ?
+            var p: \_Int = ?
             {
                 set p = f (\v)
             }
@@ -507,8 +507,8 @@ class Env {
     @Test
     fun g13_ptr_func () {
         val out = inp2env("""
-            var v: \Int = ?
-            func f : \Int -> () {
+            var v: \_Int = ?
+            func f : \_Int -> () {
                 set v = arg
             }
         """.trimIndent())
@@ -520,9 +520,9 @@ class Env {
     @Test
     fun h01_ptr_tuple_err () {
         val out = inp2env("""
-            var p: \(Int,Int) = ?
+            var p: \[_Int,_Int] = ?
             {
-                var y: (Int,Int) = (10,20)
+                var y: [_Int,_Int] = [_10,_20]
                 set p = \y
             }
         """.trimIndent())
@@ -531,23 +531,20 @@ class Env {
     @Test
     fun h02_ptr_user_err () {
         val out = inp2env("""
-            type X {
-                Y: ()
-            }
-            var p: \X = ?
+            var p: \<()> = ?
             {
-                var y: X = X.Y
+                var y: <()> = .1
                 set p = \y
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 11): invalid assignment : cannot hold local pointer \"y\" (ln 6)")
+        assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"y\" (ln 3)")
     }
     @Test
     fun h03_ptr_tup () {
         val out = inp2env("""
-            var v: (Int,Int) = (10,20)
-            var p: \Int = \v.1
-            set /p = 20
+            var v: [_Int,_Int] = [_10,_20]
+            var p: \_Int = \v.1
+            set /p = _20
             output std v
         """.trimIndent())
         assert(out == "OK")
@@ -555,9 +552,9 @@ class Env {
     @Test
     fun h04_ptr_tup_err () {
         val out = inp2env("""
-            var p: \Int = ?
+            var p: \_Int = ?
             {
-                var v: (Int,Int) = (10,20)
+                var v: [_Int,_Int] = [_10,_20]
                 set p = \v.1
             }
         """.trimIndent())
@@ -566,23 +563,20 @@ class Env {
     @Test
     fun h05_ptr_type_err () {
         val out = inp2env("""
-            type X {
-                X: Int
-            }
-            var p: \Int = ?
+            var p: \() = ?
             {
-                var v: X = X.X 10
-                set p = \v.X!
+                var v: <()> = .1 ()
+                set p = \v.1!
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 11): invalid assignment : cannot hold local pointer \"v\" (ln 6)")
+        assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"v\" (ln 3)")
     }
     @Test
     fun h06_ptr_tup_err () {
         val out = inp2env("""
-            var p: (Int,\Int) = (10,?)
+            var p: [_Int,\_Int] = [_10,?]
             {
-                var v: Int = 20
+                var v: _Int = _20
                 set p.2 = \v
             }
         """.trimIndent())
@@ -591,10 +585,10 @@ class Env {
     @Test
     fun h07_ptr_tup_err () {
         val out = inp2env("""
-            var p: (Int,\Int) = (10,?)
+            var p: [_Int,\_Int] = [_10,?]
             {
-                var v: Int = 20
-                set p = (10,\v)
+                var v: _Int = _20
+                set p = [_10,\v]
             }
         """.trimIndent())
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"v\" (ln 3)")
@@ -602,38 +596,33 @@ class Env {
     @Test
     fun h08_ptr_type_err () {
         val out = inp2env("""
-            type X {
-                X: \Int
-            }
-            var p: X = X.X ?
+            var p: <\_Int> = .1 ?
             {
-                var v: Int = 20
-                set p.X! = \v
+                var v: _Int = _20
+                set p.1! = \v
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 14): invalid assignment : cannot hold local pointer \"v\" (ln 6)")
+        assert(out == "(ln 4, col 14): invalid assignment : cannot hold local pointer \"v\" (ln 3)")
     }
     @Test
     fun h09_ptr_type_err () {
         val out = inp2env("""
-            type X {
-                X: \Int
-            }
-            var p: X = X.X ?
+            var p: <\_Int> = .1 ?
             {
-                var v: Int = 20
-                set p = X.X \v
+                var v: _Int = _20
+                set p = .1 \v
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 11): invalid assignment : cannot hold local pointer \"v\" (ln 6)")
+        println(out)
+        assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"v\" (ln 3)")
     }
     @Test
     fun h10_ptr_tup_err () {
         val out = inp2env("""
-            var x1: (Int,\Int) = ?
+            var x1: [_Int,\_Int] = ?
             {
-                var v: Int = 20
-                var x2: (Int,\Int) = (10,\v)
+                var v: _Int = _20
+                var x2: [_Int,\_Int] = [_10,\v]
                 set x1 = x2
             }
         """.trimIndent())
@@ -642,17 +631,14 @@ class Env {
     @Test
     fun h11_ptr_type_err () {
         val out = inp2env("""
-            type X {
-                X: \Int
-            }
-            var x1: X = ?
+            var x1: <\_Int> = ?
             {
-                var v: Int = 20
-                var x2: X = X.X \v
+                var v: _Int = _20
+                var x2: <\_Int> = .1 \v
                 set x1 = x2
             }
         """.trimIndent())
-        assert(out == "(ln 8, col 12): invalid assignment : cannot hold local pointer \"x2\" (ln 7)")
+        assert(out == "(ln 5, col 12): invalid assignment : cannot hold local pointer \"x2\" (ln 4)")
     }
 
     // TYPE - REC - MOVE - CLONE - BORROW
@@ -660,56 +646,14 @@ class Env {
     @Test
     fun i01_list () {
         val out = inp2env("""
-            type @rec List {
-               Item: List
-            }
-            var p: \List = ?
+            var p: \<^> = ?
             {
-                var l: List = List.Item List.Item List.Nil
+                var l: <^> = .1 .1 .0
                 set p = \l
             }
             output std p
         """.trimIndent())
-        assert(out == "(ln 7, col 11): invalid assignment : cannot hold local pointer \"l\" (ln 6)")
-    }
-    @Test
-    fun i02_rec_err () {
-        val out = inp2env("""
-            type @rec X {
-                X: ()
-            }
-        """.trimIndent())
-        assert(out == "(ln 1, col 11): invalid type declaration : unexpected `@rec´")
-    }
-    @Test
-    fun i03_rec_pre_err () {
-        val out = inp2env("""
-            type @pre List
-            type @rec List {
-                Item: List
-            }
-        """.trimIndent())
-        assert(out == "(ln 2, col 11): unmatching type declaration (ln 1)")
-    }
-    @Test
-    fun i04_rec_pre_err () {
-        val out = inp2env("""
-            type @pre @rec List
-            type List {
-                Item: List
-            }
-        """.trimIndent())
-        assert(out == "(ln 2, col 6): unmatching type declaration (ln 1)")
-    }
-    @Test
-    fun i05_rec_pre_ok () {
-        val out = inp2env("""
-            type @pre @rec List
-            type @rec List {
-                Item: List
-            }
-        """.trimIndent())
-        assert(out == "OK")
+        assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"l\" (ln 3)")
     }
 
     // XEPR
@@ -717,51 +661,39 @@ class Env {
     @Test
     fun j01_rec_xepr_null_err () {
         val out = inp2env("""
-            type @rec List {
-                Item: List
-            }
-            var x: List = ?
-            var y: List = x
+            var x: <^> = ?
+            var y: <^> = x
         """.trimIndent())
-        assert(out == "(ln 5, col 15): invalid expression : expected operation modifier")
+        assert(out == "(ln 2, col 14): invalid expression : expected operation modifier")
     }
     @Test
     fun j02_rec_xepr_move_ok () {
         val out = inp2env("""
-            type @rec List {
-                Item: List
-            }
-            var x: List = ?
-            var y: List = move x
+            var x: <^> = ?
+            var y: <^> = move x
         """.trimIndent())
         assert(out == "OK")
     }
     @Test
     fun j03_rec_xepr_borrow_err () {
         val out = inp2env("""
-            type @rec List {
-                Item: List
-            }
-            var x: List = ?
-            var y: List = borrow x
+            var x: <^> = ?
+            var y: <^> = borrow x
         """.trimIndent())
-        assert(out == "(ln 5, col 15): invalid `borrow` : expected pointer to recursive variable")
+        assert(out == "(ln 2, col 14): invalid `borrow` : expected pointer to recursive variable")
     }
     @Test
     fun j04_rec_xepr_copy_err () {
         val out = inp2env("""
-            var x: Int = copy 10
+            var x: _Int = copy _10
         """.trimIndent())
-        assert(out == "(ln 1, col 14): invalid `copy` : expected recursive variable")
+        assert(out == "(ln 1, col 15): invalid `copy` : expected recursive variable")
     }
     @Test
     fun j05_rec_xepr_borrow_ok () {
         val out = inp2env("""
-            type @rec List {
-                Item: List
-            }
-            var x: List = ?
-            var y: \List = borrow \x
+            var x: <^> = ?
+            var y: \<^> = borrow \x
         """.trimIndent())
         println(out)
         assert(out == "OK")
@@ -769,22 +701,16 @@ class Env {
     @Test
     fun j06_rec_xepr_borrow_err () {
         val out = inp2env("""
-            type @rec List {
-                Item: List
-            }
-            var x: Int = ?
-            var y: \Int = borrow \x
+            var x: _Int = ?
+            var y: \_Int = borrow \x
         """.trimIndent())
-        assert(out == "(ln 5, col 15): invalid `borrow` : expected pointer to recursive variable")
+        assert(out == "(ln 2, col 16): invalid `borrow` : expected pointer to recursive variable")
     }
     @Test
     fun j07_rec_xepr_copy_err () {
         val out = inp2env("""
-            type @rec List {
-                Item: List
-            }
-            var x: List = copy List.Item List.Nil
+            var x: <^> = copy .1 .0
         """.trimIndent())
-        assert(out == "(ln 4, col 15): invalid `copy` : expected recursive variable")
+        assert(out == "(ln 1, col 14): invalid `copy` : expected recursive variable")
     }
 }

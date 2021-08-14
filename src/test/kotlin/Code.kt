@@ -17,7 +17,7 @@ class Code {
     }
     @Test
     fun a02_type_tuple () {
-        val tp = Type.Cons(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(tp_unit,tp_unit))
+        val tp = Type.Cons(Tk.Chr(TK.CHAR,1,1,'['), arrayOf(tp_unit,tp_unit))
         assert(tp.toce() == "TUPLE__Unit__Unit")
     }
 
@@ -95,11 +95,10 @@ class Code {
             #include <assert.h>
             #include <stdio.h>
             #include <stdlib.h>
-            typedef int Int;
             #define output_std_Unit_() printf("()")
             #define output_std_Unit()  (output_std_Unit_(), puts(""))
-            #define output_std_Int_(x) printf("%d",x)
-            #define output_std_Int(x)  (output_std_Int_(x), puts(""))
+            #define output_std_int_(x) printf("%d",x)
+            #define output_std_int(x)  (output_std_int_(x), puts(""))
             int main (void) {
 
             }

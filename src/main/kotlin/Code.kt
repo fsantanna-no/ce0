@@ -6,7 +6,7 @@ fun Type.toce (): String {
         is Type.Unit -> "Unit"
         is Type.Ptr  -> this.tp.toce() + "_ptr"
         is Type.Nat  -> this.tk_.str.replace('*','_')
-        is Type.Cons -> "CONS__" + this.vec.map { it.toce() }.joinToString("__")
+        is Type.Cons -> "TUPLE__" + this.vec.map { it.toce() }.joinToString("__")
         is Type.Func -> "FUNC__" + this.inp.toce() + "__" + this.out.toce()
         is Type.Rec  -> error("TODO")
         is Type.Varia -> error("TODO")
@@ -28,17 +28,14 @@ fun Type.pre (): String {
                     }
                 } $ce;
                 void output_std_${ce}_ ($ce v) {
-                    printf("(");
+                    printf("[");
                     ${this.vec
                         .mapIndexed { i,sub ->
-                            when (sub) {
-                                is Type.Nat -> "putchar('_')"
-                                else -> "output_std_${sub.toce()}_(" + (if (sub is Type.Unit) "" else "v._${i + 1}") + ")"
-                            } + ";\n"
+                            "output_std_${sub.toce()}_(" + (if (sub is Type.Unit) "" else "v._${i + 1}") + ");\n"
                         }
                         .joinToString("putchar(',');\n")
                     }
-                    printf(")");
+                    printf("]");
                 }
                 void output_std_$ce ($ce v) {
                     output_std_${ce}_(v);
@@ -130,23 +127,6 @@ fun Expr.pre (): String {
         is Expr.Dnref -> this.e.pre()
         is Expr.Upref -> this.e.pre()
         is Expr.Index -> this.e.pre()
-        /*
-        is Expr.Pred  -> this.e.pre()
-        is Expr.Disc  -> {
-            val tpe = this.e.toType() as Type.User
-            this.e.pre() + (
-                if (this.tk_.str == "Nil") {
-                    "assert(${this.e.pos(false)} == NULL);\n"
-                } else {
-                    (if (!tpe.ishasrec()) {
-                        ""
-                    } else {
-                        "assert(${this.e.pos(false)} != NULL);\n"
-                    }) + "assert(${this.e.pos(true)}.sub == ${tpe.tk_.str}_${this.tk_.str});\n"
-                }
-            )
-        }
-         */
         is Expr.Call  -> this.f.pre() + this.e.pre()
     }
 }
@@ -386,11 +366,10 @@ fun Stmt.code (): String {
         #include <assert.h>
         #include <stdio.h>
         #include <stdlib.h>
-        typedef int Int;
         #define output_std_Unit_() printf("()")
         #define output_std_Unit()  (output_std_Unit_(), puts(""))
-        #define output_std_Int_(x) printf("%d",x)
-        #define output_std_Int(x)  (output_std_Int_(x), puts(""))
+        #define output_std_int_(x) printf("%d",x)
+        #define output_std_int(x)  (output_std_int_(x), puts(""))
         int main (void) {
     """ + this.pos() + """
         }

@@ -52,7 +52,7 @@ class Exec {
     @Test
     fun a05_int () {
         val out = all("""
-            var x: Int = 10
+            var x: _int = _10
             output std x
         """.trimIndent())
         assert(out == "10\n")
@@ -78,17 +78,16 @@ class Exec {
     @Test
     fun a09_int_abs () {
         val out = all("""
-            var x: Int = _abs(-1)
+            var x: _int = _abs _(-1)
             output std x
         """.trimIndent())
-        println(out)
         assert(out == "1\n")
     }
     @Test
     fun a10_int_set () {
         val out = all("""
-            var x: Int = 10
-            set x = -20
+            var x: _int = _10
+            set x = _(-20)
             output std x
         """.trimIndent())
         assert(out == "-20\n")
@@ -96,8 +95,8 @@ class Exec {
     @Test
     fun a11_unk () {
         val out = all("""
-            var x: Int = ?
-            set x = -20
+            var x: _int = ?
+            set x = _(-20)
             output std x
         """.trimIndent())
         assert(out == "-20\n")
@@ -108,7 +107,7 @@ class Exec {
     @Test
     fun b01_tuple_units () {
         val out = all("""
-            var x: ((),()) = ((),())
+            var x: [(),()] = [(),()]
             var y: () = x.1
             call _output_std_Unit y
         """.trimIndent())
@@ -117,16 +116,16 @@ class Exec {
     @Test
     fun b02_tuple_idx () {
         val out = all("""
-            output std (((),()).1)
+            output std ([(),()].1)
         """.trimIndent())
         assert(out == "()\n")
     }
     @Test
     fun b03_tuple_tuples () {
         val out = all("""
-            var v: ((),()) = ((),())
-            var x: ((),((),())) = ((),v)
-            var y: ((),()) = x.2
+            var v: [(),()] = [(),()]
+            var x: [(),[(),()]] = [(),v]
+            var y: [(),()] = x.2
             var z: () = y.2
             output std z
         """.trimIndent())
@@ -135,10 +134,11 @@ class Exec {
     @Test
     fun b04_tuple_pp () {
         val out = all("""
-            var x: ((Int,Int),(Int,Int)) = ((1,2),(3,4))
+            var n: _int = _1
+            var x: [[_int,_int],[_int,_int]] = [[n,n],[n,n]]
             output std x
         """.trimIndent())
-        assert(out == "((1,2),(3,4))\n")
+        assert(out == "[[1,1],[1,1]]\n")
     }
 
     // NATIVE
@@ -157,9 +157,11 @@ class Exec {
     fun c02_nat () {
         val out = all("""
             var y: _(char*) = _("hello")
-            var x: (Int,_(char*)) = (10,y)
+            var n: _int = _10
+            var x: [_int,_(char*)] = [n,y]
             call _puts x.2
         """.trimIndent())
+        println(out)
         assert(out == "hello\n")
     }
 
@@ -168,8 +170,8 @@ class Exec {
     @Test
     fun d01_f_int () {
         val out = all("""
-            func f: Int -> Int { return arg }
-            var x: Int = call f 10
+            func f: _int -> _int { return arg }
+            var x: _int = call f _10
             output std x
         """.trimIndent())
         assert(out == "10\n")
@@ -186,56 +188,59 @@ class Exec {
     @Test
     fun d03_fg () {
         val out = all("""
-            func f: () -> () { output std 10 }
+            func f: () -> () { var x: _int = _10 ; output std x }
             func g: () -> () { return f () }
             call g ()
         """.trimIndent())
+        println(out)
         assert(out == "10\n")
     }
     @Test
     fun d04_arg () {
         val out = all("""
-        func f : Int -> Int {
+        func f : _int -> _int {
            set arg = _(arg+1)
            return arg
         }
-        output std f 1
+        output std f _1
         """.trimIndent())
         assert(out == "2\n")
     }
     @Test
     fun d05_func_var () {
         val out = all("""
-        func f: Int->Int { return arg }
-        var p: Int->Int = f
-        output std p 10
+        func f: _int->_int { return arg }
+        var p: _int->_int = f
+        output std p _10
         """.trimIndent())
         assert(out == "10\n")
     }
     @Test
     fun d06_func_fg () {
         val out = all("""
-            func f: Int->Int { return arg }
-            func g: (Int->Int, Int) -> Int {
-               var f: Int->Int = arg.1
-               var v: Int = call f arg.2
+            func f: _int->_int { return arg }
+            func g: [_int->_int, _int] -> _int {
+               var f: _int->_int = arg.1
+               var v: _int = call f arg.2
                return v
             }
-            output std g (f,10)
+            output std g [f,_10]
         """.trimIndent())
         assert(out == "(ln 3, col 8): invalid declaration : \"f\" is already declared (ln 1)")
     }
     @Test
     fun d07_func_fg () {
         val out = all("""
-            func f: Int->Int { return arg }
-            func g: (Int->Int, Int) -> Int {
-               var fx: Int->Int = arg.1
-               var v: Int = call fx arg.2
+            func f: _int->_int { return arg }
+            func g: [_int->_int, _int] -> _int {
+               var fx: _int->_int = arg.1
+               var v: _int = call fx arg.2
                return v
             }
-            output std g (f,10)
+            var n: _int = _10
+            output std g [f,n]
         """.trimIndent())
+        println(out)
         assert(out == "10\n")
     }
 
@@ -251,16 +256,16 @@ class Exec {
     @Test
     fun e02_out () {
         val out = all("""
-            var x: ((),()) = ((),())
+            var x: [(),()] = [(),()]
             output std x
         """.trimIndent())
-        assert(out == "((),())\n")
+        assert(out == "[(),()]\n")
     }
     @Test
     fun e03_out () {
         val out = all("""
-            func output_f: Int -> () { output std arg }
-            output f 10
+            func output_f: _int -> () { output std arg }
+            output f _10
         """.trimIndent())
         assert(out == "10\n")
     }
@@ -270,11 +275,11 @@ class Exec {
     @Test
     fun f01_bool () {
         val out = all("""
-            type Bool { False: () ; True: () }
-            var b : Bool = Bool.False()
+            var b : <(),()> = .1
             output std b
         """.trimIndent())
-        assert(out == "False\n")
+        println(out)
+        assert(out == ".1\n")
     }
     @Test
     fun f02_xyz () {
