@@ -20,6 +20,7 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
         env_PRV_set(s, null)
         check_dcls(s)
         check_types(s)
+        check_xexprs(s)
         check_pointers(s)
         return Pair(true, s.code())
     } catch (e: Throwable) {

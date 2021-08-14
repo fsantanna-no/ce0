@@ -18,7 +18,7 @@ sealed class Expr (val tk: Tk) {
     data class Var   (val tk_: Tk.Str): Expr(tk_)
     data class Nat   (val tk_: Tk.Str): Expr(tk_)
     data class Tuple (val tk_: Tk.Chr, val vec: Array<XExpr>): Expr(tk_)
-    data class Cons  (val tk_: Tk.Chr, val sup: Tk.Str, val sub: Tk.Str, val arg: Expr): Expr(tk_)
+    data class Cons  (val tk_: Tk.Chr, val sup: Tk.Str, val sub: Tk.Str, val arg: XExpr): Expr(tk_)
     data class Dnref (val tk_: Tk, val e: Expr): Expr(tk_)
     data class Upref (val tk_: Tk.Chr, val e: Expr): Expr(tk_)
     data class Index (val tk_: Tk.Num, val e: Expr): Expr(tk_)
@@ -129,13 +129,13 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 all.accept_err(TK.XUSER)
                 val sub = all.tk0 as Tk.Str
                 try {
-                    val arg = parser_expr(all, false)
+                    val arg = parser_xexpr(all, false)
                     Expr.Cons(tk0, sup, sub, arg)
                 } catch (e: Throwable) {
                     assert(!all.consumed(sub)) {
                         e.message!!
                     }
-                    Expr.Cons(tk0, sup, sub, Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()")))
+                    Expr.Cons(tk0, sup, sub, XExpr(null, Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()"))))
                 }
             }
             all.accept(TK.CHAR,'\\') -> {

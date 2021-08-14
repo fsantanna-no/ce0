@@ -16,6 +16,7 @@ class Env {
             env_PRV_set(s, null)
             check_dcls(s)
             check_types(s)
+            check_xexprs(s)
             check_pointers(s)
             return "OK"
         } catch (e: Throwable) {
@@ -774,5 +775,81 @@ class Env {
             }
         """.trimIndent())
         assert(out == "OK")
+    }
+
+    // XEPR
+
+    @Test
+    fun j01_rec_xepr_null_err () {
+        val out = inp2env("""
+            type @rec List {
+                Item: List
+            }
+            var x: List = ?
+            var y: List = x
+        """.trimIndent())
+        assert(out == "(ln 5, col 15): invalid expression : expected operation modifier")
+    }
+    @Test
+    fun j02_rec_xepr_move_ok () {
+        val out = inp2env("""
+            type @rec List {
+                Item: List
+            }
+            var x: List = ?
+            var y: List = move x
+        """.trimIndent())
+        assert(out == "OK")
+    }
+    @Test
+    fun j03_rec_xepr_borrow_err () {
+        val out = inp2env("""
+            type @rec List {
+                Item: List
+            }
+            var x: List = ?
+            var y: List = borrow x
+        """.trimIndent())
+        assert(out == "(ln 5, col 15): invalid `borrow` : expected pointer to recursive variable")
+    }
+    @Test
+    fun j04_rec_xepr_copy_err () {
+        val out = inp2env("""
+            var x: Int = copy 10
+        """.trimIndent())
+        assert(out == "(ln 1, col 14): invalid `copy` : expected recursive variable")
+    }
+    @Test
+    fun j05_rec_xepr_borrow_ok () {
+        val out = inp2env("""
+            type @rec List {
+                Item: List
+            }
+            var x: List = ?
+            var y: \List = borrow \x
+        """.trimIndent())
+        println(out)
+        assert(out == "OK")
+    }
+    @Test
+    fun j06_rec_xepr_borrow_err () {
+        val out = inp2env("""
+            type @rec List {
+                Item: List
+            }
+            var x: Int = ?
+            var y: \Int = borrow \x
+        """.trimIndent())
+        assert(out == "(ln 5, col 15): invalid `borrow` : expected pointer to recursive variable")
+    }
+    @Test
+    fun j07_rec_xepr_copy_err () {
+        val out = inp2env("""
+            type @rec List {
+                Item: List
+            }
+            var x: List = copy List.Item List.Nil
+        """.trimIndent())
+        assert(out == "(ln 4, col 15): invalid `copy` : expected recursive variable")
     }
 }

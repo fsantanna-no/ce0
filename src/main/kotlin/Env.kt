@@ -296,7 +296,7 @@ fun check_types (S: Stmt) {
                 }
             }
             is Expr.Cons -> {
-                All_assert_tk(e.sub, e.subType()!!.isSupOf(e.arg.toType())) {
+                All_assert_tk(e.sub, e.subType()!!.isSupOf(e.arg.e.toType())) {
                     "invalid constructor \"${e.sub.str}\" : type mismatch"
                 }
             }
@@ -319,6 +319,54 @@ fun check_types (S: Stmt) {
                     }
                 }
             }
+        }
+        return true
+    }
+    S.visit(::fs, ::fe, null)
+}
+
+fun Expr.isconst (): Boolean {
+    return when (this) {
+        is Expr.Unit, is Expr.Unk, is Expr.Int, is Expr.Call, is Expr.Cons, is Expr.Tuple, is Expr.Pred -> true
+        is Expr.Var, is Expr.Nat, is Expr.Dnref -> false
+        is Expr.Index -> this.e.isconst()
+        is Expr.Disc  -> this.e.isconst()
+        is Expr.Upref -> this.e.isconst()
+    }
+}
+
+fun check_xexprs (S: Stmt) {
+    fun aux (e: XExpr) {
+        val isrec = e.e.toType().ishasrec()
+        val iscst = e.e.isconst()
+        println(e.e.toType())
+        when {
+            (e.x == null) -> All_assert_tk(e.e.tk, !isrec || iscst) {
+                "invalid expression : expected operation modifier"
+            }
+            (e.x.enu == TK.COPY) -> All_assert_tk(e.x, isrec && !iscst) {
+                "invalid `copy` : expected recursive variable"
+            }
+            (e.x.enu == TK.MOVE) -> All_assert_tk(e.x, isrec && !iscst) {
+                "invalid `move` : expected recursive variable"
+            }
+            (e.x.enu == TK.BORROW) -> All_assert_tk(e.x, e.e.toType().let { it is Type.Ptr && it.tp.ishasrec() }) {
+                "invalid `borrow` : expected pointer to recursive variable"
+            }
+        }
+    }
+    fun fs (s: Stmt): Boolean {
+        when (s) {
+            is Stmt.Var -> aux(s.init)
+            is Stmt.Set -> aux(s.src)
+            is Stmt.Ret -> aux(s.e)
+        }
+        return true
+    }
+    fun fe (e: Expr): Boolean {
+        when (e) {
+            is Expr.Tuple -> e.vec.map { aux(it) }
+            is Expr.Call  -> aux(e.arg)
         }
         return true
     }
@@ -373,7 +421,7 @@ fun Expr.getDepth (caller: Int, hold: Boolean): Pair<Int,Stmt?> {
             }
         }
         is Expr.Tuple -> this.vec.map { it.e.getDepth(caller,it.e.toType().ishasptr()) }.maxByOrNull { it.first }!!
-        is Expr.Cons -> this.arg.getDepth(caller, this.subType()!!.ishasptr())
+        is Expr.Cons -> this.arg.e.getDepth(caller, this.subType()!!.ishasptr())
     }
 }
 

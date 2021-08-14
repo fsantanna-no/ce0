@@ -86,10 +86,10 @@ fun Expr.pre (): String {
         is Expr.Cons  -> {
             val user = this.idToStmt(this.sup.str)!! as Stmt.User
             val tp   = this.subType()
-            val arg  = if (tp is Type.Unit) "" else (", " + this.arg.pos(false))
+            val arg  = if (tp is Type.Unit) "" else (", " + this.arg.e.pos(false))
             val N    = this.hashCode().absoluteValue
             val sup  = this.sup.str
-            this.arg.pre() + if (this.sub.str=="Nil") "" else """
+            this.arg.e.pre() + if (this.sub.str=="Nil") "" else """
                 ${
                     if (user.isrec) {
                         """

@@ -287,21 +287,21 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("X.Y ()"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Cons && e.tk_.chr=='.' && e.sup.str=="X" && e.sub.str=="Y" && e.arg is Expr.Unit)
+        assert(e is Expr.Cons && e.tk_.chr=='.' && e.sup.str=="X" && e.sub.str=="Y" && e.arg.e is Expr.Unit)
     }
     @Test
     fun b16_parser_expr_cons () {
         val all = All_new(PushbackReader(StringReader("X.Y"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Cons && e.sup.str=="X" && e.sub.str=="Y" && e.arg is Expr.Unit)
+        assert(e is Expr.Cons && e.sup.str=="X" && e.sub.str=="Y" && e.arg.e is Expr.Unit)
     }
     @Test
     fun b17_parser_expr_cons () {
         val all = All_new(PushbackReader(StringReader("Aa1.Aa2 Bb1.Bb2 ((),())"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Cons && e.sup.str=="Aa1" && e.arg is Expr.Cons && (e.arg as Expr.Cons).arg is Expr.Tuple)
+        assert(e is Expr.Cons && e.sup.str=="Aa1" && e.arg.e is Expr.Cons && (e.arg.e as Expr.Cons).arg.e is Expr.Tuple)
     }
 
     // INDEX

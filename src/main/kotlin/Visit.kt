@@ -11,7 +11,7 @@ fun Expr.visit (fe: ((Expr)->Boolean)?): Boolean {
     return when (this) {
         is Expr.Unk, is Expr.Unit, is Expr.Int, is Expr.Var, is Expr.Nat -> true
         is Expr.Tuple -> this.vec.all { it.e.visit(fe) }
-        is Expr.Cons  -> this.arg.visit(fe)
+        is Expr.Cons  -> this.arg.e.visit(fe)
         is Expr.Dnref -> this.e.visit(fe)
         is Expr.Upref -> this.e.visit(fe)
         is Expr.Index -> this.e.visit(fe)
