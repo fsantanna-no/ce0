@@ -103,14 +103,14 @@ fun XExpr.pos (deref: Boolean): String {
 fun Expr.pre (): String {
     return when (this) {
         is Expr.Unk, is Expr.Unit, is Expr.Int, is Expr.Var, is Expr.Nat -> ""
-        is Expr.Tuple -> this.toType().pre() + this.vec.map { it.e.pre() }.joinToString("")
+        is Expr.Tuple -> this.toType().pre() + this.vec.map { it.pre() }.joinToString("")
         is Expr.Cons  -> {
             val user = this.idToStmt(this.sup.str)!! as Stmt.User
             val tp   = this.subType()
-            val arg  = if (tp is Type.Unit) "" else (", " + this.arg.e.pos(false))
+            val arg  = if (tp is Type.Unit) "" else (", " + this.arg.pos(false))
             val N    = this.hashCode().absoluteValue
             val sup  = this.sup.str
-            this.arg.e.pre() + if (this.sub.str=="Nil") "" else """
+            this.arg.pre() + if (this.sub.str=="Nil") "" else """
                 ${
                     if (user.isrec) {
                         """
@@ -146,7 +146,7 @@ fun Expr.pre (): String {
                 }
             )
         }
-        is Expr.Call  -> this.f.pre() + this.arg.e.pre()
+        is Expr.Call  -> this.f.pre() + this.arg.pre()
     }
 }
 

@@ -791,6 +791,35 @@ class Exec {
         //println(out)
         assert(out == "Nil\nItem (Nil)\n")
     }
+    @Test
+    fun j08_list_move () {
+        val out = all("""
+            type @rec List {
+               Item: List
+            }
+            var l1: List = List.Item List.Nil
+            var l2: List = List.Nil
+            set l2 = List.Item move l1
+            output std \l1
+            output std \l2
+        """.trimIndent())
+        //println(out)
+        assert(out == "Nil\nItem (Item (Nil))\n")
+    }
+    @Test
+    fun j09_list_move () {
+        val out = all("""
+            type @rec List {
+               Item: List
+            }
+            var l1: List = List.Item List.Nil
+            var l2: (Int,List) = (10, move l1)
+            output std \l1
+            output std \l2.2
+        """.trimIndent())
+        println(out)
+        assert(out == "Nil\nItem (Item (Nil))\n")
+    }
 
     // SET - TUPLE - DATA
 
