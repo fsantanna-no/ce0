@@ -23,6 +23,7 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
         check_pointers(s)
         return Pair(true, s.code())
     } catch (e: Throwable) {
+        CODE.clear()
         //throw e
         return Pair(false, e.message!!)
     }

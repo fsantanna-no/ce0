@@ -161,7 +161,6 @@ class Exec {
             var x: [_int,_(char*)] = [n,y]
             call _puts x.2
         """.trimIndent())
-        println(out)
         assert(out == "hello\n")
     }
 
@@ -192,7 +191,6 @@ class Exec {
             func g: () -> () { return f () }
             call g ()
         """.trimIndent())
-        println(out)
         assert(out == "10\n")
     }
     @Test
@@ -240,7 +238,6 @@ class Exec {
             var n: _int = _10
             output std g [f,n]
         """.trimIndent())
-        println(out)
         assert(out == "10\n")
     }
 
@@ -278,7 +275,6 @@ class Exec {
             var b : <(),()> = .1
             output std b
         """.trimIndent())
-        println(out)
         assert(out == ".1\n")
     }
     @Test
@@ -793,7 +789,6 @@ class Exec {
             output std \l1
             output std \l2
         """.trimIndent())
-        //println(out)
         assert(out == "Nil\nItem (Nil)\n")
     }
     @Test
@@ -808,7 +803,6 @@ class Exec {
             output std \l1
             output std \l2
         """.trimIndent())
-        //println(out)
         assert(out == "Nil\nItem (Item (Nil))\n")
     }
     @Test
@@ -822,7 +816,6 @@ class Exec {
             output std \l1
             output std \l2.2
         """.trimIndent())
-        println(out)
         assert(out == "Nil\nItem (Item (Nil))\n")
     }
 

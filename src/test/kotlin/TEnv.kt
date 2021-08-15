@@ -43,7 +43,16 @@ class TEnv {
         val out = inp2env("call f ()")
         assert(out == "(ln 1, col 6): undeclared variable \"f\"")
     }
-
+    @Test
+    fun a03_redeclared_var () {
+        val out = inp2env("var x:()=() ; { var x:()=() }")
+        assert(out == "(ln 1, col 21): invalid declaration : \"x\" is already declared (ln 1)")
+    }
+    @Test
+    fun a04_redeclared_func () {
+        val out = inp2env("var x:()=() ; func x:()->() {}")
+        assert(out == "(ln 1, col 20): invalid declaration : \"x\" is already declared (ln 1)")
+    }
     // CONS
 
     @Test
@@ -60,7 +69,6 @@ class TEnv {
             var x: <(),()> = ?
             output std(x.0)
         """.trimIndent())
-        println(out)
         assert(out == "(ln 2, col 13): invalid index : out of bounds")
     }
     @Test
@@ -113,7 +121,6 @@ class TEnv {
             var l: <^> = .1 .0
             output std \l.0!
         """.trimIndent())
-        println(out)
         assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
     }
     @Test
@@ -122,7 +129,6 @@ class TEnv {
             var l: <^> = new .1 .0
             output std \l.0!
         """.trimIndent())
-        println(out)
         assert(out == "OK")
     }
     // TODO: test if empty is part of isrec
@@ -295,7 +301,6 @@ class TEnv {
             }
             output std /p1
         """.trimIndent())
-        println(out)
         assert(out == "(ln 5, col 12): invalid assignment : cannot hold local pointer \"v\" (ln 4)")
     }
     @Test
@@ -642,7 +647,6 @@ class TEnv {
                 set p = .1 \v
             }
         """.trimIndent())
-        println(out)
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"v\" (ln 3)")
     }
     @Test
@@ -739,7 +743,6 @@ class TEnv {
         val out = inp2env("""
             var x: <^> = copy .1 .0
         """.trimIndent())
-        println(out)
         //assert(out == "(ln 1, col 14): invalid `copy` : expected recursive variable")
         assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
     }

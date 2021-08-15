@@ -168,49 +168,55 @@ fun Expr.pos (env: Env, deref: Boolean): String {
     }
 }
 
-fun Stmt.pos (env: Env): String {
-    return when (this) {
-        is Stmt.Pass  -> ""
-        is Stmt.Nat   -> this.tk_.str + "\n"
-        is Stmt.Seq   -> this.s1.pos(env) + this.s2.pos(env)
-        is Stmt.Set   -> {
-            this.dst.toExpr().pre(env) + this.src.pre(env) + (
-                (if (this.dst.toExpr().toType(env) is Type.Unit) "" else (this.dst.toExpr().pos(env,false)+" = ")) +
-                    this.src.pos(env,false) + ";\n"
-            )
+val CODE = ArrayDeque<String>()
+
+fun code_fs (env: Env, s: Stmt) {
+    CODE.addFirst(when (s) {
+        is Stmt.Pass -> ""
+        is Stmt.Nat  -> s.tk_.str + "\n"
+        is Stmt.Seq  -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; s1+s2 }
+        is Stmt.Set  -> {
+            s.dst.toExpr().pre(env) + s.src.pre(env) + (
+                    (if (s.dst.toExpr().toType(env) is Type.Unit) "" else (s.dst.toExpr().pos(env,false)+" = ")) +
+                            s.src.pos(env,false) + ";\n"
+                    )
         }
-        is Stmt.If    -> this.tst.pre(env) + """
-            if (${this.tst.pos(env,true)}.sub) {
-                ${this.true_.pos(env)}
+        is Stmt.If -> {
+            val false_ = CODE.removeFirst()
+            val true_  = CODE.removeFirst()
+            s.tst.pre(env) + """
+            if (${s.tst.pos(env,true)}.sub) {
+                ${true_}
             } else {
-                ${this.false_.pos(env)}
+                ${false_}
             }
         """.trimIndent()
+        }
         is Stmt.Loop  -> """
             while (1) {
-                ${this.block.pos(env)}
+                ${CODE.removeFirst()}
             }
         """.trimIndent()
         is Stmt.Break -> "break;\n"
-        is Stmt.Call  -> this.call.pre(env) + this.call.pos(env,true) + ";\n"
-        is Stmt.Block -> "{\n" + this.body.pos(env) + "}\n"
-        is Stmt.Ret   -> "return" + if (this.e.e.toType(env) is Type.Unit) ";\n" else " _ret_;\n"
+        is Stmt.Call  -> s.call.pre(env) + s.call.pos(env,true) + ";\n"
+        is Stmt.Block -> "{\n" + CODE.removeFirst() + "}\n"
+        is Stmt.Ret   -> "return" + if (s.e.e.toType(env) is Type.Unit) ";\n" else " _ret_;\n"
         is Stmt.Var   -> {
-            this.init.pre(env) +
-                if (this.type is Type.Unit) "" else {
-                    "${this.type.pos()} ${this.tk_.str}" + (    // List* l
-                        if (this.tk_.str == "_ret_") "" else {
-                            (if (!this.type.containsRec()) "" else {
-                                " __attribute__ ((__cleanup__(${this.type.toce()}_free)))"
-                            }) + (if (this.init.e is Expr.Unk) "" else {
-                                " = " + this.init.pos(env,false)
-                            })
-                        }
-                    ) + ";\n"
-                }
+            s.init.pre(env) +
+                    if (s.type is Type.Unit) "" else {
+                        "${s.type.pos()} ${s.tk_.str}" + (    // List* l
+                                if (s.tk_.str == "_ret_") "" else {
+                                    (if (!s.type.containsRec()) "" else {
+                                        " __attribute__ ((__cleanup__(${s.type.toce()}_free)))"
+                                    }) + (if (s.init.e is Expr.Unk) "" else {
+                                        " = " + s.init.pos(env,false)
+                                    })
+                                }
+                                ) + ";\n"
+                    }
         }
         /*is Stmt.User  -> {
-            val ID = this.tk_.str
+            val ID = s.tk_.str
             if (ID == "Int") {
                 return ""
             }
@@ -223,27 +229,27 @@ fun Stmt.pos (env: Env): String {
 
             """.trimIndent()
 
-            val (v,fn,ptr) = if (this.isrec) Triple("(*(*v))","_ptr","**") else Triple("v","","")
+            val (v,fn,ptr) = if (s.isrec) Triple("(*(*v))","_ptr","**") else Triple("v","","")
             val ret2 = """
                 ${
-                    if (!this.isrec) "" else {
+                    if (!s.isrec) "" else {
                         "auto void ${ID}_free ($ID** p);\n"
                     }
                 }
                 auto void output_std_$ID${fn}_ ($ID$ptr v);
-                
+
             """.trimIndent()
 
-            if (this.subs.isEmpty()) {
+            if (s.subs.isEmpty()) {
                 return ret1 + ret2
             }
 
-            val ret3 = this.subs.map { it.second.pre() + "\n" }.joinToString("")
+            val ret3 = s.subs.map { it.second.pre() + "\n" }.joinToString("")
 
             // enum { Bool_False, Bool_True } _Bool_;
             val ret4 = """
                 typedef enum {
-                    ${ this.subs
+                    ${ s.subs
                         .map { ID + "_" + it.first.str }
                         .joinToString(", ")
                     }
@@ -256,32 +262,32 @@ fun Stmt.pos (env: Env): String {
                 struct $ID {
                     _${ID}_ sub;
                     union {
-                        ${ this.subs
+                        ${ s.subs
                             .filter { (_,tp) -> tp !is Type.Unit }
                             .map { (sub,tp) -> tp.pos() + " _" + sub.str + ";\n" }
                             .joinToString("")
                         }
                     };
                 };
-                
+
             """.trimIndent()
 
             // void output_std_Bool_ (Bool v) { ... }
             val ret6 = """
                 void output_std_$ID${fn}_ ($ID$ptr v) {
                     ${
-                        if (this.isrec) {
+                        if (s.isrec) {
                             """
                             if (*v == NULL) {
                                 printf("Nil");
                                 return;
                             }
-    
+
                             """
                         } else { "" }
                     }
                     switch ($v.sub) {
-                        ${this.subs
+                        ${s.subs
                             .map { (sub,tp) -> """
                                 case ${ID}_${sub.str}:
                                     printf("${sub.str}");
@@ -308,18 +314,18 @@ fun Stmt.pos (env: Env): String {
                     output_std_$ID${fn}_(v);
                     puts("");
                 }
-                
+
             """.trimIndent()
 
             // void List_free (List** p) { ... }
-            val ret7 = if (!this.isrec) "" else {
+            val ret7 = if (!s.isrec) "" else {
                 """
                     void ${ID}_free ($ID** p) {
                         if (*p == NULL) return;
                         switch ((*p)->sub) {
-                            ${ this.subs
+                            ${ s.subs
                                 .map { (id,tp) ->
-                                    if (!tp.ishasrec()) "" else    
+                                    if (!tp.ishasrec()) "" else
                                         """
                                         case ${ID}_${id.str}:
                                             ${tp.toce()}_free(&(*p)->_${id.str});
@@ -334,31 +340,34 @@ fun Stmt.pos (env: Env): String {
                         }
                         free(*p);
                     }
-                    
+
                 """.trimIndent()
             }
 
             return (ret1 + ret2 + ret3 + ret4 + ret5 + ret6 + ret7)
         } */
         is Stmt.Func  -> {
-            this.type.pre() + when (this.tk_.str) {
+            s.type.pre() + when (s.tk_.str) {
                 "output_std" -> ""
                 else -> {
-                    val out = this.type.out.let { if (it is Type.Unit) "void" else it.pos() }
-                    val inp = this.type.inp.let { if (it is Type.Unit) "void" else (it.pos()+" _arg_") }
+                    val out = s.type.out.let { if (it is Type.Unit) "void" else it.pos() }
+                    val inp = s.type.inp.let { if (it is Type.Unit) "void" else (it.pos()+" _arg_") }
                     """
-                        auto $out ${this.tk_.str} ($inp) {
-                            ${this.block!!.pos(env)}
+                        auto $out ${s.tk_.str} ($inp) {
+                            ${CODE.removeFirst()}
                         }
                         
                     """.trimIndent()
                 }
             }
         }
-    }
+    })
 }
 
 fun Stmt.code (): String {
+    this.visit(emptyList(),::code_fs,null)
+    //println(CODE)
+    assert(CODE.size == 1)
     return ("""
         #include <assert.h>
         #include <stdio.h>
@@ -368,7 +377,7 @@ fun Stmt.code (): String {
         #define output_std_int_(x) printf("%d",x)
         #define output_std_int(x)  (output_std_int_(x), puts(""))
         int main (void) {
-    """ + /*this.pos() +*/ """
+    """ + CODE.removeFirst() + """
         }
     """).trimIndent()
 }

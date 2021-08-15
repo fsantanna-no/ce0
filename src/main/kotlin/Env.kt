@@ -59,7 +59,20 @@ fun check_dcls (s: Stmt) {
             }
         }
     }
-    s.visit(emptyList(), null, ::fe)
+    fun fs (env: Env, s: Stmt) {
+        val id = when (s) {
+            is Stmt.Var  -> s.tk_.str
+            is Stmt.Func -> s.tk_.str
+            else -> null
+        }
+        if (id != null) {
+            val dcl = env.idToStmt(id)
+            All_assert_tk(s.tk, dcl==null) {
+                "invalid declaration : \"${id}\" is already declared (ln ${dcl!!.tk.lin})"
+            }
+        }
+    }
+    s.visit(emptyList(), ::fs, ::fe)
 }
 
 fun Type.containsRec (): Boolean {
