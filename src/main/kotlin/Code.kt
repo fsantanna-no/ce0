@@ -72,31 +72,31 @@ fun Type.pos (): String {
     }
 }
 
-fun XExpr.pre (): String {
+fun XExpr.pre (env: Env): String {
     val ismove = (this.x!=null && this.x.enu==TK.MOVE)
     val pre = if (!ismove) "" else {
         """
-       typeof(${this.e.pos(false)}) _tmp_${this.hashCode().absoluteValue} = ${this.e.pos(false)};
-       ${this.e.pos(false)} = NULL;
+       typeof(${this.e.pos(env,false)}) _tmp_${this.hashCode().absoluteValue} = ${this.e.pos(env,false)};
+       ${this.e.pos(env,false)} = NULL;
         """
     }
-    return pre + this.e.pre()
+    return pre + this.e.pre(env)
 }
 
-fun XExpr.pos (deref: Boolean): String {
+fun XExpr.pos (env: Env, deref: Boolean): String {
     val ismove = (this.x!=null && this.x.enu==TK.MOVE)
     return if (ismove) {
         assert(!deref)  // TODO: i'm not sure
         "_tmp_${this.hashCode().absoluteValue}"
     } else {
-        this.e.pos(deref)
+        this.e.pos(env,deref)
     }
 }
 
-fun Expr.pre (): String {
+fun Expr.pre (env: Env): String {
     return when (this) {
         is Expr.Unk, is Expr.Unit, is Expr.Var, is Expr.Nat -> ""
-        is Expr.Tuple -> this.toType().pre() + this.vec.map { it.pre() }.joinToString("")
+        is Expr.Tuple -> this.toType(env).pre() + this.vec.map { it.pre(env) }.joinToString("")
         is Expr.Varia -> error("TODO-Varia")/*{
             val user = this.idToStmt(this.sup.str)!! as Stmt.User
             val tp   = this.subType()
@@ -121,15 +121,15 @@ fun Expr.pre (): String {
                 
             """
         }*/
-        is Expr.Dnref -> this.e.pre()
-        is Expr.Upref -> this.e.pre()
-        is Expr.Index -> this.e.pre()
-        is Expr.Call  -> this.f.pre() + this.e.pre()
+        is Expr.Dnref -> this.e.pre(env)
+        is Expr.Upref -> this.e.pre(env)
+        is Expr.Index -> this.e.pre(env)
+        is Expr.Call  -> this.f.pre(env) + this.e.pre(env)
     }
 }
 
-fun Expr.pos (deref: Boolean): String {
-    val TP = this.toType()
+fun Expr.pos (env: Env, deref: Boolean): String {
+    val TP = this.toType(env)
     if ((TP is Type.Unit) && (this !is Expr.Call)) {
         return ""
     }
@@ -137,9 +137,9 @@ fun Expr.pos (deref: Boolean): String {
         is Expr.Unit  -> ""
         is Expr.Nat   -> this.tk_.str
         is Expr.Var   -> if (TP is Type.Unit) "" else this.tk_.str
-        is Expr.Upref -> "&" + this.e.pos(false)
-        is Expr.Dnref -> "*" + this.e.pos(false)
-        is Expr.Index -> this.e.pos(true) + "._" + this.tk_.idx
+        is Expr.Upref -> "&" + this.e.pos(env, false)
+        is Expr.Dnref -> "*" + this.e.pos(env, false)
+        is Expr.Index -> this.e.pos(env, true) + "._" + this.tk_.idx
         /*
         is Expr.Disc  -> this.e.pos(true) + "._" + this.tk_.str
         is Expr.Pred  -> "((${this.e.pos(true)}.sub == ${(this.e.toType() as Type.User).tk_.str}_${this.tk_.str}) ? (Bool){Bool_True} : (Bool){Bool_False})"
@@ -147,20 +147,20 @@ fun Expr.pos (deref: Boolean): String {
          */
         is Expr.Tuple -> {
             val vec = this.vec
-                .filter { it.e.toType() !is Type.Unit }
-                .map { it.e.pos(false) }
+                .filter { it.e.toType(env) !is Type.Unit }
+                .map { it.e.pos(env, false) }
                 .joinToString(", ")
 
             "((${TP.pos()}) { $vec })"
         }
         is Expr.Call  -> {
-            this.f.pos(true) + (
+            this.f.pos(env, true) + (
                 if (this.f is Expr.Var && this.f.tk_.str=="output_std") {
-                    "_" + this.e.e.toType().toce()
+                    "_" + this.e.e.toType(env).toce()
                 } else {
                     ""
                 }
-            ) + "(" + this.e.e.pos(true) + ")"
+            ) + "(" + this.e.e.pos(env, true) + ")"
         }
         else -> { println(this) ; error("TODO-2") }
     }.let {
@@ -168,42 +168,42 @@ fun Expr.pos (deref: Boolean): String {
     }
 }
 
-fun Stmt.pos (): String {
+fun Stmt.pos (env: Env): String {
     return when (this) {
         is Stmt.Pass  -> ""
         is Stmt.Nat   -> this.tk_.str + "\n"
-        is Stmt.Seq   -> this.s1.pos() + this.s2.pos()
+        is Stmt.Seq   -> this.s1.pos(env) + this.s2.pos(env)
         is Stmt.Set   -> {
-            this.dst.toExpr().pre() + this.src.pre() + (
-                (if (this.dst.toExpr().toType() is Type.Unit) "" else (this.dst.toExpr().pos(false)+" = ")) +
-                    this.src.pos(false) + ";\n"
+            this.dst.toExpr().pre(env) + this.src.pre(env) + (
+                (if (this.dst.toExpr().toType(env) is Type.Unit) "" else (this.dst.toExpr().pos(env,false)+" = ")) +
+                    this.src.pos(env,false) + ";\n"
             )
         }
-        is Stmt.If    -> this.tst.pre() + """
-            if (${this.tst.pos(true)}.sub) {
-                ${this.true_.pos()}
+        is Stmt.If    -> this.tst.pre(env) + """
+            if (${this.tst.pos(env,true)}.sub) {
+                ${this.true_.pos(env)}
             } else {
-                ${this.false_.pos()}
+                ${this.false_.pos(env)}
             }
         """.trimIndent()
         is Stmt.Loop  -> """
             while (1) {
-                ${this.block.pos()}
+                ${this.block.pos(env)}
             }
         """.trimIndent()
         is Stmt.Break -> "break;\n"
-        is Stmt.Call  -> this.call.pre() + this.call.pos(true) + ";\n"
-        is Stmt.Block -> "{\n" + this.body.pos() + "}\n"
-        is Stmt.Ret   -> "return" + if (this.e.e.toType() is Type.Unit) ";\n" else " _ret_;\n"
+        is Stmt.Call  -> this.call.pre(env) + this.call.pos(env,true) + ";\n"
+        is Stmt.Block -> "{\n" + this.body.pos(env) + "}\n"
+        is Stmt.Ret   -> "return" + if (this.e.e.toType(env) is Type.Unit) ";\n" else " _ret_;\n"
         is Stmt.Var   -> {
-            this.init.pre() +
+            this.init.pre(env) +
                 if (this.type is Type.Unit) "" else {
                     "${this.type.pos()} ${this.tk_.str}" + (    // List* l
                         if (this.tk_.str == "_ret_") "" else {
                             (if (!this.type.containsRec()) "" else {
                                 " __attribute__ ((__cleanup__(${this.type.toce()}_free)))"
                             }) + (if (this.init.e is Expr.Unk) "" else {
-                                " = " + this.init.pos(false)
+                                " = " + this.init.pos(env,false)
                             })
                         }
                     ) + ";\n"
@@ -348,7 +348,7 @@ fun Stmt.pos (): String {
                     val inp = this.type.inp.let { if (it is Type.Unit) "void" else (it.pos()+" _arg_") }
                     """
                         auto $out ${this.tk_.str} ($inp) {
-                            ${this.block!!.pos()}
+                            ${this.block!!.pos(env)}
                         }
                         
                     """.trimIndent()
@@ -368,7 +368,7 @@ fun Stmt.code (): String {
         #define output_std_int_(x) printf("%d",x)
         #define output_std_int(x)  (output_std_int_(x), puts(""))
         int main (void) {
-    """ + this.pos() + """
+    """ + /*this.pos() +*/ """
         }
     """).trimIndent()
 }

@@ -26,29 +26,33 @@ class Code {
     @Test
     fun b01_expr_unit () {
         val e = Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
-        assert(e.pos(true) == "")
+        assert(e.pos(emptyList(), true) == "")
     }
     @Test
     fun b02_expr_var () {
         val e = Expr.Var(Tk.Str(TK.XVAR,1,1,"xxx"))
-        env_PRV[e] = Stmt.Var (
-            Tk.Str(TK.XVAR,1,1,"xxx"),
-            false,
-            Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
-            XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
+        val env = listOf (
+            Stmt.Var (
+                Tk.Str(TK.XVAR,1,1,"xxx"),
+                false,
+                Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
+                XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
+            )
         )
-        assert(e.pos(false) == "xxx")
+        assert(e.pos(env, false) == "xxx")
     }
     @Test
     fun b03_expr_nat () {
         val e = Expr.Var(Tk.Str(TK.XNAT,1,1,"xxx"))
-        env_PRV[e] = Stmt.Var (
-            Tk.Str(TK.XVAR,1,1,"xxx"),
-            false,
-            Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
-            XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
+        val env = listOf (
+            Stmt.Var (
+                Tk.Str(TK.XVAR,1,1,"xxx"),
+                false,
+                Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
+                XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
+            )
         )
-        assert(e.pos(true) == "xxx")
+        assert(e.pos(env,true) == "xxx")
     }
     @Test
     fun b04_expr_tuple () {
@@ -59,7 +63,7 @@ class Code {
                 XExpr(null, Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))),
             )
         )
-        assert(e.pos(false) == "((TUPLE__Unit__Unit) {  })")
+        assert(e.pos(emptyList(), false) == "((TUPLE__Unit__Unit) {  })")
     }
     @Test
     fun b05_expr_index () {
@@ -68,13 +72,15 @@ class Code {
             Expr.Var(Tk.Str(TK.XVAR,1,1,"x")),
             null
         )
-        env_PRV[e.e] = Stmt.Var (
-            Tk.Str(TK.XVAR,1,1,"x"),
-            false,
-            Type.Cons(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int")))),
-            XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
+        val env = listOf (
+            Stmt.Var (
+                Tk.Str(TK.XVAR,1,1,"x"),
+                false,
+                Type.Cons(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int")))),
+                XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
+            )
         )
-        assert(e.pos(true) == "x._1")
+        assert(e.pos(env, true) == "x._1")
     }
 
     // STMT
@@ -82,7 +88,7 @@ class Code {
     @Test
     fun c01_stmt_pass () {
         val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
-        assert(s.pos() == "")
+        assert(s.pos(emptyList()) == "")
     }
 
     // CODE
@@ -112,8 +118,6 @@ class Code {
         lexer(all)
         var s = parser_stmts(all, Pair(TK.EOF,null))
         s = env_prelude(s)
-        env_PRV_set(s, null)
-        //println(s)
-        return s.pos()
+        return s.pos(emptyList())
     }
 }
