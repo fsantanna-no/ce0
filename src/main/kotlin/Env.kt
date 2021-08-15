@@ -59,7 +59,7 @@ fun check_dcls (s: Stmt) {
             }
         }
     }
-    s.visit(emptyList(), null, ::fe,null)
+    s.visit(emptyList(), null, ::fe)
 }
 
 fun Type.containsRec (): Boolean {
@@ -162,7 +162,7 @@ fun check_types (S: Stmt) {
             }
         }
     }
-    S.visit(emptyList(), ::fs, ::fe, null)
+    S.visit(emptyList(), ::fs, ::fe)
 }
 
 fun Expr.isconst (): Boolean {
@@ -212,7 +212,7 @@ fun check_xexprs (S: Stmt) {
             is Expr.Call -> aux(env, e.e)
         }
     }
-    S.visit(emptyList(), ::fs, ::fe, null)
+    S.visit(emptyList(), ::fs, ::fe)
 }
 
 fun Env.fromStmt (s: Stmt): Env {
@@ -288,5 +288,5 @@ fun check_pointers (S: Stmt) {
             }
         }
     }
-    S.visit(emptyList(), ::fs, null, null)
+    S.visit(emptyList(), ::fs, null)
 }

@@ -8,19 +8,6 @@ fun Type.map (f: ((Type)->Type)): Type {
     }
 }
 
-fun Type.visit (ft: ((Type)->Unit)?) {
-    when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> true
-        is Type.Ptr  -> this.tp.visit(ft)
-        is Type.Cons -> this.vec.forEach { it.visit(ft) }
-        is Type.Func -> { this.inp.visit(ft) ; this.out.visit(ft) }
-        is Type.Varia -> error("TODO")
-    }
-    if (ft != null) {
-        ft(this)
-    }
-}
-
 fun Expr.visit (env: Env, fe: ((Env,Expr)->Unit)?) {
     when (this) {
         is Expr.Unk, is Expr.Unit, is Expr.Var, is Expr.Nat -> {}
@@ -38,18 +25,18 @@ fun Expr.visit (env: Env, fe: ((Env,Expr)->Unit)?) {
 
 typealias Env = List<Stmt>
 
-fun Stmt.visit (old: Env, fs: ((Env,Stmt)->Unit)?, fe: ((Env,Expr)->Unit)?, ft: ((Type)->Unit)?): Env {
+fun Stmt.visit (old: Env, fs: ((Env,Stmt)->Unit)?, fe: ((Env,Expr)->Unit)?): Env {
     val new = when (this) {
         is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> emptyList()
-        is Stmt.Var   -> { this.type.visit(ft) ; this.init.e.visit(old,fe) ; listOf(this)+old }
+        is Stmt.Var   -> { this.init.e.visit(old,fe) ; listOf(this)+old }
         is Stmt.Set   -> { this.dst.toExpr().visit(old,fe) ; this.src.e.visit(old,fe) ; old }
         is Stmt.Call  -> { this.call.visit(old,fe) ; old }
-        is Stmt.Seq   -> { val e1=this.s1.visit(old,fs,fe,ft) ; val e2=this.s2.visit(e1,fs,fe,ft) ; e2}
-        is Stmt.If    -> { this.tst.visit(old,fe) ; this.true_.visit(old,fs,fe,ft) ; this.false_.visit(old,fs,fe,ft) ; old }
-        is Stmt.Func  -> { this.type.visit(ft) ; if (this.block!=null) { this.block.visit(old,fs,fe,ft) } ; listOf(this)+old }
+        is Stmt.Seq   -> { val e1=this.s1.visit(old,fs,fe) ; val e2=this.s2.visit(e1,fs,fe) ; e2}
+        is Stmt.If    -> { this.tst.visit(old,fe) ; this.true_.visit(old,fs,fe) ; this.false_.visit(old,fs,fe) ; old }
+        is Stmt.Func  -> { if (this.block!=null) { this.block.visit(old,fs,fe) } ; listOf(this)+old }
         is Stmt.Ret   -> { this.e.e.visit(old,fe) ; old }
-        is Stmt.Loop  -> { this.block.visit(old,fs,fe,ft) ; old }
-        is Stmt.Block -> { this.body.visit(listOf(this)+old,fs,fe,ft) ; old }
+        is Stmt.Loop  -> { this.block.visit(old,fs,fe) ; old }
+        is Stmt.Block -> { this.body.visit(listOf(this)+old,fs,fe) ; old }
     }
     if (fs != null) {
         fs(old, this)

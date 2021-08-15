@@ -247,7 +247,7 @@ class TEnv {
                 assert(s.getDepth(env,false) == 0)
             }
         }
-        s.visit(emptyList(), ::fs, ::fe, null)
+        s.visit(emptyList(), ::fs, ::fe)
     }
     @Test
     fun d02_func () {
@@ -275,7 +275,7 @@ class TEnv {
                 assert(0 == s.dst.toExpr().getDepth(env, s.getDepth(env,true), true).first)
             }
         }
-        s.visit(emptyList(), ::fs, ::fe, null)
+        s.visit(emptyList(), ::fs, ::fe)
     }
 
     // POINTERS
