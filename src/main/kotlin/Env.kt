@@ -42,11 +42,10 @@ fun env_PRV_set (s: Stmt, cur_: Stmt?): Stmt? {
             env_PRV[s] = cur
         }
 
-        fun fe (e: Expr): Boolean {
+        fun fe (e: Expr) {
             if (cur!=null && (e is Expr.Var)) {
                 env_PRV[e] = cur!!
             }
-            return true
         }
 
         return when (s) {
@@ -134,13 +133,12 @@ fun Expr.toType (): Type {
 }
 
 fun check_dcls (s: Stmt) {
-    fun fe (e: Expr): Boolean {
+    fun fe (e: Expr) {
         if (e is Expr.Var) {
             All_assert_tk(e.tk, e.idToStmt(e.tk_.str) != null) {
                 "undeclared variable \"${e.tk_.str}\""
             }
         }
-        return true
     }
     s.visit(null, ::fe,null)
 }
@@ -194,7 +192,7 @@ fun Type.ishasptr (): Boolean {
 }
 
 fun check_types (S: Stmt) {
-    fun fe (e: Expr): Boolean {
+    fun fe (e: Expr) {
         when (e) {
             is Expr.Dnref -> {
                 All_assert_tk(e.tk, e.e.toType() is Type.Ptr) {
@@ -215,38 +213,43 @@ fun check_types (S: Stmt) {
             is Expr.Call -> {
                 val inp = e.f.toType().let { if (it is Type.Func) it.inp else (it as Type.Nat) }
                 All_assert_tk(e.f.tk, inp.isSupOf(e.e.e.toType())) {
-                    "invalid call to \"${(e.f as Expr.Var).tk_.str}\" : type mismatch"
+                    "invalid call : type mismatch"
                 }
             }
         }
-        return true
     }
-    fun fs (s: Stmt): Boolean {
+    fun fs (s: Stmt) {
         when (s) {
             is Stmt.Var -> {
                 All_assert_tk(s.tk, s.type.isSupOf(s.init.e.toType())) {
-                    "invalid assignment to \"${s.tk_.str}\" : type mismatch"
+                    "invalid assignment : type mismatch"
+                }
+                if (s.type.exactlyRec() && s.init.e is Expr.Varia) {
+                    All_assert_tk(s.tk, s.init.x.let { it!=null && it.enu==TK.NEW }) {
+                        "invalid assignment : expected `new` operation modifier"
+                    }
                 }
             }
             is Stmt.Set -> {
+                val str = if (s.dst is Attr.Var && s.dst.tk_.str=="_ret_") "return" else "assignment"
                 All_assert_tk(s.tk, s.dst.toExpr().toType().isSupOf(s.src.e.toType())) {
-                    when {
-                        (s.dst !is Attr.Var) -> "invalid assignment : type mismatch"
-                        (s.dst.tk_.str == "_ret_") -> "invalid return : type mismatch"
-                        else -> "invalid assignment to \"${s.dst.tk_.str}\" : type mismatch"
+                    "invalid $str : type mismatch"
+                }
+                if (s.dst.toExpr().toType().exactlyRec() && s.src.e is Expr.Varia) {
+                    All_assert_tk(s.tk, s.src.x.let { it!=null && it.enu==TK.NEW }) {
+                        "invalid $str : expected `new` operation modifier"
                     }
                 }
             }
         }
-        return true
     }
     S.visit(::fs, ::fe, null)
 }
 
 fun Expr.isconst (): Boolean {
     return when (this) {
-        is Expr.Unit, is Expr.Unk, is Expr.Call, is Expr.Tuple -> true
-        is Expr.Var, is Expr.Nat, is Expr.Dnref, is Expr.Varia -> false
+        is Expr.Unit, is Expr.Unk, is Expr.Call, is Expr.Tuple, is Expr.Varia -> true
+        is Expr.Var, is Expr.Nat, is Expr.Dnref -> false
         is Expr.Index -> this.e.isconst()
         is Expr.Upref -> this.e.isconst()
     }
@@ -254,37 +257,41 @@ fun Expr.isconst (): Boolean {
 
 fun check_xexprs (S: Stmt) {
     fun aux (e: XExpr) {
-        val isrec = e.e.toType().containsRec()
+        val ctrec = e.e.toType().containsRec()
+        val exrec = true // TODO: moved to check_types since we have no context here //e.e.toType().exactlyRec()
         val iscst = e.e.isconst()
+        val isvar = e.e is Expr.Varia
         when {
-            (e.x == null) -> All_assert_tk(e.e.tk, !isrec || iscst) {
+            (e.x == null) -> All_assert_tk(e.e.tk, !ctrec || (iscst && !isvar)) {
                 "invalid expression : expected operation modifier"
-            }
-            (e.x.enu == TK.COPY) -> All_assert_tk(e.x, isrec && !iscst) {
-                "invalid `copy` : expected recursive variable"
-            }
-            (e.x.enu == TK.MOVE) -> All_assert_tk(e.x, isrec && !iscst) {
-                "invalid `move` : expected recursive variable"
             }
             (e.x.enu == TK.BORROW) -> All_assert_tk(e.x, e.e.toType().let { it is Type.Ptr && it.tp.containsRec() }) {
                 "invalid `borrow` : expected pointer to recursive variable"
             }
+            (e.x.enu == TK.COPY) -> All_assert_tk(e.x, ctrec && !iscst) {
+                "invalid `copy` : expected recursive variable"
+            }
+            (e.x.enu == TK.MOVE) -> All_assert_tk(e.x, ctrec && !iscst) {
+                "invalid `move` : expected recursive variable"
+            }
+            (e.x.enu == TK.NEW) -> All_assert_tk(e.x, exrec && isvar) {
+                "invalid `new` : expected variant constructor"
+            }
+            else -> error("bug found")
         }
     }
-    fun fs (s: Stmt): Boolean {
+    fun fs (s: Stmt) {
         when (s) {
             is Stmt.Var -> aux(s.init)
             is Stmt.Set -> aux(s.src)
             is Stmt.Ret -> aux(s.e)
         }
-        return true
     }
-    fun fe (e: Expr): Boolean {
+    fun fe (e: Expr) {
         when (e) {
             is Expr.Tuple -> e.vec.map { aux(it) }
             is Expr.Call -> aux(e.e)
         }
-        return true
     }
     S.visit(::fs, ::fe, null)
 }
@@ -348,7 +355,7 @@ fun check_pointers (S: Stmt) {
             else -> error("bug found")
         }
     }
-    fun fs (s: Stmt): Boolean {
+    fun fs (s: Stmt) {
         when (s) {
             is Stmt.Var -> {
                 val (src_depth, src_dcl) = s.init.e.getDepth(s.getDepth(), s.type.ishasptr())
@@ -363,7 +370,6 @@ fun check_pointers (S: Stmt) {
                 }
             }
         }
-        return true
     }
     S.visit(::fs, null, null)
 }
