@@ -5,7 +5,7 @@ import java.io.PushbackReader
 import java.io.StringReader
 
 @TestMethodOrder(Alphanumeric::class)
-class Env {
+class TEnv {
 
     fun inp2env (inp: String): String {
         val all = All_new(PushbackReader(StringReader(inp), 2))
@@ -13,7 +13,6 @@ class Env {
         try {
             var s = parser_stmts(all, Pair(TK.EOF,null))
             s = env_prelude(s)
-            env_PRV_set(s, null)
             check_dcls(s)
             check_types(s)
             check_xexprs(s)
@@ -29,7 +28,6 @@ class Env {
         val all = All_new(PushbackReader(StringReader(inp), 2))
         lexer(all)
         var s = parser_stmts(all, Pair(TK.EOF,null))
-        env_PRV_set(s, null)
         return s
     }
 
@@ -239,23 +237,45 @@ class Env {
     @Test
     fun d01_block () {
         val s = pre("var x: () = () ; { output std x }")
-        val blk = (s as Stmt.Seq).s2 as Stmt.Block
-        val x = (blk.body as Stmt.Call).call.e.e
-        val X = x.idToStmt("x")
-        assert(X!!.getDepth() == 0)
-        assert((s.s2 as Stmt.Block).getDepth() == 0)
-        //println("<<<")
+        fun fe (env: Env, e: Expr) {
+            if (e is Expr.Var && e.tk_.str=="x") {
+                assert(0 == e.getDepth(env,0,true).first)
+            }
+        }
+        fun fs (env: Env, s: Stmt) {
+            if (s is Stmt.Block) {
+                assert(s.getDepth(env,false) == 0)
+            }
+        }
+        s.visit(emptyList(), ::fs, ::fe, null)
     }
     @Test
     fun d02_func () {
-        val s = pre("var x: () = () ; func f: ()->() { var y: () = () ; output std x }")
-        val blk = ((s as Stmt.Seq).s2 as Stmt.Func).block as Stmt.Block
-        val seq = ((((blk.body as Stmt.Seq).s2 as Stmt.Seq).s2 as Stmt.Block).body as Stmt.Seq)
-        val call = (seq.s2 as Stmt.Call)
-        val x = call.call.e.e
-        val X = x.idToStmt("x")
-        assert(X!!.getDepth() == 0)
-        assert(seq.s1.getDepth() == 2)
+        val s = pre("var x: () = () ; func f: ()->() { var y: () = x ; output std y ; set x = () }")
+        fun fe (env: Env, e: Expr) {
+            if (e is Expr.Var) {
+                if (e.tk_.str == "x") {
+                    assert(0 == e.getDepth(env, 0, true).first)
+                }
+                if (e.tk_.str == "y") {
+                    assert(2 == s.getDepth(env,false))
+                }
+            }
+        }
+        fun fs (env: Env, s: Stmt) {
+            if (s is Stmt.Var) {
+                if (s.tk_.str == "x") {
+                    assert(0 == s.getDepth(env,false))
+                }
+                if (s.tk_.str == "y") {
+                    assert(2 == s.getDepth(env,false))
+                }
+            }
+            if (s is Stmt.Set) {
+                assert(0 == s.dst.toExpr().getDepth(env, s.getDepth(env,true), true).first)
+            }
+        }
+        s.visit(emptyList(), ::fs, ::fe, null)
     }
 
     // POINTERS
@@ -271,10 +291,11 @@ class Env {
             }
             {
                 var v: () = ()
-                set p2 = \v
+                --set p2 = \v
             }
             output std /p1
         """.trimIndent())
+        println(out)
         assert(out == "(ln 5, col 12): invalid assignment : cannot hold local pointer \"v\" (ln 4)")
     }
     @Test

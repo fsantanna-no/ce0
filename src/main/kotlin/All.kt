@@ -17,7 +17,6 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
     try {
         var s = parser_stmts(all, Pair(TK.EOF,null))
         s = env_prelude(s)
-        env_PRV_set(s, null)
         check_dcls(s)
         check_types(s)
         check_xexprs(s)

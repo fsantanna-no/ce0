@@ -1,5 +1,3 @@
-val env_PRV: MutableMap<Any,Stmt> = mutableMapOf()
-
 fun env_prelude (s: Stmt): Stmt {
     val stdo = Stmt.Func (
         Tk.Str(TK.XVAR,1,1,"output_std"),
@@ -13,115 +11,36 @@ fun env_prelude (s: Stmt): Stmt {
     return Stmt.Seq(stdo.tk, stdo, s)
 }
 
-/*
- * Environment of each Stmt/Expr based on backlinks to previous Stmt.Var/Stmt.Func.
- * func f: ...
- * var x: ...
- * var y: ...
- * return f(x,y)    // x+y -> y -> x -> f -> null
- */
-fun env_PRV_set (s: Stmt, cur_: Stmt?): Stmt? {
-    fun aux (s: Stmt, cur_: Stmt?): Stmt? {
-        var cur = cur_
-        if (cur != null && (s is Stmt.Block || s is Stmt.Var || s is Stmt.Func)) {
-            val id = when (s) {
-                is Stmt.Block -> null
-                is Stmt.Var   -> s.tk_.str
-                is Stmt.Func  -> s.tk_.str
-                else -> error("impossible case")
-            }
-            if (id != null) {
-                cur.idToStmt(id).let {
-                    All_assert_tk(s.tk, it == null) {
-                        "invalid declaration : \"$id\" is already declared (ln ${it!!.tk.lin})"
-                    }
-                }
-            }
+fun Env.idToStmt (id: String): Stmt? {
+    return this.find {
+        id == when (it) {
+            is Stmt.Var  -> it.tk_.str
+            is Stmt.Func -> it.tk_.str
+            else         -> null
         }
-        if (cur != null) {
-            env_PRV[s] = cur
-        }
-
-        fun fe (e: Expr) {
-            if (cur!=null && (e is Expr.Var)) {
-                env_PRV[e] = cur!!
-            }
-        }
-
-        return when (s) {
-            is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> cur
-            is Stmt.Var -> {
-                s.init.e.visit(::fe); s
-            }
-            is Stmt.Set -> {
-                s.dst.toExpr().visit(::fe); s.src.e.visit(::fe); cur
-            }
-            is Stmt.Call -> {
-                s.call.visit(::fe); cur
-            }
-            is Stmt.Seq -> {
-                val prv2 = aux(s.s1, cur); aux(s.s2, prv2)
-            }
-            is Stmt.If -> {
-                s.tst.visit(::fe); aux(s.true_, cur); aux(s.false_, cur); cur
-            }
-            is Stmt.Func -> {
-                cur = s; if (s.block != null) {
-                    aux(s.block, cur)
-                }; s
-            }
-            is Stmt.Ret -> {
-                s.e.e.visit(::fe); cur
-            }
-            is Stmt.Loop -> {
-                aux(s.block, cur); cur
-            }
-            is Stmt.Block -> {
-                aux(s.body, s); cur
-            }
-        }
-    }
-    return aux(s,cur_)
-}
-
-fun Any.env_dump () {
-    val env = env_PRV[this]
-    println(env)
-    if (env != null) {
-        env.env_dump()
     }
 }
 
-fun Any.idToStmt (id: String): Stmt? {
-    //println("$id: $this")
-    return when {
-        (this is Stmt.Var  && this.tk_.str==id) -> this
-        (this is Stmt.Func && this.tk_.str==id) -> this
-        (env_PRV[this] == null) -> null
-        else -> env_PRV[this]!!.idToStmt(id)
-    }
-}
-
-fun Expr.toType (): Type {
+fun Expr.toType (env: Env): Type {
     return when (this) {
         is Expr.Unk   -> Type.Any(this.tk_)
         is Expr.Unit  -> Type.Unit(this.tk_)
         is Expr.Nat   -> Type.Nat(this.tk_)
-        is Expr.Upref -> Type.Ptr(this.tk_, this.e.toType())
-        is Expr.Dnref -> (this.e.toType() as Type.Ptr).tp
+        is Expr.Upref -> Type.Ptr(this.tk_, this.e.toType(env))
+        is Expr.Dnref -> (this.e.toType(env) as Type.Ptr).tp
         is Expr.Var   -> {
-            val s = this.idToStmt(this.tk_.str)!!
+            val s = env.idToStmt(this.tk_.str)!!
             when (s) {
                 is Stmt.Var -> s.type
                 is Stmt.Func -> s.type
                 else -> error("bug found")
             }
         }
-        is Expr.Tuple -> Type.Cons(this.tk_, this.vec.map{it.e.toType()}.toTypedArray())
-        is Expr.Varia -> Type.Varia(this.tk_, this.e.e.toType())
-        is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType() as Type.Func).out
+        is Expr.Tuple -> Type.Cons(this.tk_, this.vec.map{it.e.toType(env)}.toTypedArray())
+        is Expr.Varia -> Type.Varia(this.tk_, this.e.e.toType(env))
+        is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType(env) as Type.Func).out
         is Expr.Index -> {
-            val cons = this.e.toType() as Type.Cons
+            val cons = this.e.toType(env) as Type.Cons
             if (this.tk_.idx == 0) {
                 assert(cons.tk_.chr=='<' && cons.exactlyRec()) { "bug found" }
                 Type.Unit(Tk.Sym(TK.UNIT, this.tk.lin, this.tk.col, "()"))
@@ -133,14 +52,14 @@ fun Expr.toType (): Type {
 }
 
 fun check_dcls (s: Stmt) {
-    fun fe (e: Expr) {
+    fun fe (env: Env, e: Expr) {
         if (e is Expr.Var) {
-            All_assert_tk(e.tk, e.idToStmt(e.tk_.str) != null) {
+            All_assert_tk(e.tk, env.idToStmt(e.tk_.str) != null) {
                 "undeclared variable \"${e.tk_.str}\""
             }
         }
     }
-    s.visit(null, ::fe,null)
+    s.visit(emptyList(), null, ::fe,null)
 }
 
 fun Type.containsRec (): Boolean {
@@ -192,18 +111,18 @@ fun Type.ishasptr (): Boolean {
 }
 
 fun check_types (S: Stmt) {
-    fun fe (e: Expr) {
+    fun fe (env: Env, e: Expr) {
         when (e) {
             is Expr.Dnref -> {
-                All_assert_tk(e.tk, e.e.toType() is Type.Ptr) {
+                All_assert_tk(e.tk, e.e.toType(env) is Type.Ptr) {
                     "invalid `/` : expected pointer type"
                 }
             }
             is Expr.Index -> {
-                All_assert_tk(e.tk, e.e.toType() is Type.Cons) {
+                All_assert_tk(e.tk, e.e.toType(env) is Type.Cons) {
                     "invalid index : type mismatch"
                 }
-                val cons = (e.e.toType() as Type.Cons)
+                val cons = (e.e.toType(env) as Type.Cons)
                 val MAX = cons.vec.size
                 val MIN = if (cons.exactlyRec()) 0 else 1
                 All_assert_tk(e.tk, MIN<=e.tk_.idx && e.tk_.idx<=MAX) {
@@ -211,17 +130,17 @@ fun check_types (S: Stmt) {
                 }
             }
             is Expr.Call -> {
-                val inp = e.f.toType().let { if (it is Type.Func) it.inp else (it as Type.Nat) }
-                All_assert_tk(e.f.tk, inp.isSupOf(e.e.e.toType())) {
+                val inp = e.f.toType(env).let { if (it is Type.Func) it.inp else (it as Type.Nat) }
+                All_assert_tk(e.f.tk, inp.isSupOf(e.e.e.toType(env))) {
                     "invalid call : type mismatch"
                 }
             }
         }
     }
-    fun fs (s: Stmt) {
+    fun fs (env: Env, s: Stmt) {
         when (s) {
             is Stmt.Var -> {
-                All_assert_tk(s.tk, s.type.isSupOf(s.init.e.toType())) {
+                All_assert_tk(s.tk, s.type.isSupOf(s.init.e.toType(env))) {
                     "invalid assignment : type mismatch"
                 }
                 if (s.type.exactlyRec() && s.init.e is Expr.Varia) {
@@ -232,10 +151,10 @@ fun check_types (S: Stmt) {
             }
             is Stmt.Set -> {
                 val str = if (s.dst is Attr.Var && s.dst.tk_.str=="_ret_") "return" else "assignment"
-                All_assert_tk(s.tk, s.dst.toExpr().toType().isSupOf(s.src.e.toType())) {
+                All_assert_tk(s.tk, s.dst.toExpr().toType(env).isSupOf(s.src.e.toType(env))) {
                     "invalid $str : type mismatch"
                 }
-                if (s.dst.toExpr().toType().exactlyRec() && s.src.e is Expr.Varia) {
+                if (s.dst.toExpr().toType(env).exactlyRec() && s.src.e is Expr.Varia) {
                     All_assert_tk(s.tk, s.src.x.let { it!=null && it.enu==TK.NEW }) {
                         "invalid $str : expected `new` operation modifier"
                     }
@@ -243,7 +162,7 @@ fun check_types (S: Stmt) {
             }
         }
     }
-    S.visit(::fs, ::fe, null)
+    S.visit(emptyList(), ::fs, ::fe, null)
 }
 
 fun Expr.isconst (): Boolean {
@@ -256,8 +175,8 @@ fun Expr.isconst (): Boolean {
 }
 
 fun check_xexprs (S: Stmt) {
-    fun aux (e: XExpr) {
-        val ctrec = e.e.toType().containsRec()
+    fun aux (env: Env, e: XExpr) {
+        val ctrec = e.e.toType(env).containsRec()
         val exrec = true // TODO: moved to check_types since we have no context here //e.e.toType().exactlyRec()
         val iscst = e.e.isconst()
         val isvar = e.e is Expr.Varia
@@ -265,7 +184,7 @@ fun check_xexprs (S: Stmt) {
             (e.x == null) -> All_assert_tk(e.e.tk, !ctrec || (iscst && !isvar)) {
                 "invalid expression : expected operation modifier"
             }
-            (e.x.enu == TK.BORROW) -> All_assert_tk(e.x, e.e.toType().let { it is Type.Ptr && it.tp.containsRec() }) {
+            (e.x.enu == TK.BORROW) -> All_assert_tk(e.x, e.e.toType(env).let { it is Type.Ptr && it.tp.containsRec() }) {
                 "invalid `borrow` : expected pointer to recursive variable"
             }
             (e.x.enu == TK.COPY) -> All_assert_tk(e.x, ctrec && !iscst) {
@@ -280,49 +199,44 @@ fun check_xexprs (S: Stmt) {
             else -> error("bug found")
         }
     }
-    fun fs (s: Stmt) {
+    fun fs (env: Env, s: Stmt) {
         when (s) {
-            is Stmt.Var -> aux(s.init)
-            is Stmt.Set -> aux(s.src)
-            is Stmt.Ret -> aux(s.e)
+            is Stmt.Var -> aux(env, s.init)
+            is Stmt.Set -> aux(env, s.src)
+            is Stmt.Ret -> aux(env, s.e)
         }
     }
-    fun fe (e: Expr) {
+    fun fe (env: Env, e: Expr) {
         when (e) {
-            is Expr.Tuple -> e.vec.map { aux(it) }
-            is Expr.Call -> aux(e.e)
+            is Expr.Tuple -> e.vec.map { aux(env, it) }
+            is Expr.Call -> aux(env, e.e)
         }
     }
-    S.visit(::fs, ::fe, null)
+    S.visit(emptyList(), ::fs, ::fe, null)
 }
 
-fun Stmt.getDepth (): Int {
-    fun aux (s: Stmt): Int {
-        return env_PRV[s].let {
-            when {
-                (it == null) -> 0
-                (it is Stmt.Block) -> 1 + aux(it)
-                //(it is Stmt.Func) -> 1 + aux(it)
-                else -> aux(it)
-            }
-        }
-    }
+fun Env.fromStmt (s: Stmt): Env {
+    return this.dropWhile { it != s }
+}
+
+fun Stmt.getDepth (env: Env, drop: Boolean): Int {
     return if (this is Stmt.Var && this.outer) {
-        this.idToStmt("arg")!!.getDepth()
+        env.idToStmt("arg")!!.getDepth(env, true)
     } else {
-        aux(this)
+        val env2 = if (!drop) env else env.fromStmt(this)
+        env2.count { it is Stmt.Block }
     }
 }
 
-fun Expr.getDepth (caller: Int, hold: Boolean): Pair<Int,Stmt?> {
+fun Expr.getDepth (env: Env, caller: Int, hold: Boolean): Pair<Int,Stmt?> {
     return when (this) {
         is Expr.Unk, is Expr.Unit, is Expr.Nat -> Pair(0, null)
         is Expr.Var -> {
-            val dcl = this.idToStmt(this.tk_.str)!!
-            return if (hold) Pair(dcl.getDepth(), dcl) else Pair(0, null)
+            val dcl = env.idToStmt(this.tk_.str)!!
+            return if (hold) Pair(dcl.getDepth(env,true), dcl) else Pair(0, null)
         }
         is Expr.Upref ->  {
-            val (depth,dcl) = this.e.getDepth(caller, hold)
+            val (depth,dcl) = this.e.getDepth(env, caller, hold)
             if (dcl is Stmt.Var) {
                 val inc = if (dcl.tk_.str == "arg" || dcl.outer) 1 else 0
                 Pair(depth + inc, dcl)
@@ -330,20 +244,20 @@ fun Expr.getDepth (caller: Int, hold: Boolean): Pair<Int,Stmt?> {
                 Pair(depth, dcl)
             }
         }
-        is Expr.Dnref -> this.e.getDepth(caller, hold)
-        is Expr.Index -> this.e.getDepth(caller, hold)
-        is Expr.Call -> this.f.toType().let {
+        is Expr.Dnref -> this.e.getDepth(env, caller, hold)
+        is Expr.Index -> this.e.getDepth(env, caller, hold)
+        is Expr.Call -> this.f.toType(env).let {
             when (it) {
                 is Type.Nat -> Pair(0, null)
                 is Type.Func -> if (!it.out.ishasptr()) Pair(0,null) else {
                     // substitute args depth/id by caller depth/id
-                    Pair(caller, this.f.idToStmt((this.f as Expr.Var).tk_.str))
+                    Pair(caller, env.idToStmt((this.f as Expr.Var).tk_.str))
                 }
                 else -> error("bug found")
             }
         }
-        is Expr.Tuple -> this.vec.map { it.e.getDepth(caller,it.e.toType().ishasptr()) }.maxByOrNull { it.first }!!
-        is Expr.Varia -> this.e.e.getDepth(caller, hold)
+        is Expr.Tuple -> this.vec.map { it.e.getDepth(env, caller,it.e.toType(env).ishasptr()) }.maxByOrNull { it.first }!!
+        is Expr.Varia -> this.e.e.getDepth(env, caller, hold)
     }
 }
 
@@ -355,21 +269,24 @@ fun check_pointers (S: Stmt) {
             else -> error("bug found")
         }
     }
-    fun fs (s: Stmt) {
+    fun fs (env: Env, s: Stmt) {
         when (s) {
             is Stmt.Var -> {
-                val (src_depth, src_dcl) = s.init.e.getDepth(s.getDepth(), s.type.ishasptr())
-                All_assert_tk(s.tk, s.getDepth() >= src_depth) {
+                val dst_depth = s.getDepth(env,false)
+                val (src_depth, src_dcl) = s.init.e.getDepth(env, dst_depth, s.type.ishasptr())
+                All_assert_tk(s.tk, dst_depth >= src_depth) {
                     "invalid assignment : cannot hold local pointer \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
                 }
             }
             is Stmt.Set -> {
-                val (src_depth, src_dcl) = s.src.e.getDepth(s.getDepth(), s.dst.toExpr().toType().ishasptr())
-                All_assert_tk(s.tk, s.dst.toExpr().getDepth(s.getDepth(), s.dst.toExpr().toType().ishasptr()).first >= src_depth) {
+                val set_depth = s.getDepth(env,false)
+                val (src_depth, src_dcl) = s.src.e.getDepth(env, set_depth, s.dst.toExpr().toType(env).ishasptr())
+                //println("${s.dst.toExpr().getDepth(env, set_depth, s.dst.toExpr().toType(env).ishasptr()).first} >= $src_depth")
+                All_assert_tk(s.tk, s.dst.toExpr().getDepth(env, set_depth, s.dst.toExpr().toType(env).ishasptr()).first >= src_depth) {
                     "invalid assignment : cannot hold local pointer \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
                 }
             }
         }
     }
-    S.visit(::fs, null, null)
+    S.visit(emptyList(), ::fs, null, null)
 }
