@@ -92,14 +92,14 @@ class Env {
             var x: <()> = ?
             var y: <^> = x
         """.trimIndent())
-        assert(out == "(ln 2, col 5): invalid assignment to \"y\" : type mismatch")
+        assert(out == "(ln 2, col 5): invalid assignment : type mismatch")
     }
     @Test
     fun b10_user_empty_err () {
         val out = inp2env("""
             var l: <^> = .1 ()
         """.trimIndent())
-        assert(out == "(ln 1, col 5): invalid assignment to \"l\" : type mismatch")
+        assert(out == "(ln 1, col 5): invalid assignment : type mismatch")
     }
     @Test
     fun b11_user_empty_err () {
@@ -110,15 +110,23 @@ class Env {
         assert(out == "(ln 2, col 14): invalid index : out of bounds")
     }
     @Test
-    fun b12_user_empty_ok () {
+    fun b12_user_empty_err () {
         val out = inp2env("""
             var l: <^> = .1 .0
             output std \l.0!
         """.trimIndent())
         println(out)
+        assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
+    }
+    @Test
+    fun b13_user_empty_ok () {
+        val out = inp2env("""
+            var l: <^> = new .1 .0
+            output std \l.0!
+        """.trimIndent())
+        println(out)
         assert(out == "OK")
     }
-
     // TODO: test if empty is part of isrec
 
     // TYPE
@@ -128,7 +136,7 @@ class Env {
         val out = inp2env("""
             var x: [()] = ()
         """.trimIndent())
-        assert(out == "(ln 1, col 5): invalid assignment to \"x\" : type mismatch")
+        assert(out == "(ln 1, col 5): invalid assignment : type mismatch")
     }
     @Test
     fun c02_type_set () {
@@ -136,7 +144,7 @@ class Env {
             var x: () = ()
             set x = [()]
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment to \"x\" : type mismatch")
+        assert(out == "(ln 2, col 7): invalid assignment : type mismatch")
     }
     @Test
     fun c03_type_func_ret () {
@@ -151,14 +159,14 @@ class Env {
             func f : [(),()] -> () { }
             call f()
         """.trimIndent())
-        assert(out == "(ln 2, col 6): invalid call to \"f\" : type mismatch")
+        assert(out == "(ln 2, col 6): invalid call : type mismatch")
     }
     @Test
     fun c05_type_idx () {
         val out = inp2env("""
             var x: () = [[()],[()]].1
         """.trimIndent())
-        assert(out == "(ln 1, col 5): invalid assignment to \"x\" : type mismatch")
+        assert(out == "(ln 1, col 5): invalid assignment : type mismatch")
     }
     @Test
     fun c06_type_idx () {
@@ -173,7 +181,7 @@ class Env {
         val out = inp2env("""
             var x: \() = ()
         """.trimIndent())
-        assert(out == "(ln 1, col 5): invalid assignment to \"x\" : type mismatch")
+        assert(out == "(ln 1, col 5): invalid assignment : type mismatch")
     }
     @Test
     fun c08_type_upref () {
@@ -181,7 +189,7 @@ class Env {
             var y: () = ()
             var x: () = \y
         """.trimIndent())
-        assert(out == "(ln 2, col 5): invalid assignment to \"x\" : type mismatch")
+        assert(out == "(ln 2, col 5): invalid assignment : type mismatch")
     }
     @Test
     fun c09_type_upref () {
@@ -197,7 +205,7 @@ class Env {
             var y: [()] = [()]
             var x: \() = \y
         """.trimIndent())
-        assert(out == "(ln 2, col 5): invalid assignment to \"x\" : type mismatch")
+        assert(out == "(ln 2, col 5): invalid assignment : type mismatch")
     }
     @Test
     fun c11_type_upref () {
@@ -223,7 +231,7 @@ class Env {
             var y: \() = \x
             var z: \() = /y
         """.trimIndent())
-        assert(out == "(ln 3, col 5): invalid assignment to \"z\" : type mismatch")
+        assert(out == "(ln 3, col 5): invalid assignment : type mismatch")
     }
 
     // DEPTH
@@ -648,7 +656,7 @@ class Env {
         val out = inp2env("""
             var p: \<^> = ?
             {
-                var l: <^> = .1 .1 .0
+                var l: <^> = new .1 .1 .0
                 set p = \l
             }
             output std p
@@ -695,7 +703,6 @@ class Env {
             var x: <^> = ?
             var y: \<^> = borrow \x
         """.trimIndent())
-        println(out)
         assert(out == "OK")
     }
     @Test
@@ -711,6 +718,8 @@ class Env {
         val out = inp2env("""
             var x: <^> = copy .1 .0
         """.trimIndent())
-        assert(out == "(ln 1, col 14): invalid `copy` : expected recursive variable")
+        println(out)
+        //assert(out == "(ln 1, col 14): invalid `copy` : expected recursive variable")
+        assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
     }
 }

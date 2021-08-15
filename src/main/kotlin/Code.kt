@@ -97,9 +97,7 @@ fun Expr.pre (): String {
     return when (this) {
         is Expr.Unk, is Expr.Unit, is Expr.Var, is Expr.Nat -> ""
         is Expr.Tuple -> this.toType().pre() + this.vec.map { it.pre() }.joinToString("")
-        is Expr.Varia -> error("TODO")
-        /*
-        is Expr.Union  -> {
+        is Expr.Varia -> error("TODO-Varia")/*{
             val user = this.idToStmt(this.sup.str)!! as Stmt.User
             val tp   = this.subType()
             val arg  = if (tp is Type.Unit) "" else (", " + this.arg.pos(false))
@@ -122,8 +120,7 @@ fun Expr.pre (): String {
                 (($sup) { ${sup}_${this.sub.str}$arg });
                 
             """
-        }
-         */
+        }*/
         is Expr.Dnref -> this.e.pre()
         is Expr.Upref -> this.e.pre()
         is Expr.Index -> this.e.pre()

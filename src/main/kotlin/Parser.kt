@@ -105,7 +105,7 @@ fun parser_type (all: All): Type {
 }
 
 fun parser_xexpr (all: All, canpre: Boolean): XExpr {
-    val tk = if (all.accept(TK.BORROW) || all.accept(TK.COPY) || all.accept(TK.MOVE)) all.tk0 else null
+    val tk = if (all.accept(TK.BORROW) || all.accept(TK.COPY) || all.accept(TK.MOVE) || all.accept(TK.NEW)) all.tk0 else null
     val e = parser_expr(all,canpre)
     return XExpr(tk, e)
 }
