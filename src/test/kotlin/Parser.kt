@@ -561,11 +561,7 @@ class Parser {
     fun c17_stmt_xexpr () {
         val all = All_new(PushbackReader(StringReader("set s = (move ())"), 2))
         lexer(all)
-        try {
-            parser_stmt(all)
-            error("impossible case")
-        } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 10): unexpected operation modifier")
-        }
+        val s = parser_stmt(all)
+        assert(s is Stmt.Set && s.src is XExpr && s.src.x!!.enu==TK.MOVE)
     }
 }

@@ -191,13 +191,14 @@ fun check_xexprs (S: Stmt) {
         val xp_exrec = xp.exactlyRec()
         val e_iscst  = e.e.isconst()
         val e_isvar  = e.e is Expr.Varia
+        val e_isnil  = e_isvar && ((e.e as Expr.Varia).tk_.idx==0)
         println(xp)
         println(e)
         println("ctrec = " + xp_ctrec)
         println(xp_exrec)
         when {
-            (e.x == null) -> All_assert_tk(e.e.tk, !xp_ctrec || (e_iscst && !e_isvar)) {
-                "invalid expression : expected operation modifier"
+            (e.x == null) -> All_assert_tk(e.e.tk, !xp_ctrec || (e_iscst && (!e_isvar||e_isnil))) {
+                "invalid expression : expected " + (if (e_iscst) "`new` " else "") + "operation modifier"
             }
             (e.x.enu == TK.BORROW) -> All_assert_tk(e.x, e.e.toType(env).let { it is Type.Ptr && it.tp.containsRec() }) {
                 "invalid `borrow` : expected pointer to recursive variable"
@@ -208,7 +209,7 @@ fun check_xexprs (S: Stmt) {
             (e.x.enu == TK.MOVE) -> All_assert_tk(e.x, xp_ctrec && !e_iscst) {
                 "invalid `move` : expected recursive variable"
             }
-            (e.x.enu == TK.NEW) -> All_assert_tk(e.x, xp_exrec && !e_isvar) {
+            (e.x.enu == TK.NEW) -> All_assert_tk(e.x, xp_exrec && e_isvar) {
                 "invalid `new` : expected variant constructor"
             }
             else -> error("bug found")

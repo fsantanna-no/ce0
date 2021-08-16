@@ -129,9 +129,15 @@ fun parser_type (all: All): Type {
 }
 
 fun parser_xexpr (all: All, canpre: Boolean): XExpr {
-    val tk = if (all.accept(TK.BORROW) || all.accept(TK.COPY) || all.accept(TK.MOVE) || all.accept(TK.NEW)) all.tk0 else null
-    val e = parser_expr(all,canpre)
-    return XExpr(tk, e)
+    if (all.accept(TK.CHAR,'(')) {
+        val e = parser_xexpr(all, false)
+        all.accept_err(TK.CHAR,')')
+        return e
+    } else {
+        val tk = if (all.accept(TK.BORROW) || all.accept(TK.COPY) || all.accept(TK.MOVE) || all.accept(TK.NEW)) all.tk0 else null
+        val e = parser_expr(all, canpre)
+        return XExpr(tk, e)
+    }
 }
 
 fun parser_expr (all: All, canpre: Boolean): Expr {
@@ -158,12 +164,9 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 Expr.Dnref(tk0,e)
             }
             all.accept(TK.CHAR,'(') -> {
-                val e = parser_xexpr(all, false)
+                val e = parser_expr(all, false)
                 all.accept_err(TK.CHAR,')')
-                if (e.x != null) {
-                    all.assert_tk(e.x, false) { "unexpected operation modifier" }
-                }
-                e.e
+                e
             }
             all.accept(TK.CHAR,'[') || all.accept(TK.CHAR,'<') -> {
                 val tk0 = all.tk0 as Tk.Chr

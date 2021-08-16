@@ -121,8 +121,7 @@ class TEnv {
             var l: <^> = .1 .0
             output std \l.0!
         """.trimIndent())
-        println(out)
-        assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
+        assert(out == "(ln 1, col 14): invalid expression : expected `new` operation modifier")
     }
     @Test
     fun b13_user_empty_ok () {
@@ -130,7 +129,6 @@ class TEnv {
             var l: <^> = new .1 .0
             output std \l.0!
         """.trimIndent())
-        println(out)
         assert(out == "OK")
     }
 
@@ -682,11 +680,12 @@ class TEnv {
         val out = inp2env("""
             var p: \<^> = ?
             {
-                var l: <^> = new .1 .1 .0
+                var l: <^> = new .1 (new .1 .0)
                 set p = \l
             }
             output std p
         """.trimIndent())
+        println(out)
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"l\" (ln 3)")
     }
 
@@ -744,7 +743,7 @@ class TEnv {
         val out = inp2env("""
             var x: <^> = copy .1 .0
         """.trimIndent())
-        //assert(out == "(ln 1, col 14): invalid `copy` : expected recursive variable")
-        assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
+        assert(out == "(ln 1, col 14): invalid `copy` : expected recursive variable")
+        //assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
     }
 }
