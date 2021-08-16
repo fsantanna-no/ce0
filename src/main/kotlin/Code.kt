@@ -2,14 +2,15 @@ import kotlin.math.absoluteValue
 
 fun Type.toce (): String {
     return when (this) {
+        is Type.None -> TODO()
         is Type.Any  -> "Any"
         is Type.Unit -> "Unit"
         is Type.Ptr  -> this.tp.toce() + "_ptr"
         is Type.Nat  -> this.tk_.str.replace('*','_')
         is Type.Cons -> "TUPLE__" + this.vec.map { it.toce() }.joinToString("__")
         is Type.Func -> "FUNC__" + this.inp.toce() + "__" + this.out.toce()
-        is Type.Rec  -> error("TODO")
-        is Type.Varia -> error("TODO")
+        is Type.Rec  -> TODO()
+        is Type.Varia -> TODO()
     }
 }
 
@@ -62,13 +63,14 @@ fun Type.pre (): String {
 
 fun Type.pos (): String {
     return when (this) {
+        is Type.None -> TODO()
         is Type.Any, is Type.Unit  -> "void"
         is Type.Ptr  -> this.tp.pos() + "*"
         is Type.Nat  -> this.tk_.str
         is Type.Cons -> this.toce()
         is Type.Func -> this.toce() + "*"
-        is Type.Rec  -> error("TODO")
-        is Type.Varia -> error("TODO")
+        is Type.Rec  -> TODO()
+        is Type.Varia -> TODO()
     }
 }
 

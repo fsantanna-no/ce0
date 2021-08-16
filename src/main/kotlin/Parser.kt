@@ -1,4 +1,5 @@
 sealed class Type (val tk: Tk) {
+    data class None  (val tk_: Tk):     Type(tk_)
     data class Any   (val tk_: Tk.Chr): Type(tk_)
     data class Unit  (val tk_: Tk.Sym): Type(tk_)
     data class Nat   (val tk_: Tk.Str): Type(tk_)

@@ -235,9 +235,10 @@ class Exec {
                var v: _int = call fx arg.2
                return v
             }
-            var n: _int = _10
-            output std g [f,n]
+            --var n: _int = _10
+            output std g [f,_10]
         """.trimIndent())
+        println(out)
         assert(out == "10\n")
     }
 

@@ -77,7 +77,7 @@ fun check_dcls (s: Stmt) {
 
 fun Type.containsRec (): Boolean {
     return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
+        is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
         is Type.Rec   -> true
         is Type.Cons  -> this.vec.any { it.containsRec() }
         is Type.Varia -> this.tp.containsRec()
@@ -86,7 +86,7 @@ fun Type.containsRec (): Boolean {
 
 fun Type.exactlyRec (): Boolean {
     return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
+        is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
         is Type.Rec -> true
         is Type.Cons -> (this.tk_.chr=='<') && this.vec.any { it.containsRec() }
         is Type.Varia -> error("bug found")
@@ -95,8 +95,9 @@ fun Type.exactlyRec (): Boolean {
 
 fun Type.isSupOf (sub: Type): Boolean {
     return when {
-        (this is Type.Any || sub is Type.Any) -> true
-        (this is Type.Nat || sub is Type.Nat) -> true
+        (this is Type.None || sub is Type.None) -> true
+        (this is Type.Any  || sub is Type.Any) -> true
+        (this is Type.Nat  || sub is Type.Nat) -> true
         (this is Type.Cons && sub is Type.Varia) -> {
             assert(this.tk_.chr == '<') { "bug found" }
             if (sub.tk_.idx==0 && this.exactlyRec()) {
@@ -116,7 +117,7 @@ fun Type.isSupOf (sub: Type): Boolean {
 
 fun Type.ishasptr (): Boolean {
     return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Func, is Type.Rec -> false
+        is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Func, is Type.Rec -> false
         is Type.Ptr  -> true
         is Type.Cons -> this.vec.any { it.ishasptr() }
         is Type.Varia -> error("bug found")

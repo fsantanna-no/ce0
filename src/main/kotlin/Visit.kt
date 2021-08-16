@@ -1,10 +1,10 @@
 fun Type.map (f: ((Type)->Type)): Type {
     return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> f(this)
+        is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> f(this)
         is Type.Ptr  -> f(Type.Ptr(this.tk_, f(this.tp)))
         is Type.Cons -> f(Type.Cons(this.tk_, this.vec.map(f).toTypedArray()))
         is Type.Func -> f(Type.Func(this.tk_, f(this.inp), f(this.out)))
-        is Type.Varia -> error("TODO")
+        is Type.Varia -> TODO()
     }
 }
 
