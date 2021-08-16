@@ -685,7 +685,6 @@ class TEnv {
             }
             output std p
         """.trimIndent())
-        println(out)
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"l\" (ln 3)")
     }
 

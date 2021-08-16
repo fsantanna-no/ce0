@@ -44,7 +44,7 @@ fun TK.toErr (chr: Char?): String {
         TK.XNAT -> "`_´"
         TK.XVAR -> "variable identifier"
         TK.XIDX -> "index"
-        else -> { println(this) ; error("TODO-3") }
+        else -> TODO(this.toString())
     }
 }
 

@@ -12,11 +12,11 @@ fun Expr.visit (env: Env, fe: ((Env,Expr)->Unit)?) {
     when (this) {
         is Expr.Unk, is Expr.Unit, is Expr.Var, is Expr.Nat -> {}
         is Expr.Tuple -> this.vec.forEach { it.e.visit(env,fe) }
-        is Expr.Varia -> this.e.e.visit(env,fe)
-        is Expr.Dnref -> this.e.visit(env,fe)
-        is Expr.Upref -> this.e.visit(env,fe)
-        is Expr.Index -> this.e.visit(env,fe)
-        is Expr.Call  -> { this.f.visit(env,fe) ; this.e.e.visit(env,fe) }
+        is Expr.Varia -> this.arg.e.visit(env,fe)
+        is Expr.Dnref -> this.sub.visit(env,fe)
+        is Expr.Upref -> this.sub.visit(env,fe)
+        is Expr.Index -> this.pre.visit(env,fe)
+        is Expr.Call  -> { this.f.visit(env,fe) ; this.arg.e.visit(env,fe) }
     }
     if (fe != null) {
         fe(env,this)
@@ -28,7 +28,7 @@ typealias Env = List<Stmt>
 fun Stmt.visit (old: Env, fs: ((Env,Stmt)->Unit)?, fe: ((Env,Expr)->Unit)?): Env {
     val new = when (this) {
         is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> emptyList()
-        is Stmt.Var   -> { this.init.e.visit(old,fe) ; listOf(this)+old }
+        is Stmt.Var   -> { this.src.e.visit(old,fe) ; listOf(this)+old }
         is Stmt.Set   -> { this.dst.toExpr().visit(old,fe) ; this.src.e.visit(old,fe) ; old }
         is Stmt.Call  -> { this.call.visit(old,fe) ; old }
         is Stmt.Seq   -> { val e1=this.s1.visit(old,fs,fe) ; val e2=this.s2.visit(e1,fs,fe) ; e2}

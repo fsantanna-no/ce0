@@ -34,11 +34,11 @@ sealed class Expr (val tk: Tk) {
     data class Var   (val tk_: Tk.Str): Expr(tk_)
     data class Nat   (val tk_: Tk.Str): Expr(tk_)
     data class Tuple (val tk_: Tk.Chr, val vec: Array<XExpr>): Expr(tk_)
-    data class Varia (val tk_: Tk.Idx, val e: XExpr): Expr(tk_)
-    data class Index (val tk_: Tk.Idx, val e: Expr, val op: Tk.Chr?): Expr(tk_)
-    data class Dnref (val tk_: Tk, val e: Expr): Expr(tk_)
-    data class Upref (val tk_: Tk.Chr, val e: Expr): Expr(tk_)
-    data class Call  (val tk_: Tk.Key, val f: Expr, val e: XExpr): Expr(tk_)
+    data class Varia (val tk_: Tk.Idx, val arg: XExpr): Expr(tk_)
+    data class Index (val tk_: Tk.Idx, val pre: Expr, val op: Tk.Chr?): Expr(tk_)
+    data class Dnref (val tk_: Tk, val sub: Expr): Expr(tk_)
+    data class Upref (val tk_: Tk.Chr, val sub: Expr): Expr(tk_)
+    data class Call  (val tk_: Tk.Key, val f: Expr, val arg: XExpr): Expr(tk_)
 }
 
 sealed class Attr (val tk: Tk) {
@@ -59,7 +59,7 @@ fun Attr.toExpr (): Expr {
 
 sealed class Stmt (val tk: Tk) {
     data class Pass  (val tk_: Tk) : Stmt(tk_)
-    data class Var   (val tk_: Tk.Str, val outer: Boolean, val type: Type, val init: XExpr) : Stmt(tk_)
+    data class Var   (val tk_: Tk.Str, val outer: Boolean, val type: Type, val src: XExpr) : Stmt(tk_)
     data class Set   (val tk_: Tk.Chr, val dst: Attr, val src: XExpr) : Stmt(tk_)
     data class Nat   (val tk_: Tk.Str) : Stmt(tk_)
     data class Call  (val tk_: Tk.Key, val call: Expr.Call) : Stmt(tk_)

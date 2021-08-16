@@ -7,26 +7,22 @@ fun Expr.visitXP (env: Env, fx: ((Env, XExpr, Type) -> Unit)?, fe: ((Env, Expr, 
             this.vec.forEachIndexed { i,v -> v.visitXP(env,fx,fe,xp_cons.vec[i]) }
         }
         is Expr.Varia -> {
-            println(xp)
             val xp_cons = xp as Type.Cons
             assert(xp_cons.tk_.chr == '<')
             val xp_cons2 = xp_cons.map { if (it is Type.Rec) xp_cons else it } as Type.Cons
             val sub = if (this.tk_.idx > 0) xp_cons2.vec[this.tk_.idx-1] else Type_Unit(this.tk)
-            this.e.visitXP(env,fx,fe,sub)
+            this.arg.visitXP(env,fx,fe,sub)
         }
-        is Expr.Dnref -> this.e.visitXP(env,fx,fe,xp.keepAnyNat { Type.Ptr(Tk.Chr(TK.CHAR,this.tk.lin,this.tk.col,'\\'),xp) })
-        is Expr.Upref -> this.e.visitXP(env,fx,fe,xp.keepAnyNat{(xp as Type.Ptr).tp})
-        is Expr.Index -> this.e.visitXP(env,fx,fe,this.e.toType(env))
+        is Expr.Dnref -> this.sub.visitXP(env,fx,fe,xp.keepAnyNat { Type.Ptr(Tk.Chr(TK.CHAR,this.tk.lin,this.tk.col,'\\'),xp) })
+        is Expr.Upref -> this.sub.visitXP(env,fx,fe,xp.keepAnyNat{(xp as Type.Ptr).tp})
+        is Expr.Index -> this.pre.visitXP(env,fx,fe,this.pre.toType(env))
         is Expr.Call  -> {
             val xp2 = this.f.toType(env).let { it.keepAnyNat{it as Type.Func} }
             this.f.visitXP(env,fx,fe,xp2)
-            this.e.visitXP(env,fx,fe,xp2.keepAnyNat{ (xp2 as Type.Func).inp })
+            this.arg.visitXP(env,fx,fe,xp2.keepAnyNat{ (xp2 as Type.Func).inp })
         }
     }
     if (fe != null) {
-        println(xp)
-        println(this.toType(env))
-        println(this)
         assert(xp.isSupOf(this.toType(env))) { "bug found" }
         fe(env,this,xp)
     }
@@ -42,7 +38,7 @@ fun XExpr.visitXP (env: Env, fx: ((Env, XExpr, Type) -> Unit)?, fe: ((Env, Expr,
 fun Stmt.visitXP (old: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env, XExpr, Type) -> Unit)?, fe: ((Env,Expr,Type)->Unit)?): Env {
     val new = when (this) {
         is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> emptyList()
-        is Stmt.Var   -> { this.init.visitXP(old,fx,fe,this.type) ; listOf(this)+old }
+        is Stmt.Var   -> { this.src.visitXP(old,fx,fe,this.type) ; listOf(this)+old }
         is Stmt.Set   -> {
             this.dst.toExpr().visitXP(old,fx,fe,Type_Any(this.tk))
             this.src.visitXP(old,fx,fe,this.dst.toExpr().toType(old))

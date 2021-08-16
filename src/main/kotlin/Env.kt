@@ -26,14 +26,14 @@ fun Expr.toType (env: Env): Type {
         is Expr.Unk   -> Type.Any(this.tk_)
         is Expr.Unit  -> Type.Unit(this.tk_)
         is Expr.Nat   -> Type.Nat(this.tk_)
-        is Expr.Upref -> Type.Ptr(this.tk_, this.e.toType(env))
-        is Expr.Dnref -> (this.e.toType(env) as Type.Ptr).tp
+        is Expr.Upref -> Type.Ptr(this.tk_, this.sub.toType(env))
+        is Expr.Dnref -> (this.sub.toType(env) as Type.Ptr).tp
         is Expr.Var   -> env.idToStmt(this.tk_.str)!!.typeVarFunc()
         is Expr.Tuple -> Type.Cons(this.tk_, this.vec.map{it.e.toType(env)}.toTypedArray())
-        is Expr.Varia -> Type.Varia(this.tk_, this.e.e.toType(env))
+        is Expr.Varia -> Type.Varia(this.tk_, this.arg.e.toType(env))
         is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType(env) as Type.Func).out
         is Expr.Index -> {
-            val cons = this.e.toType(env) as Type.Cons
+            val cons = this.pre.toType(env) as Type.Cons
             if (this.tk_.idx == 0) {
                 assert(cons.tk_.chr=='<' && cons.exactlyRec()) { "bug found" }
                 Type_Unit(this.tk)
@@ -121,15 +121,15 @@ fun check_types (S: Stmt) {
     fun fe (env: Env, e: Expr) {
         when (e) {
             is Expr.Dnref -> {
-                All_assert_tk(e.tk, e.e.toType(env) is Type.Ptr) {
+                All_assert_tk(e.tk, e.sub.toType(env) is Type.Ptr) {
                     "invalid `/` : expected pointer type"
                 }
             }
             is Expr.Index -> {
-                All_assert_tk(e.tk, e.e.toType(env) is Type.Cons) {
+                All_assert_tk(e.tk, e.pre.toType(env) is Type.Cons) {
                     "invalid index : type mismatch"
                 }
-                val cons = (e.e.toType(env) as Type.Cons)
+                val cons = (e.pre.toType(env) as Type.Cons)
                 val MAX = cons.vec.size
                 val MIN = if (cons.exactlyRec()) 0 else 1
                 All_assert_tk(e.tk, MIN<=e.tk_.idx && e.tk_.idx<=MAX) {
@@ -138,7 +138,7 @@ fun check_types (S: Stmt) {
             }
             is Expr.Call -> {
                 val inp = e.f.toType(env).let { if (it is Type.Func) it.inp else (it as Type.Nat) }
-                All_assert_tk(e.f.tk, inp.isSupOf(e.e.e.toType(env))) {
+                All_assert_tk(e.f.tk, inp.isSupOf(e.arg.e.toType(env))) {
                     "invalid call : type mismatch"
                 }
             }
@@ -147,7 +147,7 @@ fun check_types (S: Stmt) {
     fun fs (env: Env, s: Stmt) {
         when (s) {
             is Stmt.Var -> {
-                All_assert_tk(s.tk, s.type.isSupOf(s.init.e.toType(env))) {
+                All_assert_tk(s.tk, s.type.isSupOf(s.src.e.toType(env))) {
                     "invalid assignment : type mismatch"
                 }
                 /*
@@ -180,36 +180,32 @@ fun Expr.isconst (): Boolean {
     return when (this) {
         is Expr.Unit, is Expr.Unk, is Expr.Call, is Expr.Tuple, is Expr.Varia -> true
         is Expr.Var, is Expr.Nat, is Expr.Dnref -> false
-        is Expr.Index -> this.e.isconst()
-        is Expr.Upref -> this.e.isconst()
+        is Expr.Index -> this.pre.isconst()
+        is Expr.Upref -> this.sub.isconst()
     }
 }
 
 fun check_xexprs (S: Stmt) {
-    fun fx (env: Env, e: XExpr, xp: Type) {
+    fun fx (env: Env, xe: XExpr, xp: Type) {
         val xp_ctrec = xp.containsRec()
         val xp_exrec = xp.exactlyRec()
-        val e_iscst  = e.e.isconst()
-        val e_isvar  = e.e is Expr.Varia
-        val e_isnil  = e_isvar && ((e.e as Expr.Varia).tk_.idx==0)
-        println(xp)
-        println(e)
-        println("ctrec = " + xp_ctrec)
-        println(xp_exrec)
+        val e_iscst  = xe.e.isconst()
+        val e_isvar  = xe.e is Expr.Varia
+        val e_isnil  = e_isvar && ((xe.e as Expr.Varia).tk_.idx==0)
         when {
-            (e.x == null) -> All_assert_tk(e.e.tk, !xp_ctrec || (e_iscst && (!e_isvar||e_isnil))) {
+            (xe.x == null) -> All_assert_tk(xe.e.tk, !xp_ctrec || (e_iscst && (!e_isvar||e_isnil))) {
                 "invalid expression : expected " + (if (e_iscst) "`new` " else "") + "operation modifier"
             }
-            (e.x.enu == TK.BORROW) -> All_assert_tk(e.x, e.e.toType(env).let { it is Type.Ptr && it.tp.containsRec() }) {
+            (xe.x.enu == TK.BORROW) -> All_assert_tk(xe.x, xe.e.toType(env).let { it is Type.Ptr && it.tp.containsRec() }) {
                 "invalid `borrow` : expected pointer to recursive variable"
             }
-            (e.x.enu == TK.COPY) -> All_assert_tk(e.x, xp_ctrec && !e_iscst) {
+            (xe.x.enu == TK.COPY) -> All_assert_tk(xe.x, xp_ctrec && !e_iscst) {
                 "invalid `copy` : expected recursive variable"
             }
-            (e.x.enu == TK.MOVE) -> All_assert_tk(e.x, xp_ctrec && !e_iscst) {
+            (xe.x.enu == TK.MOVE) -> All_assert_tk(xe.x, xp_ctrec && !e_iscst) {
                 "invalid `move` : expected recursive variable"
             }
-            (e.x.enu == TK.NEW) -> All_assert_tk(e.x, xp_exrec && e_isvar) {
+            (xe.x.enu == TK.NEW) -> All_assert_tk(xe.x, xp_exrec && e_isvar) {
                 "invalid `new` : expected variant constructor"
             }
             else -> error("bug found")
@@ -239,7 +235,7 @@ fun Expr.getDepth (env: Env, caller: Int, hold: Boolean): Pair<Int,Stmt?> {
             return if (hold) Pair(dcl.getDepth(env,true), dcl) else Pair(0, null)
         }
         is Expr.Upref ->  {
-            val (depth,dcl) = this.e.getDepth(env, caller, hold)
+            val (depth,dcl) = this.sub.getDepth(env, caller, hold)
             if (dcl is Stmt.Var) {
                 val inc = if (dcl.tk_.str == "arg" || dcl.outer) 1 else 0
                 Pair(depth + inc, dcl)
@@ -247,8 +243,8 @@ fun Expr.getDepth (env: Env, caller: Int, hold: Boolean): Pair<Int,Stmt?> {
                 Pair(depth, dcl)
             }
         }
-        is Expr.Dnref -> this.e.getDepth(env, caller, hold)
-        is Expr.Index -> this.e.getDepth(env, caller, hold)
+        is Expr.Dnref -> this.sub.getDepth(env, caller, hold)
+        is Expr.Index -> this.pre.getDepth(env, caller, hold)
         is Expr.Call -> this.f.toType(env).let {
             when (it) {
                 is Type.Nat -> Pair(0, null)
@@ -260,7 +256,7 @@ fun Expr.getDepth (env: Env, caller: Int, hold: Boolean): Pair<Int,Stmt?> {
             }
         }
         is Expr.Tuple -> this.vec.map { it.e.getDepth(env, caller,it.e.toType(env).ishasptr()) }.maxByOrNull { it.first }!!
-        is Expr.Varia -> this.e.e.getDepth(env, caller, hold)
+        is Expr.Varia -> this.arg.e.getDepth(env, caller, hold)
     }
 }
 
@@ -276,7 +272,7 @@ fun check_pointers (S: Stmt) {
         when (s) {
             is Stmt.Var -> {
                 val dst_depth = s.getDepth(env,false)
-                val (src_depth, src_dcl) = s.init.e.getDepth(env, dst_depth, s.type.ishasptr())
+                val (src_depth, src_dcl) = s.src.e.getDepth(env, dst_depth, s.type.ishasptr())
                 All_assert_tk(s.tk, dst_depth >= src_depth) {
                     "invalid assignment : cannot hold local pointer \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
                 }
