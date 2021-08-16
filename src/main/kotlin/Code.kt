@@ -2,15 +2,16 @@ import kotlin.math.absoluteValue
 
 fun Type.toce (): String {
     return when (this) {
-        is Type.None -> TODO()
+        is Type.None, is Type.Rec, is Type.Varia -> error("bug found")
         is Type.Any  -> "Any"
         is Type.Unit -> "Unit"
         is Type.Ptr  -> this.tp.toce() + "_ptr"
         is Type.Nat  -> this.tk_.str.replace('*','_')
-        is Type.Cons -> "TUPLE__" + this.vec.map { it.toce() }.joinToString("__")
+        is Type.Cons -> {
+            val sub = if (this.tk_.chr == '[') "TUPLE" else "UNION"
+            "${sub}__" + this.vec.map { it.toce() }.joinToString("__")
+        }
         is Type.Func -> "FUNC__" + this.inp.toce() + "__" + this.out.toce()
-        is Type.Rec  -> TODO()
-        is Type.Varia -> TODO()
     }
 }
 
@@ -97,36 +98,6 @@ fun XExpr.pos (env: Env, deref: Boolean): String {
 
 fun Expr.pre (env: Env): String {
     return when (this) {
-        //is Expr.Unk, is Expr.Var, is Expr.Unit, is Expr.Nat -> ""
-        //is Expr.Tuple -> this.toType(env).pre() + this.vec.map { it.pre(env) }.joinToString("")
-        is Expr.Varia -> error("TODO-Varia")/*{
-            val user = this.idToStmt(this.sup.str)!! as Stmt.User
-            val tp   = this.subType()
-            val arg  = if (tp is Type.Unit) "" else (", " + this.arg.pos(false))
-            val N    = this.hashCode().absoluteValue
-            val sup  = this.sup.str
-            this.arg.pre() + if (this.sub.str=="Nil") "" else """
-                ${
-                    if (user.isrec) {
-                        """
-                        $sup* _tmp_$N = ($sup*) malloc(sizeof($sup));
-                        assert(_tmp_$N!=NULL && "not enough memory");
-                        *_tmp_$N = 
-                        """
-                    } else {
-                        """
-                        $sup _tmp_$N =
-                        """.trimIndent()
-                    }
-                }
-                (($sup) { ${sup}_${this.sub.str}$arg });
-                
-            """
-        }*/
-        //is Expr.Dnref -> this.e.pre(env)
-        //is Expr.Upref -> this.e.pre(env)
-        //is Expr.Index -> this.pre.pre(env)
-        //is Expr.Call  -> this.f.pre(env) + this.e.pre(env)
         else -> TODO()
     }
 }
@@ -137,34 +108,6 @@ fun Expr.pos (env: Env, deref: Boolean): String {
         return ""
     }
     return when (this) {
-        //is Expr.Unit  -> ""
-        //is Expr.Nat   -> this.tk_.str
-        //is Expr.Var   -> if (TP is Type.Unit) "" else this.tk_.str
-        //is Expr.Upref -> "&" + this.e.pos(env, false)
-        //is Expr.Dnref -> "*" + this.e.pos(env, false)
-        //is Expr.Index -> this.pre.pos(env, true) + "._" + this.tk_.idx
-        /*
-        is Expr.Disc  -> this.e.pos(true) + "._" + this.tk_.str
-        is Expr.Pred  -> "((${this.e.pos(true)}.sub == ${(this.e.toType() as Type.User).tk_.str}_${this.tk_.str}) ? (Bool){Bool_True} : (Bool){Bool_False})"
-        is Expr.Union  -> if (this.sub.str=="Nil") "NULL" else "_tmp_${this.hashCode().absoluteValue}"
-        is Expr.Tuple -> {
-            val vec = this.vec
-                .filter { it.e.toType(env) !is Type.Unit }
-                .map { it.e.pos(env, false) }
-                .joinToString(", ")
-
-            "((${TP.pos()}) { $vec })"
-        }
-        is Expr.Call  -> {
-            this.f.pos(env, true) + (
-                if (this.f is Expr.Var && this.f.tk_.str=="output_std") {
-                    "_" + this.e.e.toType(env).toce()
-                } else {
-                    ""
-                }
-            ) + "(" + this.e.e.pos(env, true) + ")"
-        }
-         */
         else -> TODO(this.toString())
     }.let {
         if (deref && TP.containsRec()) "(*($it))" else it
@@ -200,6 +143,31 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
                 xp.pre() + pre.joinToString(""),
                 pos.filter { it!="" }.joinToString(", ").let { "((${xp.pos()}) { $it })" }
             )
+        }
+        is Expr.Varia -> {
+            val arg   = EXPRS.removeFirst()
+            val pos   = if (e.tk_.idx == 0) "NULL" else "_tmp_${e.hashCode().absoluteValue}"
+            val xxx   = if (tp is Type.Unit) "" else (", " + pos)
+            val isrec = (e.tk_.idx != 0) && (xp as Type.Cons).vec[e.tk_.idx-1].exactlyRec()
+            val N     = e.hashCode().absoluteValue
+            val sup   = xp.toce()
+            val pre = (if (e.tk_.idx == 0) "" else """
+            ${
+                if (isrec) {
+                    """
+                    $sup* _tmp_$N = ($sup*) malloc(sizeof($sup));
+                    assert(_tmp_$N!=NULL && "not enough memory");
+                    *_tmp_$N =
+                    """
+                } else {
+                    """
+                    $sup _tmp_$N =
+                    """.trimIndent()
+                }
+            }
+                (($sup) { _${e.tk_.idx}$xxx });
+            """)
+            Pair(xp.pre() + arg.first + pre, pos)
         }
         is Expr.Call  -> {
             val arg = EXPRS.removeFirst()
