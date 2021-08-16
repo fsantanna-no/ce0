@@ -3,7 +3,7 @@ fun Type.map (f: ((Type)->Type)): Type {
         is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> f(this)
         is Type.Ptr   -> f(Type.Ptr(this.tk_, f(this.tp)))
         is Type.Tuple -> f(Type.Tuple(this.tk_, this.vec.map(f).toTypedArray()))
-        is Type.Union -> f(Type.Tuple(this.tk_, this.vec.map(f).toTypedArray()))
+        is Type.Union -> f(Type.Union(this.tk_, this.vec.map(f).toTypedArray()))
         is Type.Func  -> f(Type.Func(this.tk_, f(this.inp), f(this.out)))
         is Type.Case  -> TODO()
     }

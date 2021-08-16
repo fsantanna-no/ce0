@@ -7,7 +7,7 @@ fun Expr.visitXP (env: Env, fx: ((Env, XExpr, Type) -> Unit)?, fe: ((Env, Expr, 
         }
         is Expr.Case -> {
             val xp_cons = xp as Type.Union
-            val xp_cons2 = xp_cons.map { if (it is Type.Rec) xp_cons else it } as Type.Tuple
+            val xp_cons2 = xp_cons.map { if (it is Type.Rec) xp_cons else it } as Type.Union
             val sub = if (this.tk_.idx > 0) xp_cons2.vec[this.tk_.idx-1] else Type_Unit(this.tk)
             this.arg.visitXP(env,fx,fe,sub)
         }

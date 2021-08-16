@@ -100,13 +100,15 @@ fun Type.isSupOf (sub: Type): Boolean {
             if (sub.tk_.idx==0 && this.exactlyRec()) {
                 sub.tp is Type.Unit
             } else {
-                val this2 = this.map { if (it is Type.Rec) this else it } as Type.Tuple
+                val this2 = this.map { if (it is Type.Rec) this else it } as Type.Union
                 this2.vec[sub.tk_.idx-1].isSupOf(sub.tp)
             }
         }
         (this::class != sub::class) -> false
         (this is Type.Ptr && sub is Type.Ptr) -> this.tp.isSupOf(sub.tp)
         (this is Type.Tuple && sub is Type.Tuple) ->
+            (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
+        (this is Type.Union && sub is Type.Union) ->
             (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
         else -> true
     }
