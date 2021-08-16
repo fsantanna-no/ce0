@@ -1,39 +1,60 @@
-fun Expr.visitXP (env: Env, xp: Type, fe: ((Env,Expr,Type)->Unit)?) {
+fun Expr.visitXP (env: Env, fx: ((Env, XExpr, Type) -> Unit)?, fe: ((Env, Expr, Type) -> Unit)?, xp: Type) {
     when (this) {
         is Expr.Unk, is Expr.Unit, is Expr.Var, is Expr.Nat -> {}
         is Expr.Tuple -> {
-            val tp = this.toType(env) as Type.Cons
-            assert(tp.tk_.chr == '[')
-            this.vec.forEachIndexed { i,v -> v.e.visitXP(env,tp.vec[i],fe) }
+            val xp_cons = xp as Type.Cons
+            assert(xp_cons.tk_.chr == '[')
+            this.vec.forEachIndexed { i,v -> v.visitXP(env,fx,fe,xp_cons.vec[i]) }
         }
-        is Expr.Varia -> this.e.e.visitXP(env,Type.None(this.tk),fe)
-        is Expr.Dnref -> this.e.visitXP(env,Type.None(this.tk),fe)
-        is Expr.Upref -> this.e.visitXP(env,Type.None(this.tk),fe)
-        is Expr.Index -> this.e.visitXP(env,Type.None(this.tk),fe)
-        is Expr.Call  -> { this.f.visitXP(env,Type.None(this.tk),fe) ; this.e.e.visitXP(env,Type.None(this.tk),fe) }
+        is Expr.Varia -> {
+            println(xp)
+            val xp_cons = xp as Type.Cons
+            assert(xp_cons.tk_.chr == '<')
+            val xp_cons2 = xp_cons.map { if (it is Type.Rec) xp_cons else it } as Type.Cons
+            val sub = if (this.tk_.idx > 0) xp_cons2.vec[this.tk_.idx-1] else Type_Unit(this.tk)
+            this.e.visitXP(env,fx,fe,sub)
+        }
+        is Expr.Dnref -> this.e.visitXP(env,fx,fe,xp.keepAnyNat { Type.Ptr(Tk.Chr(TK.CHAR,this.tk.lin,this.tk.col,'\\'),xp) })
+        is Expr.Upref -> this.e.visitXP(env,fx,fe,xp.keepAnyNat{(xp as Type.Ptr).tp})
+        is Expr.Index -> this.e.visitXP(env,fx,fe,this.e.toType(env))
+        is Expr.Call  -> {
+            val xp2 = this.f.toType(env).let { it.keepAnyNat{it as Type.Func} }
+            this.f.visitXP(env,fx,fe,xp2)
+            this.e.visitXP(env,fx,fe,xp2.keepAnyNat{ (xp2 as Type.Func).inp })
+        }
     }
     if (fe != null) {
-        assert(this.toType(env).isSupOf(xp)) { "bug found" }
+        println(xp)
+        println(this.toType(env))
+        println(this)
+        assert(xp.isSupOf(this.toType(env))) { "bug found" }
         fe(env,this,xp)
     }
 }
 
-fun Stmt.visitXP (old: Env, fs: ((Env,Stmt)->Unit)?, fe: ((Env,Expr,Type)->Unit)?): Env {
+fun XExpr.visitXP (env: Env, fx: ((Env, XExpr, Type) -> Unit)?, fe: ((Env, Expr, Type) -> Unit)?, xp: Type) {
+    this.e.visitXP(env, fx, fe, xp)
+    if (fx != null) {
+        fx(env, this, xp)
+    }
+}
+
+fun Stmt.visitXP (old: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env, XExpr, Type) -> Unit)?, fe: ((Env,Expr,Type)->Unit)?): Env {
     val new = when (this) {
         is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> emptyList()
-        is Stmt.Var   -> { this.init.e.visitXP(old,this.type,fe) ; listOf(this)+old }
+        is Stmt.Var   -> { this.init.visitXP(old,fx,fe,this.type) ; listOf(this)+old }
         is Stmt.Set   -> {
-            this.dst.toExpr().visitXP(old,this.src.e.toType(old),fe)
-            this.src.e.visitXP(old,this.dst.toExpr().toType(old), fe)
+            this.dst.toExpr().visitXP(old,fx,fe,Type_Any(this.tk))
+            this.src.visitXP(old,fx,fe,this.dst.toExpr().toType(old))
             old
         }
-        is Stmt.Call  -> { this.call.visitXP(old,Type.None(this.tk),fe) ; old }
-        is Stmt.Seq   -> { val e1=this.s1.visitXP(old,fs,fe) ; val e2=this.s2.visitXP(e1,fs,fe) ; e2}
-        is Stmt.If    -> { this.tst.visitXP(old,Type.None(this.tk),fe) ; this.true_.visitXP(old,fs,fe) ; this.false_.visitXP(old,fs,fe) ; old }
-        is Stmt.Func  -> { if (this.block!=null) { this.block.visitXP(old,fs,fe) } ; listOf(this)+old }
-        is Stmt.Ret   -> { this.e.e.visitXP(old,Type.None(this.tk),fe) ; old }
-        is Stmt.Loop  -> { this.block.visitXP(old,fs,fe) ; old }
-        is Stmt.Block -> { this.body.visitXP(listOf(this)+old,fs,fe) ; old }
+        is Stmt.Call  -> { this.call.visitXP(old,fx,fe,Type_Any(this.tk)) ; old }
+        is Stmt.Seq   -> { val e1=this.s1.visitXP(old,fs,fx,fe) ; val e2=this.s2.visitXP(e1,fs,fx,fe) ; e2}
+        is Stmt.If    -> { this.tst.visitXP(old,fx,fe,Type.None(this.tk)) ; this.true_.visitXP(old,fs,fx,fe) ; this.false_.visitXP(old,fs,fx,fe) ; old }
+        is Stmt.Func  -> { if (this.block!=null) { this.block.visitXP(old,fs,fx,fe) } ; listOf(this)+old }
+        is Stmt.Ret   -> { this.e.visitXP(old,fx,fe,(old.idToStmt("_ret_") as Stmt.Var).type) ; old }
+        is Stmt.Loop  -> { this.block.visitXP(old,fs,fx,fe) ; old }
+        is Stmt.Block -> { this.body.visitXP(listOf(this)+old,fs,fx,fe) ; old }
     }
     if (fs != null) {
         fs(old, this)

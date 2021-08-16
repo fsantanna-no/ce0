@@ -121,6 +121,7 @@ class TEnv {
             var l: <^> = .1 .0
             output std \l.0!
         """.trimIndent())
+        println(out)
         assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
     }
     @Test
@@ -129,9 +130,9 @@ class TEnv {
             var l: <^> = new .1 .0
             output std \l.0!
         """.trimIndent())
+        println(out)
         assert(out == "OK")
     }
-    // TODO: test if empty is part of isrec
 
     // TYPE
 

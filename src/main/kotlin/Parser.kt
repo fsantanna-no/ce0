@@ -10,6 +10,21 @@ sealed class Type (val tk: Tk) {
     data class Rec   (val tk_: Tk.Up): Type(tk_)
 }
 
+fun Type_Unit (tk: Tk): Type.Unit {
+    return Type.Unit(Tk.Sym(TK.UNIT, tk.lin, tk.col, "()"))
+}
+
+fun Type_Any (tk: Tk): Type.Any {
+    return Type.Any(Tk.Chr(TK.CHAR,tk.lin,tk.col,'?'))
+}
+
+fun Type.keepAnyNat (other: ()->Type): Type {
+    return when (this) {
+        is Type.Any, is Type.Nat -> this
+        else -> other()
+    }
+}
+
 //typealias XEpr = Pair<Tk,Expr>
 data class XExpr (val x: Tk?, val e: Expr)
 
@@ -55,6 +70,14 @@ sealed class Stmt (val tk: Tk) {
     data class Loop  (val tk_: Tk.Key, val block: Block) : Stmt(tk_)
     data class Break (val tk_: Tk.Key) : Stmt(tk_)
     data class Block (val tk_: Tk.Chr, val body: Stmt) : Stmt(tk_)
+}
+
+fun Stmt.typeVarFunc (): Type {
+    return when (this) {
+        is Stmt.Var  -> this.type
+        is Stmt.Func -> this.type
+        else -> error("bug found")
+    }
 }
 
 fun parser_type (all: All): Type {

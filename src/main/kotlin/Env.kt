@@ -28,14 +28,7 @@ fun Expr.toType (env: Env): Type {
         is Expr.Nat   -> Type.Nat(this.tk_)
         is Expr.Upref -> Type.Ptr(this.tk_, this.e.toType(env))
         is Expr.Dnref -> (this.e.toType(env) as Type.Ptr).tp
-        is Expr.Var   -> {
-            val s = env.idToStmt(this.tk_.str)!!
-            when (s) {
-                is Stmt.Var -> s.type
-                is Stmt.Func -> s.type
-                else -> error("bug found")
-            }
-        }
+        is Expr.Var   -> env.idToStmt(this.tk_.str)!!.typeVarFunc()
         is Expr.Tuple -> Type.Cons(this.tk_, this.vec.map{it.e.toType(env)}.toTypedArray())
         is Expr.Varia -> Type.Varia(this.tk_, this.e.e.toType(env))
         is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType(env) as Type.Func).out
@@ -43,7 +36,7 @@ fun Expr.toType (env: Env): Type {
             val cons = this.e.toType(env) as Type.Cons
             if (this.tk_.idx == 0) {
                 assert(cons.tk_.chr=='<' && cons.exactlyRec()) { "bug found" }
-                Type.Unit(Tk.Sym(TK.UNIT, this.tk.lin, this.tk.col, "()"))
+                Type_Unit(this.tk)
             } else {
                 cons.vec[this.tk_.idx - 1]
             }
@@ -87,15 +80,15 @@ fun Type.containsRec (): Boolean {
 fun Type.exactlyRec (): Boolean {
     return when (this) {
         is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
-        is Type.Rec -> true
-        is Type.Cons -> (this.tk_.chr=='<') && this.vec.any { it.containsRec() }
+        is Type.Rec   -> true
+        is Type.Cons  -> (this.tk_.chr=='<') && this.vec.any { it.containsRec() }
         is Type.Varia -> error("bug found")
     }
 }
 
 fun Type.isSupOf (sub: Type): Boolean {
     return when {
-        (this is Type.None || sub is Type.None) -> true
+        (this is Type.None || sub is Type.None) -> false
         (this is Type.Any  || sub is Type.Any) -> true
         (this is Type.Nat  || sub is Type.Nat) -> true
         (this is Type.Cons && sub is Type.Varia) -> {
@@ -104,7 +97,7 @@ fun Type.isSupOf (sub: Type): Boolean {
                 sub.tp is Type.Unit
             } else {
                 val this2 = this.map { if (it is Type.Rec) this else it } as Type.Cons
-                this2.vec[sub.tk_.idx - 1].isSupOf(sub.tp)
+                this2.vec[sub.tk_.idx-1].isSupOf(sub.tp)
             }
         }
         (this::class != sub::class) -> false
@@ -157,22 +150,26 @@ fun check_types (S: Stmt) {
                 All_assert_tk(s.tk, s.type.isSupOf(s.init.e.toType(env))) {
                     "invalid assignment : type mismatch"
                 }
+                /*
                 if (s.type.exactlyRec() && s.init.e is Expr.Varia) {
                     All_assert_tk(s.tk, s.init.x.let { it!=null && it.enu==TK.NEW }) {
                         "invalid assignment : expected `new` operation modifier"
                     }
                 }
+                 */
             }
             is Stmt.Set -> {
                 val str = if (s.dst is Attr.Var && s.dst.tk_.str=="_ret_") "return" else "assignment"
                 All_assert_tk(s.tk, s.dst.toExpr().toType(env).isSupOf(s.src.e.toType(env))) {
                     "invalid $str : type mismatch"
                 }
+                /*
                 if (s.dst.toExpr().toType(env).exactlyRec() && s.src.e is Expr.Varia) {
                     All_assert_tk(s.tk, s.src.x.let { it!=null && it.enu==TK.NEW }) {
                         "invalid $str : expected `new` operation modifier"
                     }
                 }
+                 */
             }
         }
     }
@@ -189,44 +186,35 @@ fun Expr.isconst (): Boolean {
 }
 
 fun check_xexprs (S: Stmt) {
-    fun aux (env: Env, e: XExpr) {
-        val ctrec = e.e.toType(env).containsRec()
-        val exrec = true // TODO: moved to check_types since we have no context here //e.e.toType().exactlyRec()
-        val iscst = e.e.isconst()
-        val isvar = e.e is Expr.Varia
+    fun fx (env: Env, e: XExpr, xp: Type) {
+        val xp_ctrec = xp.containsRec()
+        val xp_exrec = xp.exactlyRec()
+        val e_iscst  = e.e.isconst()
+        val e_isvar  = e.e is Expr.Varia
+        println(xp)
+        println(e)
+        println("ctrec = " + xp_ctrec)
+        println(xp_exrec)
         when {
-            (e.x == null) -> All_assert_tk(e.e.tk, !ctrec || (iscst && !isvar)) {
+            (e.x == null) -> All_assert_tk(e.e.tk, !xp_ctrec || (e_iscst && !e_isvar)) {
                 "invalid expression : expected operation modifier"
             }
             (e.x.enu == TK.BORROW) -> All_assert_tk(e.x, e.e.toType(env).let { it is Type.Ptr && it.tp.containsRec() }) {
                 "invalid `borrow` : expected pointer to recursive variable"
             }
-            (e.x.enu == TK.COPY) -> All_assert_tk(e.x, ctrec && !iscst) {
+            (e.x.enu == TK.COPY) -> All_assert_tk(e.x, xp_ctrec && !e_iscst) {
                 "invalid `copy` : expected recursive variable"
             }
-            (e.x.enu == TK.MOVE) -> All_assert_tk(e.x, ctrec && !iscst) {
+            (e.x.enu == TK.MOVE) -> All_assert_tk(e.x, xp_ctrec && !e_iscst) {
                 "invalid `move` : expected recursive variable"
             }
-            (e.x.enu == TK.NEW) -> All_assert_tk(e.x, exrec && isvar) {
+            (e.x.enu == TK.NEW) -> All_assert_tk(e.x, xp_exrec && !e_isvar) {
                 "invalid `new` : expected variant constructor"
             }
             else -> error("bug found")
         }
     }
-    fun fs (env: Env, s: Stmt) {
-        when (s) {
-            is Stmt.Var -> aux(env, s.init)
-            is Stmt.Set -> aux(env, s.src)
-            is Stmt.Ret -> aux(env, s.e)
-        }
-    }
-    fun fe (env: Env, e: Expr) {
-        when (e) {
-            is Expr.Tuple -> e.vec.map { aux(env, it) }
-            is Expr.Call -> aux(env, e.e)
-        }
-    }
-    S.visit(emptyList(), ::fs, ::fe)
+    S.visitXP(emptyList(), null, ::fx, null)
 }
 
 fun Env.fromStmt (s: Stmt): Env {
