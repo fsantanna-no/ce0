@@ -97,8 +97,8 @@ fun XExpr.pos (env: Env, deref: Boolean): String {
 
 fun Expr.pre (env: Env): String {
     return when (this) {
-        is Expr.Unk, is Expr.Unit, is Expr.Var, is Expr.Nat -> ""
-        is Expr.Tuple -> this.toType(env).pre() + this.vec.map { it.pre(env) }.joinToString("")
+        //is Expr.Unk, is Expr.Var, is Expr.Unit, is Expr.Nat -> ""
+        //is Expr.Tuple -> this.toType(env).pre() + this.vec.map { it.pre(env) }.joinToString("")
         is Expr.Varia -> error("TODO-Varia")/*{
             val user = this.idToStmt(this.sup.str)!! as Stmt.User
             val tp   = this.subType()
@@ -123,10 +123,11 @@ fun Expr.pre (env: Env): String {
                 
             """
         }*/
-        is Expr.Dnref -> this.e.pre(env)
-        is Expr.Upref -> this.e.pre(env)
-        is Expr.Index -> this.e.pre(env)
-        is Expr.Call  -> this.f.pre(env) + this.e.pre(env)
+        //is Expr.Dnref -> this.e.pre(env)
+        //is Expr.Upref -> this.e.pre(env)
+        //is Expr.Index -> this.pre.pre(env)
+        //is Expr.Call  -> this.f.pre(env) + this.e.pre(env)
+        else -> TODO()
     }
 }
 
@@ -136,17 +137,16 @@ fun Expr.pos (env: Env, deref: Boolean): String {
         return ""
     }
     return when (this) {
-        is Expr.Unit  -> ""
-        is Expr.Nat   -> this.tk_.str
-        is Expr.Var   -> if (TP is Type.Unit) "" else this.tk_.str
-        is Expr.Upref -> "&" + this.e.pos(env, false)
-        is Expr.Dnref -> "*" + this.e.pos(env, false)
-        is Expr.Index -> this.e.pos(env, true) + "._" + this.tk_.idx
+        //is Expr.Unit  -> ""
+        //is Expr.Nat   -> this.tk_.str
+        //is Expr.Var   -> if (TP is Type.Unit) "" else this.tk_.str
+        //is Expr.Upref -> "&" + this.e.pos(env, false)
+        //is Expr.Dnref -> "*" + this.e.pos(env, false)
+        //is Expr.Index -> this.pre.pos(env, true) + "._" + this.tk_.idx
         /*
         is Expr.Disc  -> this.e.pos(true) + "._" + this.tk_.str
         is Expr.Pred  -> "((${this.e.pos(true)}.sub == ${(this.e.toType() as Type.User).tk_.str}_${this.tk_.str}) ? (Bool){Bool_True} : (Bool){Bool_False})"
         is Expr.Union  -> if (this.sub.str=="Nil") "NULL" else "_tmp_${this.hashCode().absoluteValue}"
-         */
         is Expr.Tuple -> {
             val vec = this.vec
                 .filter { it.e.toType(env) !is Type.Unit }
@@ -164,10 +164,68 @@ fun Expr.pos (env: Env, deref: Boolean): String {
                 }
             ) + "(" + this.e.e.pos(env, true) + ")"
         }
-        else -> { println(this) ; error("TODO-2") }
+         */
+        else -> TODO(this.toString())
     }.let {
         if (deref && TP.containsRec()) "(*($it))" else it
     }
+}
+
+val EXPRS = ArrayDeque<Pair<String,String>>()
+
+fun code_fe (env: Env, e: Expr, xp: Type) {
+    val tp = e.toType(env)
+    EXPRS.addFirst(when (e) {
+        is Expr.Unk, is Expr.Unit -> Pair("", "")
+        is Expr.Nat -> Pair("", e.tk_.str)
+        is Expr.Var -> Pair("", if (tp is Type.Unit) "" else e.tk_.str)
+        is Expr.Upref -> {
+            val sub = EXPRS.removeFirst()
+            Pair(sub.first, "&" + sub.second)
+        }
+        is Expr.Dnref -> {
+            val sub = EXPRS.removeFirst()
+            Pair(sub.first, "*" + sub.second)
+        }
+        is Expr.Index -> {
+            val pre = EXPRS.removeFirst()
+            Pair (
+                pre.first,
+                pre.second /*+TODO("deref=true")*/ + "._" + e.tk_.idx
+            )
+        }
+        is Expr.Tuple -> {
+            val (pre,pos) = (1..e.vec.size).map { EXPRS.removeFirst() }.reversed().unzip()
+            Pair (
+                xp.pre() + pre.joinToString(""),
+                pos.filter { it!="" }.joinToString(", ").let { "((${xp.pos()}) { $it })" }
+            )
+        }
+        is Expr.Call  -> {
+            val arg = EXPRS.removeFirst()
+            val f   = EXPRS.removeFirst()
+            Pair (
+                f.first + arg.first,
+                f.second /*+ TODO("deref=true")*/ + (
+                    if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
+                        "_" + e.arg.e.toType(env).toce()
+                    } else {
+                        ""
+                    }
+                ) + "(" + arg.second /*+ TODO("deref=true")*/ + ")"
+            )
+        }
+        else -> TODO(e.toString())
+    }.let {
+        Pair (
+            it.first,
+            if ((tp is Type.Unit) && (e !is Expr.Call)) "" else it.second
+        )
+    })
+}
+
+fun code_fx (env: Env, xe: XExpr, xp: Type) {
+
 }
 
 val CODE = ArrayDeque<String>()
@@ -178,10 +236,13 @@ fun code_fs (env: Env, s: Stmt) {
         is Stmt.Nat  -> s.tk_.str + "\n"
         is Stmt.Seq  -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; s1+s2 }
         is Stmt.Set  -> {
-            s.dst.toExpr().pre(env) + s.src.pre(env) + (
-                    (if (s.dst.toExpr().toType(env) is Type.Unit) "" else (s.dst.toExpr().pos(env,false)+" = ")) +
-                            s.src.pos(env,false) + ";\n"
-                    )
+            // Attr is not an Expr, so we need to call code_fe explicitly
+            val dst_tp = s.dst.toExpr().toType(env)
+            code_fe(env, s.dst.toExpr(), dst_tp)
+            val dst = EXPRS.removeFirst()
+            val src = EXPRS.removeFirst()
+            dst.first + src.first +
+                (if (dst_tp is Type.Unit) "" else (dst.second+" = ")) + src.second + ";\n"
         }
         is Stmt.If -> {
             val false_ = CODE.removeFirst()
@@ -200,22 +261,25 @@ fun code_fs (env: Env, s: Stmt) {
             }
         """.trimIndent()
         is Stmt.Break -> "break;\n"
-        is Stmt.Call  -> s.call.pre(env) + s.call.pos(env,true) + ";\n"
+        is Stmt.Call  -> {
+            val e = EXPRS.removeFirst()
+            e.first + e.second /*+ TODO("deref=true")*/ + ";\n"
+        }
         is Stmt.Block -> "{\n" + CODE.removeFirst() + "}\n"
         is Stmt.Ret   -> "return" + if (s.e.e.toType(env) is Type.Unit) ";\n" else " _ret_;\n"
         is Stmt.Var   -> {
-            s.init.pre(env) +
-                    if (s.type is Type.Unit) "" else {
-                        "${s.type.pos()} ${s.tk_.str}" + (    // List* l
-                                if (s.tk_.str == "_ret_") "" else {
-                                    (if (!s.type.containsRec()) "" else {
-                                        " __attribute__ ((__cleanup__(${s.type.toce()}_free)))"
-                                    }) + (if (s.init.e is Expr.Unk) "" else {
-                                        " = " + s.init.pos(env,false)
-                                    })
-                                }
-                                ) + ";\n"
+            val src = EXPRS.removeFirst()
+            src.first + (if (s.type is Type.Unit) "" else {
+                "${s.type.pos()} ${s.tk_.str}" + (    // List* l
+                    if (s.tk_.str == "_ret_") "" else {
+                        (if (!s.type.containsRec()) "" else {
+                            " __attribute__ ((__cleanup__(${s.type.toce()}_free)))"
+                        }) + (if (s.src.e is Expr.Unk) "" else {
+                            " = " + src.second
+                        })
                     }
+                ) + ";\n"
+            })
         }
         /*is Stmt.User  -> {
             val ID = s.tk_.str
@@ -367,7 +431,7 @@ fun code_fs (env: Env, s: Stmt) {
 }
 
 fun Stmt.code (): String {
-    this.visit(emptyList(),::code_fs,null)
+    this.visitXP(emptyList(), ::code_fs, ::code_fx, ::code_fe)
     //println(CODE)
     assert(CODE.size == 1)
     return ("""
