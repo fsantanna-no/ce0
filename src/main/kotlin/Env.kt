@@ -29,16 +29,20 @@ fun Expr.toType (env: Env): Type {
         is Expr.Upref -> Type.Ptr(this.tk_, this.sub.toType(env))
         is Expr.Dnref -> (this.sub.toType(env) as Type.Ptr).tp
         is Expr.Var   -> env.idToStmt(this.tk_.str)!!.typeVarFunc()
-        is Expr.Tuple -> Type.User(this.tk_, this.vec.map{it.e.toType(env)}.toTypedArray())
+        is Expr.Tuple -> Type.Tuple(this.tk_, this.vec.map{it.e.toType(env)}.toTypedArray())
         is Expr.Case -> Type.Case(this.tk_, this.arg.e.toType(env))
         is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType(env) as Type.Func).out
         is Expr.Index -> {
-            val cons = this.pre.toType(env) as Type.User
+            val cons = this.pre.toType(env)
             if (this.tk_.idx == 0) {
-                assert(cons.tk_.chr=='<' && cons.exactlyRec()) { "bug found" }
+                assert(cons is Type.Union && cons.exactlyRec()) { "bug found" }
                 Type_Unit(this.tk)
             } else {
-                cons.vec[this.tk_.idx - 1]
+                (when (cons) {
+                    is Type.Tuple -> cons.vec
+                    is Type.Union -> cons.vec
+                    else -> error("bug found")
+                })[this.tk_.idx - 1]
             }
         }
     }
@@ -72,17 +76,18 @@ fun Type.containsRec (): Boolean {
     return when (this) {
         is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
         is Type.Rec   -> true
-        is Type.User  -> this.vec.any { it.containsRec() }
-        is Type.Case -> this.tp.containsRec()
+        is Type.Tuple -> this.vec.any { it.containsRec() }
+        is Type.Union -> this.vec.any { it.containsRec() }
+        is Type.Case  -> this.tp.containsRec()
     }
 }
 
 fun Type.exactlyRec (): Boolean {
     return when (this) {
-        is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
+        is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func, is Type.Tuple -> false
         is Type.Rec   -> true
-        is Type.User  -> (this.tk_.chr=='<') && this.vec.any { it.containsRec() }
-        is Type.Case -> error("bug found")
+        is Type.Union -> this.vec.any { it.containsRec() }
+        is Type.Case  -> error("bug found")
     }
 }
 
@@ -91,18 +96,17 @@ fun Type.isSupOf (sub: Type): Boolean {
         (this is Type.None || sub is Type.None) -> false
         (this is Type.Any  || sub is Type.Any) -> true
         (this is Type.Nat  || sub is Type.Nat) -> true
-        (this is Type.User && sub is Type.Case) -> {
-            assert(this.tk_.chr == '<') { "bug found" }
+        (this is Type.Union && sub is Type.Case) -> {
             if (sub.tk_.idx==0 && this.exactlyRec()) {
                 sub.tp is Type.Unit
             } else {
-                val this2 = this.map { if (it is Type.Rec) this else it } as Type.User
+                val this2 = this.map { if (it is Type.Rec) this else it } as Type.Tuple
                 this2.vec[sub.tk_.idx-1].isSupOf(sub.tp)
             }
         }
         (this::class != sub::class) -> false
         (this is Type.Ptr && sub is Type.Ptr) -> this.tp.isSupOf(sub.tp)
-        (this is Type.User && sub is Type.User) ->
+        (this is Type.Tuple && sub is Type.Tuple) ->
             (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
         else -> true
     }
@@ -111,9 +115,10 @@ fun Type.isSupOf (sub: Type): Boolean {
 fun Type.ishasptr (): Boolean {
     return when (this) {
         is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Func, is Type.Rec -> false
-        is Type.Ptr  -> true
-        is Type.User -> this.vec.any { it.ishasptr() }
-        is Type.Case -> error("bug found")
+        is Type.Ptr   -> true
+        is Type.Tuple -> this.vec.any { it.ishasptr() }
+        is Type.Union -> this.vec.any { it.ishasptr() }
+        is Type.Case  -> error("bug found")
     }
 }
 
@@ -126,12 +131,16 @@ fun check_types (S: Stmt) {
                 }
             }
             is Expr.Index -> {
-                All_assert_tk(e.tk, e.pre.toType(env) is Type.User) {
+                All_assert_tk(e.tk, e.pre.toType(env).let { it is Type.Tuple || it is Type.Union }) {
                     "invalid index : type mismatch"
                 }
-                val cons = (e.pre.toType(env) as Type.User)
-                val MAX = cons.vec.size
-                val MIN = if (cons.exactlyRec()) 0 else 1
+                val (MIN,MAX) = e.pre.toType(env).let {
+                    when (it) {
+                        is Type.Tuple -> Pair(1, it.vec.size)
+                        is Type.Union -> Pair(if (it.exactlyRec()) 0 else 1, it.vec.size)
+                        else -> error("bug found")
+                    }
+                }
                 All_assert_tk(e.tk, MIN<=e.tk_.idx && e.tk_.idx<=MAX) {
                     "invalid index : out of bounds"
                 }

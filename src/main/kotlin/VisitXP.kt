@@ -2,14 +2,12 @@ fun Expr.visitXP (env: Env, fx: ((Env, XExpr, Type) -> Unit)?, fe: ((Env, Expr, 
     when (this) {
         is Expr.Unk, is Expr.Unit, is Expr.Var, is Expr.Nat -> {}
         is Expr.Tuple -> {
-            val xp_cons = xp as Type.User
-            assert(xp_cons.tk_.chr == '[')
+            val xp_cons = xp as Type.Tuple
             this.vec.forEachIndexed { i,v -> v.visitXP(env,fx,fe,xp_cons.vec[i]) }
         }
         is Expr.Case -> {
-            val xp_cons = xp as Type.User
-            assert(xp_cons.tk_.chr == '<')
-            val xp_cons2 = xp_cons.map { if (it is Type.Rec) xp_cons else it } as Type.User
+            val xp_cons = xp as Type.Union
+            val xp_cons2 = xp_cons.map { if (it is Type.Rec) xp_cons else it } as Type.Tuple
             val sub = if (this.tk_.idx > 0) xp_cons2.vec[this.tk_.idx-1] else Type_Unit(this.tk)
             this.arg.visitXP(env,fx,fe,sub)
         }

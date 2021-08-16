@@ -3,21 +3,19 @@ import kotlin.math.absoluteValue
 fun Type.toce (): String {
     return when (this) {
         is Type.None, is Type.Rec, is Type.Case -> error("bug found")
-        is Type.Any  -> "Any"
-        is Type.Unit -> "Unit"
-        is Type.Ptr  -> this.tp.toce() + "_ptr"
-        is Type.Nat  -> this.tk_.str.replace('*','_')
-        is Type.User -> {
-            val sub = if (this.tk_.chr == '[') "TUPLE" else "UNION"
-            "${sub}__" + this.vec.map { it.toce() }.joinToString("__")
-        }
-        is Type.Func -> "FUNC__" + this.inp.toce() + "__" + this.out.toce()
+        is Type.Any   -> "Any"
+        is Type.Unit  -> "Unit"
+        is Type.Ptr   -> this.tp.toce() + "_ptr"
+        is Type.Nat   -> this.tk_.str.replace('*','_')
+        is Type.Tuple -> "TUPLE__" + this.vec.map { it.toce() }.joinToString("__")
+        is Type.Union -> "UNION__" + this.vec.map { it.toce() }.joinToString("__")
+        is Type.Func  -> "FUNC__" + this.inp.toce() + "__" + this.out.toce()
     }
 }
 
 fun Type.pre (): String {
     return when (this) {
-        is Type.User -> {
+        is Type.Tuple -> {
             val pre = this.vec.map { it.pre() }.joinToString("")
             val ce = this.toce()
             pre + """
@@ -64,14 +62,12 @@ fun Type.pre (): String {
 
 fun Type.pos (): String {
     return when (this) {
-        is Type.None -> TODO()
+        is Type.None, is Type.Rec, is Type.Case -> TODO()
         is Type.Any, is Type.Unit  -> "void"
         is Type.Ptr  -> this.tp.pos() + "*"
         is Type.Nat  -> this.tk_.str
-        is Type.User -> this.toce()
+        is Type.Tuple, is Type.Union -> this.toce()
         is Type.Func -> this.toce() + "*"
-        is Type.Rec  -> TODO()
-        is Type.Case -> TODO()
     }
 }
 
@@ -148,7 +144,7 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
             val arg   = EXPRS.removeFirst()
             val pos   = if (e.tk_.idx == 0) "NULL" else "_tmp_${e.hashCode().absoluteValue}"
             val xxx   = if (tp is Type.Unit) "" else (", " + pos)
-            val isrec = (e.tk_.idx != 0) && (xp as Type.User).vec[e.tk_.idx-1].exactlyRec()
+            val isrec = (e.tk_.idx != 0) && (xp as Type.Tuple).vec[e.tk_.idx-1].exactlyRec()
             val N     = e.hashCode().absoluteValue
             val sup   = xp.toce()
             val pre = (if (e.tk_.idx == 0) "" else """

@@ -3,7 +3,8 @@ sealed class Type (val tk: Tk) {
     data class Any   (val tk_: Tk.Chr): Type(tk_)
     data class Unit  (val tk_: Tk.Sym): Type(tk_)
     data class Nat   (val tk_: Tk.Str): Type(tk_)
-    data class User  (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_)
+    data class Tuple (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_)
+    data class Union (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_)
     data class Case  (val tk_: Tk.Idx, val tp: Type): Type(tk_)
     data class Func  (val tk_: Tk.Sym, val inp: Type, val out: Type): Type(tk_)
     data class Ptr   (val tk_: Tk.Chr, val tp: Type): Type(tk_)
@@ -106,8 +107,13 @@ fun parser_type (all: All): Type {
                     val tp2 = parser_type(all)
                     tps.add(tp2)
                 }
-                all.accept_err(TK.CHAR, if (tk0.chr=='[') ']' else '>')
-                Type.User(tk0, tps.toTypedArray())
+                if (tk0.chr == '[') {
+                    all.accept_err(TK.CHAR, ']')
+                    Type.Tuple(tk0, tps.toTypedArray())
+                } else {
+                    all.accept_err(TK.CHAR, '>')
+                    Type.Union(tk0, tps.toTypedArray())
+                }
             }
             else -> {
                 all.err_expected("type")
@@ -168,7 +174,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 all.accept_err(TK.CHAR,')')
                 e
             }
-            all.accept(TK.CHAR,'[') || all.accept(TK.CHAR,'<') -> {
+            all.accept(TK.CHAR,'[') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val e = parser_xexpr(all, false)
                 val es = arrayListOf(e)
@@ -179,7 +185,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                     val e2 = parser_xexpr(all, false)
                     es.add(e2)
                 }
-                all.accept_err(TK.CHAR, if (tk0.chr=='[') ']' else '>')
+                all.accept_err(TK.CHAR, ']')
                 Expr.Tuple(tk0, es.toTypedArray())
             }
             all.accept(TK.XIDX) -> {
