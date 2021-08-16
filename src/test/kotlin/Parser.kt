@@ -39,7 +39,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("[(),_char]"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Cons && tp.vec.size==2 && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Nat && (tp.vec[1].tk as Tk.Str).str=="char")
+        assert(tp is Type.User && tp.vec.size==2 && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Nat && (tp.vec[1].tk as Tk.Str).str=="char")
     }
     @Test
     fun a05_parser_type_tuple_err () {
@@ -86,7 +86,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("[(),()]"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Cons && tp.vec.size==2 && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Unit)
+        assert(tp is Type.User && tp.vec.size==2 && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Unit)
     }
     @Test
     fun a09_parser_type_ptr () {
@@ -251,21 +251,21 @@ class Parser {
         val all = All_new(PushbackReader(StringReader(".0 ()"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Varia && e.tk_.idx==0 && e.arg.e is Expr.Unit)
+        assert(e is Expr.Case && e.tk_.idx==0 && e.arg.e is Expr.Unit)
     }
     @Test
     fun b16_parser_expr_cons () {
         val all = All_new(PushbackReader(StringReader(".1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Varia && e.tk_.idx==1 && e.arg.e is Expr.Unit)
+        assert(e is Expr.Case && e.tk_.idx==1 && e.arg.e is Expr.Unit)
     }
     @Test
     fun b17_parser_expr_cons () {
         val all = All_new(PushbackReader(StringReader(".2 .1 [(),()]"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Varia && e.tk_.idx==2 && e.arg.e is Expr.Varia && (e.arg.e as Expr.Varia).arg.e is Expr.Tuple)
+        assert(e is Expr.Case && e.tk_.idx==2 && e.arg.e is Expr.Case && (e.arg.e as Expr.Case).arg.e is Expr.Tuple)
     }
 
     // INDEX
@@ -370,7 +370,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("var x: [(),()] = [(),()]"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Var && s.type is Type.Cons && s.src.e is Expr.Tuple)
+        assert(s is Stmt.Var && s.type is Type.User && s.src.e is Expr.Tuple)
     }
     @Test
     fun c05_parser_stmt_var_caret () {
@@ -483,7 +483,7 @@ class Parser {
         lexer(all)
         val s = parser_stmt(all)
         assert (
-            s is Stmt.If && s.tst is Expr.Varia &&
+            s is Stmt.If && s.tst is Expr.Case &&
             s.true_.body is Stmt.Pass && s.false_.body is Stmt.Pass
         )
     }

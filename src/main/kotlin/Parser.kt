@@ -3,8 +3,8 @@ sealed class Type (val tk: Tk) {
     data class Any   (val tk_: Tk.Chr): Type(tk_)
     data class Unit  (val tk_: Tk.Sym): Type(tk_)
     data class Nat   (val tk_: Tk.Str): Type(tk_)
-    data class Cons  (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_)
-    data class Varia (val tk_: Tk.Idx, val tp: Type): Type(tk_)
+    data class User  (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_)
+    data class Case  (val tk_: Tk.Idx, val tp: Type): Type(tk_)
     data class Func  (val tk_: Tk.Sym, val inp: Type, val out: Type): Type(tk_)
     data class Ptr   (val tk_: Tk.Chr, val tp: Type): Type(tk_)
     data class Rec   (val tk_: Tk.Up): Type(tk_)
@@ -34,7 +34,7 @@ sealed class Expr (val tk: Tk) {
     data class Var   (val tk_: Tk.Str): Expr(tk_)
     data class Nat   (val tk_: Tk.Str): Expr(tk_)
     data class Tuple (val tk_: Tk.Chr, val vec: Array<XExpr>): Expr(tk_)
-    data class Varia (val tk_: Tk.Idx, val arg: XExpr): Expr(tk_)
+    data class Case  (val tk_: Tk.Idx, val arg: XExpr): Expr(tk_)
     data class Index (val tk_: Tk.Idx, val pre: Expr, val op: Tk.Chr?): Expr(tk_)
     data class Dnref (val tk_: Tk, val sub: Expr): Expr(tk_)
     data class Upref (val tk_: Tk.Chr, val sub: Expr): Expr(tk_)
@@ -107,7 +107,7 @@ fun parser_type (all: All): Type {
                     tps.add(tp2)
                 }
                 all.accept_err(TK.CHAR, if (tk0.chr=='[') ']' else '>')
-                Type.Cons(tk0, tps.toTypedArray())
+                Type.User(tk0, tps.toTypedArray())
             }
             else -> {
                 all.err_expected("type")
@@ -186,12 +186,12 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 val tk0 = all.tk0 as Tk.Idx
                 try {
                     val e = parser_xexpr(all, false)
-                    Expr.Varia(tk0, e)
+                    Expr.Case(tk0, e)
                 } catch (e: Throwable) {
                     assert(!all.consumed(tk0)) {
                         e.message!!
                     }
-                    Expr.Varia(tk0, XExpr(null, Expr.Unit(Tk.Sym(TK.UNIT, all.tk1.lin, all.tk1.col, "()"))))
+                    Expr.Case(tk0, XExpr(null, Expr.Unit(Tk.Sym(TK.UNIT, all.tk1.lin, all.tk1.col, "()"))))
                 }
             }
             else -> {

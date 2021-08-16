@@ -2,12 +2,12 @@ import kotlin.math.absoluteValue
 
 fun Type.toce (): String {
     return when (this) {
-        is Type.None, is Type.Rec, is Type.Varia -> error("bug found")
+        is Type.None, is Type.Rec, is Type.Case -> error("bug found")
         is Type.Any  -> "Any"
         is Type.Unit -> "Unit"
         is Type.Ptr  -> this.tp.toce() + "_ptr"
         is Type.Nat  -> this.tk_.str.replace('*','_')
-        is Type.Cons -> {
+        is Type.User -> {
             val sub = if (this.tk_.chr == '[') "TUPLE" else "UNION"
             "${sub}__" + this.vec.map { it.toce() }.joinToString("__")
         }
@@ -17,7 +17,7 @@ fun Type.toce (): String {
 
 fun Type.pre (): String {
     return when (this) {
-        is Type.Cons -> {
+        is Type.User -> {
             val pre = this.vec.map { it.pre() }.joinToString("")
             val ce = this.toce()
             pre + """
@@ -68,10 +68,10 @@ fun Type.pos (): String {
         is Type.Any, is Type.Unit  -> "void"
         is Type.Ptr  -> this.tp.pos() + "*"
         is Type.Nat  -> this.tk_.str
-        is Type.Cons -> this.toce()
+        is Type.User -> this.toce()
         is Type.Func -> this.toce() + "*"
         is Type.Rec  -> TODO()
-        is Type.Varia -> TODO()
+        is Type.Case -> TODO()
     }
 }
 
@@ -144,11 +144,11 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
                 pos.filter { it!="" }.joinToString(", ").let { "((${xp.pos()}) { $it })" }
             )
         }
-        is Expr.Varia -> {
+        is Expr.Case -> {
             val arg   = EXPRS.removeFirst()
             val pos   = if (e.tk_.idx == 0) "NULL" else "_tmp_${e.hashCode().absoluteValue}"
             val xxx   = if (tp is Type.Unit) "" else (", " + pos)
-            val isrec = (e.tk_.idx != 0) && (xp as Type.Cons).vec[e.tk_.idx-1].exactlyRec()
+            val isrec = (e.tk_.idx != 0) && (xp as Type.User).vec[e.tk_.idx-1].exactlyRec()
             val N     = e.hashCode().absoluteValue
             val sup   = xp.toce()
             val pre = (if (e.tk_.idx == 0) "" else """

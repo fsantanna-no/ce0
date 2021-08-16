@@ -17,7 +17,7 @@ class Code {
     }
     @Test
     fun a02_type_tuple () {
-        val tp = Type.Cons(Tk.Chr(TK.CHAR,1,1,'['), arrayOf(tp_unit,tp_unit))
+        val tp = Type.User(Tk.Chr(TK.CHAR,1,1,'['), arrayOf(tp_unit,tp_unit))
         assert(tp.toce() == "TUPLE__Unit__Unit")
     }
 
@@ -76,7 +76,7 @@ class Code {
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"x"),
                 false,
-                Type.Cons(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int")))),
+                Type.User(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int")))),
                 XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
             )
         )

@@ -97,7 +97,7 @@ fun All.err_expected (str: String) {
             (this is Tk.Str)     -> '"' + this.str + '"'
             (this is Tk.Idx)     -> "." + this.idx
             (this is Tk.Key)     -> this.key
-            else -> { println(this); error("TODO-1") }
+            else -> TODO(this.toString())
         }
     }
     error("(ln ${this.tk1.lin}, col ${this.tk1.col}): expected $str : have ${this.tk1.toPay()}")

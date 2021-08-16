@@ -29,11 +29,11 @@ fun Expr.toType (env: Env): Type {
         is Expr.Upref -> Type.Ptr(this.tk_, this.sub.toType(env))
         is Expr.Dnref -> (this.sub.toType(env) as Type.Ptr).tp
         is Expr.Var   -> env.idToStmt(this.tk_.str)!!.typeVarFunc()
-        is Expr.Tuple -> Type.Cons(this.tk_, this.vec.map{it.e.toType(env)}.toTypedArray())
-        is Expr.Varia -> Type.Varia(this.tk_, this.arg.e.toType(env))
+        is Expr.Tuple -> Type.User(this.tk_, this.vec.map{it.e.toType(env)}.toTypedArray())
+        is Expr.Case -> Type.Case(this.tk_, this.arg.e.toType(env))
         is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType(env) as Type.Func).out
         is Expr.Index -> {
-            val cons = this.pre.toType(env) as Type.Cons
+            val cons = this.pre.toType(env) as Type.User
             if (this.tk_.idx == 0) {
                 assert(cons.tk_.chr=='<' && cons.exactlyRec()) { "bug found" }
                 Type_Unit(this.tk)
@@ -72,8 +72,8 @@ fun Type.containsRec (): Boolean {
     return when (this) {
         is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
         is Type.Rec   -> true
-        is Type.Cons  -> this.vec.any { it.containsRec() }
-        is Type.Varia -> this.tp.containsRec()
+        is Type.User  -> this.vec.any { it.containsRec() }
+        is Type.Case -> this.tp.containsRec()
     }
 }
 
@@ -81,8 +81,8 @@ fun Type.exactlyRec (): Boolean {
     return when (this) {
         is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
         is Type.Rec   -> true
-        is Type.Cons  -> (this.tk_.chr=='<') && this.vec.any { it.containsRec() }
-        is Type.Varia -> error("bug found")
+        is Type.User  -> (this.tk_.chr=='<') && this.vec.any { it.containsRec() }
+        is Type.Case -> error("bug found")
     }
 }
 
@@ -91,18 +91,18 @@ fun Type.isSupOf (sub: Type): Boolean {
         (this is Type.None || sub is Type.None) -> false
         (this is Type.Any  || sub is Type.Any) -> true
         (this is Type.Nat  || sub is Type.Nat) -> true
-        (this is Type.Cons && sub is Type.Varia) -> {
+        (this is Type.User && sub is Type.Case) -> {
             assert(this.tk_.chr == '<') { "bug found" }
             if (sub.tk_.idx==0 && this.exactlyRec()) {
                 sub.tp is Type.Unit
             } else {
-                val this2 = this.map { if (it is Type.Rec) this else it } as Type.Cons
+                val this2 = this.map { if (it is Type.Rec) this else it } as Type.User
                 this2.vec[sub.tk_.idx-1].isSupOf(sub.tp)
             }
         }
         (this::class != sub::class) -> false
         (this is Type.Ptr && sub is Type.Ptr) -> this.tp.isSupOf(sub.tp)
-        (this is Type.Cons && sub is Type.Cons) ->
+        (this is Type.User && sub is Type.User) ->
             (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
         else -> true
     }
@@ -112,8 +112,8 @@ fun Type.ishasptr (): Boolean {
     return when (this) {
         is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Func, is Type.Rec -> false
         is Type.Ptr  -> true
-        is Type.Cons -> this.vec.any { it.ishasptr() }
-        is Type.Varia -> error("bug found")
+        is Type.User -> this.vec.any { it.ishasptr() }
+        is Type.Case -> error("bug found")
     }
 }
 
@@ -126,10 +126,10 @@ fun check_types (S: Stmt) {
                 }
             }
             is Expr.Index -> {
-                All_assert_tk(e.tk, e.pre.toType(env) is Type.Cons) {
+                All_assert_tk(e.tk, e.pre.toType(env) is Type.User) {
                     "invalid index : type mismatch"
                 }
-                val cons = (e.pre.toType(env) as Type.Cons)
+                val cons = (e.pre.toType(env) as Type.User)
                 val MAX = cons.vec.size
                 val MIN = if (cons.exactlyRec()) 0 else 1
                 All_assert_tk(e.tk, MIN<=e.tk_.idx && e.tk_.idx<=MAX) {
@@ -178,7 +178,7 @@ fun check_types (S: Stmt) {
 
 fun Expr.isconst (): Boolean {
     return when (this) {
-        is Expr.Unit, is Expr.Unk, is Expr.Call, is Expr.Tuple, is Expr.Varia -> true
+        is Expr.Unit, is Expr.Unk, is Expr.Call, is Expr.Tuple, is Expr.Case -> true
         is Expr.Var, is Expr.Nat, is Expr.Dnref -> false
         is Expr.Index -> this.pre.isconst()
         is Expr.Upref -> this.sub.isconst()
@@ -190,8 +190,8 @@ fun check_xexprs (S: Stmt) {
         val xp_ctrec = xp.containsRec()
         val xp_exrec = xp.exactlyRec()
         val e_iscst  = xe.e.isconst()
-        val e_isvar  = xe.e is Expr.Varia
-        val e_isnil  = e_isvar && ((xe.e as Expr.Varia).tk_.idx==0)
+        val e_isvar  = xe.e is Expr.Case
+        val e_isnil  = e_isvar && ((xe.e as Expr.Case).tk_.idx==0)
         when {
             (xe.x == null) -> All_assert_tk(xe.e.tk, !xp_ctrec || (e_iscst && (!e_isvar||e_isnil))) {
                 "invalid expression : expected " + (if (e_iscst) "`new` " else "") + "operation modifier"
@@ -256,7 +256,7 @@ fun Expr.getDepth (env: Env, caller: Int, hold: Boolean): Pair<Int,Stmt?> {
             }
         }
         is Expr.Tuple -> this.vec.map { it.e.getDepth(env, caller,it.e.toType(env).ishasptr()) }.maxByOrNull { it.first }!!
-        is Expr.Varia -> this.arg.e.getDepth(env, caller, hold)
+        is Expr.Case -> this.arg.e.getDepth(env, caller, hold)
     }
 }
 
