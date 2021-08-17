@@ -5,9 +5,9 @@ sealed class Type (val tk: Tk) {
     data class Nat   (val tk_: Tk.Str): Type(tk_)
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_)
     data class Union (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_)
-    data class Case  (val tk_: Tk.Num, val arg: Type): Type(tk_)
+    data class UCons  (val tk_: Tk.Num, val arg: Type): Type(tk_)
     data class Func  (val tk_: Tk.Sym, val inp: Type, val out: Type): Type(tk_)
-    data class Ptr   (val tk_: Tk.Chr, val tp: Type): Type(tk_)
+    data class Ptr   (val tk_: Tk.Chr, val pln: Type): Type(tk_)
     data class Rec   (val tk_: Tk.Up): Type(tk_)
 }
 
@@ -30,6 +30,21 @@ fun Type.keepAnyNat (other: ()->Type): Type {
     }
 }
 
+fun Type.Union.expand (): Type.Union {
+    fun aux (cur: Type, up: Int): Type {
+        return when (cur) {
+            is Type.Rec   -> if (up == cur.tk_.up) this else cur
+            is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray())
+            is Type.Union -> Type.Union(cur.tk_, cur.vec.map { aux(it,up+1) }.toTypedArray())
+            is Type.Ptr   -> Type.Ptr(cur.tk_, aux(cur.pln,up))
+            is Type.Func  -> Type.Func(cur.tk_, aux(cur.inp,up), aux(cur.out,up))
+            is Type.UCons  -> error("bug found")
+            else -> cur
+        }
+    }
+    return Type.Union(this.tk_, this.vec.map { aux(it, 1) }.toTypedArray())
+}
+
 //typealias XEpr = Pair<Tk,Expr>
 data class XExpr (val x: Tk?, val e: Expr)
 
@@ -43,8 +58,8 @@ sealed class Expr (val tk: Tk) {
     data class TDisc (val tk_: Tk.Num, val tup: Expr): Expr(tk_)
     data class UDisc (val tk_: Tk.Num, val uni: Expr): Expr(tk_)
     data class UPred (val tk_: Tk.Num, val uni: Expr): Expr(tk_)
-    data class Dnref (val tk_: Tk, val sub: Expr): Expr(tk_)
-    data class Upref (val tk_: Tk.Chr, val sub: Expr): Expr(tk_)
+    data class Dnref (val tk_: Tk,     val ptr: Expr): Expr(tk_)
+    data class Upref (val tk_: Tk.Chr, val pln: Expr): Expr(tk_)
     data class Call  (val tk_: Tk.Key, val f: Expr, val arg: XExpr): Expr(tk_)
 }
 
