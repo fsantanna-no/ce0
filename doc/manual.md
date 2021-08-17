@@ -29,44 +29,42 @@ The following keywords are reserved:
 
 ```
     arg         -- function argument
+    borrow      -- borrow recursive operation
     break       -- escape loop statement
     call        -- function invocation
-    clone       -- clone operation
+    copy        -- copy recursive operation
     else        -- conditional statement
     func        -- function declaration
     if          -- conditional statement
     input       -- input invocation
     loop        -- loop statement
-    move        -- move operation
+    move        -- move recursive operation
     native      -- native statement
-    Nil         -- empty subcase
+    new         -- new recursive operation
     output      -- output invocation
-    pre         -- native/type pre declaration
     return      -- function return
     set         -- assignment statement
     std         -- standard I/O function
-    type        -- new type declaration
     var         -- variable declaration
-    @pre        -- recursive type pre declaration
-    @ptr        -- recursive pointer type annotation
-    @rec        -- recursive type annotation
 ```
 
 The following symbols are valid:
 
 ```
     {   }       -- block delimeter
-    (   )       -- unit type, unit value, group expression
+    (   )       -- unit type, unit value, group type & expression
+    [   ]       -- tuple delimiter
+    <   >       -- union delimiter
     ;           -- sequence separator
     :           -- variable, type, function declaration
     ->          -- function type signature
     =           -- variable assignment
-    ,           -- tuple separator
-    .           -- tuple index, type predicate & discriminator
+    ,           -- tuple & union separator
+    .           -- tuple index, union index predicate & discriminator
     \           -- pointer type, upref & dnref operation
-    ^           -- outermost scope type declaration
-    !           -- type discriminator
-    ?           -- type predicate, unknown initialization
+    ^           -- recursive union, outermost scope
+    !           -- union discriminator
+    ?           -- union predicate, unknown initialization
 ```
 
 ## Identifiers
@@ -78,22 +76,13 @@ digits, and underscores:
 i    myCounter    x_10          -- variable identifiers
 ```
 
-A type identifier starts with an uppercase letter and might contain letters,
-digits, and underscores:
+## Indexes
+
+An tuple/union index is a dot `.` followed by sequence of digits:
 
 ```
-Int    U32    Tree              -- type identifiers
+.0    .20                       -- tuple/union indexes
 ```
-
-## Integer numbers
-
-A number is a sequence of digits with an option minus prefix `-`:
-
-```
--1    20    300                  -- tuple indexes / Int values
-```
-
-Numbers are used in values of [type `Int`](TODO) and in [tuple indexes](TODO):
 
 ## Native tokens
 
@@ -101,7 +90,7 @@ A native token starts with an underscore `_` and might contain letters,
 digits, and underscores:
 
 ```
-_char    _printf    _errno      -- native identifiers
+_char    _printf    _100        -- native identifiers
 ```
 
 A native token may also be enclosed with curly braces `{` and `}` or
@@ -129,30 +118,38 @@ Native type identifiers follow the rules for [native tokens](TODO):
 _char     _int    _{FILE*}
 ```
 
-## User
+## Composite Types
 
-A user type is a [new type](TODO) introduced by the programmer.
-A user type holds values created from [subcase constructors](TODO) also
-introduced by the programmer.
+A composite type is created from other types through tuples and unions.
 
-A user type identifier starts with an uppercase letter:
+### Tuple
 
-```
-List    Int    Tree
-```
-
-The type `Int` is a primitive type that holds [integer values](TODO).
-
-## Tuple
-
-A tuple type holds [compound values](TODO) from a fixed number of other types.
+A tuple type holds a value for each of its subtypes.
 A tuple type identifier is a comma-separated list of types enclosed with
-parentheses:
+brackets `[` and `]`:
 
 ```
-((),(),())          -- type is a triple of unit types
-(Int,(Tree,Tree))   -- type is a pair containing another pair
+[(),(),())          -- a triple of unit types
+[(),[_int,()]]      -- a pair containing another pair
 ```
+
+### Union
+
+A union type holds a value of one of its subtypes.
+A tuple type identifier is a comma-separated list of types enclosed with
+angle brackets `<` and `>`:
+
+```
+<(),(),()>          -- a union of three unit types
+<(),[_int,()]>      -- a union of unit and a pair
+<[_int,^]>          -- a recursive union
+```
+
+The caret subtype `^` indicates recursion and refers to the enclosing union
+type.
+A recursive union always includes an implicit unit subcase at its index `.0`.
+
+`TODO: multiple ^`
 
 ## Function
 
@@ -160,8 +157,8 @@ A function type holds a [function](TODO) value and is composed of an input and
 output types separated by an arrow `->`:
 
 ```
-() -> Tree          -- input is unit and output is Tree
-(List,List) -> ()   -- input is a pair and output is unit
+() -> _int          -- input is unit and output is Tree
+(_int,_int) -> ()   -- input is a pair and output is unit
 ```
 
 ## Pointers
@@ -170,8 +167,8 @@ A pointer type can be applied to any other type with the prefix backslash `\`
 and holds a pointer to another value:
 
 ```
-\Int        -- pointer to Int
-\List       -- pointer to List
+\_int           -- pointer to _int
+\(_int,())      -- pointer to tuple
 ```
 
 # 3. EXPRESSIONS
@@ -207,7 +204,9 @@ A variable holds a value of its [type](TODO):
 i    myCounter    x_10
 ```
 
-## Tuples and Indexes
+## Composite Expressions
+
+### Tuples and Indexes
 
 A tuple holds a fixed number of values of a compound [tuple type](TODO):
 
@@ -222,6 +221,51 @@ given position:
 ```
 (x,()).2                -- yields ()
 ```
+
+### Union Constructors, Discriminators & Predicates
+
+#### Constructors
+
+A constructor creates a value of a [union type](TODO) given a subcase index and
+an argument:
+
+```
+.1 ()                   -- subcase 1 holds unit
+.0                      -- () is optional
+.2 [_10,.0]             -- subcase 2 holds a tuple
+```
+
+#### Discriminators
+
+A discriminator accesses the value of a [union type](TODO) as one of its
+subcases.
+A discriminator expression suffixes the value to access with an index and an
+exclamation mark `!`:
+
+```
+(.1 ()).1!              -- yields ()
+
+x = .1 [.0,(),.0]
+... x.1!.2              -- yields ()
+... x.0!                -- error: `x` is a `.1`
+```
+
+If the discriminated subcase does not match the actual value, the attempted
+access raises a runtime error.
+
+#### Predicates
+
+A predicate checks if the value of a [union type](TODO) is of the given
+subcase.
+A predicate expression suffixes the value to test with an index and a question
+mark `?`:
+
+```
+(.1 ()).0?              -- yields 0
+.0.0?                   -- yields 1
+```
+
+`TODO: bool=native int`
 
 ## Calls, Input & Output
 
@@ -278,52 +322,7 @@ var x: List = clone y    -- `x` becomes "Item Item Nil"
 ```
 
 `TODO: move, types of both`
-
-## Constructors, Discriminators & Predicates
-
-### Constructors
-
-A constructor creates a value of a [user type](TODO) given a type and subcase,
-separated by a dot `.`, and an argument:
-
-```
-Bool.True ()                 -- value of type `Bool`
-Bool.False                   -- () is optional
-List.Item (Int,List)         -- subcase `Item` holds a tuple
-```
-
-### Discriminators
-
-A discriminator accesses the value of a [user type](TODO) as one of its
-subcases.
-A discriminator expression suffixes the value to access with a dot `.`, a
-subcase identifier, and an exclamation mark `!`:
-
-```
-(Bool.True ()).True!    -- yields ()
-
-x = Tree.Node (Tree.Nil,(),Tree.Nil)
-... x.Node!.2           -- yields ()
-... x.Nil!              -- error: `x` is a `Node`
-```
-
-If the discriminated subcase does not match the actual value, the attempted
-access raises a runtime error.
-
-### Predicates
-
-A predicate checks if the value of a [user type](TODO) is of its given subcase.
-A predicate expression suffixes the value to test with a dot `.`, a subcase
-identifier, and a question mark `?`:
-
-```
-type Member {
-    Student:   ()
-    Professor: ()
-}
-var x: Member = Member.Professor
-var b: Bool = x.Professor?    -- yields True
-```
+`TODO: borrow`
 
 ## Pointer uprefs & dnrefs
 
@@ -340,45 +339,6 @@ output std y\       -- recovers the value of `x`
 ```
 
 # 4. STATEMENTS
-
-## Type declarations
-
-A type declaration creates a new [user type](TODO).
-Each declaration inside the type defines a subcase of it:
-
-```
-type Bool {
-    False: ()       -- subcase `False` holds unit value
-    True:  ()       -- subcase `True`  holds unit value
-}
-```
-
-A recursive type requires a `@rec` modifier:
-
-```
-type @rec Tree {
-    -- Nil: ()          -- implicit empty subcase, always present
-    Node: (Tree,Tree)   -- subcase Node holds left/right subtrees
-}
-```
-
-A recursive type always includes an implicit empty `Nil` subcase, e.g.,
-`Tree.Nil` is the empty subcase of `Tree`.
-
-A mutually recursive type requires a `@pre` declaration to signal its existence
-before its full declaration:
-
-```
-type @pre Bb    -- let `Aa` know that `Bb` exists
-type @rec Aa {
-   Aa1: Bb      -- `Aa` contains `Bb`
-}
-type @rec Bb {
-   Bb1: Aa      -- `Bb` contains `Aa`
-}
-```
-
-`TODO: @ptr`
 
 ## Variable declarations
 
