@@ -286,6 +286,7 @@ class Exec {
             var b : <(),()> = <.1>
             output std b
         """.trimIndent())
+        println(out)
         assert(out == "<.1>\n")
     }
     @Test
@@ -429,7 +430,6 @@ class Exec {
         call f \x
         output std x
         """.trimIndent())
-        println(out)
         assert(out == "2\n")
     }
     @Test
@@ -443,24 +443,16 @@ class Exec {
         assert(out == "10\n")
     }
     @Test
-    fun i04_ptr_pre () {
-        val out = all("""
-            var n: <<^^>> = <.1 <.1 <.1 <.0>>>>
-            output std \n
-        """.trimIndent())
-        assert(out == "Aa1 (Bb1 (Aa1 (Nil)))\n")
-    }
-    @Test
     fun i05_ptr_block_err () {
         val out = all("""
             var p1: \_int = ?
             var p2: \_int = ?
             {
-                var v: _int = 10
+                var v: _int = _10
                 set p1 = \v
             }
             {
-                var v: _int = 20
+                var v: _int = _20
                 set p2 = \v
             }
             output std /p1
@@ -470,10 +462,10 @@ class Exec {
     @Test
     fun i06_ptr_block_err () {
         val out = all("""
-            var x: _int = 10
+            var x: _int = _10
             var p: \_int = ?
             {
-                var y: _int = 10
+                var y: _int = _10
                 set p = \x
                 set p = \y
             }
@@ -486,7 +478,7 @@ class Exec {
             func f : \_int -> \_int {
                 return arg
             }
-            var v: _int = 10
+            var v: _int = _10
             var p: \_int = f \v
             output std /p
         """.trimIndent())
@@ -495,7 +487,7 @@ class Exec {
     @Test
     fun i08_ptr_func_ok () {
         val out = all("""
-            var v: _int = 10
+            var v: _int = _10
             func f : () -> \_int {
                 return \v
             }
@@ -508,10 +500,10 @@ class Exec {
     fun i09_ptr_func_err () {
         val out = all("""
             func f : () -> \_int {
-                var v: _int = 10
+                var v: _int = _10
                 return \v
             }
-            var v: _int = 10
+            var v: _int = _10
             var p: \_int = f ()
             output std /p
         """.trimIndent())
@@ -524,7 +516,7 @@ class Exec {
                 var ptr: \_int = arg
                 return ptr
             }
-            var v: _int = 10
+            var v: _int = _10
             var p: \_int = f \v
             output std /p
         """.trimIndent())
@@ -537,7 +529,7 @@ class Exec {
                 var ptr: ^\_int = arg
                 return ptr
             }
-            var v: _int = 10
+            var v: _int = _10
             var p: \_int = f \v
             output std /p
         """.trimIndent())
@@ -547,7 +539,7 @@ class Exec {
     fun i12_ptr_ptr_ok () {
         val out = all("""
             var p: \\_int = ?
-            var z: _int = 10
+            var z: _int = _10
             var y: \_int = \z
             set p = \y
             output std //p
@@ -557,32 +549,29 @@ class Exec {
     @Test
     fun i13_ptr_tup () {
         val out = all("""
-            var v: (_int,_int) = (10,20)
+            var v: [_int,_int] = [_10,_20]
             var p: \_int = \v.1
-            set /p = 20
+            set /p = _20
             output std v
         """.trimIndent())
-        assert(out == "(20,20)\n")
+        assert(out == "[20,20]\n")
     }
     @Test
     fun i14_ptr_type () {
         val out = all("""
-            type X {
-                X: _int
-            }
-            var v: X = X.X 10
-            var p: \_int = \v.X!
-            set /p = 20
+            var v: <_int> = <.1 _10>
+            var p: \_int = \v!1
+            set /p = _20
             output std v
         """.trimIndent())
-        assert(out == "X (20)\n")
+        assert(out == "<.1 _>\n")
     }
     @Test
     fun i15_ptr_tup () {
         val out = all("""
-            var x: _int = 10
-            var p: (_int,\_int) = (10,\x)
-            var v: _int = 20
+            var x: _int = _10
+            var p: [_int,\_int] = [_10,\x]
+            var v: _int = _20
             set p.2 = \v
             output std /p.2
         """.trimIndent())
@@ -591,10 +580,10 @@ class Exec {
     @Test
     fun i16_ptr_tup () {
         val out = all("""
-            var x: _int = 10
-            var p: (_int,\_int) = (10,\x)
-            var v: _int = 20
-            set p = (10,\v)
+            var x: _int = _10
+            var p: [_int,\_int] = [_10,\x]
+            var v: _int = _20
+            set p = [_10,\v]
             output std /p.2
         """.trimIndent())
         assert(out == "20\n")
@@ -602,37 +591,31 @@ class Exec {
     @Test
     fun i17_ptr_type () {
         val out = all("""
-            type X {
-                X: \_int
-            }
-            var x: _int = 10
-            var p: X = X.X \x
-            var v: _int = 20
-            set p.X! = \v
-            output std /p.X!
+            var x: _int = _10
+            var p: <\_int> = <.1 \x>
+            var v: _int = _20
+            set p!1 = \v
+            output std /p!1
         """.trimIndent())
         assert(out == "20\n")
     }
     @Test
     fun i18_ptr_type () {
         val out = all("""
-            type X {
-                X: \_int
-            }
-            var x: _int = 10
-            var p: X = X.X \x
-            var v: _int = 20
-            set p = X.X \v
-            output std /p.X!
+            var x: _int = _10
+            var p: <\_int> = <.1 \x>
+            var v: _int = _20
+            set p = <.1 \v>
+            output std /p!1
         """.trimIndent())
         assert(out == "20\n")
     }
     @Test
     fun i19_ptr_tup () {
         val out = all("""
-            var x1: (_int,\_int) = ?
-            var v: _int = 20
-            var x2: (_int,\_int) = (10,\v)
+            var x1: [_int,\_int] = ?
+            var v: _int = _20
+            var x2: [_int,\_int] = [_10,\v]
             set x1 = x2
             output std /x1.2
         """.trimIndent())
@@ -673,7 +656,7 @@ class Exec {
             output std \l
         """.trimIndent())
         println(out)
-        assert(out == "Nil\n")
+        assert(out == "<.0>\n")
     }
     @Test
     fun j02_list () {
@@ -768,11 +751,29 @@ class Exec {
                Item: List
             }
             var l1: List = List.Item List.Nil
-            var l2: (_int,List) = (10, move l1)
+            var l2: (_int,List) = (_10, move l1)
             output std \l1
             output std \l2.2
         """.trimIndent())
         assert(out == "Nil\nItem (Item (Nil))\n")
+    }
+    @Test
+    fun j10_rec () {
+        val out = all("""
+            var n: <<^>> = <.1 new <.1 <.0>>>
+            output std \n
+        """.trimIndent())
+        println(out)
+        assert(out == "<.1 <.1 <.0>>>\n")
+    }
+    @Test
+    fun j11_rec_double () {
+        val out = all("""
+            var n: <<^^>> = new <.1 <.1 new <.1 <.1 <.0>>>>>
+            output std \n
+        """.trimIndent())
+        println(out)
+        assert(out == "Aa1 (Bb1 (Aa1 (Nil)))\n")
     }
 
     // SET - TUPLE - DATA
@@ -780,8 +781,8 @@ class Exec {
     @Test
     fun k01_set_tuple () {
         val out = all("""
-            var xy: (_int,_int) = (10,10)
-            set xy.1 = 20
+            var xy: [_int,_int] = [_10,_10]
+            set xy.1 = _20
             var x: _int = xy.1
             var y: _int = xy.2
             var v: _int = _(x+y)
@@ -795,42 +796,28 @@ class Exec {
     @Test
     fun z01 () {
         val out = all("""
-        type Bool {
-            False: ()
-            True:  ()
-        }
-        func inv : Bool -> Bool {
-            var tst: Bool = arg.True?
-            if tst {
-                var v: Bool = Bool.False()
-                return v
+        func inv : <(),()> -> <(),()> {
+            if arg?1 {
+                return <.2>
             } else {
-                var v: Bool = Bool.True
-                return v
+                return <.1>
             }
         }
-        var a: Bool = Bool.True
-        var b: Bool = inv a
+        var a: <(),()> = <.2>
+        var b: <(),()> = inv a
         output std b
         """.trimIndent())
-        assert(out == "False\n")
+        assert(out == "<.1>\n")
     }
     @Test
     fun z02 () {
         val out = all("""
-        type Bool {
-            False: ()
-            True:  ()
-        }
-        func bool: _int -> Bool {
-            return _(arg ? (Bool){Bool_True} : (Bool){Bool_False})
-        }
-        var i: _int = 1
-        var n: _int = 0
+        var i: _int = _1
+        var n: _int = _0
         loop {
             set n = _(n + i)
             set i = _(i + 1)
-            if bool _(i > 5) {
+            if _(i > 5) {
                 break
             }
         }
