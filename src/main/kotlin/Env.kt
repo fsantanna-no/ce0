@@ -202,7 +202,7 @@ fun check_xexprs (S: Stmt) {
         val e_isvar  = xe.e is Expr.UCons
         val e_isnil  = e_isvar && ((xe.e as Expr.UCons).tk_.num==0)
         when {
-            (xe.x == null) -> All_assert_tk(xe.e.tk, !xp_ctrec || (e_iscst && (!e_isvar||e_isnil))) {
+            (xe.x == null) -> All_assert_tk(xe.e.tk, !xp_ctrec || (e_iscst && (!e_isvar||!xp_exrec||e_isnil))) {
                 "invalid expression : expected " + (if (e_iscst) "`new` " else "") + "operation modifier"
             }
             (xe.x.enu == TK.BORROW) -> All_assert_tk(xe.x, xe.e.toType(env).let { it is Type.Ptr && it.pln.containsRec() }) {
