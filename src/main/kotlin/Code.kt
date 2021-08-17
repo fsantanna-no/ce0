@@ -253,13 +253,10 @@ fun code_fs (env: Env, s: Stmt) {
         is Stmt.Nat  -> s.tk_.str + "\n"
         is Stmt.Seq  -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; s1+s2 }
         is Stmt.Set  -> {
-            // Attr is not an Expr, so we need to call code_fe explicitly
-            val dst_tp = s.dst.toExpr().toType(env)
-            code_fe(env, s.dst.toExpr(), dst_tp)
-            val dst = EXPRS.removeFirst()
             val src = EXPRS.removeFirst()
+            val dst = EXPRS.removeFirst()
             dst.first + src.first +
-                (if (dst_tp is Type.Unit) "" else (dst.second+" = ")) + src.second + ";\n"
+                (if (s.dst.toExpr().toType(env) is Type.Unit) "" else (dst.second+" = ")) + src.second + ";\n"
         }
         is Stmt.If -> {
             val tst = EXPRS.removeFirst()
