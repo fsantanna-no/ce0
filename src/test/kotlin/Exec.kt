@@ -55,6 +55,7 @@ class Exec {
             var x: _int = _10
             output std x
         """.trimIndent())
+        println(out)
         assert(out == "10\n")
     }
     @Test
@@ -281,80 +282,45 @@ class Exec {
     @Test
     fun f02_xyz () {
         val out = all("""
-            type Z { Z:() }
-            type Y { Y:Z }
-            type X { X:Y }
-            var z : Z = Z.Z()
-            var y : Y = Y.Y z
-            var x : X = X.X y
-            var yy: Y = x.X!
-            var zz: Z = yy.Y!
+            var z : <()> = .1()
+            var y : <<()>> = .1 z
+            var x : <<<()>>> = .1 y
+            var yy: <<()>> = x.1!
+            var zz: <()> = yy.1!
             output std zz
         """.trimIndent())
-        assert(out == "Z\n")
+        assert(out == ".1\n")
     }
     @Test
     fun f05_user_big () {
         val out = all("""
-            type Set_ {
-                Size:     (_int,_int,_int,_int)
-                Color_BG: _int
-                Color_FG: _int
-            }
-            var x: _int = _1
-            var y: _int = _2
-            var w: _int = _3
-            var z: _int = _4
-            output std(Set_.Size (x,y,w,x))
+            var s: <[_int,_int,_int,_int],_int,_int> = .1 [_1,_2,_3,_4]
+            output std s
         """.trimIndent())
-        assert(out == "Size (_,_,_,_)\n")
+        assert(out == ".1 [1,2,3,4]\n")
     }
     @Test
     fun f06_user_big () {
         val out = all("""
-            type Z { Z:() }
-            type Y { Y:() }
-            type X { X:(Y,Z) }
-            output std (X.X (Y.Y,Z.Z))
+            var x: <[<()>,<()>]> = .1 [.1,.1]
+            output std x
         """.trimIndent())
-        assert(out == "X (Y,Z)\n")
+        println(out)
+        assert(out == ".1 [.1,.1]\n")
     }
     @Test
     fun f07_user_pred () {
         val out = all("""
-            type Bool { False: () ; True: () }
-            type Z { Z:() }
-            var z: Z = Z.Z
-            output std z.Z?
+            var z: <()> = .1
+            output std z.1?
         """.trimIndent())
-        assert(out == "True\n")
-    }
-    @Test
-    fun f08_user_pred_err () {
-        val out = all("""
-            type Bool { False: () ; True: () }
-            type Z { Z:() }
-            var z: Z = Z.Z
-            output std z.Err?
-        """.trimIndent())
-        assert(out == "(ln 4, col 14): invalid `.´ : undeclared subcase \"Err\"")
-    }
-    @Test
-    fun f09_user_disc_err () {
-        val out = all("""
-            type Z { Z:() }
-            var z: Z = Z.Z
-            output std z.Err!
-        """.trimIndent())
-        assert(out == "(ln 3, col 14): invalid `.´ : undeclared subcase \"Err\"")
+        assert(out == "1\n")
     }
     @Test
     fun f10_user_disc () {
         val out = all("""
-            type Bool { False: () ; True: () }
-            type Z { X:() Y:() }
-            var z: Z = Z.Y
-            output std z.Y!
+            var z: <(),()> = .2 ()
+            output std z.2!
         """.trimIndent())
         assert(out == "()\n")
     }
@@ -681,15 +647,13 @@ class Exec {
     @Test
     fun f09_ptr_type_err () {
         val out = all("""
-            type X {
-                X: \Int
-            }
-            var x1: X = ?
-            var v: Int = 20
-            var x2: X = X.X \v
+            var x1: <\_int> = ?
+            var v: _int = _20
+            var x2: <\_int> = .1 \v
             set x1 = x2
-            output std /x1.X!
+            output std /x1.1!
         """.trimIndent())
+        println(out)
         assert(out == "20\n")
     }
     @Test

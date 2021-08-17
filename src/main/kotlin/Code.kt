@@ -80,10 +80,10 @@ fun Type.pre (): String {
                                 ${
                                     when (tp) {
                                         is Type.Unit  -> ""
-                                        is Type.Nat   -> "putchar(' '); putchar('_');"
+                                        is Type.Nat, is Type.Ptr -> "putchar(' '); putchar('_');"
                                         is Type.Tuple -> "putchar(' '); output_std_${tp.toce()}_(v._${i+1});"
                                         is Type.Union -> "putchar(' '); output_std_${tp.toce()}_(v._${i+1});"
-                                        else -> TODO()
+                                        else -> TODO(tp.toString())
                                     }
                                 }
                                 break;
@@ -173,10 +173,17 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
         }
         is Expr.Index -> {
             val pre = EXPRS.removeFirst()
-            Pair (
-                pre.first,
-                pre.second /*+TODO("deref=true")*/ + "._" + e.tk_.idx
-            )
+            if (e.op is Tk.Chr && e.op.chr=='?') {
+                Pair (
+                    pre.first,
+                    "(${pre.second /*deref=true*/}.tag == ${e.tk_.idx})"
+                )
+            } else {
+                Pair (
+                    pre.first,
+                    pre.second /*+TODO("deref=true")*/ + "._" + e.tk_.idx
+                )
+            }
         }
         is Expr.Tuple -> {
             val (pre,pos) = (1..e.vec.size).map { EXPRS.removeFirst() }.reversed().unzip()
@@ -278,7 +285,7 @@ fun code_fs (env: Env, s: Stmt) {
         is Stmt.Ret   -> "return" + if (s.e.e.toType(env) is Type.Unit) ";\n" else " _ret_;\n"
         is Stmt.Var   -> {
             val src = EXPRS.removeFirst()
-            src.first + (if (s.type is Type.Unit) "" else {
+            s.type.pre() + src.first + (if (s.type is Type.Unit) "" else {
                 "${s.type.pos()} ${s.tk_.str}" + (    // List* l
                     if (s.tk_.str == "_ret_") "" else {
                         (if (!s.type.containsRec()) "" else {

@@ -30,19 +30,23 @@ fun Expr.toType (env: Env): Type {
         is Expr.Dnref -> (this.sub.toType(env) as Type.Ptr).tp
         is Expr.Var   -> env.idToStmt(this.tk_.str)!!.typeVarFunc()
         is Expr.Tuple -> Type.Tuple(this.tk_, this.vec.map{it.e.toType(env)}.toTypedArray())
-        is Expr.Case -> Type.Case(this.tk_, this.arg.e.toType(env))
+        is Expr.Case  -> Type.Case(this.tk_, this.arg.e.toType(env))
         is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType(env) as Type.Func).out
         is Expr.Index -> {
             val cons = this.pre.toType(env)
-            if (this.tk_.idx == 0) {
-                assert(cons is Type.Union && cons.exactlyRec()) { "bug found" }
-                Type_Unit(this.tk)
-            } else {
-                (when (cons) {
-                    is Type.Tuple -> cons.vec
-                    is Type.Union -> cons.vec
-                    else -> error("bug found")
-                })[this.tk_.idx - 1]
+            when {
+                (this.op is Tk.Chr && this.op.chr=='?') -> Type.Nat(Tk.Str(TK.XNAT, this.tk.lin, this.tk.col, "int"))
+                (this.tk_.idx == 0) -> {
+                    assert(cons is Type.Union && cons.exactlyRec()) { "bug found" }
+                    Type_Unit(this.tk)
+                }
+                else -> {
+                    (when (cons) {
+                        is Type.Tuple -> cons.vec
+                        is Type.Union -> cons.vec
+                        else -> error("bug found")
+                    })[this.tk_.idx - 1]
+                }
             }
         }
     }
@@ -78,7 +82,7 @@ fun Type.containsRec (): Boolean {
         is Type.Rec   -> true
         is Type.Tuple -> this.vec.any { it.containsRec() }
         is Type.Union -> this.vec.any { it.containsRec() }
-        is Type.Case  -> this.tp.containsRec()
+        is Type.Case  -> this.arg.containsRec()
     }
 }
 
@@ -98,10 +102,10 @@ fun Type.isSupOf (sub: Type): Boolean {
         (this is Type.Nat  || sub is Type.Nat) -> true
         (this is Type.Union && sub is Type.Case) -> {
             if (sub.tk_.idx==0 && this.exactlyRec()) {
-                sub.tp is Type.Unit
+                sub.arg is Type.Unit
             } else {
                 val this2 = this.map { if (it is Type.Rec) this else it } as Type.Union
-                this2.vec[sub.tk_.idx-1].isSupOf(sub.tp)
+                this2.vec[sub.tk_.idx-1].isSupOf(sub.arg)
             }
         }
         (this::class != sub::class) -> false
@@ -120,7 +124,7 @@ fun Type.ishasptr (): Boolean {
         is Type.Ptr   -> true
         is Type.Tuple -> this.vec.any { it.ishasptr() }
         is Type.Union -> this.vec.any { it.ishasptr() }
-        is Type.Case  -> error("bug found")
+        is Type.Case  -> this.arg.ishasptr()
     }
 }
 
