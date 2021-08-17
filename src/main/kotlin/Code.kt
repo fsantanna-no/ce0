@@ -281,7 +281,10 @@ fun code_fs (env: Env, s: Stmt) {
             e.first + e.second /*+ TODO("deref=true")*/ + ";\n"
         }
         is Stmt.Block -> "{\n" + CODE.removeFirst() + "}\n"
-        is Stmt.Ret   -> "return" + if (s.e.e.toType(env) is Type.Unit) ";\n" else " _ret_;\n"
+        is Stmt.Ret   -> {
+            EXPRS.removeFirst()
+            "return" + if (s.e.e.toType(env) is Type.Unit) ";\n" else " _ret_;\n"
+        }
         is Stmt.Var   -> {
             val src = EXPRS.removeFirst()
             s.type.pre() + src.first + (if (s.type is Type.Unit) "" else {

@@ -435,9 +435,9 @@ class Exec {
     @Test
     fun i03_ptr_func () {
         val out = all("""
-            func f: \Int->Int { return /arg }
-            var g: \Int->Int = f
-            var x: Int = 10
+            func f: \_int->_int { return /arg }
+            var g: \_int->_int = f
+            var x: _int = _10
             output std g (\x)
         """.trimIndent())
         assert(out == "10\n")
@@ -445,14 +445,7 @@ class Exec {
     @Test
     fun i04_ptr_pre () {
         val out = all("""
-            type @pre @rec Bb
-            type @rec Aa {
-               Aa1: Bb
-            }
-            type @rec Bb {
-               Bb1: Aa
-            }
-            var n: Aa = Aa.Aa1 Bb.Bb1 Aa.Aa1 Bb.Nil
+            var n: <<^^>> = <.1 <.1 <.1 <.0>>>>
             output std \n
         """.trimIndent())
         assert(out == "Aa1 (Bb1 (Aa1 (Nil)))\n")
@@ -460,14 +453,14 @@ class Exec {
     @Test
     fun i05_ptr_block_err () {
         val out = all("""
-            var p1: \Int = ?
-            var p2: \Int = ?
+            var p1: \_int = ?
+            var p2: \_int = ?
             {
-                var v: Int = 10
+                var v: _int = 10
                 set p1 = \v
             }
             {
-                var v: Int = 20
+                var v: _int = 20
                 set p2 = \v
             }
             output std /p1
@@ -477,10 +470,10 @@ class Exec {
     @Test
     fun i06_ptr_block_err () {
         val out = all("""
-            var x: Int = 10
-            var p: \Int = ?
+            var x: _int = 10
+            var p: \_int = ?
             {
-                var y: Int = 10
+                var y: _int = 10
                 set p = \x
                 set p = \y
             }
@@ -490,11 +483,11 @@ class Exec {
     @Test
     fun i07_ptr_func_ok () {
         val out = all("""
-            func f : \Int -> \Int {
+            func f : \_int -> \_int {
                 return arg
             }
-            var v: Int = 10
-            var p: \Int = f \v
+            var v: _int = 10
+            var p: \_int = f \v
             output std /p
         """.trimIndent())
         assert(out == "10\n")
@@ -502,11 +495,11 @@ class Exec {
     @Test
     fun i08_ptr_func_ok () {
         val out = all("""
-            var v: Int = 10
-            func f : () -> \Int {
+            var v: _int = 10
+            func f : () -> \_int {
                 return \v
             }
-            var p: \Int = f ()
+            var p: \_int = f ()
             output std /p
         """.trimIndent())
         assert(out == "10\n")
@@ -514,12 +507,12 @@ class Exec {
     @Test
     fun i09_ptr_func_err () {
         val out = all("""
-            func f : () -> \Int {
-                var v: Int = 10
+            func f : () -> \_int {
+                var v: _int = 10
                 return \v
             }
-            var v: Int = 10
-            var p: \Int = f ()
+            var v: _int = 10
+            var p: \_int = f ()
             output std /p
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold local pointer \"v\" (ln 2)")
@@ -527,12 +520,12 @@ class Exec {
     @Test
     fun i10_ptr_func_err () {
         val out = all("""
-            func f : \Int -> \Int {
-                var ptr: \Int = arg
+            func f : \_int -> \_int {
+                var ptr: \_int = arg
                 return ptr
             }
-            var v: Int = 10
-            var p: \Int = f \v
+            var v: _int = 10
+            var p: \_int = f \v
             output std /p
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold local pointer \"ptr\" (ln 2)")
@@ -540,12 +533,12 @@ class Exec {
     @Test
     fun i11_ptr_func_ok () {
         val out = all("""
-            func f : \Int -> \Int {
-                var ptr: ^\Int = arg
+            func f : \_int -> \_int {
+                var ptr: ^\_int = arg
                 return ptr
             }
-            var v: Int = 10
-            var p: \Int = f \v
+            var v: _int = 10
+            var p: \_int = f \v
             output std /p
         """.trimIndent())
         assert(out == "10\n")
@@ -553,9 +546,9 @@ class Exec {
     @Test
     fun i12_ptr_ptr_ok () {
         val out = all("""
-            var p: \\Int = ?
-            var z: Int = 10
-            var y: \Int = \z
+            var p: \\_int = ?
+            var z: _int = 10
+            var y: \_int = \z
             set p = \y
             output std //p
         """.trimIndent())
@@ -564,8 +557,8 @@ class Exec {
     @Test
     fun i13_ptr_tup () {
         val out = all("""
-            var v: (Int,Int) = (10,20)
-            var p: \Int = \v.1
+            var v: (_int,_int) = (10,20)
+            var p: \_int = \v.1
             set /p = 20
             output std v
         """.trimIndent())
@@ -575,10 +568,10 @@ class Exec {
     fun i14_ptr_type () {
         val out = all("""
             type X {
-                X: Int
+                X: _int
             }
             var v: X = X.X 10
-            var p: \Int = \v.X!
+            var p: \_int = \v.X!
             set /p = 20
             output std v
         """.trimIndent())
@@ -587,9 +580,9 @@ class Exec {
     @Test
     fun i15_ptr_tup () {
         val out = all("""
-            var x: Int = 10
-            var p: (Int,\Int) = (10,\x)
-            var v: Int = 20
+            var x: _int = 10
+            var p: (_int,\_int) = (10,\x)
+            var v: _int = 20
             set p.2 = \v
             output std /p.2
         """.trimIndent())
@@ -598,9 +591,9 @@ class Exec {
     @Test
     fun i16_ptr_tup () {
         val out = all("""
-            var x: Int = 10
-            var p: (Int,\Int) = (10,\x)
-            var v: Int = 20
+            var x: _int = 10
+            var p: (_int,\_int) = (10,\x)
+            var v: _int = 20
             set p = (10,\v)
             output std /p.2
         """.trimIndent())
@@ -610,11 +603,11 @@ class Exec {
     fun i17_ptr_type () {
         val out = all("""
             type X {
-                X: \Int
+                X: \_int
             }
-            var x: Int = 10
+            var x: _int = 10
             var p: X = X.X \x
-            var v: Int = 20
+            var v: _int = 20
             set p.X! = \v
             output std /p.X!
         """.trimIndent())
@@ -624,11 +617,11 @@ class Exec {
     fun i18_ptr_type () {
         val out = all("""
             type X {
-                X: \Int
+                X: \_int
             }
-            var x: Int = 10
+            var x: _int = 10
             var p: X = X.X \x
-            var v: Int = 20
+            var v: _int = 20
             set p = X.X \v
             output std /p.X!
         """.trimIndent())
@@ -637,9 +630,9 @@ class Exec {
     @Test
     fun i19_ptr_tup () {
         val out = all("""
-            var x1: (Int,\Int) = ?
-            var v: Int = 20
-            var x2: (Int,\Int) = (10,\v)
+            var x1: (_int,\_int) = ?
+            var v: _int = 20
+            var x2: (_int,\_int) = (10,\v)
             set x1 = x2
             output std /x1.2
         """.trimIndent())
@@ -775,7 +768,7 @@ class Exec {
                Item: List
             }
             var l1: List = List.Item List.Nil
-            var l2: (Int,List) = (10, move l1)
+            var l2: (_int,List) = (10, move l1)
             output std \l1
             output std \l2.2
         """.trimIndent())
@@ -787,11 +780,11 @@ class Exec {
     @Test
     fun k01_set_tuple () {
         val out = all("""
-            var xy: (Int,Int) = (10,10)
+            var xy: (_int,_int) = (10,10)
             set xy.1 = 20
-            var x: Int = xy.1
-            var y: Int = xy.2
-            var v: Int = _(x+y)
+            var x: _int = xy.1
+            var y: _int = xy.2
+            var v: _int = _(x+y)
             output std v
         """.trimIndent())
         assert(out == "30\n")
@@ -829,11 +822,11 @@ class Exec {
             False: ()
             True:  ()
         }
-        func bool: Int -> Bool {
+        func bool: _int -> Bool {
             return _(arg ? (Bool){Bool_True} : (Bool){Bool_False})
         }
-        var i: Int = 1
-        var n: Int = 0
+        var i: _int = 1
+        var n: _int = 0
         loop {
             set n = _(n + i)
             set i = _(i + 1)

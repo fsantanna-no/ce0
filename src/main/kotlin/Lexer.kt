@@ -44,7 +44,7 @@ fun TK.toErr (chr: Char?): String {
         TK.CHAR -> "`" + chr!! + "´"
         TK.XNAT -> "`_´"
         TK.XVAR -> "variable identifier"
-        //TK.XIDX -> "index"
+        //TK.XNUM -> "index"
         else -> TODO(this.toString())
     }
 }
@@ -98,7 +98,6 @@ fun token (all: All) {
                 all.read().let { c1=it.first ; x1=it.second }
             }
             all.unread(c1)
-            assert(n == 1) { "TODO: multiple ^"}
             all.tk1 = Tk.Up(TK.XUP, LIN, COL, n)
         }
         (x1 == '(') -> {

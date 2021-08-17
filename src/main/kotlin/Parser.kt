@@ -316,6 +316,7 @@ fun parser_stmt (all: All): Stmt {
             val tk_id = all.tk0 as Tk.Str
             all.accept_err(TK.CHAR,':')
             val outer = all.accept(TK.XUP)
+            if (outer && (all.tk0 as Tk.Up).up > 1) { TODO("multiple ^") }
             val tp = parser_type(all)
             all.assert_tk(tp.tk, !outer || tp is Type.Ptr) {
                 "expected pointer type"

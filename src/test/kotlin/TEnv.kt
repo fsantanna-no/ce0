@@ -320,9 +320,9 @@ class TEnv {
     @Test
     fun e03_ptr_err () {
         val out = inp2env("""
-            var pout: \_Int = ?
+            var pout: \_int = ?
             {
-                var pin: \_Int = ?
+                var pin: \_int = ?
                 set pout = pin
             }
         """.trimIndent())
@@ -331,9 +331,9 @@ class TEnv {
     @Test
     fun e04_ptr_ok () {
         val out = inp2env("""
-            var pout: \_Int = ?
+            var pout: \_int = ?
             {
-                var pin: \_Int = ?
+                var pin: \_int = ?
                 set pin = pout
             }
         """.trimIndent())
@@ -345,9 +345,9 @@ class TEnv {
     @Test
     fun f01_ptr_ptr_err () {
         val out = inp2env("""
-            var p: \\_Int = ?
+            var p: \\_int = ?
             {
-                var y: \_Int = ?
+                var y: \_int = ?
                 set p = \y
             }
         """.trimIndent())
@@ -356,9 +356,9 @@ class TEnv {
     @Test
     fun f02_ptr_ptr_ok () {
         val out = inp2env("""
-            var p: \\_Int = ?
-            var z: _Int = _10
-            var y: \_Int = \z
+            var p: \\_int = ?
+            var z: _int = _10
+            var y: \_int = \z
             set p = \y
             output std //p
         """.trimIndent())
@@ -367,10 +367,10 @@ class TEnv {
     @Test
     fun f03_ptr_ptr_err () {
         val out = inp2env("""
-            var p: \\_Int = ?
+            var p: \\_int = ?
             {
-                var z: _Int = _10
-                var y: \_Int = \z
+                var z: _int = _10
+                var y: \_int = \z
                 set p = \y
             }
         """.trimIndent())
@@ -379,11 +379,11 @@ class TEnv {
     @Test
     fun f04_ptr_ptr_err () {
         val out = inp2env("""
-            var p: \_Int = ?
+            var p: \_int = ?
             {
-                var x: _Int = _10
-                var y: \_Int = \x
-                var z: \\_Int = \y
+                var x: _int = _10
+                var y: \_int = \x
+                var z: \\_int = \y
                 set p = /z
             }
         """.trimIndent())
@@ -395,11 +395,11 @@ class TEnv {
     @Test
     fun g01_ptr_func_ok () {
         val out = inp2env("""
-            func f : \_Int -> \_Int {
+            func f : \_int -> \_int {
                 return arg
             }
-            var v: _Int = _10
-            var p: \_Int = f \v
+            var v: _int = _10
+            var p: \_int = f \v
             output std /p
         """.trimIndent())
         assert(out == "OK")
@@ -407,11 +407,11 @@ class TEnv {
     @Test
     fun g02_ptr_func_ok () {
         val out = inp2env("""
-            var v: _Int = _10
-            func f : () -> \_Int {
+            var v: _int = _10
+            func f : () -> \_int {
                 return \v
             }
-            var p: \_Int = f ()
+            var p: \_int = f ()
             output std /p
         """.trimIndent())
         assert(out == "OK")
@@ -419,12 +419,12 @@ class TEnv {
     @Test
     fun g03_ptr_func_err () {
         val out = inp2env("""
-            func f : () -> \_Int {
-                var v: _Int = _10
+            func f : () -> \_int {
+                var v: _int = _10
                 return \v
             }
-            var v: _Int = _10
-            var p: \_Int = f ()
+            var v: _int = _10
+            var p: \_int = f ()
             output std /p
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold local pointer \"v\" (ln 2)")
@@ -432,12 +432,12 @@ class TEnv {
     @Test
     fun g04_ptr_func_err () {
         val out = inp2env("""
-            func f : \_Int -> \_Int {
-                var ptr: \_Int = arg
+            func f : \_int -> \_int {
+                var ptr: \_int = arg
                 return ptr
             }
-            var v: _Int = _10
-            var p: \_Int = f \v
+            var v: _int = _10
+            var p: \_int = f \v
             output std /p
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment : cannot hold local pointer \"ptr\" (ln 2)")
@@ -445,12 +445,12 @@ class TEnv {
     @Test
     fun g05_ptr_caret_ok () {
         val out = inp2env("""
-            func f : \_Int -> \_Int {
-                var ptr: ^\_Int = arg
+            func f : \_int -> \_int {
+                var ptr: ^\_int = arg
                 return ptr
             }
-            var v: _Int = _10
-            var p: \_Int = f \v
+            var v: _int = _10
+            var p: \_int = f \v
             output std /p
         """.trimIndent())
         assert(out == "OK")
@@ -458,13 +458,13 @@ class TEnv {
     @Test
     fun g06_ptr_caret_err () {
         val out = inp2env("""
-            func f : \_Int -> \_Int {
-                var x: _Int = _10
-                var ptr: ^\_Int = \x
+            func f : \_int -> \_int {
+                var x: _int = _10
+                var ptr: ^\_int = \x
                 return ptr
             }
-            var v: _Int = _10
-            var p: \_Int = f \v
+            var v: _int = _10
+            var p: \_int = f \v
             output std /p
         """.trimIndent())
         assert(out == "(ln 3, col 9): invalid assignment : cannot hold local pointer \"x\" (ln 2)")
@@ -474,7 +474,7 @@ class TEnv {
     @Test
     fun g07_ptr_caret_err () {
         val out = inp2env("""
-            var ptr: ^\_Int = ?
+            var ptr: ^\_int = ?
         """.trimIndent())
         assert(out == "OK")
     }
@@ -482,7 +482,7 @@ class TEnv {
     @Test
     fun g08_ptr_arg_err () {
         val out = inp2env("""
-            func f: _Int -> \_Int
+            func f: _int -> \_int
             {
                 return \arg
             }
@@ -492,9 +492,9 @@ class TEnv {
     @Test
     fun g09_ptr_arg_err () {
         val out = inp2env("""
-            func f: _Int -> \_Int
+            func f: _int -> \_int
             {
-                var ptr: ^\_Int = \arg
+                var ptr: ^\_int = \arg
                 return ptr
             }
         """.trimIndent())
@@ -503,9 +503,9 @@ class TEnv {
     @Test
     fun g10_ptr_out_err () {
         val out = inp2env("""
-            func f: \_Int -> \\_Int
+            func f: \_int -> \\_int
             {
-                var ptr: ^\_Int = arg
+                var ptr: ^\_int = arg
                 return \ptr
             }
         """.trimIndent())
@@ -514,11 +514,11 @@ class TEnv {
     @Test
     fun g11_ptr_func () {
         val out = inp2env("""
-            var v: _Int = _10
-            func f : () -> \_Int {
+            var v: _int = _10
+            func f : () -> \_int {
                 return \v
             }
-            var p: \_Int = ?
+            var p: \_int = ?
             {
                 set p = f ()
             }
@@ -528,11 +528,11 @@ class TEnv {
     @Test
     fun g12_ptr_func () {
         val out = inp2env("""
-            var v: _Int = _10
-            func f : \_Int -> \_Int {
+            var v: _int = _10
+            func f : \_int -> \_int {
                 return \v
             }
-            var p: \_Int = ?
+            var p: \_int = ?
             {
                 set p = f (\v)
             }
@@ -542,8 +542,8 @@ class TEnv {
     @Test
     fun g13_ptr_func () {
         val out = inp2env("""
-            var v: \_Int = ?
-            func f : \_Int -> () {
+            var v: \_int = ?
+            func f : \_int -> () {
                 set v = arg
             }
         """.trimIndent())
@@ -555,9 +555,9 @@ class TEnv {
     @Test
     fun h01_ptr_tuple_err () {
         val out = inp2env("""
-            var p: \[_Int,_Int] = ?
+            var p: \[_int,_int] = ?
             {
-                var y: [_Int,_Int] = [_10,_20]
+                var y: [_int,_int] = [_10,_20]
                 set p = \y
             }
         """.trimIndent())
@@ -577,8 +577,8 @@ class TEnv {
     @Test
     fun h03_ptr_tup () {
         val out = inp2env("""
-            var v: [_Int,_Int] = [_10,_20]
-            var p: \_Int = \v.1
+            var v: [_int,_int] = [_10,_20]
+            var p: \_int = \v.1
             set /p = _20
             output std v
         """.trimIndent())
@@ -587,9 +587,9 @@ class TEnv {
     @Test
     fun h04_ptr_tup_err () {
         val out = inp2env("""
-            var p: \_Int = ?
+            var p: \_int = ?
             {
-                var v: [_Int,_Int] = [_10,_20]
+                var v: [_int,_int] = [_10,_20]
                 set p = \v.1
             }
         """.trimIndent())
@@ -609,9 +609,9 @@ class TEnv {
     @Test
     fun h06_ptr_tup_err () {
         val out = inp2env("""
-            var p: [_Int,\_Int] = [_10,?]
+            var p: [_int,\_int] = [_10,?]
             {
-                var v: _Int = _20
+                var v: _int = _20
                 set p.2 = \v
             }
         """.trimIndent())
@@ -620,9 +620,9 @@ class TEnv {
     @Test
     fun h07_ptr_tup_err () {
         val out = inp2env("""
-            var p: [_Int,\_Int] = [_10,?]
+            var p: [_int,\_int] = [_10,?]
             {
-                var v: _Int = _20
+                var v: _int = _20
                 set p = [_10,\v]
             }
         """.trimIndent())
@@ -631,9 +631,9 @@ class TEnv {
     @Test
     fun h08_ptr_type_err () {
         val out = inp2env("""
-            var p: <\_Int> = <.1 ?>
+            var p: <\_int> = <.1 ?>
             {
-                var v: _Int = _20
+                var v: _int = _20
                 set p!1 = \v
             }
         """.trimIndent())
@@ -642,9 +642,9 @@ class TEnv {
     @Test
     fun h09_ptr_type_err () {
         val out = inp2env("""
-            var p: <\_Int> = <.1 ?>
+            var p: <\_int> = <.1 ?>
             {
-                var v: _Int = _20
+                var v: _int = _20
                 set p = <.1 \v>
             }
         """.trimIndent())
@@ -653,10 +653,10 @@ class TEnv {
     @Test
     fun h10_ptr_tup_err () {
         val out = inp2env("""
-            var x1: [_Int,\_Int] = ?
+            var x1: [_int,\_int] = ?
             {
-                var v: _Int = _20
-                var x2: [_Int,\_Int] = [_10,\v]
+                var v: _int = _20
+                var x2: [_int,\_int] = [_10,\v]
                 set x1 = x2
             }
         """.trimIndent())
@@ -665,10 +665,10 @@ class TEnv {
     @Test
     fun h11_ptr_type_err () {
         val out = inp2env("""
-            var x1: <\_Int> = ?
+            var x1: <\_int> = ?
             {
-                var v: _Int = _20
-                var x2: <\_Int> = <.1 \v>
+                var v: _int = _20
+                var x2: <\_int> = <.1 \v>
                 set x1 = x2
             }
         """.trimIndent())
@@ -719,7 +719,7 @@ class TEnv {
     @Test
     fun j04_rec_xepr_copy_err () {
         val out = inp2env("""
-            var x: _Int = copy _10
+            var x: _int = copy _10
         """.trimIndent())
         assert(out == "(ln 1, col 15): invalid `copy` : expected recursive variable")
     }
@@ -734,8 +734,8 @@ class TEnv {
     @Test
     fun j06_rec_xepr_borrow_err () {
         val out = inp2env("""
-            var x: _Int = ?
-            var y: \_Int = borrow \x
+            var x: _int = ?
+            var y: \_int = borrow \x
         """.trimIndent())
         assert(out == "(ln 2, col 16): invalid `borrow` : expected pointer to recursive variable")
     }
@@ -743,6 +743,14 @@ class TEnv {
     fun j07_rec_xepr_copy_err () {
         val out = inp2env("""
             var x: <^> = copy <.1 <.0>>
+        """.trimIndent())
+        assert(out == "(ln 1, col 14): invalid `copy` : expected recursive variable")
+        //assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
+    }
+    @Test
+    fun j08_rec_xepr_double_rec () {
+        val out = inp2env("""
+            var x: <<^^>> = new <.1 <.1 new <.1 <.1 .0>>>
         """.trimIndent())
         assert(out == "(ln 1, col 14): invalid `copy` : expected recursive variable")
         //assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
