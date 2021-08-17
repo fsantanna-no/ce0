@@ -26,11 +26,11 @@ fun Expr.toType (env: Env): Type {
         is Expr.Unk   -> Type.Any(this.tk_)
         is Expr.Unit  -> Type.Unit(this.tk_)
         is Expr.Nat   -> Type.Nat(this.tk_)
-        is Expr.Upref -> Type.Ptr(this.tk_, this.sub.toType(env))
-        is Expr.Dnref -> (this.sub.toType(env) as Type.Ptr).tp
+        is Expr.Upref -> Type.Ptr(this.tk_, this.pln.toType(env))
+        is Expr.Dnref -> (this.ptr.toType(env) as Type.Ptr).pln
         is Expr.Var   -> env.idToStmt(this.tk_.str)!!.typeVarFunc()
         is Expr.TCons -> Type.Tuple(this.tk_, this.arg.map{it.e.toType(env)}.toTypedArray())
-        is Expr.UCons  -> Type.Case(this.tk_, this.arg.e.toType(env))
+        is Expr.UCons -> Type.UCons(this.tk_, this.arg.e.toType(env))
         is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType(env) as Type.Func).out
         is Expr.TDisc -> (this.tup.toType(env) as Type.Tuple).vec[this.tk_.num-1]
         is Expr.UDisc -> (this.uni.toType(env) as Type.Union).let {
@@ -75,16 +75,15 @@ fun Type.containsRec (): Boolean {
         is Type.Rec   -> true
         is Type.Tuple -> this.vec.any { it.containsRec() }
         is Type.Union -> this.vec.any { it.containsRec() }
-        is Type.Case  -> this.arg.containsRec()
+        is Type.UCons  -> this.arg.containsRec()
     }
 }
 
 fun Type.exactlyRec (): Boolean {
     return when (this) {
-        is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func, is Type.Tuple -> false
-        is Type.Rec   -> true
-        is Type.Union -> this.vec.any { it.containsRec() }
-        is Type.Case  -> error("bug found")
+        is Type.Union -> (this.expand().toString() != this.toString())
+        is Type.UCons -> error("bug found")
+        else -> false
     }
 }
 
@@ -93,16 +92,16 @@ fun Type.isSupOf (sub: Type): Boolean {
         (this is Type.None || sub is Type.None) -> false
         (this is Type.Any  || sub is Type.Any) -> true
         (this is Type.Nat  || sub is Type.Nat) -> true
-        (this is Type.Union && sub is Type.Case) -> {
+        (this is Type.Union && sub is Type.UCons) -> {
             if (sub.tk_.num==0 && this.exactlyRec()) {
                 sub.arg is Type.Unit
             } else {
-                val this2 = this.map { if (it is Type.Rec) this else it } as Type.Union
+                val this2 = this.expand()
                 this2.vec[sub.tk_.num-1].isSupOf(sub.arg)
             }
         }
         (this::class != sub::class) -> false
-        (this is Type.Ptr && sub is Type.Ptr) -> this.tp.isSupOf(sub.tp)
+        (this is Type.Ptr && sub is Type.Ptr) -> this.pln.isSupOf(sub.pln)
         (this is Type.Tuple && sub is Type.Tuple) ->
             (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
         (this is Type.Union && sub is Type.Union) ->
@@ -117,7 +116,7 @@ fun Type.ishasptr (): Boolean {
         is Type.Ptr   -> true
         is Type.Tuple -> this.vec.any { it.ishasptr() }
         is Type.Union -> this.vec.any { it.ishasptr() }
-        is Type.Case  -> this.arg.ishasptr()
+        is Type.UCons  -> this.arg.ishasptr()
     }
 }
 
@@ -125,7 +124,7 @@ fun check_types (S: Stmt) {
     fun fe (env: Env, e: Expr) {
         when (e) {
             is Expr.Dnref -> {
-                All_assert_tk(e.tk, e.sub.toType(env) is Type.Ptr) {
+                All_assert_tk(e.tk, e.ptr.toType(env) is Type.Ptr) {
                     "invalid `/` : expected pointer type"
                 }
             }
@@ -191,7 +190,7 @@ fun Expr.isconst (): Boolean {
         is Expr.Var, is Expr.Nat, is Expr.Dnref -> false
         is Expr.TDisc -> this.tup.isconst()
         is Expr.UDisc -> this.uni.isconst()
-        is Expr.Upref -> this.sub.isconst()
+        is Expr.Upref -> this.pln.isconst()
     }
 }
 
@@ -206,7 +205,7 @@ fun check_xexprs (S: Stmt) {
             (xe.x == null) -> All_assert_tk(xe.e.tk, !xp_ctrec || (e_iscst && (!e_isvar||e_isnil))) {
                 "invalid expression : expected " + (if (e_iscst) "`new` " else "") + "operation modifier"
             }
-            (xe.x.enu == TK.BORROW) -> All_assert_tk(xe.x, xe.e.toType(env).let { it is Type.Ptr && it.tp.containsRec() }) {
+            (xe.x.enu == TK.BORROW) -> All_assert_tk(xe.x, xe.e.toType(env).let { it is Type.Ptr && it.pln.containsRec() }) {
                 "invalid `borrow` : expected pointer to recursive variable"
             }
             (xe.x.enu == TK.COPY) -> All_assert_tk(xe.x, xp_ctrec && !e_iscst) {
@@ -245,7 +244,7 @@ fun Expr.getDepth (env: Env, caller: Int, hold: Boolean): Pair<Int,Stmt?> {
             return if (hold) Pair(dcl.getDepth(env,true), dcl) else Pair(0, null)
         }
         is Expr.Upref ->  {
-            val (depth,dcl) = this.sub.getDepth(env, caller, hold)
+            val (depth,dcl) = this.pln.getDepth(env, caller, hold)
             if (dcl is Stmt.Var) {
                 val inc = if (dcl.tk_.str == "arg" || dcl.outer) 1 else 0
                 Pair(depth + inc, dcl)
@@ -253,7 +252,7 @@ fun Expr.getDepth (env: Env, caller: Int, hold: Boolean): Pair<Int,Stmt?> {
                 Pair(depth, dcl)
             }
         }
-        is Expr.Dnref -> this.sub.getDepth(env, caller, hold)
+        is Expr.Dnref -> this.ptr.getDepth(env, caller, hold)
         is Expr.TDisc -> this.tup.getDepth(env, caller, hold)
         is Expr.UDisc -> this.uni.getDepth(env, caller, hold)
         is Expr.Call -> this.f.toType(env).let {

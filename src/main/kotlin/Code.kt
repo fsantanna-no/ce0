@@ -2,11 +2,11 @@ import kotlin.math.absoluteValue
 
 fun Type.toce (): String {
     return when (this) {
-        is Type.None, is Type.Case -> error("bug found")
+        is Type.None, is Type.UCons -> error("bug found")
         is Type.Rec   -> "Rec"
         is Type.Any   -> "Any"
         is Type.Unit  -> "Unit"
-        is Type.Ptr   -> this.tp.toce() + "_ptr"
+        is Type.Ptr   -> this.pln.toce() + "_ptr"
         is Type.Nat   -> this.tk_.str.replace('*','_')
         is Type.Tuple -> "TUPLE__" + this.vec.map { it.toce() }.joinToString("__")
         is Type.Union -> "UNION__" + this.vec.map { it.toce() }.joinToString("__")
@@ -118,9 +118,9 @@ fun Type.pre (): String {
 
 fun Type.pos (): String {
     return when (this) {
-        is Type.None, is Type.Rec, is Type.Case -> TODO(this.toString())
+        is Type.None, is Type.Rec, is Type.UCons -> TODO(this.toString())
         is Type.Any, is Type.Unit  -> "void"
-        is Type.Ptr   -> this.tp.pos() + "*"
+        is Type.Ptr   -> this.pln.pos() + "*"
         is Type.Nat   -> this.tk_.str
         is Type.Tuple -> this.toce()
         is Type.Union -> this.toce() + (if (this.exactlyRec()) "*" else "")
@@ -172,7 +172,7 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
         is Expr.Var -> Pair("", if (tp is Type.Unit) "" else e.tk_.str)
         is Expr.Upref -> {
             val sub = EXPRS.removeFirst()
-            Pair(sub.first, "(" + (if (e.sub.toType(env).exactlyRec()) "" else "&") + sub.second + ")")
+            Pair(sub.first, "(" + (if (e.pln.toType(env).exactlyRec()) "" else "&") + sub.second + ")")
         }
         is Expr.Dnref -> {
             val sub = EXPRS.removeFirst()

@@ -93,7 +93,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("\\()"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Ptr && tp.tp is Type.Unit)
+        assert(tp is Type.Ptr && tp.pln is Type.Unit)
     }
 
     // EXPR
@@ -292,7 +292,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("\\x.1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Upref && e.sub is Expr.TDisc)
+        assert(e is Expr.Upref && e.pln is Expr.TDisc)
     }
     @Test
     fun b22_parser_expr_upref () {
@@ -310,7 +310,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("(/x).1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.TDisc && e.tup is Expr.Dnref && (e.tup as Expr.Dnref).sub is Expr.Var)
+        assert(e is Expr.TDisc && e.tup is Expr.Dnref && (e.tup as Expr.Dnref).ptr is Expr.Var)
     }
     @Test
     fun b24_parser_expr_dnref () {
@@ -329,7 +329,7 @@ class Parser {
         lexer(all)
         val e = parser_expr(all,false)
         //println(e)
-        assert(e is Expr.Dnref && e.sub is Expr.Dnref)
+        assert(e is Expr.Dnref && e.ptr is Expr.Dnref)
     }
 
     // PRED, DISC

@@ -750,8 +750,9 @@ class TEnv {
     @Test
     fun j08_rec_xepr_double_rec () {
         val out = inp2env("""
-            var x: <<^^>> = new <.1 <.1 new <.1 <.1 .0>>>
+            var x: <<^^>> = new <.1 <.1 new <.1 <.1 <.0>>>>>
         """.trimIndent())
+        println(out)
         assert(out == "(ln 1, col 14): invalid `copy` : expected recursive variable")
         //assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
     }

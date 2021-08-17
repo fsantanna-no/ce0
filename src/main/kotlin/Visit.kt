@@ -1,21 +1,10 @@
-fun Type.map (f: ((Type)->Type)): Type {
-    return when (this) {
-        is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> f(this)
-        is Type.Ptr   -> f(Type.Ptr(this.tk_, f(this.tp)))
-        is Type.Tuple -> f(Type.Tuple(this.tk_, this.vec.map(f).toTypedArray()))
-        is Type.Union -> f(Type.Union(this.tk_, this.vec.map(f).toTypedArray()))
-        is Type.Func  -> f(Type.Func(this.tk_, f(this.inp), f(this.out)))
-        is Type.Case  -> TODO()
-    }
-}
-
 fun Expr.visit (env: Env, fe: ((Env,Expr)->Unit)?) {
     when (this) {
         is Expr.Unk, is Expr.Unit, is Expr.Var, is Expr.Nat -> {}
         is Expr.TCons -> this.arg.forEach { it.e.visit(env,fe) }
         is Expr.UCons  -> this.arg.e.visit(env,fe)
-        is Expr.Dnref -> this.sub.visit(env,fe)
-        is Expr.Upref -> this.sub.visit(env,fe)
+        is Expr.Dnref -> this.ptr.visit(env,fe)
+        is Expr.Upref -> this.pln.visit(env,fe)
         is Expr.TDisc -> this.tup.visit(env,fe)
         is Expr.UDisc -> this.uni.visit(env,fe)
         is Expr.UPred -> this.uni.visit(env,fe)
