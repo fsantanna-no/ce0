@@ -15,6 +15,17 @@ fun Type.toce (): String {
 
 fun Type.pre (): String {
     return when (this) {
+        is Type.Func  -> {
+            val ce = this.toce()
+            this.out.pre() + this.inp.pre() +
+                    """
+                #ifndef __${ce}__
+                #define __${ce}__
+                typedef ${this.out.pos()} $ce (${this.inp.pos()});
+                #endif
+
+            """.trimIndent()
+        }
         is Type.Tuple -> {
             val pre = this.vec.map { it.pre() }.joinToString("")
             val ce = this.toce()
@@ -23,18 +34,18 @@ fun Type.pre (): String {
                 #define __${ce}__
                 typedef struct {
                     ${this.vec  // do not filter to keep correct i
-                        .mapIndexed { i,sub -> if (sub is Type.Unit) "" else { sub.pos() + " _" + (i+1).toString() + ";\n" } }
-                        .joinToString("")  
-                    }
+                .mapIndexed { i,sub -> if (sub is Type.Unit) "" else { sub.pos() + " _" + (i+1).toString() + ";\n" } }
+                .joinToString("")
+            }
                 } $ce;
                 void output_std_${ce}_ ($ce v) {
                     printf("[");
                     ${this.vec
-                        .mapIndexed { i,sub ->
-                            "output_std_${sub.toce()}_(" + (if (sub is Type.Unit) "" else "v._${i + 1}") + ");\n"
-                        }
-                        .joinToString("putchar(',');\n")
-                    }
+                .mapIndexed { i,sub ->
+                    "output_std_${sub.toce()}_(" + (if (sub is Type.Unit) "" else "v._${i + 1}") + ");\n"
+                }
+                .joinToString("putchar(',');\n")
+            }
                     printf("]");
                 }
                 void output_std_$ce ($ce v) {
@@ -45,13 +56,47 @@ fun Type.pre (): String {
 
             """.trimIndent()
         }
-        is Type.Func  -> {
+        is Type.Union -> {
+            val pre = this.vec.map { it.pre() }.joinToString("")
             val ce = this.toce()
-            this.out.pre() + this.inp.pre() +
-            """
+            pre + """
                 #ifndef __${ce}__
                 #define __${ce}__
-                typedef ${this.out.pos()} $ce (${this.inp.pos()});
+                typedef struct $ce {
+                    int tag;
+                    union {
+                        ${this.vec  // do not filter to keep correct i
+                            .mapIndexed { i,sub -> if (sub is Type.Unit) "" else { sub.pos() + " _" + (i+1).toString() + ";\n" } }
+                            .joinToString("")
+                        }
+                    };
+                } $ce;
+                void output_std_${ce}_ ($ce v) {
+                    printf(".%d", v.tag);
+                    switch (v.tag) {
+                        ${this.vec
+                            .mapIndexed { i,tp -> """
+                                case ${i+1}:
+                                ${
+                                    when (tp) {
+                                        is Type.Unit  -> ""
+                                        is Type.Nat   -> "putchar(' '); putchar('_');"
+                                        is Type.Tuple -> "putchar(' '); output_std_${tp.toce()}_(v._${i+1});"
+                                        is Type.Union -> "putchar(' '); output_std_${tp.toce()}_(v._${i+1});"
+                                        else -> TODO()
+                                    }
+                                }
+                                break;
+
+                            """.trimIndent()
+                            }.joinToString("")
+                        }
+                    }
+                }
+                void output_std_$ce ($ce v) {
+                    output_std_${ce}_(v);
+                    puts("");
+                }
                 #endif
 
             """.trimIndent()
@@ -143,8 +188,8 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
         is Expr.Case -> {
             val arg   = EXPRS.removeFirst()
             val pos   = if (e.tk_.idx == 0) "NULL" else "_tmp_${e.hashCode().absoluteValue}"
-            val xxx   = if (tp is Type.Unit) "" else (", " + pos)
-            val isrec = (e.tk_.idx != 0) && (xp as Type.Tuple).vec[e.tk_.idx-1].exactlyRec()
+            val xxx   = if (e.arg.e.toType(env) is Type.Unit) "" else (", " + arg.second)
+            val isrec = (e.tk_.idx != 0) && (xp as Type.Union).vec[e.tk_.idx-1].exactlyRec()
             val N     = e.hashCode().absoluteValue
             val sup   = xp.toce()
             val pre = (if (e.tk_.idx == 0) "" else """
@@ -161,7 +206,7 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
                     """.trimIndent()
                 }
             }
-                (($sup) { _${e.tk_.idx}$xxx });
+                (($sup) { ${e.tk_.idx}$xxx });
             """)
             Pair(xp.pre() + arg.first + pre, pos)
         }
