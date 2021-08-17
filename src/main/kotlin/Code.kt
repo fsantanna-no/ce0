@@ -81,7 +81,7 @@ fun Type.pre (): String {
                     };
                 } $ce;
                 void output_std_${ce}_ ($cex v) {
-                    printf(".%d", $vx.tag);
+                    printf("<.%d", $vx.tag);
                     switch ($vx.tag) {
                         ${this.vec
                             .mapIndexed { i,tp -> """
@@ -102,6 +102,7 @@ fun Type.pre (): String {
                             }.joinToString("")
                         }
                     }
+                    putchar('>');
                 }
                 void output_std_$ce ($cex v) {
                     output_std_${ce}_(v);
@@ -135,7 +136,7 @@ fun XExpr.pre (env: Env): String {
        ${this.e.pos(env,false)} = NULL;
         """
     }
-    return pre + this.e.pre(env)
+    return pre //+ this.e.pre(env)
 }
 
 fun XExpr.pos (env: Env, deref: Boolean): String {
@@ -145,12 +146,6 @@ fun XExpr.pos (env: Env, deref: Boolean): String {
         "_tmp_${this.hashCode().absoluteValue}"
     } else {
         this.e.pos(env,deref)
-    }
-}
-
-fun Expr.pre (env: Env): String {
-    return when (this) {
-        else -> TODO()
     }
 }
 
@@ -182,35 +177,24 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
             val sub = EXPRS.removeFirst()
             Pair(sub.first, "*" + sub.second)
         }
-        is Expr.Index -> {
-            val pre = EXPRS.removeFirst()
-            if (e.op is Tk.Chr && e.op.chr=='?') {
-                Pair (
-                    pre.first,
-                    "(${pre.second /*deref=true*/}.tag == ${e.tk_.idx})"
-                )
-            } else {
-                Pair (
-                    pre.first,
-                    pre.second /*+TODO("deref=true")*/ + "._" + e.tk_.idx
-                )
-            }
-        }
-        is Expr.Tuple -> {
-            val (pre,pos) = (1..e.vec.size).map { EXPRS.removeFirst() }.reversed().unzip()
+        is Expr.TDisc -> EXPRS.removeFirst().let { Pair(it.first, it.second /*+TODO("deref=true")*/ + "._" + e.tk_.num) }
+        is Expr.UDisc -> EXPRS.removeFirst().let { Pair(it.first, it.second /*+TODO("deref=true")*/ + "._" + e.tk_.num) }
+        is Expr.UPred -> EXPRS.removeFirst().let { Pair(it.first, "(${it.second /*deref=true*/}.tag == ${e.tk_.num})") }
+        is Expr.TCons -> {
+            val (pre,pos) = (1..e.arg.size).map { EXPRS.removeFirst() }.reversed().unzip()
             Pair (
                 xp.pre() + pre.joinToString(""),
                 pos.filter { it!="" }.joinToString(", ").let { "((${xp.pos()}) { $it })" }
             )
         }
-        is Expr.Case -> {
+        is Expr.UCons -> {
             val arg   = EXPRS.removeFirst()
-            val pos   = if (e.tk_.idx == 0) "NULL" else "_tmp_${e.hashCode().absoluteValue}"
+            val pos   = if (e.tk_.num == 0) "NULL" else "_tmp_${e.hashCode().absoluteValue}"
             val xxx   = if (e.arg.e.toType(env) is Type.Unit) "" else (", " + arg.second)
-            val isrec = (e.tk_.idx != 0) && (xp as Type.Union).vec[e.tk_.idx-1].exactlyRec()
+            val isrec = (e.tk_.num != 0) && (xp as Type.Union).vec[e.tk_.num-1].exactlyRec()
             val N     = e.hashCode().absoluteValue
             val sup   = xp.toce()
-            val pre = (if (e.tk_.idx == 0) "" else """
+            val pre = (if (e.tk_.num == 0) "" else """
             ${
                 if (isrec) {
                     """
@@ -224,7 +208,7 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
                     """.trimIndent()
                 }
             }
-                (($sup) { ${e.tk_.idx}$xxx });
+                (($sup) { ${e.tk_.num}$xxx });
             """)
             Pair(xp.pre() + arg.first + pre, pos)
         }
@@ -272,15 +256,16 @@ fun code_fs (env: Env, s: Stmt) {
                 (if (dst_tp is Type.Unit) "" else (dst.second+" = ")) + src.second + ";\n"
         }
         is Stmt.If -> {
+            val tst = EXPRS.removeFirst()
             val false_ = CODE.removeFirst()
             val true_  = CODE.removeFirst()
-            s.tst.pre(env) + """
-            if (${s.tst.pos(env,true)}.sub) {
-                ${true_}
-            } else {
-                ${false_}
-            }
-        """.trimIndent()
+            tst.first + """
+                if (${tst.second /*deref=true*/}) {
+                    ${true_}
+                } else {
+                    ${false_}
+                }
+            """.trimIndent()
         }
         is Stmt.Loop  -> """
             while (1) {

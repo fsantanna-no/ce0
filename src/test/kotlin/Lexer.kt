@@ -124,12 +124,13 @@ class Lexer {
     @Test
     fun b09_lexer_xnum () {
         val all = All_new(PushbackReader(StringReader(".a"), 2))
-        //lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1 as Tk.Chr).chr== '.')
-        lexer(all) ; assert(all.tk1.enu==TK.ERR && (all.tk1 as Tk.Err).err==".a")
+        lexer(all) ; assert(all.tk1.enu==TK.CHAR && (all.tk1 as Tk.Chr).chr== '.')
+        //lexer(all) ; assert(all.tk1.enu==TK.ERR && (all.tk1 as Tk.Err).err=="a")
     }
     @Test
     fun b10_lexer_xnum () {
         val all = All_new(PushbackReader(StringReader(".10"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.XIDX && (all.tk1 as Tk.Idx).idx==10)
+        lexer(all) ; lexer(all)
+        assert(all.tk1.enu==TK.XNUM && (all.tk1 as Tk.Num).num==10)
     }
 }

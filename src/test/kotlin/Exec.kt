@@ -274,65 +274,63 @@ class Exec {
     @Test
     fun f01_bool () {
         val out = all("""
-            var b : <(),()> = .1
+            var b : <(),()> = <.1>
             output std b
         """.trimIndent())
-        assert(out == ".1\n")
+        assert(out == "<.1>\n")
     }
     @Test
     fun f02_xyz () {
         val out = all("""
-            var z : <()> = .1()
-            var y : <<()>> = .1 z
-            var x : <<<()>>> = .1 y
-            var yy: <<()>> = x.1!
-            var zz: <()> = yy.1!
+            var z : <()> = <.1()>
+            var y : <<()>> = <.1 z>
+            var x : <<<()>>> = <.1 y>
+            var yy: <<()>> = x!1
+            var zz: <()> = yy!1
             output std zz
         """.trimIndent())
-        assert(out == ".1\n")
+        assert(out == "<.1>\n")
     }
     @Test
     fun f05_user_big () {
         val out = all("""
-            var s: <[_int,_int,_int,_int],_int,_int> = .1 [_1,_2,_3,_4]
+            var s: <[_int,_int,_int,_int],_int,_int> = <.1 [_1,_2,_3,_4]>
             output std s
         """.trimIndent())
-        assert(out == ".1 [1,2,3,4]\n")
+        assert(out == "<.1 [1,2,3,4]>\n")
     }
     @Test
     fun f06_user_big () {
         val out = all("""
-            var x: <[<()>,<()>]> = .1 [.1,.1]
+            var x: <[<()>,<()>]> = <.1 [<.1>,<.1>]>
             output std x
         """.trimIndent())
         println(out)
-        assert(out == ".1 [.1,.1]\n")
+        assert(out == "<.1 [<.1>,<.1>]>\n")
     }
     @Test
     fun f07_user_pred () {
         val out = all("""
-            var z: <()> = .1
-            output std z.1?
+            var z: <()> = <.1>
+            output std z?1
         """.trimIndent())
         assert(out == "1\n")
     }
     @Test
     fun f10_user_disc () {
         val out = all("""
-            var z: <(),()> = .2 ()
-            output std z.2!
+            var z: <(),()> = <.2 ()>
+            output std z!2
         """.trimIndent())
         assert(out == "()\n")
     }
     @Test
     fun f11_user_disc_err () {
         val out = all("""
-            type Bool { False: () ; True: () }
-            type Z { X:() Y:() }
-            var z: Z = Z.Y
-            output std z.X!
+            var z: <(),()> = <.2>
+            output std z!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:85: main: Assertion `z.sub == Z_X' failed.\n")
+        assert(out == "out.exe: out.c:85: main: Assertion `z.tag == 1' failed.\n")
     }
     @Test
     fun f12_user_disc_pred_idx () {
@@ -649,9 +647,9 @@ class Exec {
         val out = all("""
             var x1: <\_int> = ?
             var v: _int = _20
-            var x2: <\_int> = .1 \v
+            var x2: <\_int> = <.1 \v>
             set x1 = x2
-            output std /x1.1!
+            output std /x1!1
         """.trimIndent())
         assert(out == "20\n")
     }
@@ -675,7 +673,7 @@ class Exec {
     @Test
     fun j01_list () {
         val out = all("""
-            var l: <^> = .0
+            var l: <^> = <.0>
             output std \l
         """.trimIndent())
         println(out)

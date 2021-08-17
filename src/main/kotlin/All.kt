@@ -91,11 +91,11 @@ fun All.err_expected (str: String) {
     fun Tk.toPay (): String {
         return when {
             (this.enu == TK.EOF) -> "end of file"
-            (this is Tk.Err)      -> '"' + this.err + '"'
+            (this is Tk.Err)     -> '"' + this.err + '"'
             (this is Tk.Chr)     -> "`" + this.chr + "´"
             (this is Tk.Sym)     -> '`' + this.sym + '´'
             (this is Tk.Str)     -> '"' + this.str + '"'
-            (this is Tk.Idx)     -> "." + this.idx
+            //(this is Tk.Num)     -> "." + this.num
             (this is Tk.Key)     -> this.key
             else -> TODO(this.toString())
         }

@@ -5,7 +5,7 @@ sealed class Type (val tk: Tk) {
     data class Nat   (val tk_: Tk.Str): Type(tk_)
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_)
     data class Union (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_)
-    data class Case  (val tk_: Tk.Idx, val arg: Type): Type(tk_)
+    data class Case  (val tk_: Tk.Num, val arg: Type): Type(tk_)
     data class Func  (val tk_: Tk.Sym, val inp: Type, val out: Type): Type(tk_)
     data class Ptr   (val tk_: Tk.Chr, val tp: Type): Type(tk_)
     data class Rec   (val tk_: Tk.Up): Type(tk_)
@@ -34,9 +34,11 @@ sealed class Expr (val tk: Tk) {
     data class Unit  (val tk_: Tk.Sym): Expr(tk_)
     data class Var   (val tk_: Tk.Str): Expr(tk_)
     data class Nat   (val tk_: Tk.Str): Expr(tk_)
-    data class Tuple (val tk_: Tk.Chr, val vec: Array<XExpr>): Expr(tk_)
-    data class Case  (val tk_: Tk.Idx, val arg: XExpr): Expr(tk_)
-    data class Index (val tk_: Tk.Idx, val pre: Expr, val op: Tk.Chr?): Expr(tk_)
+    data class TCons (val tk_: Tk.Chr, val arg: Array<XExpr>): Expr(tk_)
+    data class UCons (val tk_: Tk.Num, val arg: XExpr): Expr(tk_)
+    data class TDisc (val tk_: Tk.Num, val tup: Expr): Expr(tk_)
+    data class UDisc (val tk_: Tk.Num, val uni: Expr): Expr(tk_)
+    data class UPred (val tk_: Tk.Num, val uni: Expr): Expr(tk_)
     data class Dnref (val tk_: Tk, val sub: Expr): Expr(tk_)
     data class Upref (val tk_: Tk.Chr, val sub: Expr): Expr(tk_)
     data class Call  (val tk_: Tk.Key, val f: Expr, val arg: XExpr): Expr(tk_)
@@ -45,16 +47,18 @@ sealed class Expr (val tk: Tk) {
 sealed class Attr (val tk: Tk) {
     data class Var   (val tk_: Tk.Str): Attr(tk_)
     data class Nat   (val tk_: Tk.Str): Attr(tk_)
-    data class Dnref (val tk_: Tk, val e: Attr): Attr(tk_)
-    data class Index (val tk_: Tk.Idx, val e: Attr, val op: Tk.Chr?): Attr(tk_)
+    data class Dnref (val tk_: Tk, val sub: Attr): Attr(tk_)
+    data class TDisc (val tk_: Tk.Num, val tup: Attr): Attr(tk_)
+    data class UDisc (val tk_: Tk.Num, val uni: Attr): Attr(tk_)
 }
 
 fun Attr.toExpr (): Expr {
     return when (this) {
         is Attr.Var   -> Expr.Var(this.tk_)
         is Attr.Nat   -> Expr.Nat(this.tk_)
-        is Attr.Dnref -> Expr.Dnref(this.tk_,this.e.toExpr())
-        is Attr.Index -> Expr.Index(this.tk_,this.e.toExpr(),this.op)
+        is Attr.Dnref -> Expr.Dnref(this.tk_,this.sub.toExpr())
+        is Attr.TDisc -> Expr.TDisc(this.tk_,this.tup.toExpr())
+        is Attr.UDisc -> Expr.UDisc(this.tk_,this.uni.toExpr())
     }
 }
 
@@ -156,7 +160,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
             all.accept(TK.CHAR,'\\') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val e = parser_expr(all,false)
-                all.assert_tk(all.tk0, e is Expr.Nat || e is Expr.Var || e is Expr.Index || e is Expr.Dnref || e is Expr.Upref) {
+                all.assert_tk(all.tk0, e is Expr.Nat || e is Expr.Var || e is Expr.TDisc || e is Expr.UDisc || e is Expr.Dnref || e is Expr.Upref) {
                     "unexpected operand to `\\´"
                 }
                 Expr.Upref(tk0,e)
@@ -164,7 +168,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
             all.accept(TK.CHAR,'/') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val e = parser_expr(all,false)
-                all.assert_tk(all.tk0, e is Expr.Nat || e is Expr.Var || e is Expr.Index || e is Expr.Dnref || e is Expr.Upref || e is Expr.Call) {
+                all.assert_tk(all.tk0, e is Expr.Nat || e is Expr.Var || e is Expr.TDisc || e is Expr.UDisc || e is Expr.Dnref || e is Expr.Upref || e is Expr.Call) {
                     "unexpected operand to `/´"
                 }
                 Expr.Dnref(tk0,e)
@@ -186,19 +190,22 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                     es.add(e2)
                 }
                 all.accept_err(TK.CHAR, ']')
-                Expr.Tuple(tk0, es.toTypedArray())
+                Expr.TCons(tk0, es.toTypedArray())
             }
-            all.accept(TK.XIDX) -> {
-                val tk0 = all.tk0 as Tk.Idx
-                try {
-                    val e = parser_xexpr(all, false)
-                    Expr.Case(tk0, e)
+            all.accept(TK.CHAR,'<') -> {
+                all.accept_err(TK.CHAR,'.')
+                all.accept_err(TK.XNUM)
+                val tk0 = all.tk0 as Tk.Num
+                val cons = try {
+                    parser_xexpr(all, false)
                 } catch (e: Throwable) {
                     assert(!all.consumed(tk0)) {
                         e.message!!
                     }
-                    Expr.Case(tk0, XExpr(null, Expr.Unit(Tk.Sym(TK.UNIT, all.tk1.lin, all.tk1.col, "()"))))
+                    XExpr(null, Expr.Unit(Tk.Sym(TK.UNIT, all.tk1.lin, all.tk1.col, "()")))
                 }
+                all.accept_err(TK.CHAR, '>')
+                Expr.UCons(tk0, cons)
             }
             else -> {
                 all.err_expected("expression")
@@ -210,18 +217,25 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
     fun call (ispre: Boolean): Expr {
         val tk_pre = all.tk0
 
-        // one.1!.2.1?
+        // one!1.2?1
         var e1 = one()
-        while (all.accept(TK.XIDX)) {
-            val idx = all.tk0
-            val op = all.accept(TK.CHAR, '?') || all.accept(TK.CHAR, '!')
-            e1 = Expr.Index(idx as Tk.Idx, e1, if (op) all.tk0 as Tk.Chr else null)
+        while (all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!') || all.accept(TK.CHAR, '?')) {
+            val chr = all.tk0 as Tk.Chr
+            all.accept_err(TK.XNUM)
+            val num = all.tk0 as Tk.Num
+                e1 = when {
+            (chr.chr == '?') -> Expr.UPred(num, e1)
+                (chr.chr == '!') -> Expr.UDisc(num, e1)
+                (chr.chr == '.') -> Expr.TDisc(num, e1)
+                else -> error("impossible case")
+            }
         }
 
         val tk_bef = all.tk0
         val e2 = try {
             parser_xexpr(all, false)
         } catch (e: Throwable) {
+            //throw e
             assert(!all.consumed(tk_bef)) {
                 e.message!! // failed parser_expr and consumed input: error)
             }
@@ -257,7 +271,7 @@ fun parser_attr (all: All): Attr {
             all.accept(TK.CHAR,'/') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val e = parser_attr(all)
-                all.assert_tk(all.tk0, e is Attr.Nat || e is Attr.Var || e is Attr.Index || e is Attr.Dnref) {
+                all.assert_tk(all.tk0, e is Attr.Nat || e is Attr.Var || e is Attr.TDisc || e is Attr.UDisc || e is Attr.Dnref) {
                     "unexpected operand to `/´"
                 }
                 Attr.Dnref(tk0,e)
@@ -271,10 +285,15 @@ fun parser_attr (all: All): Attr {
 
     // one.1!.2.1?
     var e1 = one()
-    while (all.accept(TK.XIDX)) {
-        val idx = all.tk0
-        val op = all.accept(TK.CHAR, '?') || all.accept(TK.CHAR, '!')
-        e1 = Attr.Index(idx as Tk.Idx, e1, if (op) all.tk0 as Tk.Chr else null)
+    while (all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!')) {
+        val chr = all.tk0 as Tk.Chr
+        all.accept_err(TK.XNUM)
+        val num = all.tk0 as Tk.Num
+        e1 = when {
+            (chr.chr == '!') -> Attr.UDisc(num, e1)
+            (chr.chr == '.') -> Attr.TDisc(num, e1)
+            else -> error("impossible case")
+        }
     }
     return e1
 }
@@ -409,6 +428,7 @@ fun parser_stmts (all: All, opt: Pair<TK,Char?>): Stmt {
             val s = parser_stmt(all)
             ret = enseq(ret,s)
         } catch (e: Throwable) {
+            //throw e
             assert(!all.consumed(tk_bef)) {
                 e.message!!
             }

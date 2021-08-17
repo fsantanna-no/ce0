@@ -1,20 +1,22 @@
 fun Expr.visitXP (env: Env, fx: ((Env, XExpr, Type) -> Unit)?, fe: ((Env, Expr, Type) -> Unit)?, xp: Type) {
     when (this) {
         is Expr.Unk, is Expr.Unit, is Expr.Var, is Expr.Nat -> {}
-        is Expr.Tuple -> {
+        is Expr.TCons -> {
             val xp_cons = xp as Type.Tuple
-            this.vec.forEachIndexed { i,v -> v.visitXP(env,fx,fe,xp_cons.vec[i]) }
+            this.arg.forEachIndexed { i, v -> v.visitXP(env,fx,fe,xp_cons.vec[i]) }
         }
-        is Expr.Case -> {
+        is Expr.UCons -> {
             assert(xp is Type.Union) { TODO("could be Type.Case?") }
             val xp_cons = xp as Type.Union
             val xp_cons2 = xp_cons.map { if (it is Type.Rec) xp_cons else it } as Type.Union
-            val sub = if (this.tk_.idx > 0) xp_cons2.vec[this.tk_.idx-1] else Type_Unit(this.tk)
+            val sub = if (this.tk_.num > 0) xp_cons2.vec[this.tk_.num-1] else Type_Unit(this.tk)
             this.arg.visitXP(env,fx,fe,sub)
         }
         is Expr.Dnref -> this.sub.visitXP(env,fx,fe,xp.keepAnyNat { Type.Ptr(Tk.Chr(TK.CHAR,this.tk.lin,this.tk.col,'\\'),xp) })
         is Expr.Upref -> this.sub.visitXP(env,fx,fe,xp.keepAnyNat{(xp as Type.Ptr).tp})
-        is Expr.Index -> this.pre.visitXP(env,fx,fe,this.pre.toType(env))
+        is Expr.TDisc -> this.tup.visitXP(env,fx,fe,this.tup.toType(env))
+        is Expr.UDisc -> this.uni.visitXP(env,fx,fe,this.uni.toType(env))
+        is Expr.UPred -> this.uni.visitXP(env,fx,fe,this.uni.toType(env))
         is Expr.Call  -> {
             val xp2 = this.f.toType(env).let { it.keepAnyNat{it as Type.Func} }
             this.f.visitXP(env,fx,fe,xp2)

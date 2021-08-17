@@ -61,7 +61,7 @@ class TEnv {
             var x: [(),()] = ?
             output std(x.3)
         """.trimIndent())
-        assert(out == "(ln 2, col 13): invalid index : out of bounds")
+        assert(out == "(ln 2, col 14): invalid discriminator : out of bounds")
     }
     @Test
     fun b02_user_sub_undeclared () {
@@ -69,14 +69,14 @@ class TEnv {
             var x: <(),()> = ?
             output std(x.0)
         """.trimIndent())
-        assert(out == "(ln 2, col 13): invalid index : out of bounds")
+        assert(out == "(ln 2, col 14): invalid discriminator : type mismatch")
     }
     @Test
     fun b04_user_disc_cons_err () {
         val out = inp2env("""
-            output std ().1!
+            output std ()!1
         """.trimIndent())
-        assert(out == "(ln 1, col 14): invalid index : type mismatch")
+        assert(out == "(ln 1, col 15): invalid discriminator : type mismatch")
     }
     @Test
     fun b07_user_out_err1 () {
@@ -103,31 +103,32 @@ class TEnv {
     @Test
     fun b10_user_empty_err () {
         val out = inp2env("""
-            var l: <^> = .1 ()
+            var l: <^> = <.1 ()>
         """.trimIndent())
         assert(out == "(ln 1, col 5): invalid assignment : type mismatch")
     }
     @Test
     fun b11_user_empty_err () {
         val out = inp2env("""
-            var l: <()> = .1
-            output std \l.2!
+            var l: <()> = <.1>
+            output std \l!2
         """.trimIndent())
-        assert(out == "(ln 2, col 14): invalid index : out of bounds")
+        assert(out == "(ln 2, col 15): invalid discriminator : out of bounds")
     }
     @Test
     fun b12_user_empty_err () {
         val out = inp2env("""
-            var l: <^> = .1 .0
-            output std \l.0!
+            var l: <^> = <.1 <.0>>
+            output std \l!0
         """.trimIndent())
-        assert(out == "(ln 1, col 14): invalid expression : expected `new` operation modifier")
+        println(out)
+        assert(out == "(ln 1, col 16): invalid expression : expected `new` operation modifier")
     }
     @Test
     fun b13_user_empty_ok () {
         val out = inp2env("""
-            var l: <^> = new .1 .0
-            output std \l.0!
+            var l: <^> = new <.1 <.0>>
+            output std \l!0
         """.trimIndent())
         assert(out == "OK")
     }
@@ -566,7 +567,7 @@ class TEnv {
         val out = inp2env("""
             var p: \<()> = ?
             {
-                var y: <()> = .1
+                var y: <()> = <.1>
                 set p = \y
             }
         """.trimIndent())
@@ -598,8 +599,8 @@ class TEnv {
         val out = inp2env("""
             var p: \() = ?
             {
-                var v: <()> = .1 ()
-                set p = \v.1!
+                var v: <()> = <.1 ()>
+                set p = \v!1
             }
         """.trimIndent())
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"v\" (ln 3)")
@@ -629,21 +630,21 @@ class TEnv {
     @Test
     fun h08_ptr_type_err () {
         val out = inp2env("""
-            var p: <\_Int> = .1 ?
+            var p: <\_Int> = <.1 ?>
             {
                 var v: _Int = _20
-                set p.1! = \v
+                set p!1 = \v
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 14): invalid assignment : cannot hold local pointer \"v\" (ln 3)")
+        assert(out == "(ln 4, col 13): invalid assignment : cannot hold local pointer \"v\" (ln 3)")
     }
     @Test
     fun h09_ptr_type_err () {
         val out = inp2env("""
-            var p: <\_Int> = .1 ?
+            var p: <\_Int> = <.1 ?>
             {
                 var v: _Int = _20
-                set p = .1 \v
+                set p = <.1 \v>
             }
         """.trimIndent())
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"v\" (ln 3)")
@@ -666,7 +667,7 @@ class TEnv {
             var x1: <\_Int> = ?
             {
                 var v: _Int = _20
-                var x2: <\_Int> = .1 \v
+                var x2: <\_Int> = <.1 \v>
                 set x1 = x2
             }
         """.trimIndent())
@@ -680,7 +681,7 @@ class TEnv {
         val out = inp2env("""
             var p: \<^> = ?
             {
-                var l: <^> = new .1 (new .1 .0)
+                var l: <^> = new <.1 (new <.1 <.0>>)>
                 set p = \l
             }
             output std p
@@ -740,7 +741,7 @@ class TEnv {
     @Test
     fun j07_rec_xepr_copy_err () {
         val out = inp2env("""
-            var x: <^> = copy .1 .0
+            var x: <^> = copy <.1 <.0>>
         """.trimIndent())
         assert(out == "(ln 1, col 14): invalid `copy` : expected recursive variable")
         //assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")

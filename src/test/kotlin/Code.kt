@@ -26,7 +26,8 @@ class Code {
     @Test
     fun b01_expr_unit () {
         val e = Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
-        assert(e.pos(emptyList(), true) == "")
+        code_fe(emptyList(), e, tp_unit)
+        assert(EXPRS.removeFirst().second == "")
     }
     @Test
     fun b02_expr_var () {
@@ -39,7 +40,8 @@ class Code {
                 XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
             )
         )
-        assert(e.pos(env, false) == "xxx")
+        code_fe(env, e, tp_unit)
+        assert(EXPRS.removeFirst().second == "xxx")
     }
     @Test
     fun b03_expr_nat () {
@@ -52,25 +54,30 @@ class Code {
                 XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
             )
         )
-        assert(e.pos(env,true) == "xxx")
+        code_fe(env, e, tp_unit)
+        assert(EXPRS.removeFirst().second == "xxx")
     }
     @Test
     fun b04_expr_tuple () {
-        val e = Expr.Tuple (
+        val e = Expr.TCons (
             Tk.Chr(TK.CHAR,0, 0, '('),
             arrayOf (
                 XExpr(null, Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))),
                 XExpr(null, Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))),
             )
         )
-        assert(e.pos(emptyList(), false) == "((TUPLE__Unit__Unit) {  })")
+        e.visitXP(emptyList(), ::code_fx, ::code_fe,
+            Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray()))
+        EXPRS.removeFirst().second.let {
+            //println(it)
+            assert(it == "((TUPLE__Unit__Unit) {  })")
+        }
     }
     @Test
     fun b05_expr_index () {
-        val e = Expr.Index (
-            Tk.Idx(TK.XIDX,1,1,1),
-            Expr.Var(Tk.Str(TK.XVAR,1,1,"x")),
-            null
+        val e = Expr.TDisc (
+            Tk.Num(TK.XNUM,1,1,1),
+            Expr.Var(Tk.Str(TK.XVAR,1,1,"x"))
         )
         val env = listOf (
             Stmt.Var (
@@ -80,7 +87,11 @@ class Code {
                 XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
             )
         )
-        assert(e.pos(env, true) == "x._1")
+        e.visitXP(env, ::code_fx, ::code_fe, tp_unit)
+        EXPRS.removeFirst().second.let {
+            //println(it)
+            assert(it == "x._1")
+        }
     }
 
     // STMT

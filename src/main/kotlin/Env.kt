@@ -29,26 +29,19 @@ fun Expr.toType (env: Env): Type {
         is Expr.Upref -> Type.Ptr(this.tk_, this.sub.toType(env))
         is Expr.Dnref -> (this.sub.toType(env) as Type.Ptr).tp
         is Expr.Var   -> env.idToStmt(this.tk_.str)!!.typeVarFunc()
-        is Expr.Tuple -> Type.Tuple(this.tk_, this.vec.map{it.e.toType(env)}.toTypedArray())
-        is Expr.Case  -> Type.Case(this.tk_, this.arg.e.toType(env))
+        is Expr.TCons -> Type.Tuple(this.tk_, this.arg.map{it.e.toType(env)}.toTypedArray())
+        is Expr.UCons  -> Type.Case(this.tk_, this.arg.e.toType(env))
         is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType(env) as Type.Func).out
-        is Expr.Index -> {
-            val cons = this.pre.toType(env)
-            when {
-                (this.op is Tk.Chr && this.op.chr=='?') -> Type.Nat(Tk.Str(TK.XNAT, this.tk.lin, this.tk.col, "int"))
-                (this.tk_.idx == 0) -> {
-                    assert(cons is Type.Union && cons.exactlyRec()) { "bug found" }
-                    Type_Unit(this.tk)
-                }
-                else -> {
-                    (when (cons) {
-                        is Type.Tuple -> cons.vec
-                        is Type.Union -> cons.vec
-                        else -> error("bug found")
-                    })[this.tk_.idx - 1]
-                }
+        is Expr.TDisc -> (this.tup.toType(env) as Type.Tuple).vec[this.tk_.num-1]
+        is Expr.UDisc -> (this.uni.toType(env) as Type.Union).let {
+            if (this.tk_.num == 0) {
+                assert(it.exactlyRec()) { "bug found" }
+                Type_Unit(this.tk)
+            } else {
+                it.vec[this.tk_.num - 1]
             }
         }
+        is Expr.UPred -> Type.Nat(Tk.Str(TK.XNAT, this.tk.lin, this.tk.col, "int"))
     }
 }
 
@@ -101,11 +94,11 @@ fun Type.isSupOf (sub: Type): Boolean {
         (this is Type.Any  || sub is Type.Any) -> true
         (this is Type.Nat  || sub is Type.Nat) -> true
         (this is Type.Union && sub is Type.Case) -> {
-            if (sub.tk_.idx==0 && this.exactlyRec()) {
+            if (sub.tk_.num==0 && this.exactlyRec()) {
                 sub.arg is Type.Unit
             } else {
                 val this2 = this.map { if (it is Type.Rec) this else it } as Type.Union
-                this2.vec[sub.tk_.idx-1].isSupOf(sub.arg)
+                this2.vec[sub.tk_.num-1].isSupOf(sub.arg)
             }
         }
         (this::class != sub::class) -> false
@@ -136,19 +129,22 @@ fun check_types (S: Stmt) {
                     "invalid `/` : expected pointer type"
                 }
             }
-            is Expr.Index -> {
-                All_assert_tk(e.tk, e.pre.toType(env).let { it is Type.Tuple || it is Type.Union }) {
-                    "invalid index : type mismatch"
+            is Expr.TDisc -> e.tup.toType(env).let {
+                All_assert_tk(e.tk, it is Type.Tuple) {
+                    "invalid discriminator : type mismatch"
                 }
-                val (MIN,MAX) = e.pre.toType(env).let {
-                    when (it) {
-                        is Type.Tuple -> Pair(1, it.vec.size)
-                        is Type.Union -> Pair(if (it.exactlyRec()) 0 else 1, it.vec.size)
-                        else -> error("bug found")
-                    }
+                val (MIN,MAX) = Pair(1, (it as Type.Tuple).vec.size)
+                All_assert_tk(e.tk, MIN<=e.tk_.num && e.tk_.num<=MAX) {
+                    "invalid discriminator : out of bounds"
                 }
-                All_assert_tk(e.tk, MIN<=e.tk_.idx && e.tk_.idx<=MAX) {
-                    "invalid index : out of bounds"
+            }
+            is Expr.UDisc -> e.uni.toType(env).let {
+                All_assert_tk(e.tk, it is Type.Union) {
+                    "invalid discriminator : type mismatch"
+                }
+                val (MIN,MAX) = Pair(if (it.exactlyRec()) 0 else 1, (it as Type.Union).vec.size)
+                All_assert_tk(e.tk, MIN<=e.tk_.num && e.tk_.num<=MAX) {
+                    "invalid discriminator : out of bounds"
                 }
             }
             is Expr.Call -> {
@@ -193,9 +189,10 @@ fun check_types (S: Stmt) {
 
 fun Expr.isconst (): Boolean {
     return when (this) {
-        is Expr.Unit, is Expr.Unk, is Expr.Call, is Expr.Tuple, is Expr.Case -> true
+        is Expr.Unit, is Expr.Unk, is Expr.Call, is Expr.TCons, is Expr.UCons, is Expr.UPred -> true
         is Expr.Var, is Expr.Nat, is Expr.Dnref -> false
-        is Expr.Index -> this.pre.isconst()
+        is Expr.TDisc -> this.tup.isconst()
+        is Expr.UDisc -> this.uni.isconst()
         is Expr.Upref -> this.sub.isconst()
     }
 }
@@ -205,8 +202,8 @@ fun check_xexprs (S: Stmt) {
         val xp_ctrec = xp.containsRec()
         val xp_exrec = xp.exactlyRec()
         val e_iscst  = xe.e.isconst()
-        val e_isvar  = xe.e is Expr.Case
-        val e_isnil  = e_isvar && ((xe.e as Expr.Case).tk_.idx==0)
+        val e_isvar  = xe.e is Expr.UCons
+        val e_isnil  = e_isvar && ((xe.e as Expr.UCons).tk_.num==0)
         when {
             (xe.x == null) -> All_assert_tk(xe.e.tk, !xp_ctrec || (e_iscst && (!e_isvar||e_isnil))) {
                 "invalid expression : expected " + (if (e_iscst) "`new` " else "") + "operation modifier"
@@ -244,7 +241,7 @@ fun Stmt.getDepth (env: Env, drop: Boolean): Int {
 
 fun Expr.getDepth (env: Env, caller: Int, hold: Boolean): Pair<Int,Stmt?> {
     return when (this) {
-        is Expr.Unk, is Expr.Unit, is Expr.Nat -> Pair(0, null)
+        is Expr.Unk, is Expr.Unit, is Expr.Nat, is Expr.UPred -> Pair(0, null)
         is Expr.Var -> {
             val dcl = env.idToStmt(this.tk_.str)!!
             return if (hold) Pair(dcl.getDepth(env,true), dcl) else Pair(0, null)
@@ -259,7 +256,8 @@ fun Expr.getDepth (env: Env, caller: Int, hold: Boolean): Pair<Int,Stmt?> {
             }
         }
         is Expr.Dnref -> this.sub.getDepth(env, caller, hold)
-        is Expr.Index -> this.pre.getDepth(env, caller, hold)
+        is Expr.TDisc -> this.tup.getDepth(env, caller, hold)
+        is Expr.UDisc -> this.uni.getDepth(env, caller, hold)
         is Expr.Call -> this.f.toType(env).let {
             when (it) {
                 is Type.Nat -> Pair(0, null)
@@ -270,8 +268,8 @@ fun Expr.getDepth (env: Env, caller: Int, hold: Boolean): Pair<Int,Stmt?> {
                 else -> error("bug found")
             }
         }
-        is Expr.Tuple -> this.vec.map { it.e.getDepth(env, caller,it.e.toType(env).ishasptr()) }.maxByOrNull { it.first }!!
-        is Expr.Case -> this.arg.e.getDepth(env, caller, hold)
+        is Expr.TCons -> this.arg.map { it.e.getDepth(env, caller,it.e.toType(env).ishasptr()) }.maxByOrNull { it.first }!!
+        is Expr.UCons -> this.arg.e.getDepth(env, caller, hold)
     }
 }
 

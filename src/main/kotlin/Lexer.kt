@@ -1,6 +1,6 @@
 enum class TK {
     ERR, EOF, CHAR,
-    XVAR, XNAT, XIDX, XUP,
+    XVAR, XNAT, XNUM, XUP,
     UNIT, ARROW,
     BORROW, BREAK, CALL, COPY, ELSE, FUNC, IF, INP, LOOP, MOVE, NAT, NEW, OUT, RET, SET, VAR,
 }
@@ -34,7 +34,7 @@ sealed class Tk (
     data class Chr (val enu_: TK, val lin_: Int, val col_: Int, val chr: Char):   Tk(enu_,lin_,col_)
     data class Key (val enu_: TK, val lin_: Int, val col_: Int, val key: String): Tk(enu_,lin_,col_)
     data class Str (val enu_: TK, val lin_: Int, val col_: Int, val str: String): Tk(enu_,lin_,col_)
-    data class Idx (val enu_: TK, val lin_: Int, val col_: Int, val idx: Int):    Tk(enu_,lin_,col_)
+    data class Num (val enu_: TK, val lin_: Int, val col_: Int, val num: Int):    Tk(enu_,lin_,col_)
     data class Up  (val enu_: TK, val lin_: Int, val col_: Int, val up:  Int):    Tk(enu_,lin_,col_)
 }
 
@@ -44,7 +44,7 @@ fun TK.toErr (chr: Char?): String {
         TK.CHAR -> "`" + chr!! + "´"
         TK.XNAT -> "`_´"
         TK.XVAR -> "variable identifier"
-        TK.XIDX -> "index"
+        //TK.XIDX -> "index"
         else -> TODO(this.toString())
     }
 }
@@ -88,7 +88,7 @@ fun token (all: All) {
     var (c1,x1) = all.read()
     when {
         (c1 == -1) -> all.tk1 = Tk.Sym(TK.EOF, LIN, COL, "")
-        (x1 in arrayOf(')', '{', '}', '[', ']', '<' , '>' , ';' , ':' , '=' , ',' , '\\', '/' , '!' , '?')) -> {
+        (x1 in arrayOf(')', '{', '}', '[', ']', '<' , '>' , ';' , ':' , '=' , ',' , '\\', '/' , '.', '!' , '?')) -> {
             all.tk1 = Tk.Chr(TK.CHAR, LIN, COL, x1)
         }
         (x1 == '^') -> {
@@ -149,27 +149,21 @@ fun token (all: All) {
             }
             all.tk1 = Tk.Str(TK.XNAT, LIN, COL, pay)
         }
-        (x1 == '.') -> {
-            val x0 = x1
-            all.read().let { c1=it.first ; x1=it.second }
-            if (!x1.isDigit()) {
-                all.tk1 = Tk.Err(TK.ERR, LIN, COL, ""+x0+x1)
-                return
-            }
+        x1.isDigit() -> {
             var pay = ""
-            while (x1.isDigit()) {
+            do {
                 pay += x1
                 all.read().let { c1=it.first ; x1=it.second }
-            }
+            } while (x1.isDigit())
             all.unread(c1)
-            all.tk1 = Tk.Idx(TK.XIDX, LIN, COL, pay.toInt())
+            all.tk1 = Tk.Num(TK.XNUM, LIN, COL, pay.toInt())
         }
         x1.isLowerCase() -> {
             var pay = ""
-            while (x1.isLetterOrDigit() || x1=='_') {
+            do {
                 pay += x1
                 all.read().let { c1=it.first ; x1=it.second }
-            }
+            } while (x1.isLetterOrDigit() || x1=='_')
             all.unread(c1)
             all.tk1 = key2tk[pay].let {
                 if (it != null) Tk.Key(it, LIN, COL, pay) else Tk.Str(TK.XVAR, LIN, COL, pay)

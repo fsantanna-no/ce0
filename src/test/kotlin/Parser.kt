@@ -156,7 +156,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("[(),x,()]"), 2))
         lexer(all)
         val e = parser_expr(all,true)
-        assert(e is Expr.Tuple && e.vec.size==3 && e.vec[0].e is Expr.Unit && e.vec[1].e is Expr.Var && (e.vec[1].e.tk as Tk.Str).str=="x")
+        assert(e is Expr.TCons && e.arg.size==3 && e.arg[0].e is Expr.Unit && e.arg[1].e is Expr.Var && (e.arg[1].e.tk as Tk.Str).str=="x")
     }
     @Test
     fun b07_parser_expr_tuple_err () {
@@ -237,35 +237,35 @@ class Parser {
 
     @Test
     fun b14_parser_expr_cons_err_1 () {
-        val all = All_new(PushbackReader(StringReader(".0 ("), 2))
+        val all = All_new(PushbackReader(StringReader("<.0 ("), 2))
         lexer(all)
         try {
             parser_expr(all, false)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 5): expected expression : have end of file")
+            assert(e.message == "(ln 1, col 6): expected expression : have end of file")
         }
     }
     @Test
     fun b15_parser_expr_cons () {
-        val all = All_new(PushbackReader(StringReader(".0 ()"), 2))
+        val all = All_new(PushbackReader(StringReader("<.0 ()>"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Case && e.tk_.idx==0 && e.arg.e is Expr.Unit)
+        assert(e is Expr.UCons && e.tk_.num==0 && e.arg.e is Expr.Unit)
     }
     @Test
     fun b16_parser_expr_cons () {
-        val all = All_new(PushbackReader(StringReader(".1"), 2))
+        val all = All_new(PushbackReader(StringReader("<.1>"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Case && e.tk_.idx==1 && e.arg.e is Expr.Unit)
+        assert(e is Expr.UCons && e.tk_.num==1 && e.arg.e is Expr.Unit)
     }
     @Test
     fun b17_parser_expr_cons () {
-        val all = All_new(PushbackReader(StringReader(".2 .1 [(),()]"), 2))
+        val all = All_new(PushbackReader(StringReader("<.2 <.1 [(),()]>>"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Case && e.tk_.idx==2 && e.arg.e is Expr.Case && (e.arg.e as Expr.Case).arg.e is Expr.Tuple)
+        assert(e is Expr.UCons && e.tk_.num==2 && e.arg.e is Expr.UCons && (e.arg.e as Expr.UCons).arg.e is Expr.TCons)
     }
 
     // INDEX
@@ -275,14 +275,14 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("x.1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Index && e.tk_.idx==1 && e.pre is Expr.Var)
+        assert(e is Expr.TDisc && e.tk_.num==1 && e.tup is Expr.Var)
     }
     @Test
     fun b19_parser_expr_index () {
         val all = All_new(PushbackReader(StringReader("x () .10"), 2))
         lexer(all)  // x [() .10]
         val e = parser_expr(all,false)
-        assert(e is Expr.Call && e.arg.e is Expr.Index)
+        assert(e is Expr.Call && e.arg.e is Expr.TDisc)
     }
 
     // UPREF, DNREF
@@ -292,7 +292,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("\\x.1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Upref && e.sub is Expr.Index)
+        assert(e is Expr.Upref && e.sub is Expr.TDisc)
     }
     @Test
     fun b22_parser_expr_upref () {
@@ -310,7 +310,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("(/x).1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Index && e.pre is Expr.Dnref && (e.pre as Expr.Dnref).sub is Expr.Var)
+        assert(e is Expr.TDisc && e.tup is Expr.Dnref && (e.tup as Expr.Dnref).sub is Expr.Var)
     }
     @Test
     fun b24_parser_expr_dnref () {
@@ -336,24 +336,24 @@ class Parser {
 
     @Test
     fun b25_parser_expr_disc () {
-        val all = All_new(PushbackReader(StringReader("x.1!"), 2))
+        val all = All_new(PushbackReader(StringReader("x!1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Index && e.tk_.idx==1 && e.pre is Expr.Var && e.op!!.chr=='!')
+        assert(e is Expr.UDisc && e.tk_.num==1 && e.uni is Expr.Var)
     }
     @Test
     fun b26_parser_expr_pred () {
-        val all = All_new(PushbackReader(StringReader("x.0?"), 2))
+        val all = All_new(PushbackReader(StringReader("x?0"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Index && e.tk_.idx==0 && e.pre is Expr.Var && e.op!!.chr=='?')
+        assert(e is Expr.UPred && e.tk_.num==0 && e.uni is Expr.Var)
     }
     @Test
     fun b27_parser_expr_idx () {
         val all = All_new(PushbackReader(StringReader("x.10"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.Index && e.tk_.idx==10 && e.pre is Expr.Var && e.op==null)
+        assert(e is Expr.TDisc && e.tk_.num==10 && e.tup is Expr.Var)
     }
 
     // STMT
@@ -370,7 +370,7 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("var x: [(),()] = [(),()]"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Var && s.type is Type.Tuple && s.src.e is Expr.Tuple)
+        assert(s is Stmt.Var && s.type is Type.Tuple && s.src.e is Expr.TCons)
     }
     @Test
     fun c05_parser_stmt_var_caret () {
@@ -479,11 +479,11 @@ class Parser {
     }
     @Test
     fun c11_parser_stmt_if () {
-        val all = All_new(PushbackReader(StringReader("if (.2) {}"), 2))
+        val all = All_new(PushbackReader(StringReader("if <.2> {}"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert (
-            s is Stmt.If && s.tst is Expr.Case &&
+            s is Stmt.If && s.tst is Expr.UCons &&
             s.true_.body is Stmt.Pass && s.false_.body is Stmt.Pass
         )
     }

@@ -12,11 +12,13 @@ fun Type.map (f: ((Type)->Type)): Type {
 fun Expr.visit (env: Env, fe: ((Env,Expr)->Unit)?) {
     when (this) {
         is Expr.Unk, is Expr.Unit, is Expr.Var, is Expr.Nat -> {}
-        is Expr.Tuple -> this.vec.forEach { it.e.visit(env,fe) }
-        is Expr.Case  -> this.arg.e.visit(env,fe)
+        is Expr.TCons -> this.arg.forEach { it.e.visit(env,fe) }
+        is Expr.UCons  -> this.arg.e.visit(env,fe)
         is Expr.Dnref -> this.sub.visit(env,fe)
         is Expr.Upref -> this.sub.visit(env,fe)
-        is Expr.Index -> this.pre.visit(env,fe)
+        is Expr.TDisc -> this.tup.visit(env,fe)
+        is Expr.UDisc -> this.uni.visit(env,fe)
+        is Expr.UPred -> this.uni.visit(env,fe)
         is Expr.Call  -> { this.f.visit(env,fe) ; this.arg.e.visit(env,fe) }
     }
     if (fe != null) {
