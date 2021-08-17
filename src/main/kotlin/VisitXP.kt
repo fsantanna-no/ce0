@@ -47,7 +47,7 @@ fun Stmt.visitXP (old: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env, XExpr, Type) -> 
         }
         is Stmt.Call  -> { this.call.visitXP(old,fx,fe,Type_Any(this.tk)) ; old }
         is Stmt.Seq   -> { val e1=this.s1.visitXP(old,fs,fx,fe) ; val e2=this.s2.visitXP(e1,fs,fx,fe) ; e2}
-        is Stmt.If    -> { this.tst.visitXP(old,fx,fe,Type.None(this.tk)) ; this.true_.visitXP(old,fs,fx,fe) ; this.false_.visitXP(old,fs,fx,fe) ; old }
+        is Stmt.If    -> { this.tst.visitXP(old,fx,fe,Type_Nat(this.tk,"int")) ; this.true_.visitXP(old,fs,fx,fe) ; this.false_.visitXP(old,fs,fx,fe) ; old }
         is Stmt.Func  -> { if (this.block!=null) { this.block.visitXP(old,fs,fx,fe) } ; listOf(this)+old }
         is Stmt.Ret   -> { this.e.visitXP(old,fx,fe,(old.idToStmt("_ret_") as Stmt.Var).type) ; old }
         is Stmt.Loop  -> { this.block.visitXP(old,fs,fx,fe) ; old }

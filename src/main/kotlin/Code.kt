@@ -150,6 +150,7 @@ fun XExpr.pos (env: Env, deref: Boolean): String {
 }
 
 fun Expr.pos (env: Env, deref: Boolean): String {
+    TODO()
     val TP = this.toType(env)
     if ((TP is Type.Unit) && (this !is Expr.Call)) {
         return ""
@@ -171,14 +172,19 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
         is Expr.Var -> Pair("", if (tp is Type.Unit) "" else e.tk_.str)
         is Expr.Upref -> {
             val sub = EXPRS.removeFirst()
-            Pair(sub.first, (if (e.sub.toType(env).exactlyRec()) "" else "&") + sub.second)
+            Pair(sub.first, "(" + (if (e.sub.toType(env).exactlyRec()) "" else "&") + sub.second + ")")
         }
         is Expr.Dnref -> {
             val sub = EXPRS.removeFirst()
-            Pair(sub.first, "*" + sub.second)
+            Pair(sub.first, "(*" + sub.second + ")")
         }
         is Expr.TDisc -> EXPRS.removeFirst().let { Pair(it.first, it.second /*+TODO("deref=true")*/ + "._" + e.tk_.num) }
-        is Expr.UDisc -> EXPRS.removeFirst().let { Pair(it.first, it.second /*+TODO("deref=true")*/ + "._" + e.tk_.num) }
+        is Expr.UDisc -> EXPRS.removeFirst().let {
+            Pair (
+                it.first + "assert(${it.second}.tag == ${e.tk_.num});\n",
+                it.second /*+TODO("deref=true")*/ + "._" + e.tk_.num
+            )
+        }
         is Expr.UPred -> EXPRS.removeFirst().let { Pair(it.first, "(${it.second /*deref=true*/}.tag == ${e.tk_.num})") }
         is Expr.TCons -> {
             val (pre,pos) = (1..e.arg.size).map { EXPRS.removeFirst() }.reversed().unzip()
@@ -260,7 +266,7 @@ fun code_fs (env: Env, s: Stmt) {
             val false_ = CODE.removeFirst()
             val true_  = CODE.removeFirst()
             tst.first + """
-                if (${tst.second /*deref=true*/}) {
+                if (${tst.second /*TODO("deref=true")*/}) {
                     ${true_}
                 } else {
                     ${false_}
@@ -293,137 +299,6 @@ fun code_fs (env: Env, s: Stmt) {
                 ) + ";\n"
             })
         }
-        /*is Stmt.User  -> {
-            val ID = s.tk_.str
-            if (ID == "Int") {
-                return ""
-            }
-
-            // struct Bool;
-            // typedef struct Bool Bool;
-            val ret1 = """
-                struct $ID;
-                typedef struct $ID $ID;
-
-            """.trimIndent()
-
-            val (v,fn,ptr) = if (s.isrec) Triple("(*(*v))","_ptr","**") else Triple("v","","")
-            val ret2 = """
-                ${
-                    if (!s.isrec) "" else {
-                        "auto void ${ID}_free ($ID** p);\n"
-                    }
-                }
-                auto void output_std_$ID${fn}_ ($ID$ptr v);
-
-            """.trimIndent()
-
-            if (s.subs.isEmpty()) {
-                return ret1 + ret2
-            }
-
-            val ret3 = s.subs.map { it.second.pre() + "\n" }.joinToString("")
-
-            // enum { Bool_False, Bool_True } _Bool_;
-            val ret4 = """
-                typedef enum {
-                    ${ s.subs
-                        .map { ID + "_" + it.first.str }
-                        .joinToString(", ")
-                    }
-                } _${ID}_;
-
-            """.trimIndent()
-
-            // struct Bool { _Bool_ sub; union { ... } };
-            val ret5 = """
-                struct $ID {
-                    _${ID}_ sub;
-                    union {
-                        ${ s.subs
-                            .filter { (_,tp) -> tp !is Type.Unit }
-                            .map { (sub,tp) -> tp.pos() + " _" + sub.str + ";\n" }
-                            .joinToString("")
-                        }
-                    };
-                };
-
-            """.trimIndent()
-
-            // void output_std_Bool_ (Bool v) { ... }
-            val ret6 = """
-                void output_std_$ID${fn}_ ($ID$ptr v) {
-                    ${
-                        if (s.isrec) {
-                            """
-                            if (*v == NULL) {
-                                printf("Nil");
-                                return;
-                            }
-
-                            """
-                        } else { "" }
-                    }
-                    switch ($v.sub) {
-                        ${s.subs
-                            .map { (sub,tp) -> """
-                                case ${ID}_${sub.str}:
-                                    printf("${sub.str}");
-                                    ${
-                                        if (false) "" else {
-                                            val (op2,fn2) = if (tp.ishasrec()) Pair("&","_ptr") else Pair("","")
-                                            when (tp) {
-                                                is Type.Nat -> "putchar('_');"
-                                                is Type.Cons -> "putchar(' '); output_std_${tp.toce()}${fn2}_($op2$v._${sub.str});"
-                                                is Type.User -> "putchar(' '); putchar('('); output_std_${tp.toce()}${fn2}_($op2$v._${sub.str}); putchar(')');"
-                                                else -> ""
-                                            }
-                                        }
-                                    }
-                                    break;
-
-                            """.trimIndent()
-                            }
-                            .joinToString("")
-                        }
-                    }
-                }
-                void output_std_$ID$fn ($ID$ptr v) {
-                    output_std_$ID${fn}_(v);
-                    puts("");
-                }
-
-            """.trimIndent()
-
-            // void List_free (List** p) { ... }
-            val ret7 = if (!s.isrec) "" else {
-                """
-                    void ${ID}_free ($ID** p) {
-                        if (*p == NULL) return;
-                        switch ((*p)->sub) {
-                            ${ s.subs
-                                .map { (id,tp) ->
-                                    if (!tp.ishasrec()) "" else
-                                        """
-                                        case ${ID}_${id.str}:
-                                            ${tp.toce()}_free(&(*p)->_${id.str});
-                                            break;
-
-                                        """.trimIndent()
-                                }
-                                .joinToString("")
-                            }
-                            default:
-                                break;
-                        }
-                        free(*p);
-                    }
-
-                """.trimIndent()
-            }
-
-            return (ret1 + ret2 + ret3 + ret4 + ret5 + ret6 + ret7)
-        } */
         is Stmt.Func  -> {
             s.type.pre() + when (s.tk_.str) {
                 "output_std" -> ""
@@ -445,6 +320,7 @@ fun code_fs (env: Env, s: Stmt) {
 fun Stmt.code (): String {
     this.visitXP(emptyList(), ::code_fs, ::code_fx, ::code_fe)
     //println(CODE)
+    assert(EXPRS.size == 0)
     assert(CODE.size == 1)
     return ("""
         #include <assert.h>

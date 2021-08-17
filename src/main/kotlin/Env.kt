@@ -138,13 +138,20 @@ fun check_types (S: Stmt) {
                     "invalid discriminator : out of bounds"
                 }
             }
-            is Expr.UDisc -> e.uni.toType(env).let {
-                All_assert_tk(e.tk, it is Type.Union) {
-                    "invalid discriminator : type mismatch"
+            is Expr.UDisc, is Expr.UPred -> {
+                val (uni,tk) = when (e) {
+                    is Expr.UDisc -> Pair(e.uni, e.tk_)
+                    is Expr.UPred -> Pair(e.uni, e.tk_)
+                    else -> error("impossible case")
                 }
-                val (MIN,MAX) = Pair(if (it.exactlyRec()) 0 else 1, (it as Type.Union).vec.size)
-                All_assert_tk(e.tk, MIN<=e.tk_.num && e.tk_.num<=MAX) {
-                    "invalid discriminator : out of bounds"
+                uni.toType(env).let {
+                    All_assert_tk(e.tk, it is Type.Union) {
+                        "invalid discriminator : type mismatch"
+                    }
+                    val (MIN,MAX) = Pair(if (it.exactlyRec()) 0 else 1, (it as Type.Union).vec.size)
+                    All_assert_tk(e.tk, MIN<=tk.num && tk.num<=MAX) {
+                        "invalid discriminator : out of bounds"
+                    }
                 }
             }
             is Expr.Call -> {
@@ -161,26 +168,17 @@ fun check_types (S: Stmt) {
                 All_assert_tk(s.tk, s.type.isSupOf(s.src.e.toType(env))) {
                     "invalid assignment : type mismatch"
                 }
-                /*
-                if (s.type.exactlyRec() && s.init.e is Expr.Varia) {
-                    All_assert_tk(s.tk, s.init.x.let { it!=null && it.enu==TK.NEW }) {
-                        "invalid assignment : expected `new` operation modifier"
-                    }
-                }
-                 */
             }
             is Stmt.Set -> {
                 val str = if (s.dst is Attr.Var && s.dst.tk_.str=="_ret_") "return" else "assignment"
                 All_assert_tk(s.tk, s.dst.toExpr().toType(env).isSupOf(s.src.e.toType(env))) {
                     "invalid $str : type mismatch"
                 }
-                /*
-                if (s.dst.toExpr().toType(env).exactlyRec() && s.src.e is Expr.Varia) {
-                    All_assert_tk(s.tk, s.src.x.let { it!=null && it.enu==TK.NEW }) {
-                        "invalid $str : expected `new` operation modifier"
-                    }
+            }
+            is Stmt.If -> {
+                All_assert_tk(s.tk, s.tst.toType(env) is Type.Nat) {
+                    "invalid condition : type mismatch"
                 }
-                 */
             }
         }
     }

@@ -330,44 +330,37 @@ class Exec {
             var z: <(),()> = <.2>
             output std z!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:85: main: Assertion `z.tag == 1' failed.\n")
+        assert(out == "out.exe: out.c:69: main: Assertion `z.tag == 1' failed.\n")
     }
     @Test
     fun f12_user_disc_pred_idx () {
         val out = all("""
-            type Bool { False: () ; True: () }
-            type X { Z:() }
-            type A { B:(X,()) }
-            output std (A.B (X.Z,())).B!.1.Z?
+            var v: <[<()>,()]> = <.1 [<.1>,()]>
+            output std v!1.1?1
         """.trimIndent())
-        assert(out == "True\n")
+        assert(out == "1\n")
     }
     @Test
     fun f13_user_disc_pred_err () {
         val out = all("""
-            output std ().Z?
+            output std ()?1
         """.trimIndent())
-        assert(out == "(ln 1, col 12): invalid `.´ : expected user type")
+        assert(out == "(ln 1, col 15): invalid discriminator : type mismatch")
     }
     @Test
     fun f14_user_dots_err () {
         val out = all("""
-            type Z { Z:() }
-            type Y { Y:Z }
-            type X { X:Y }
-            var x: X = X.X Y.Y Z.Z
-            output std x.X!.Z!
+            var x: <<<()>>> = <.1 <.1 <.1>>>
+            output std x!1!2
         """.trimIndent())
-        assert(out == "(ln 5, col 17): invalid `.´ : undeclared subcase \"Z\"")
+        println(out)
+        assert(out == "(ln 2, col 16): invalid discriminator : out of bounds")
     }
     @Test
     fun f15_user_dots () {
         val out = all("""
-            type Z { Z:() }
-            type Y { Y:Z }
-            type X { X:Y }
-            var x: X = X.X Y.Y Z.Z
-            output std x.X!.Y!.Z!
+            var x: <<<()>>> = <.1 <.1 <.1>>>
+            output std x!1!1!1
         """.trimIndent())
         assert(out == "()\n")
     }
@@ -377,17 +370,17 @@ class Exec {
     @Test
     fun g01_if () {
         val out = all("""
-            type Bool { False: () ; True: () }
-            if Bool.False { } else { output std }
+            var x: <(),()> = <.2>
+            if x?1 { } else { output std }
         """.trimIndent())
+        println(out)
         assert(out == "()\n")
     }
     @Test
     fun g02_if_pred () {
         val out = all("""
-            type Bool { False: () ; True: () }
-            var x: Bool = Bool.True
-            if x.False? { } else { output std }
+            var x: <(),()> = <.2>
+            if x?2 { output std } else { }
         """.trimIndent())
         assert(out == "()\n")
     }
@@ -410,8 +403,8 @@ class Exec {
     @Test
     fun i01_ptr () {
         val out = all("""
-            var y: Int = 10
-            var x: \Int = \y
+            var y: _int = _10
+            var x: \_int = \y
             output std /x
         """.trimIndent())
         assert(out == "10\n")
@@ -419,14 +412,15 @@ class Exec {
     @Test
     fun i02_ptr_func () {
         val out = all("""
-        func f : \Int -> () {
+        func f : \_int -> () {
            set /arg = _(*arg+1)
            return
         }
-        var x: Int = 1
+        var x: _int = _1
         call f \x
         output std x
         """.trimIndent())
+        println(out)
         assert(out == "2\n")
     }
     @Test

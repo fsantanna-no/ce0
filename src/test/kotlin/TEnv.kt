@@ -53,6 +53,7 @@ class TEnv {
         val out = inp2env("var x:()=() ; func x:()->() {}")
         assert(out == "(ln 1, col 20): invalid declaration : \"x\" is already declared (ln 1)")
     }
+
     // CONS
 
     @Test
@@ -746,4 +747,15 @@ class TEnv {
         assert(out == "(ln 1, col 14): invalid `copy` : expected recursive variable")
         //assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
     }
+
+    // IF
+
+    @Test
+    fun k01_if () {
+        val out = inp2env("""
+            if () {} else {}
+        """.trimIndent())
+        assert(out == "(ln 1, col 1): invalid condition : type mismatch")
+    }
+
 }

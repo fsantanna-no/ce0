@@ -19,6 +19,10 @@ fun Type_Any (tk: Tk): Type.Any {
     return Type.Any(Tk.Chr(TK.CHAR,tk.lin,tk.col,'?'))
 }
 
+fun Type_Nat (tk: Tk, str: String): Type.Nat {
+    return Type.Nat(Tk.Str(TK.XNAT,tk.lin,tk.col,str))
+}
+
 fun Type.keepAnyNat (other: ()->Type): Type {
     return when (this) {
         is Type.Any, is Type.Nat -> this
