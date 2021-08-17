@@ -653,18 +653,17 @@ class Exec {
             set x1 = x2
             output std /x1.1!
         """.trimIndent())
-        println(out)
         assert(out == "20\n")
     }
     @Test
     fun f10_ptr_func () {
         val out = all("""
-            var v: Int = 10
-            func f : \Int -> \Int {
+            var v: _int = _10
+            func f : \_int -> \_int {
                 return \v
             }
             {
-                var p: \Int = f (\v)
+                var p: \_int = f (\v)
                 output std /p
             }
         """.trimIndent())
@@ -676,12 +675,10 @@ class Exec {
     @Test
     fun j01_list () {
         val out = all("""
-            type @rec List {
-               Item: List
-            }
-            var l: List = List.Nil
+            var l: <^> = .0
             output std \l
         """.trimIndent())
+        println(out)
         assert(out == "Nil\n")
     }
     @Test

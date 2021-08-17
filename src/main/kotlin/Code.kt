@@ -2,7 +2,8 @@ import kotlin.math.absoluteValue
 
 fun Type.toce (): String {
     return when (this) {
-        is Type.None, is Type.Rec, is Type.Case -> error("bug found")
+        is Type.None, is Type.Case -> error("bug found")
+        is Type.Rec   -> "Rec"
         is Type.Any   -> "Any"
         is Type.Unit  -> "Unit"
         is Type.Ptr   -> this.tp.toce() + "_ptr"
@@ -59,6 +60,8 @@ fun Type.pre (): String {
         is Type.Union -> {
             val pre = this.vec.map { it.pre() }.joinToString("")
             val ce = this.toce()
+            val cex = if (this.exactlyRec()) ce+"*" else ce
+            val vx  = if (this.exactlyRec()) "(*v)" else "v"
             pre + """
                 #ifndef __${ce}__
                 #define __${ce}__
@@ -66,14 +69,20 @@ fun Type.pre (): String {
                     int tag;
                     union {
                         ${this.vec  // do not filter to keep correct i
-                            .mapIndexed { i,sub -> if (sub is Type.Unit) "" else { sub.pos() + " _" + (i+1).toString() + ";\n" } }
+                            .mapIndexed { i,sub ->
+                                when {
+                                    sub is Type.Unit -> ""
+                                    sub is Type.Rec -> "struct $ce* _${i+1};\n"
+                                    else -> "${sub.pos()} _${i+1};\n"
+                                }
+                            }
                             .joinToString("")
                         }
                     };
                 } $ce;
-                void output_std_${ce}_ ($ce v) {
-                    printf(".%d", v.tag);
-                    switch (v.tag) {
+                void output_std_${ce}_ ($cex v) {
+                    printf(".%d", $vx.tag);
+                    switch ($vx.tag) {
                         ${this.vec
                             .mapIndexed { i,tp -> """
                                 case ${i+1}:
@@ -81,8 +90,9 @@ fun Type.pre (): String {
                                     when (tp) {
                                         is Type.Unit  -> ""
                                         is Type.Nat, is Type.Ptr -> "putchar(' '); putchar('_');"
-                                        is Type.Tuple -> "putchar(' '); output_std_${tp.toce()}_(v._${i+1});"
-                                        is Type.Union -> "putchar(' '); output_std_${tp.toce()}_(v._${i+1});"
+                                        is Type.Tuple -> "putchar(' '); output_std_${tp.toce()}_($vx._${i+1});"
+                                        is Type.Union -> "putchar(' '); output_std_${tp.toce()}_($vx._${i+1});"
+                                        is Type.Rec   -> "putchar(' '); output_std_${ce}_($vx._${i+1});"
                                         else -> TODO(tp.toString())
                                     }
                                 }
@@ -93,7 +103,7 @@ fun Type.pre (): String {
                         }
                     }
                 }
-                void output_std_$ce ($ce v) {
+                void output_std_$ce ($cex v) {
                     output_std_${ce}_(v);
                     puts("");
                 }
@@ -107,12 +117,13 @@ fun Type.pre (): String {
 
 fun Type.pos (): String {
     return when (this) {
-        is Type.None, is Type.Rec, is Type.Case -> TODO()
+        is Type.None, is Type.Rec, is Type.Case -> TODO(this.toString())
         is Type.Any, is Type.Unit  -> "void"
-        is Type.Ptr  -> this.tp.pos() + "*"
-        is Type.Nat  -> this.tk_.str
-        is Type.Tuple, is Type.Union -> this.toce()
-        is Type.Func -> this.toce() + "*"
+        is Type.Ptr   -> this.tp.pos() + "*"
+        is Type.Nat   -> this.tk_.str
+        is Type.Tuple -> this.toce()
+        is Type.Union -> this.toce() + (if (this.exactlyRec()) "*" else "")
+        is Type.Func  -> this.toce() + "*"
     }
 }
 
@@ -165,7 +176,7 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
         is Expr.Var -> Pair("", if (tp is Type.Unit) "" else e.tk_.str)
         is Expr.Upref -> {
             val sub = EXPRS.removeFirst()
-            Pair(sub.first, "&" + sub.second)
+            Pair(sub.first, (if (e.sub.toType(env).exactlyRec()) "" else "&") + sub.second)
         }
         is Expr.Dnref -> {
             val sub = EXPRS.removeFirst()
