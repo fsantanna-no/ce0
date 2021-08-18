@@ -211,7 +211,7 @@ fun check_xexprs (S: Stmt) {
             (xe.x.enu == TK.COPY) -> All_assert_tk(xe.x, xp_ctrec && !e_iscst) {
                 "invalid `copy` : expected recursive variable"
             }
-            (xe.x.enu == TK.MOVE) -> All_assert_tk(xe.x, xp_ctrec && !e_iscst) {
+            (xe.x.enu == TK.MOVE) -> All_assert_tk(xe.x, xp_exrec && !e_iscst) {
                 "invalid `move` : expected recursive variable"
             }
             (xe.x.enu == TK.NEW) -> All_assert_tk(xe.x, xp_exrec && e_isvar) {

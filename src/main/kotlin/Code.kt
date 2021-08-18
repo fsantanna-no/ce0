@@ -29,6 +29,7 @@ fun Type.pre (): String {
         is Type.Tuple -> {
             val pre = this.vec.map { it.pre() }.joinToString("")
             val ce = this.toce()
+
             pre + """
                 #ifndef __${ce}__
                 #define __${ce}__
@@ -60,7 +61,7 @@ fun Type.pre (): String {
             val pre = this.vec.map { it.pre() }.joinToString("")
             val ce = this.toce()
 
-            val ctrec = this.exactlyRec()
+            val ctrec = this.containsRec()
             val cex  = if (ctrec) ce+"*" else ce
             val vx   = if (ctrec) "(*v)" else "v"
             val _ptr = if (ctrec) "_ptr" else ""

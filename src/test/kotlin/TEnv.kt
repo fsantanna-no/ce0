@@ -782,6 +782,16 @@ class TEnv {
         """.trimIndent())
         assert(out == "(ln 1, col 31): invalid expression : expected `new` operation modifier")
     }
+    @Test
+    fun j13_tup_move_err () {
+        val out = inp2env("""
+            var l: <^> = <.0>
+            var t1: [<^>] = [move l]
+            var t2: [<^>] = move t1
+        """.trimIndent())
+        assert(out == "(ln 3, col 17): invalid `move` : expected recursive variable")
+    }
+
 
     // IF
 
