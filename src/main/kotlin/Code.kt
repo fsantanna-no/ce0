@@ -210,10 +210,12 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
             )
         }
         is Expr.UCons -> {
-            val top   = EXPRS.removeFirst()
-            val pos   = if (e.tk_.num == 0) "NULL" else "_tmp_${e.hashCode().absoluteValue}"
-            val arg   = if (e.arg.e.toType(env) is Type.Unit) "" else (", " + top.second)
-            val pre   = "((${xp.toce()}) { ${e.tk_.num} $arg })"
+            val top = EXPRS.removeFirst()
+            val ID  = "_tmp_" + e.hashCode().absoluteValue
+            val pos = if (e.tk_.num == 0) "NULL" else ID
+            val arg = if (e.arg.e.toType(env) is Type.Unit) "" else (", " + top.second)
+            val sup = xp.toce()
+            val pre = "$sup $ID = (($sup) { ${e.tk_.num} $arg });\n"
             Pair(xp.pre() + top.first + pre, pos)
         }
         is Expr.Call  -> {
@@ -267,22 +269,20 @@ fun code_fx (env: Env, xe: XExpr, xp: Type) {
     }
 
     val top = EXPRS.removeFirst()
-    val N   = xe.e.hashCode().absoluteValue
-    val sup = xp.toce()
 
     EXPRS.addFirst(when {
-        (xe.x == null) -> {
-            val pre = "$sup _tmp_$N =\n${top.first};"
-            Pair(pre, top.second)
-        }
+        (xe.x == null) -> top
         (xe.x.enu == TK.NEW) -> {
+            val ID  = "_tmp_" + xe.e.hashCode().absoluteValue
+            val pos = if (xe.e.tk_.num == 0) "NULL" else ID
+            val sup = xp.toce()
             val pre = """
-                $sup* _tmp_$N = ($sup*) malloc(sizeof($sup));
-                assert(_tmp_$N!=NULL && "not enough memory");
-                *_tmp_$N =\n${top.first};
+                $sup* $ID = ($sup*) malloc(sizeof($sup));
+                assert($ID!=NULL && "not enough memory");
+                *$ID = ${top.second};
 
             """.trimIndent()
-            Pair(pre, top.second)
+            Pair(pre, pos)
         }
         else -> top
     })
