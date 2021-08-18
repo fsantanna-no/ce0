@@ -758,19 +758,9 @@ class Exec {
     fun j09_tup_list_err () {
         val out = all("""
             var t: [_int,<^>] = [_10, new <.1 <.0>>]
-            output std t
-        """.trimIndent())
-        println(out)
-        assert(out == "<.0>\n<.1 <.1 <.0>>\n")
-    }
-    @Test
-    fun j09_tup_list_ok () {
-        val out = all("""
-            var t: [_int,<^>] = [_10, new <.1 <.0>>]
             output std \t
         """.trimIndent())
-        println(out)
-        assert(out == "<.0>\n<.1 <.1 <.0>>\n")
+        assert(out == "[10,<.1 <.0>>]\n")
     }
     @Test
     fun j10_tup_move_ok () {

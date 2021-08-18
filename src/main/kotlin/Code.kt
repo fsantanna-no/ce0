@@ -9,8 +9,8 @@ fun Type.toce (ptr: Boolean = false): String {
         is Type.Unit  -> "Unit"
         is Type.Ptr   -> this.pln.toce(false) + "_ptr"
         is Type.Nat   -> this.tk_.str.replace('*','_')
-        is Type.Tuple -> "TUPLE__" + this.vec.map { it.toce(ptr) }.joinToString("__") + _ptr
-        is Type.Union -> "UNION__" + this.vec.map { it.toce(ptr) }.joinToString("__") + _ptr
+        is Type.Tuple -> "TUPLE__" + this.vec.map { it.toce(false) }.joinToString("__") + _ptr
+        is Type.Union -> "UNION__" + this.vec.map { it.toce(false) }.joinToString("__") + _ptr
         is Type.Func  -> "FUNC__" + this.inp.toce() + "__" + this.out.toce()
     }
 }
@@ -254,7 +254,6 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
                 ) + "(" + arg.second /*+ TODO("deref=true")*/ + ")"
             )
         }
-        else -> TODO(e.toString())
     }.let {
         Pair (
             it.first,
