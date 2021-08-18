@@ -655,19 +655,16 @@ class Exec {
             var l: <^> = <.0>
             output std \l
         """.trimIndent())
-        println(out)
         assert(out == "<.0>\n")
     }
     @Test
     fun j02_list () {
         val out = all("""
-            type @rec List {
-               Item: List
-            }
-            var l: List = List.Item List.Nil
+            var l: <^> = new <.1 <.0>>
             output std \l
         """.trimIndent())
-        assert(out == "Item (Nil)\n")
+        println(out)
+        assert(out == "<.1 <.0>>\n")
     }
     @Test
     fun j03_list () {
