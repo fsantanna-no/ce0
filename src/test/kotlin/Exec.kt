@@ -734,7 +734,7 @@ class Exec {
             output std \l2.2
         """.trimIndent())
         println(out)
-        assert(out == "<.0>\n<.1 <.1 <.0>>\n")
+        assert(out == "<.0>\n<.1 <.0>>\n")
     }
     @Test
     fun j10_rec () {
@@ -771,6 +771,17 @@ class Exec {
         """.trimIndent())
         println(out)
         assert(out == "<.0>\n<.1 <.1 <.0>>\n")
+    }
+    @Test
+    fun j10_tup_move_ok () {
+        val out = all("""
+            var l: <^> = <.0>
+            var t1: [<^>] = [move l]
+            var t2: [<^>] = move t1
+        """.trimIndent())
+        println(out)
+        //assert(out == "(ln 3, col 17): invalid `move` : expected recursive variable")
+        assert(out == "OK")
     }
 
     // SET - TUPLE - DATA

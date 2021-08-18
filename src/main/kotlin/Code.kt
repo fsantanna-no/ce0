@@ -58,6 +58,21 @@ fun Type.pre (): String {
                     output_std_${_ptr}_(v);
                     puts("");
                 }
+
+            """.trimIndent() + (if (!this.containsRec()) "" else """
+                void free_${ce} ($ce* p) {
+                    ${this.vec
+                        .mapIndexed { i, tp ->
+                            if (!tp.containsRec()) "" else """
+                                free_${tp.toce()}(&p->_${i + 1});
+
+                            """.trimIndent()
+                        }
+                        .joinToString("")
+                    }
+                }
+
+            """.trimIndent()) + """
                 #endif
 
             """.trimIndent()
