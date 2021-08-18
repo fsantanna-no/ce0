@@ -38,7 +38,7 @@ fun Expr.toType (env: Env): Type {
                 assert(it.exactlyRec()) { "bug found" }
                 Type_Unit(this.tk)
             } else {
-                it.vec[this.tk_.num - 1]
+                it.expand().vec[this.tk_.num - 1]
             }
         }
         is Expr.UPred -> Type.Nat(Tk.Str(TK.XNAT, this.tk.lin, this.tk.col, "int"))

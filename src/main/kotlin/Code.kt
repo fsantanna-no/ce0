@@ -180,6 +180,14 @@ fun Expr.pos (env: Env, deref: Boolean): String {
 
 val EXPRS = ArrayDeque<Pair<String,String>>()
 
+fun Expr.UDisc.defref (env: Env, str: String): String {
+    return if (this.uni.toType(env).exactlyRec()) {
+        "(*($str))"
+    } else {
+        str
+    }
+}
+
 fun code_fe (env: Env, e: Expr, xp: Type) {
     val tp = e.toType(env)
     EXPRS.addFirst(when (e) {
@@ -196,9 +204,10 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
         }
         is Expr.TDisc -> EXPRS.removeFirst().let { Pair(it.first, it.second /*+TODO("deref=true")*/ + "._" + e.tk_.num) }
         is Expr.UDisc -> EXPRS.removeFirst().let {
+            val ee = e.defref(env,it.second)
             Pair (
-                it.first + "assert(${it.second}.tag == ${e.tk_.num});\n",
-                it.second /*+TODO("deref=true")*/ + "._" + e.tk_.num
+                it.first + "assert($ee.tag == ${e.tk_.num});\n",
+                ee + "._" + e.tk_.num
             )
         }
         is Expr.UPred -> EXPRS.removeFirst().let { Pair(it.first, "(${it.second /*deref=true*/}.tag == ${e.tk_.num})") }
@@ -212,11 +221,10 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
         is Expr.UCons -> {
             val top = EXPRS.removeFirst()
             val ID  = "_tmp_" + e.hashCode().absoluteValue
-            val pos = if (e.tk_.num == 0) "NULL" else ID
             val arg = if (e.arg.e.toType(env) is Type.Unit) "" else (", " + top.second)
             val sup = xp.toce()
             val pre = "$sup $ID = (($sup) { ${e.tk_.num} $arg });\n"
-            Pair(xp.pre() + top.first + pre, pos)
+            Pair(xp.pre() + top.first + pre, if (e.tk_.num == 0) "NULL" else ID)
         }
         is Expr.Call  -> {
             val arg = EXPRS.removeFirst()
@@ -273,8 +281,7 @@ fun code_fx (env: Env, xe: XExpr, xp: Type) {
     EXPRS.addFirst(when {
         (xe.x == null) -> top
         (xe.x.enu == TK.NEW) -> {
-            val ID  = "_tmp_" + xe.e.hashCode().absoluteValue
-            val pos = if (xe.e.tk_.num == 0) "NULL" else ID
+            val ID  = "_tmp_" + xe.hashCode().absoluteValue
             val sup = xp.toce()
             val pre = """
                 $sup* $ID = ($sup*) malloc(sizeof($sup));
@@ -282,7 +289,7 @@ fun code_fx (env: Env, xe: XExpr, xp: Type) {
                 *$ID = ${top.second};
 
             """.trimIndent()
-            Pair(pre, pos)
+            Pair(top.first+pre, if (xe.e.tk_.num == 0) "NULL" else ID)
         }
         else -> top
     })
