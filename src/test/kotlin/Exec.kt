@@ -673,30 +673,23 @@ class Exec {
             var l: <^> = new <.1 new <.1 <.0>>>
             output std \l!1
         """.trimIndent())
-        println(out)
         assert(out == "<.1 <.0>>\n")
     }
     @Test
     fun j04_list_disc_null_err () {
         val out = all("""
-            type @rec List {
-               Item: List
-            }
-            var l: List = List.Item List.Nil
-            output std l.Nil!
+            var l: <^> = new <.1 <.0>>
+            output std l!0
         """.trimIndent())
-        assert(out == "out.exe: out.c:71: main: Assertion `l == NULL' failed.\n")
+        assert(out == "out.exe: out.c:139: main: Assertion `l == NULL' failed.\n")
     }
     @Test
     fun j05_list_disc_null_err () {
         val out = all("""
-            type @rec List {
-               Item: List
-            }
-            var l: List = List.Nil
-            output std \l.Item!
+            var l: <^> = <.0>
+            output std \l!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:63: main: Assertion `l != NULL' failed.\n")
+        assert(out == "out.exe: out.c:95: main: Assertion `l != NULL' failed.\n")
     }
     @Test
     fun j06_list () {

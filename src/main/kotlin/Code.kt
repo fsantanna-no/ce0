@@ -205,10 +205,19 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
         is Expr.TDisc -> EXPRS.removeFirst().let { Pair(it.first, it.second /*+TODO("deref=true")*/ + "._" + e.tk_.num) }
         is Expr.UDisc -> EXPRS.removeFirst().let {
             val ee = e.defref(env,it.second)
-            Pair (
-                it.first + "assert($ee.tag == ${e.tk_.num});\n",
-                ee + "._" + e.tk_.num
-            )
+            val pre = if (e.tk_.num == 0) {
+                """
+                assert(${it.second} == NULL);
+
+                """.trimIndent()
+            } else {
+                """
+                ${ if (e.uni.toType(env).exactlyRec()) "assert(${it.second} != NULL);\n" else "" }
+                assert($ee.tag == ${e.tk_.num});
+
+                """.trimIndent()
+            }
+            Pair(it.first + pre, ee + "._" + e.tk_.num)
         }
         is Expr.UPred -> EXPRS.removeFirst().let { Pair(it.first, "(${it.second /*deref=true*/}.tag == ${e.tk_.num})") }
         is Expr.TCons -> {
