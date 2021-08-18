@@ -165,19 +165,6 @@ fun Type.pos (): String {
     }
 }
 
-fun Expr.pos (env: Env, deref: Boolean): String {
-    TODO()
-    val TP = this.toType(env)
-    if ((TP is Type.Unit) && (this !is Expr.Call)) {
-        return ""
-    }
-    return when (this) {
-        else -> TODO(this.toString())
-    }.let {
-        if (deref && TP.containsRec()) "(*($it))" else it
-    }
-}
-
 val EXPRS = ArrayDeque<Pair<String,String>>()
 
 fun Expr.UDisc.defref (env: Env, str: String): String {
@@ -258,39 +245,15 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
     })
 }
 
-fun XExpr.pre (env: Env): String {
-    val ismove = (this.x!=null && this.x.enu==TK.MOVE)
-    val pre = if (!ismove) "" else {
-        """
-       typeof(${this.e.pos(env,false)}) _tmp_${this.hashCode().absoluteValue} = ${this.e.pos(env,false)};
-       ${this.e.pos(env,false)} = NULL;
-
-        """.trimIndent()
-    }
-    return pre //+ this.e.pre(env)
-}
-
-fun XExpr.pos (env: Env, deref: Boolean): String {
-    val ismove = (this.x!=null && this.x.enu==TK.MOVE)
-    return if (ismove) {
-        assert(!deref)  // TODO: i'm not sure
-        "_tmp_${this.hashCode().absoluteValue}"
-    } else {
-        this.e.pos(env,deref)
-    }
-}
-
 fun code_fx (env: Env, xe: XExpr, xp: Type) {
-    if (xe.e !is Expr.UCons) {
-        return
-    }
-
     val top = EXPRS.removeFirst()
+    val ID  = "_tmp_" + xe.hashCode().absoluteValue
 
     EXPRS.addFirst(when {
         (xe.x == null) -> top
         (xe.x.enu == TK.NEW) -> {
-            val ID  = "_tmp_" + xe.hashCode().absoluteValue
+            assert(xe.e is Expr.UCons)
+            val xee = xe.e as Expr.UCons
             val sup = xp.toce()
             val pre = """
                 $sup* $ID = ($sup*) malloc(sizeof($sup));
@@ -298,7 +261,15 @@ fun code_fx (env: Env, xe: XExpr, xp: Type) {
                 *$ID = ${top.second};
 
             """.trimIndent()
-            Pair(top.first+pre, if (xe.e.tk_.num == 0) "NULL" else ID)
+            Pair(top.first+pre, if (xee.tk_.num == 0) "NULL" else ID)
+        }
+        (xe.x.enu == TK.MOVE) -> {
+            val pre = """
+               typeof(${top.second}) $ID = ${top.second};
+               ${top.second} = NULL;
+
+            """.trimIndent()
+            Pair(pre, ID)
         }
         else -> top
     })
@@ -368,7 +339,7 @@ fun code_fs (env: Env, s: Stmt) {
                         auto $out ${s.tk_.str} ($inp) {
                             ${CODE.removeFirst()}
                         }
-                        
+
                     """.trimIndent()
                 }
             }

@@ -717,29 +717,24 @@ class Exec {
     @Test
     fun j08_list_move () {
         val out = all("""
-            type @rec List {
-               Item: List
-            }
-            var l1: List = List.Item List.Nil
-            var l2: List = List.Nil
-            set l2 = List.Item move l1
+            var l1: <^> = new <.1 <.0>>
+            var l2: <^> = <.0>
+            set l2 = new <.1 move l1>
             output std \l1
             output std \l2
         """.trimIndent())
-        assert(out == "Nil\nItem (Item (Nil))\n")
+        assert(out == "<.0>\n<.1 <.1 <.0>>>\n")
     }
     @Test
     fun j09_list_move () {
         val out = all("""
-            type @rec List {
-               Item: List
-            }
-            var l1: List = List.Item List.Nil
-            var l2: (_int,List) = (_10, move l1)
+            var l1: <^> = new <.1 <.0>>
+            var l2: [_int,<^>] = [_10, move l1]
             output std \l1
             output std \l2.2
         """.trimIndent())
-        assert(out == "Nil\nItem (Item (Nil))\n")
+        println(out)
+        assert(out == "<.0>\n<.1 <.1 <.0>>\n")
     }
     @Test
     fun j10_rec () {
@@ -757,7 +752,7 @@ class Exec {
             output std \n
         """.trimIndent())
         println(out)
-        assert(out == "Aa1 (Bb1 (Aa1 (Nil)))\n")
+        assert(out == "<.1 <.1 <.1 <.0>>>>\n")
     }
 
     // SET - TUPLE - DATA
