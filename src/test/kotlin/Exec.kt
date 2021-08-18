@@ -341,7 +341,7 @@ class Exec {
             var z: <(),()> = <.2>
             output std z!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:69: main: Assertion `z.tag == 1' failed.\n")
+        assert(out == "out.exe: out.c:70: main: Assertion `z.tag == 1' failed.\n")
     }
     @Test
     fun f12_user_disc_pred_idx () {
@@ -694,30 +694,25 @@ class Exec {
     @Test
     fun j06_list () {
         val out = all("""
-            type @rec List {
-               Item: List
-            }
-            var l: List = List.Item List.Item List.Nil
-            var p: \List = ?
+            var l: <^> = new <.1 new <.1 <.0>>>
+            var p: \<^> = ?
             {
-                set p = \l.Item!
+                set p = \l!1
             }
             output std p
         """.trimIndent())
-        assert(out == "Item (Nil)\n")
+        assert(out == "<.1 <.0>>\n")
     }
     @Test
     fun j07_list_move () {
         val out = all("""
-            type @rec List {
-               Item: List
-            }
-            var l1: List = List.Item List.Nil
-            var l2: List = move l1
+            var l1: <^> = new <.1 <.0>>
+            var l2: <^> = move l1
             output std \l1
             output std \l2
         """.trimIndent())
-        assert(out == "Nil\nItem (Nil)\n")
+        println(out)
+        assert(out == "<.0>\n<.1 <.0>>\n")
     }
     @Test
     fun j08_list_move () {
