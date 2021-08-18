@@ -123,7 +123,7 @@ fun Type.pre (): String {
                     puts("");
                 }
 
-            """.trimIndent() + if (!this.containsRec()) "" else """
+            """.trimIndent() + (if (!this.containsRec()) "" else """
                 void free_${ce} ($ce** p) {
                     if (*p == NULL) return;
                     switch ((*p)->tag) {
@@ -143,7 +143,9 @@ fun Type.pre (): String {
                     }
                     free(*p);
                 }
-                #endif
+
+            """.trimIndent()) + """
+            #endif
 
             """.trimIndent()
         }
@@ -160,27 +162,6 @@ fun Type.pos (): String {
         is Type.Tuple -> this.toce()
         is Type.Union -> this.toce() + (if (this.exactlyRec()) "*" else "")
         is Type.Func  -> this.toce() + "*"
-    }
-}
-
-fun XExpr.pre (env: Env): String {
-    val ismove = (this.x!=null && this.x.enu==TK.MOVE)
-    val pre = if (!ismove) "" else {
-        """
-       typeof(${this.e.pos(env,false)}) _tmp_${this.hashCode().absoluteValue} = ${this.e.pos(env,false)};
-       ${this.e.pos(env,false)} = NULL;
-        """
-    }
-    return pre //+ this.e.pre(env)
-}
-
-fun XExpr.pos (env: Env, deref: Boolean): String {
-    val ismove = (this.x!=null && this.x.enu==TK.MOVE)
-    return if (ismove) {
-        assert(!deref)  // TODO: i'm not sure
-        "_tmp_${this.hashCode().absoluteValue}"
-    } else {
-        this.e.pos(env,deref)
     }
 }
 
@@ -229,29 +210,11 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
             )
         }
         is Expr.UCons -> {
-            val arg   = EXPRS.removeFirst()
+            val top   = EXPRS.removeFirst()
             val pos   = if (e.tk_.num == 0) "NULL" else "_tmp_${e.hashCode().absoluteValue}"
-            val xxx   = if (e.arg.e.toType(env) is Type.Unit) "" else (", " + arg.second)
-            val isrec = (e.tk_.num != 0) && (xp as Type.Union).vec[e.tk_.num-1].exactlyRec()
-            val N     = e.hashCode().absoluteValue
-            val sup   = xp.toce()
-            val pre = (if (e.tk_.num == 0) "" else """
-            ${
-                if (isrec) {
-                    """
-                    $sup* _tmp_$N = ($sup*) malloc(sizeof($sup));
-                    assert(_tmp_$N!=NULL && "not enough memory");
-                    *_tmp_$N =
-                    """
-                } else {
-                    """
-                    $sup _tmp_$N =
-                    """.trimIndent()
-                }
-            }
-                (($sup) { ${e.tk_.num}$xxx });
-            """)
-            Pair(xp.pre() + arg.first + pre, pos)
+            val arg   = if (e.arg.e.toType(env) is Type.Unit) "" else (", " + top.second)
+            val pre   = "((${xp.toce()}) { ${e.tk_.num} $arg })"
+            Pair(xp.pre() + top.first + pre, pos)
         }
         is Expr.Call  -> {
             val arg = EXPRS.removeFirst()
@@ -276,8 +239,53 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
     })
 }
 
-fun code_fx (env: Env, xe: XExpr, xp: Type) {
+fun XExpr.pre (env: Env): String {
+    val ismove = (this.x!=null && this.x.enu==TK.MOVE)
+    val pre = if (!ismove) "" else {
+        """
+       typeof(${this.e.pos(env,false)}) _tmp_${this.hashCode().absoluteValue} = ${this.e.pos(env,false)};
+       ${this.e.pos(env,false)} = NULL;
 
+        """.trimIndent()
+    }
+    return pre //+ this.e.pre(env)
+}
+
+fun XExpr.pos (env: Env, deref: Boolean): String {
+    val ismove = (this.x!=null && this.x.enu==TK.MOVE)
+    return if (ismove) {
+        assert(!deref)  // TODO: i'm not sure
+        "_tmp_${this.hashCode().absoluteValue}"
+    } else {
+        this.e.pos(env,deref)
+    }
+}
+
+fun code_fx (env: Env, xe: XExpr, xp: Type) {
+    if (xe.e !is Expr.UCons) {
+        return
+    }
+
+    val top = EXPRS.removeFirst()
+    val N   = xe.e.hashCode().absoluteValue
+    val sup = xp.toce()
+
+    EXPRS.addFirst(when {
+        (xe.x == null) -> {
+            val pre = "$sup _tmp_$N =\n${top.first};"
+            Pair(pre, top.second)
+        }
+        (xe.x.enu == TK.NEW) -> {
+            val pre = """
+                $sup* _tmp_$N = ($sup*) malloc(sizeof($sup));
+                assert(_tmp_$N!=NULL && "not enough memory");
+                *_tmp_$N =\n${top.first};
+
+            """.trimIndent()
+            Pair(pre, top.second)
+        }
+        else -> top
+    })
 }
 
 val CODE = ArrayDeque<String>()
