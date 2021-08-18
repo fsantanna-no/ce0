@@ -59,12 +59,13 @@ The following symbols are valid:
     :           -- variable, type, function declaration
     ->          -- function type signature
     =           -- variable assignment
+    \           -- pointer type, upref operation
+    /           -- dnref operation
     ,           -- tuple & union separator
-    .           -- tuple index, union index predicate & discriminator
-    \           -- pointer type, upref & dnref operation
-    ^           -- recursive union, outermost scope
+    .           -- tuple discriminator, union constructor
     !           -- union discriminator
     ?           -- union predicate, unknown initialization
+    ^           -- recursive union, outermost scope
 ```
 
 ## Identifiers
@@ -76,13 +77,15 @@ digits, and underscores:
 i    myCounter    x_10          -- variable identifiers
 ```
 
-## Indexes
+## Numbers
 
-An tuple/union index is a dot `.` followed by sequence of digits:
+A number is a sequence of digits:
 
 ```
-.0    .20                       -- tuple/union indexes
+0    20
 ```
+
+Numbers are used in tuple & union discriminators.
 
 ## Native tokens
 
@@ -206,7 +209,9 @@ i    myCounter    x_10
 
 ## Composite Expressions
 
-### Tuples and Indexes
+### Tuples Constructors and Discriminators
+
+#### Constructors
 
 A tuple holds a fixed number of values of a compound [tuple type](TODO):
 
@@ -215,8 +220,10 @@ A tuple holds a fixed number of values of a compound [tuple type](TODO):
 (x,(),y)                -- a triple
 ```
 
-A tuple index suffixes a tuple with a dot `.` and evaluates to the value at the
-given position:
+#### Discriminators
+
+A tuple discriminator suffixes a tuple with a dot `.` and a number to evaluate
+the value at the given position:
 
 ```
 (x,()).2                -- yields ()
@@ -243,11 +250,11 @@ A discriminator expression suffixes the value to access with an index and an
 exclamation mark `!`:
 
 ```
-(.1 ()).1!              -- yields ()
+(.1 ())!1               -- yields ()
 
 x = .1 [.0,(),.0]
-... x.1!.2              -- yields ()
-... x.0!                -- error: `x` is a `.1`
+... x!1.2               -- yields ()
+... x!0                 -- error: `x` is a `.1`
 ```
 
 If the discriminated subcase does not match the actual value, the attempted
