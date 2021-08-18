@@ -60,11 +60,11 @@ fun Type.pre (): String {
                 }
 
             """.trimIndent() + (if (!this.containsRec()) "" else """
-                void free_${ce} ($ce* p) {
+                void free_${ce} ($ce* v) {
                     ${this.vec
                         .mapIndexed { i, tp ->
                             if (!tp.containsRec()) "" else """
-                                free_${tp.toce()}(&p->_${i + 1});
+                                free_${tp.toce()}(&v->_${i + 1});
 
                             """.trimIndent()
                         }
@@ -82,8 +82,11 @@ fun Type.pre (): String {
             val ce    = this.toce()
             val _ptr  = this.toce(true)
             val ctrec = this.containsRec()
+            val exrec = this.exactlyRec()
             val cex   = if (ctrec) ce+"*" else ce
             val xv    = if (ctrec) "(*v)" else "v"
+            val cexx  = if (exrec) ce+"*" else ce
+            val xxv   = if (exrec) "(*v)" else "v"
 
             pre + """
                 #ifndef __${ce}__
@@ -142,14 +145,14 @@ fun Type.pre (): String {
                 }
 
             """.trimIndent() + (if (!this.containsRec()) "" else """
-                void free_${ce} ($ce** p) {
-                    if (*p == NULL) return;
-                    switch ((*p)->tag) {
+                void free_${ce} ($cexx* v) {
+                    ${ if (!exrec) "" else "if (${xxv} == NULL) return;\n" }
+                    switch ((${xxv})->tag) {
                         ${ this.expand().vec
                             .mapIndexed { i,tp ->
                                 if (!tp.containsRec()) "" else """
                                     case ${i+1}:
-                                        free_${tp.toce()}(&(*p)->_${i+1});
+                                        free_${tp.toce()}(&(${xxv})->_${i+1});
                                         break;
 
                                 """.trimIndent()
@@ -159,7 +162,7 @@ fun Type.pre (): String {
                         default:
                             break;
                     }
-                    free(*p);
+                    ${ if (!exrec) "" else "free(${xxv});\n" }
                 }
 
             """.trimIndent()) + """
