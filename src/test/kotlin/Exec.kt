@@ -754,6 +754,24 @@ class Exec {
         println(out)
         assert(out == "<.1 <.1 <.1 <.0>>>>\n")
     }
+    @Test
+    fun j09_tup_list_err () {
+        val out = all("""
+            var t: [_int,<^>] = [_10, new <.1 <.0>>]
+            output std t
+        """.trimIndent())
+        println(out)
+        assert(out == "<.0>\n<.1 <.1 <.0>>\n")
+    }
+    @Test
+    fun j09_tup_list_ok () {
+        val out = all("""
+            var t: [_int,<^>] = [_10, new <.1 <.0>>]
+            output std \t
+        """.trimIndent())
+        println(out)
+        assert(out == "<.0>\n<.1 <.1 <.0>>\n")
+    }
 
     // SET - TUPLE - DATA
 

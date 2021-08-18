@@ -1,15 +1,16 @@
 import kotlin.math.absoluteValue
 
-fun Type.toce (): String {
+fun Type.toce (ptr: Boolean = false): String {
+    val _ptr = if (!ptr || !this.containsRec()) "" else "_ptr"
     return when (this) {
         is Type.None, is Type.UCons -> error("bug found")
         is Type.Rec   -> "Rec"
         is Type.Any   -> "Any"
         is Type.Unit  -> "Unit"
-        is Type.Ptr   -> this.pln.toce() + "_ptr"
+        is Type.Ptr   -> this.pln.toce(false) + "_ptr"
         is Type.Nat   -> this.tk_.str.replace('*','_')
-        is Type.Tuple -> "TUPLE__" + this.vec.map { it.toce() }.joinToString("__")
-        is Type.Union -> "UNION__" + this.vec.map { it.toce() }.joinToString("__")
+        is Type.Tuple -> "TUPLE__" + this.vec.map { it.toce(ptr) }.joinToString("__") + _ptr
+        is Type.Union -> "UNION__" + this.vec.map { it.toce(ptr) }.joinToString("__") + _ptr
         is Type.Func  -> "FUNC__" + this.inp.toce() + "__" + this.out.toce()
     }
 }
@@ -27,8 +28,12 @@ fun Type.pre (): String {
             """.trimIndent()
         }
         is Type.Tuple -> {
-            val pre = this.vec.map { it.pre() }.joinToString("")
-            val ce = this.toce()
+            val pre   = this.vec.map { it.pre() }.joinToString("")
+            val ce    = this.toce()
+            val _ptr  = this.toce(true)
+            val ctrec = this.containsRec()
+            val cex   = if (ctrec) ce+"*" else ce
+            val xv    = if (ctrec) "(*v)" else "v"
 
             pre + """
                 #ifndef __${ce}__
@@ -39,18 +44,18 @@ fun Type.pre (): String {
                         .joinToString("")
                     }
                 } $ce;
-                void output_std_${ce}_ ($ce v) {
+                void output_std_${_ptr}_ ($cex v) {
                     printf("[");
                     ${this.vec
                         .mapIndexed { i,sub ->
-                            "output_std_${sub.toce()}_(" + (if (sub is Type.Unit) "" else "v._${i + 1}") + ");\n"
+                            "output_std_${sub.toce(true)}_(" + (if (sub is Type.Unit) "" else "${xv}._${i + 1}") + ");\n"
                         }
                         .joinToString("putchar(',');\n")
                     }
                     printf("]");
                 }
-                void output_std_$ce ($ce v) {
-                    output_std_${ce}_(v);
+                void output_std_${_ptr} ($cex v) {
+                    output_std_${_ptr}_(v);
                     puts("");
                 }
                 #endif
@@ -58,13 +63,12 @@ fun Type.pre (): String {
             """.trimIndent()
         }
         is Type.Union -> {
-            val pre = this.vec.map { it.pre() }.joinToString("")
-            val ce = this.toce()
-
+            val pre   = this.vec.map { it.pre() }.joinToString("")
+            val ce    = this.toce()
+            val _ptr  = this.toce(true)
             val ctrec = this.containsRec()
-            val cex  = if (ctrec) ce+"*" else ce
-            val vx   = if (ctrec) "(*v)" else "v"
-            val _ptr = if (ctrec) "_ptr" else ""
+            val cex   = if (ctrec) ce+"*" else ce
+            val xv    = if (ctrec) "(*v)" else "v"
 
             pre + """
                 #ifndef __${ce}__
@@ -84,7 +88,7 @@ fun Type.pre (): String {
                         }
                     };
                 } $ce;
-                void output_std_$ce${_ptr}_ ($cex v) {
+                void output_std_${_ptr}_ ($cex v) {
                     ${
                         if (!ctrec) "" else """
                             if (v == NULL) {
@@ -93,20 +97,18 @@ fun Type.pre (): String {
                             }
                         """.trimIndent()
                     }
-                    printf("<.%d", $vx.tag);
-                    switch ($vx.tag) {
+                    printf("<.%d", $xv.tag);
+                    switch ($xv.tag) {
                         ${this.expand().vec
                             .mapIndexed { i,tp -> """
                                 case ${i+1}:
                                 ${
                                     let {
-                                        val ctrec2 = tp.containsRec()
-                                        val _ptr2 = if (ctrec2) "_ptr" else ""
                                         when (tp) {
                                             is Type.Unit  -> ""
                                             is Type.Nat, is Type.Ptr -> "putchar(' '); putchar('_');"
-                                            is Type.Tuple -> "putchar(' '); output_std_${tp.toce()}${_ptr2}_($vx._${i+1});"
-                                            is Type.Union -> "putchar(' '); output_std_${tp.toce()}${_ptr2}_($vx._${i+1});"
+                                            is Type.Tuple -> "putchar(' '); output_std_${tp.toce(true)}_($xv._${i+1});"
+                                            is Type.Union -> "putchar(' '); output_std_${tp.toce(true)}_($xv._${i+1});"
                                             else -> TODO(tp.toString())
                                         }
                                     }
@@ -119,8 +121,8 @@ fun Type.pre (): String {
                     }
                     putchar('>');
                 }
-                void output_std_$ce${_ptr} ($cex v) {
-                    output_std_$ce${_ptr}_(v);
+                void output_std_${_ptr} ($cex v) {
+                    output_std_${_ptr}_(v);
                     puts("");
                 }
 
