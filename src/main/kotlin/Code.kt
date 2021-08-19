@@ -7,7 +7,7 @@ fun Type.toce (ptr: Boolean = false): String {
         is Type.Rec   -> "Rec"
         is Type.Any   -> "Any"
         is Type.Unit  -> "Unit"
-        is Type.Ptr   -> "Ptr" //this.pln.toce(false) + "_ptr"
+        is Type.Ptr   -> if (this.pln is Type.Tuple || this.pln is Type.Union) this.pln.toce(false) + "_ptr" else "Ptr"
         is Type.Nat   -> this.tk_.str.replace('*','_')
         is Type.Tuple -> "TUPLE__" + this.vec.map { it.toce(false) }.joinToString("__") + _ptr
         is Type.Union -> "UNION__" + this.vec.map { it.toce(false) }.joinToString("__") + _ptr
@@ -93,7 +93,6 @@ fun code_ft (tp: Type) {
             """.trimIndent())))
         }
         is Type.Union -> {
-            val pre   = tp.expand().visitTP(::code_ft)
             val ce    = tp.toce()
             val _ptr  = tp.toce(true)
             val ctrec = tp.containsRec()
@@ -129,7 +128,7 @@ fun code_ft (tp: Type) {
                 void output_std_${_ptr}_ (${tp.pos(true)} v);
                 void output_std_${_ptr} (${tp.pos(true)} v);
                 ${if (!tp.containsRec()) "" else """
-                    void free_${ce} (${tp.pos(true)}* v)
+                    void free_${ce} (${tp.pos(true)}${if (exrec) "*" else ""} v);
                 
                 """
             }
@@ -174,7 +173,7 @@ fun code_ft (tp: Type) {
                 }
 
             """.trimIndent() + (if (!tp.containsRec()) "" else """
-                void free_${ce} (${tp.pos(true)}* v) {
+                void free_${ce} (${tp.pos(true)}${if (exrec) "*" else ""} v) {
                     ${ if (!exrec) "" else "if (${xxv} == NULL) return;\n" }
                     switch ((${xxv})->tag) {
                         ${ tp.expand().vec
@@ -411,8 +410,8 @@ fun Stmt.code (): String {
         #define output_std_int(x)    (output_std_int_(x), puts(""))
         #define output_std_char__(x) printf("\"%s\"",x)
         #define output_std_char_(x)  (output_std_int_(x), puts(""))
-        #define output_std_Ptr_(x)  printf("%p",x)
-        #define output_std_Ptr(x)   (output_std_Ptr_(x), puts(""))
+        #define output_std_Ptr_(x)   printf("%p",x)
+        #define output_std_Ptr(x)    (output_std_Ptr_(x), puts(""))
         ${TYPES.map { it.first  }.joinToString("")}
         ${TYPES.map { it.second }.joinToString("")}
         int main (void) {
