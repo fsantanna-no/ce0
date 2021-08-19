@@ -7,7 +7,7 @@ fun Type.toce (ptr: Boolean = false): String {
         is Type.Rec   -> "Rec"
         is Type.Any   -> "Any"
         is Type.Unit  -> "Unit"
-        is Type.Ptr   -> this.pln.toce(false) + "_ptr"
+        is Type.Ptr   -> "Ptr" //this.pln.toce(false) + "_ptr"
         is Type.Nat   -> this.tk_.str.replace('*','_')
         is Type.Tuple -> "TUPLE__" + this.vec.map { it.toce(false) }.joinToString("__") + _ptr
         is Type.Union -> "UNION__" + this.vec.map { it.toce(false) }.joinToString("__") + _ptr
@@ -127,7 +127,7 @@ fun code_ft (tp: Type) {
             TYPES.add(Pair("""
                 ${if (tp.containsRec()) struct.first else struct.second }
                 void output_std_${_ptr}_ (${tp.pos(true)} v);
-                void output_std_${_ptr} (${tp.pos(true)} v)
+                void output_std_${_ptr} (${tp.pos(true)} v);
                 ${if (!tp.containsRec()) "" else """
                     void free_${ce} (${tp.pos(true)}* v)
                 
@@ -411,6 +411,8 @@ fun Stmt.code (): String {
         #define output_std_int(x)    (output_std_int_(x), puts(""))
         #define output_std_char__(x) printf("\"%s\"",x)
         #define output_std_char_(x)  (output_std_int_(x), puts(""))
+        #define output_std_Ptr_(x)  printf("%p",x)
+        #define output_std_Ptr(x)   (output_std_Ptr_(x), puts(""))
         ${TYPES.map { it.first  }.joinToString("")}
         ${TYPES.map { it.second }.joinToString("")}
         int main (void) {
