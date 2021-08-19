@@ -15,56 +15,74 @@ fun Type.toce (ptr: Boolean = false): String {
     }
 }
 
-fun Type.pre (): String {
-    return when (this) {
-        is Type.Func  -> {
-            val ce = this.toce()
-            this.out.pre() + this.inp.pre() + """
-                #ifndef __${ce}__
-                #define __${ce}__
-                typedef ${this.out.pos()} $ce (${this.inp.pos()});
-                #endif
+val TYPEX = mutableSetOf<String>()
+val TYPES = mutableListOf<Pair<String,String>>()
 
-            """.trimIndent()
+fun code_ft (tp: Type) {
+    tp.toce().let {
+        if (TYPEX.contains(it)) {
+            return
         }
+        TYPEX.add(it)
+    }
+
+    when (tp) {
+        is Type.Func -> TYPES.add(Pair(
+            "typedef ${tp.out.pos()} ${tp.toce()} (${tp.inp.pos()});\n",
+            ""
+        ))
         is Type.Tuple -> {
-            val pre   = this.vec.map { it.pre() }.joinToString("")
-            val ce    = this.toce()
-            val _ptr  = this.toce(true)
-            val ctrec = this.containsRec()
-            val cex   = if (ctrec) ce+"*" else ce
+            val ce    = tp.toce()
+            val _ptr  = tp.toce(true)
+            val ctrec = tp.containsRec()
             val xv    = if (ctrec) "(*v)" else "v"
 
-            pre + """
-                #ifndef __${ce}__
-                #define __${ce}__
-                typedef struct {
-                    ${this.vec  // do not filter to keep correct i
+            val struct = Pair("""
+                struct $ce;                    
+
+            """.trimIndent(), """
+                struct $ce {
+                    ${tp.vec  // do not filter to keep correct i
                         .mapIndexed { i,sub -> if (sub is Type.Unit) "" else { sub.pos() + " _" + (i+1).toString() + ";\n" } }
                         .joinToString("")
                     }
-                } $ce;
-                void output_std_${_ptr}_ ($cex v) {
+                };
+
+            """.trimIndent())
+
+            TYPES.add(Pair("""
+                ${if (tp.containsRec()) struct.first else struct.second }
+                void output_std_${_ptr}_ (${tp.pos(true)} v);
+                void output_std_${_ptr} (${tp.pos(true)} v);
+                ${if (!tp.containsRec()) "" else """
+                    void free_${ce} (${tp.pos(true)} v);
+                
+                """
+                }
+            ""","""
+                ${if (tp.containsRec()) struct.second else "" }
+                void output_std_${_ptr}_ (${tp.pos(true)} v) {
                     printf("[");
-                    ${this.vec
+                    ${tp.vec
                         .mapIndexed { i,sub ->
-                            "output_std_${sub.toce(true)}_(" + (if (sub is Type.Unit) "" else "${xv}._${i + 1}") + ");\n"
+                            if (sub is Type.Func) "" else
+                                "output_std_${sub.toce(true)}_(" + (if (sub is Type.Unit) "" else "${xv}._${i + 1}") + ");\n"
                         }
                         .joinToString("putchar(',');\n")
                     }
                     printf("]");
                 }
-                void output_std_${_ptr} ($cex v) {
+                void output_std_${_ptr} (${tp.pos(true)} v) {
                     output_std_${_ptr}_(v);
                     puts("");
                 }
 
-            """.trimIndent() + (if (!this.containsRec()) "" else """
-                void free_${ce} ($ce* v) {
-                    ${this.vec
-                        .mapIndexed { i, tp ->
-                            if (!tp.containsRec()) "" else """
-                                free_${tp.toce()}(&v->_${i + 1});
+            """.trimIndent() + (if (!tp.containsRec()) "" else """
+                void free_${ce} (${tp.pos(true)} v) {
+                    ${tp.vec
+                        .mapIndexed { i, tp2 ->
+                            if (!tp2.containsRec()) "" else """
+                                free_${tp2.toce()}(&v->_${i + 1});
 
                             """.trimIndent()
                         }
@@ -72,41 +90,54 @@ fun Type.pre (): String {
                     }
                 }
 
-            """.trimIndent()) + """
-                #endif
-
-            """.trimIndent()
+            """.trimIndent())))
         }
         is Type.Union -> {
-            val pre   = this.vec.map { it.pre() }.joinToString("")
-            val ce    = this.toce()
-            val _ptr  = this.toce(true)
-            val ctrec = this.containsRec()
-            val exrec = this.exactlyRec()
-            val cex   = if (ctrec) ce+"*" else ce
+            val pre   = tp.expand().visitTP(::code_ft)
+            val ce    = tp.toce()
+            val _ptr  = tp.toce(true)
+            val ctrec = tp.containsRec()
+            val exrec = tp.exactlyRec()
             val xv    = if (ctrec) "(*v)" else "v"
-            val cexx  = if (exrec) ce+"*" else ce
             val xxv   = if (exrec) "(*v)" else "v"
 
-            pre + """
-                #ifndef __${ce}__
-                #define __${ce}__
-                typedef struct $ce {
+            val struct = Pair ("""
+                struct $ce;
+
+            """.trimIndent(),
+            """
+                struct $ce {
                     int tag;
                     union {
-                        ${this.vec  // do not filter to keep correct i
-                            .mapIndexed { i,sub ->
-                                when {
-                                    sub is Type.Unit -> ""
-                                    sub is Type.Rec -> "struct $ce* _${i+1};\n"
-                                    else -> "${sub.pos()} _${i+1};\n"
-                                }
+                        ${tp.expand().vec  // do not filter to keep correct i
+                        .mapIndexed { i,sub ->
+                            when {
+                                sub is Type.Unit -> ""
+                                sub is Type.Rec -> error("bug found") //"struct $ce* _${i+1};\n"
+                                else -> "${sub.pos()} _${i+1};\n"
                             }
-                            .joinToString("")
                         }
+                        .joinToString("")
+                    }
                     };
-                } $ce;
-                void output_std_${_ptr}_ ($cex v) {
+                };
+            
+            """.trimIndent())
+
+            TYPES.add(Pair("""
+                ${if (tp.containsRec()) struct.first else struct.second }
+                void output_std_${_ptr}_ (${tp.pos(true)} v);
+                void output_std_${_ptr} (${tp.pos(true)} v)
+                ${if (!tp.containsRec()) "" else """
+                    void free_${ce} (${tp.pos(true)}* v)
+                
+                """
+            }
+                
+            """.trimIndent(),
+            """
+                ${if (tp.containsRec()) struct.second else "" }
+                void output_std_${_ptr}_ (${tp.pos(true)} v) {
                     ${
                         if (!ctrec) "" else """
                             if (v == NULL) {
@@ -117,18 +148,16 @@ fun Type.pre (): String {
                     }
                     printf("<.%d", $xv.tag);
                     switch ($xv.tag) {
-                        ${this.expand().vec
-                            .mapIndexed { i,tp -> """
+                        ${tp.expand().vec
+                            .mapIndexed { i,tp2 -> """
                                 case ${i+1}:
                                 ${
-                                    let {
-                                        when (tp) {
-                                            is Type.Unit  -> ""
-                                            is Type.Nat, is Type.Ptr -> "putchar(' '); putchar('_');"
-                                            is Type.Tuple -> "putchar(' '); output_std_${tp.toce(true)}_($xv._${i+1});"
-                                            is Type.Union -> "putchar(' '); output_std_${tp.toce(true)}_($xv._${i+1});"
-                                            else -> TODO(tp.toString())
-                                        }
+                                    when (tp2) {
+                                        is Type.Unit  -> ""
+                                        is Type.Nat, is Type.Ptr -> "putchar(' '); putchar('_');"
+                                        is Type.Tuple -> "putchar(' '); output_std_${tp2.toce(true)}_($xv._${i+1});"
+                                        is Type.Union -> "putchar(' '); output_std_${tp2.toce(true)}_($xv._${i+1});"
+                                        else -> TODO(tp2.toString())
                                     }
                                 }
                                 break;
@@ -139,20 +168,20 @@ fun Type.pre (): String {
                     }
                     putchar('>');
                 }
-                void output_std_${_ptr} ($cex v) {
+                void output_std_${_ptr} (${tp.pos(true)} v) {
                     output_std_${_ptr}_(v);
                     puts("");
                 }
 
-            """.trimIndent() + (if (!this.containsRec()) "" else """
-                void free_${ce} ($cexx* v) {
+            """.trimIndent() + (if (!tp.containsRec()) "" else """
+                void free_${ce} (${tp.pos(true)}* v) {
                     ${ if (!exrec) "" else "if (${xxv} == NULL) return;\n" }
                     switch ((${xxv})->tag) {
-                        ${ this.expand().vec
-                            .mapIndexed { i,tp ->
-                                if (!tp.containsRec()) "" else """
+                        ${ tp.expand().vec
+                            .mapIndexed { i,tp2 ->
+                                if (!tp2.containsRec()) "" else """
                                     case ${i+1}:
-                                        free_${tp.toce()}(&(${xxv})->_${i+1});
+                                        free_${tp2.toce()}(&(${xxv})->_${i+1});
                                         break;
 
                                 """.trimIndent()
@@ -165,23 +194,20 @@ fun Type.pre (): String {
                     ${ if (!exrec) "" else "free(${xxv});\n" }
                 }
 
-            """.trimIndent()) + """
-            #endif
-
-            """.trimIndent()
+            """.trimIndent())))
         }
-        else -> ""
     }
 }
 
-fun Type.pos (): String {
+fun Type.pos (ctrec: Boolean = false): String {
+    val x = if (this.exactlyRec() || (ctrec && this.containsRec())) "*" else ""
     return when (this) {
         is Type.None, is Type.Rec, is Type.UCons -> TODO(this.toString())
         is Type.Any, is Type.Unit  -> "void"
         is Type.Ptr   -> this.pln.pos() + "*"
         is Type.Nat   -> this.tk_.str
-        is Type.Tuple -> this.toce()
-        is Type.Union -> this.toce() + (if (this.exactlyRec()) "*" else "")
+        is Type.Tuple -> "struct " + this.toce() + x
+        is Type.Union -> "struct " + this.toce() + x
         is Type.Func  -> this.toce() + "*"
     }
 }
@@ -231,7 +257,7 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
         is Expr.TCons -> {
             val (pre,pos) = (1..e.arg.size).map { EXPRS.removeFirst() }.reversed().unzip()
             Pair (
-                xp.pre() + pre.joinToString(""),
+                pre.joinToString(""),
                 pos.filter { it!="" }.joinToString(", ").let { "((${xp.pos()}) { $it })" }
             )
         }
@@ -239,9 +265,9 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
             val top = EXPRS.removeFirst()
             val ID  = "_tmp_" + e.hashCode().absoluteValue
             val arg = if (e.arg.e.toType(env) is Type.Unit) "" else (", " + top.second)
-            val sup = xp.toce()
+            val sup = xp.pos()
             val pre = "$sup $ID = (($sup) { ${e.tk_.num} $arg });\n"
-            Pair(xp.pre() + top.first + pre, if (e.tk_.num == 0) "NULL" else ID)
+            Pair(top.first + pre, if (e.tk_.num == 0) "NULL" else ID)
         }
         is Expr.Call  -> {
             val arg = EXPRS.removeFirst()
@@ -337,7 +363,7 @@ fun code_fs (env: Env, s: Stmt) {
         }
         is Stmt.Var   -> {
             val src = EXPRS.removeFirst()
-            s.type.pre() + src.first + (if (s.type is Type.Unit) "" else {
+            src.first + (if (s.type is Type.Unit) "" else {
                 "${s.type.pos()} ${s.tk_.str}" + (    // List* l
                     if (s.tk_.str == "_ret_") "" else {
                         (if (!s.type.containsRec()) "" else {
@@ -350,7 +376,7 @@ fun code_fs (env: Env, s: Stmt) {
             })
         }
         is Stmt.Func  -> {
-            s.type.pre() + when (s.tk_.str) {
+            when (s.tk_.str) {
                 "output_std" -> ""
                 else -> {
                     val out = s.type.out.let { if (it is Type.Unit) "void" else it.pos() }
@@ -368,6 +394,9 @@ fun code_fs (env: Env, s: Stmt) {
 }
 
 fun Stmt.code (): String {
+    TYPEX.clear()
+    TYPES.clear()
+    this.visitTP(::code_ft)
     this.visitXP(emptyList(), ::code_fs, ::code_fx, ::code_fe)
     //println(CODE)
     assert(EXPRS.size == 0)
@@ -376,12 +405,16 @@ fun Stmt.code (): String {
         #include <assert.h>
         #include <stdio.h>
         #include <stdlib.h>
-        #define output_std_Unit_() printf("()")
-        #define output_std_Unit()  (output_std_Unit_(), puts(""))
-        #define output_std_int_(x) printf("%d",x)
-        #define output_std_int(x)  (output_std_int_(x), puts(""))
+        #define output_std_Unit_()   printf("()")
+        #define output_std_Unit()    (output_std_Unit_(), puts(""))
+        #define output_std_int_(x)   printf("%d",x)
+        #define output_std_int(x)    (output_std_int_(x), puts(""))
+        #define output_std_char__(x) printf("\"%s\"",x)
+        #define output_std_char_(x)  (output_std_int_(x), puts(""))
+        ${TYPES.map { it.first  }.joinToString("")}
+        ${TYPES.map { it.second }.joinToString("")}
         int main (void) {
-    """ + CODE.removeFirst() + """
+            ${CODE.removeFirst()}
         }
     """).trimIndent()
 }

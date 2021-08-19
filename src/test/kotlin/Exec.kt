@@ -173,6 +173,16 @@ class Exec {
         """.trimIndent())
         assert(out == "hello\n")
     }
+    @Test
+    fun c03_nat () {
+        val out = all("""
+            var y: _(char*) = _("hello")
+            var n: _int = _10
+            var x: [_int,_(char*)] = [n,y]
+            output std x
+        """.trimIndent())
+        assert(out == "[10,\"hello\"]\n")
+    }
 
     // FUNC / CALL
 
@@ -341,7 +351,7 @@ class Exec {
             var z: <(),()> = <.2>
             output std z!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:70: main: Assertion `z.tag == 1' failed.\n")
+        assert(out == "out.exe: out.c:37: main: Assertion `z.tag == 1' failed.\n")
     }
     @Test
     fun f12_user_disc_pred_idx () {
