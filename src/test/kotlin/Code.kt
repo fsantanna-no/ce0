@@ -70,7 +70,7 @@ class Code {
             Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray()))
         EXPRS.removeFirst().second.let {
             //println(it)
-            assert(it == "((TUPLE__Unit__Unit) {  })")
+            assert(it == "((struct TUPLE__Unit__Unit) {  })")
         }
     }
     @Test
@@ -110,16 +110,23 @@ class Code {
     fun d01 () {
         val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
         val out = s.code()
+        println(out)
         assert(out == """
             #include <assert.h>
             #include <stdio.h>
             #include <stdlib.h>
-            #define output_std_Unit_() printf("()")
-            #define output_std_Unit()  (output_std_Unit_(), puts(""))
-            #define output_std_int_(x) printf("%d",x)
-            #define output_std_int(x)  (output_std_int_(x), puts(""))
-            int main (void) {
+            #define output_std_Unit_()   printf("()")
+            #define output_std_Unit()    (output_std_Unit_(), puts(""))
+            #define output_std_int_(x)   printf("%d",x)
+            #define output_std_int(x)    (output_std_int_(x), puts(""))
+            #define output_std_char__(x) printf("\"%s\"",x)
+            #define output_std_char_(x)  (output_std_int_(x), puts(""))
+            #define output_std_Ptr_(x)   printf("%p",x)
+            #define output_std_Ptr(x)    (output_std_Ptr_(x), puts(""))
 
+
+            int main (void) {
+                
             }
         """.trimIndent())
     }

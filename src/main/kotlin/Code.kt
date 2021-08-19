@@ -18,6 +18,19 @@ fun Type.toce (ptr: Boolean = false): String {
 val TYPEX = mutableSetOf<String>()
 val TYPES = mutableListOf<Pair<String,String>>()
 
+fun Type.pos (ctrec: Boolean = false): String {
+    val x = if (this.exactlyRec() || (ctrec && this.containsRec())) "*" else ""
+    return when (this) {
+        is Type.None, is Type.Rec, is Type.UCons -> TODO(this.toString())
+        is Type.Any, is Type.Unit  -> "void"
+        is Type.Ptr   -> this.pln.pos() + "*"
+        is Type.Nat   -> this.tk_.str
+        is Type.Tuple -> "struct " + this.toce() + x
+        is Type.Union -> "struct " + this.toce() + x
+        is Type.Func  -> this.toce() + "*"
+    }
+}
+
 fun code_ft (tp: Type) {
     tp.toce().let {
         if (TYPEX.contains(it)) {
@@ -198,19 +211,6 @@ fun code_ft (tp: Type) {
     }
 }
 
-fun Type.pos (ctrec: Boolean = false): String {
-    val x = if (this.exactlyRec() || (ctrec && this.containsRec())) "*" else ""
-    return when (this) {
-        is Type.None, is Type.Rec, is Type.UCons -> TODO(this.toString())
-        is Type.Any, is Type.Unit  -> "void"
-        is Type.Ptr   -> this.pln.pos() + "*"
-        is Type.Nat   -> this.tk_.str
-        is Type.Tuple -> "struct " + this.toce() + x
-        is Type.Union -> "struct " + this.toce() + x
-        is Type.Func  -> this.toce() + "*"
-    }
-}
-
 val EXPRS = ArrayDeque<Pair<String,String>>()
 
 fun Expr.UDisc.defref (env: Env, str: String): String {
@@ -264,9 +264,9 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
             val top = EXPRS.removeFirst()
             val ID  = "_tmp_" + e.hashCode().absoluteValue
             val arg = if (e.arg.e.toType(env) is Type.Unit) "" else (", " + top.second)
-            val sup = xp.pos()
+            val sup = "struct " + xp.toce()
             val pre = "$sup $ID = (($sup) { ${e.tk_.num} $arg });\n"
-            Pair(top.first + pre, if (e.tk_.num == 0) "NULL" else ID)
+            if (e.tk_.num == 0) Pair("","NULL") else Pair(top.first + pre, ID)
         }
         is Expr.Call  -> {
             val arg = EXPRS.removeFirst()
@@ -299,9 +299,9 @@ fun code_fx (env: Env, xe: XExpr, xp: Type) {
         (xe.x.enu == TK.NEW) -> {
             assert(xe.e is Expr.UCons)
             val xee = xe.e as Expr.UCons
-            val sup = xp.toce()
+            val sup = xp.pos()
             val pre = """
-                $sup* $ID = ($sup*) malloc(sizeof($sup));
+                $sup $ID = ($sup) malloc(sizeof($sup));
                 assert($ID!=NULL && "not enough memory");
                 *$ID = ${top.second};
 

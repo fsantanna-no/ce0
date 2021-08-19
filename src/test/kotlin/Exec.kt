@@ -351,7 +351,7 @@ class Exec {
             var z: <(),()> = <.2>
             output std z!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:37: main: Assertion `z.tag == 1' failed.\n")
+        assert(out == "out.exe: out.c:48: main: Assertion `z.tag == 1' failed.\n")
     }
     @Test
     fun f12_user_disc_pred_idx () {
@@ -691,7 +691,7 @@ class Exec {
             var l: <^> = new <.1 <.0>>
             output std l!0
         """.trimIndent())
-        assert(out == "out.exe: out.c:145: main: Assertion `l == NULL' failed.\n")
+        assert(out == "out.exe: out.c:69: main: Assertion `l == NULL' failed.\n")
     }
     @Test
     fun j05_list_disc_null_err () {
@@ -699,7 +699,7 @@ class Exec {
             var l: <^> = <.0>
             output std \l!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:99: main: Assertion `l != NULL' failed.\n")
+        assert(out == "out.exe: out.c:65: main: Assertion `l != NULL' failed.\n")
     }
     @Test
     fun j06_list () {
