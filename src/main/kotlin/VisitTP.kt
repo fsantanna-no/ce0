@@ -1,7 +1,15 @@
+internal val X = mutableSetOf<String>()
+
 fun Type.visitTP (ft: (Type)->Unit) {
+    this.toce().let {
+        if (X.contains(it)) {
+            return
+        }
+        X.add(it)
+    }
     when (this) {
         is Type.Tuple -> this.vec.forEach { it.visitTP(ft) }
-        is Type.Union -> this.vec.forEach { it.visitTP(ft) }
+        is Type.Union -> this.expand().vec.forEach { it.visitTP(ft) }
         is Type.UCons -> this.arg.visitTP(ft)
         is Type.Func  -> { this.inp.visitTP(ft) ; this.out.visitTP(ft) }
         is Type.Ptr   -> this.pln.visitTP(ft)
@@ -10,6 +18,7 @@ fun Type.visitTP (ft: (Type)->Unit) {
 }
 
 fun Stmt.visitTP (ft: (Type)->Unit) {
+    X.clear()
     when (this) {
         is Stmt.Var   -> this.type.visitTP(ft)
         is Stmt.Seq   -> { this.s1.visitTP(ft) ; this.s2.visitTP(ft) }
