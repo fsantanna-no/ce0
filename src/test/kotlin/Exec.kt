@@ -676,7 +676,6 @@ class Exec {
             var l: <^> = new <.1 <.0>>
             output std \l
         """.trimIndent())
-        println(out)
         assert(out == "<.1 <.0>>\n")
     }
     @Test
@@ -764,7 +763,7 @@ class Exec {
             output std \n
         """.trimIndent())
         println(out)
-        assert(out == "<.1 <.1 <.1 <.0>>>>\n")
+        assert(out == "<.1 <.1 <.1 <.1 <.0>>>>>\n")
     }
     @Test
     fun j09_tup_list_err () {

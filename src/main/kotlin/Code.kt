@@ -1,7 +1,7 @@
 import kotlin.math.absoluteValue
 
-fun Type.toce (ptr: Boolean = false): String {
-    val _ptr = if (!ptr || !this.containsRec()) "" else "_ptr"
+fun Type.toce (ctrec: Boolean = false): String {
+    val _ptr = (if (this.exactlyRec()) "_ptr" else "") + (if (ctrec && this.containsRec()) "_ptr" else "")
     return when (this) {
         is Type.None, is Type.UCons -> error("bug found")
         is Type.Rec   -> "Rec"
@@ -19,7 +19,7 @@ val TYPEX = mutableSetOf<String>()
 val TYPES = mutableListOf<Pair<String,String>>()
 
 fun Type.pos (ctrec: Boolean = false): String {
-    val x = if (this.exactlyRec() || (ctrec && this.containsRec())) "*" else ""
+    val x = (if (this.exactlyRec())  "*" else "") + (if (ctrec && this.containsRec()) "*" else "")
     return when (this) {
         is Type.None, is Type.Rec, is Type.UCons -> TODO(this.toString())
         is Type.Any, is Type.Unit  -> "void"
@@ -31,13 +31,11 @@ fun Type.pos (ctrec: Boolean = false): String {
     }
 }
 
-fun Type.output (i: Int, xv: String): String {
-    val amp = "" //if (ctrec) "&" else ""
+fun Type.output (arg: String): String {
     val ce = this.toce(true)
     return when (this) {
         is Type.Ptr, is Type.Func -> "putchar('_');\n"
-        is Type.Unit -> "output_std_${ce}_();\n"
-        else -> "output_std_${ce}_($amp$xv._$i);\n"
+        else -> "output_std_${ce}_($arg);\n"
     }
 }
 
@@ -88,7 +86,8 @@ fun code_ft (tp: Type) {
                     printf("[");
                     ${tp.vec
                         .mapIndexed { i,sub ->
-                            sub.output(i+1, xv)
+                            val amp = if (sub.containsRec()) "&" else ""
+                            sub.output(if (sub is Type.Unit) "" else "$amp$xv._${i+1}")
                         }
                         .joinToString("putchar(',');\n")
                     }
@@ -119,8 +118,8 @@ fun code_ft (tp: Type) {
             val _ptr  = tp.toce(true)
             val ctrec = tp.containsRec()
             val exrec = tp.exactlyRec()
-            val xv    = if (ctrec) "(*v)" else "v"
-            val xxv   = if (exrec) "(*v)" else "v"
+            val xxv   = (if (ctrec) "(*v)" else "v").let { if (exrec) "(*$it)" else it }
+            val xv    = (if (exrec) "(*v)" else "v")
 
             val struct = Pair ("""
                 struct $ce;
@@ -150,7 +149,7 @@ fun code_ft (tp: Type) {
                 void output_std_${_ptr}_ (${tp.pos(true)} v);
                 void output_std_${_ptr} (${tp.pos(true)} v);
                 ${if (!tp.containsRec()) "" else """
-                    void free_${ce} (${tp.pos(true)}${if (exrec) "*" else ""} v);
+                    void free_${ce} (${tp.pos(true)} v);
                 
                 """
             }
@@ -161,25 +160,25 @@ fun code_ft (tp: Type) {
                 void output_std_${_ptr}_ (${tp.pos(true)} v) {
                     ${
                         if (!ctrec) "" else """
-                            if (v == NULL) {
+                            if ($xv == NULL) {
                                 printf("<.0>");
                                 return;
                             }
                         """.trimIndent()
                     }
-                    printf("<.%d", $xv.tag);
-                    switch ($xv.tag) {
+                    printf("<.%d", $xxv.tag);
+                    switch ($xxv.tag) {
                         ${tp.expand().vec
-                            .mapIndexed { i,tp2 -> """
+                            .mapIndexed { i,sub -> """
                                 case ${i+1}:
-                                ${ (tp2.containsRec()).let { ctrec ->
-                                    val amp = "" //if (ctrec) "&" else ""
-                                    if (tp2 is Type.Unit) {
+                                ${
+                                    if (sub is Type.Unit) {
                                         ""
                                     } else {
-                                        "putchar(' ');\n" + tp2.output(i + 1, xv)
+                                        val amp = if (sub.containsRec()) "&" else ""
+                                        "putchar(' ');\n" + sub.output("$amp$xxv._${i+1}")
                                     }
-                                }}
+                                }
                                 break;
 
                             """.trimIndent()
@@ -194,14 +193,14 @@ fun code_ft (tp: Type) {
                 }
 
             """.trimIndent() + (if (!tp.containsRec()) "" else """
-                void free_${ce} (${tp.pos(true)}${if (exrec) "*" else ""} v) {
-                    ${ if (!exrec) "" else "if (${xxv} == NULL) return;\n" }
-                    switch ((${xxv})->tag) {
+                void free_${ce} (${tp.pos(true)} v) {
+                    ${ if (!exrec) "" else "if (${xv} == NULL) return;\n" }
+                    switch ((${xxv}).tag) {
                         ${ tp.expand().vec
                             .mapIndexed { i,tp2 ->
                                 if (!tp2.containsRec()) "" else """
                                     case ${i+1}:
-                                        free_${tp2.toce()}(&(${xxv})->_${i+1});
+                                        free_${tp2.toce()}(&(${xxv})._${i+1});
                                         break;
 
                                 """.trimIndent()
@@ -211,7 +210,7 @@ fun code_ft (tp: Type) {
                         default:
                             break;
                     }
-                    ${ if (!exrec) "" else "free(${xxv});\n" }
+                    ${ if (!exrec) "" else "free(${xv});\n" }
                 }
 
             """.trimIndent())))
@@ -237,7 +236,7 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
         is Expr.Var -> Pair("", if (tp is Type.Unit) "" else e.tk_.str)
         is Expr.Upref -> {
             val sub = EXPRS.removeFirst()
-            Pair(sub.first, "(" + (if (e.pln.toType(env).exactlyRec()) "" else "&") + sub.second + ")")
+            Pair(sub.first, "(&" + sub.second + ")")
         }
         is Expr.Dnref -> {
             val sub = EXPRS.removeFirst()
