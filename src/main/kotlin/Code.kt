@@ -31,6 +31,16 @@ fun Type.pos (ctrec: Boolean = false): String {
     }
 }
 
+fun Type.output (i: Int, xv: String): String {
+    val amp = "" //if (ctrec) "&" else ""
+    val ce = this.toce(true)
+    return when (this) {
+        is Type.Ptr, is Type.Func -> "putchar('_');\n"
+        is Type.Unit -> "output_std_${ce}_();\n"
+        else -> "output_std_${ce}_($amp$xv._$i);\n"
+    }
+}
+
 fun code_ft (tp: Type) {
     tp.toce().let {
         if (TYPEX.contains(it)) {
@@ -78,8 +88,7 @@ fun code_ft (tp: Type) {
                     printf("[");
                     ${tp.vec
                         .mapIndexed { i,sub ->
-                            if (sub is Type.Func) "" else
-                                "output_std_${sub.toce(true)}_(" + (if (sub is Type.Unit) "" else "${xv}._${i + 1}") + ");\n"
+                            sub.output(i+1, xv)
                         }
                         .joinToString("putchar(',');\n")
                     }
@@ -163,15 +172,14 @@ fun code_ft (tp: Type) {
                         ${tp.expand().vec
                             .mapIndexed { i,tp2 -> """
                                 case ${i+1}:
-                                ${
-                                    when (tp2) {
-                                        is Type.Unit  -> ""
-                                        is Type.Nat, is Type.Ptr -> "putchar(' '); putchar('_');"
-                                        is Type.Tuple -> "putchar(' '); output_std_${tp2.toce(true)}_($xv._${i+1});"
-                                        is Type.Union -> "putchar(' '); output_std_${tp2.toce(true)}_($xv._${i+1});"
-                                        else -> TODO(tp2.toString())
+                                ${ (tp2.containsRec()).let { ctrec ->
+                                    val amp = "" //if (ctrec) "&" else ""
+                                    if (tp2 is Type.Unit) {
+                                        ""
+                                    } else {
+                                        "putchar(' ');\n" + tp2.output(i + 1, xv)
                                     }
-                                }
+                                }}
                                 break;
 
                             """.trimIndent()

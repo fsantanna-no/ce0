@@ -148,6 +148,7 @@ class Exec {
             var x: [[_int,_int],[_int,_int]] = [[n,n],[n,n]]
             output std x
         """.trimIndent())
+        println(out)
         assert(out == "[[1,1],[1,1]]\n")
     }
 
@@ -575,7 +576,8 @@ class Exec {
             set /p = _20
             output std v
         """.trimIndent())
-        assert(out == "<.1 _>\n")
+        println(out)
+        assert(out == "<.1 20>\n")
     }
     @Test
     fun i15_ptr_tup () {
@@ -691,7 +693,7 @@ class Exec {
             var l: <^> = new <.1 <.0>>
             output std l!0
         """.trimIndent())
-        assert(out == "out.exe: out.c:69: main: Assertion `l == NULL' failed.\n")
+        assert(out == "out.exe: out.c:71: main: Assertion `l == NULL' failed.\n")
     }
     @Test
     fun j05_list_disc_null_err () {
@@ -699,7 +701,7 @@ class Exec {
             var l: <^> = <.0>
             output std \l!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:65: main: Assertion `l != NULL' failed.\n")
+        assert(out == "out.exe: out.c:67: main: Assertion `l != NULL' failed.\n")
     }
     @Test
     fun j06_list () {
