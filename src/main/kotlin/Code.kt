@@ -77,6 +77,8 @@ fun code_ft (tp: Type) {
                 void output_std_${_ptr} (${tp.pos(true)} v);
                 ${if (!tp.containsRec()) "" else """
                     void free_${ce} (${tp.pos(true)} v);
+                    ${tp.pos()} copy_${ce} (${tp.pos(true)} v);
+                    void move_${ce} (${tp.pos(true)} v);
                 
                 """
                 }
@@ -101,9 +103,38 @@ fun code_ft (tp: Type) {
             """.trimIndent() + (if (!tp.containsRec()) "" else """
                 void free_${ce} (${tp.pos(true)} v) {
                     ${tp.vec
-                        .mapIndexed { i, tp2 ->
-                            if (!tp2.containsRec()) "" else """
-                                free_${tp2.toce()}(&v->_${i + 1});
+                        .mapIndexed { i, sub ->
+                            if (!sub.containsRec()) "" else """
+                                free_${sub.toce()}(&v->_${i + 1});
+
+                            """.trimIndent()
+                        }
+                        .joinToString("")
+                    }
+                }
+                ${tp.pos()} copy_${ce} (${tp.pos(true)} v) {
+                    ${tp.vec
+                        .mapIndexed { i, sub ->
+                            "v->_${i + 1} = " +
+                            (if (!sub.containsRec()) {
+                                "v->_${i + 1}"
+                            } else {
+                                "copy_${sub.toce()}(&v->_${i + 1})"
+                            }) +
+                            ";\n"
+                       }
+                        .joinToString("")
+                    }
+                }
+                void move_${ce} (${tp.pos(true)} v) {
+                    ${tp.vec
+                        .mapIndexed { i, sub ->
+                            if (!sub.containsRec()) "" else """
+                                move_${sub.toce()}(&v->_${i + 1});
+
+                            """.trimIndent()
+                            if (!sub.exactlyRec()) "" else """
+                                v->_${i + 1} = NULL;
 
                             """.trimIndent()
                         }
@@ -150,6 +181,7 @@ fun code_ft (tp: Type) {
                 void output_std_${_ptr} (${tp.pos(true)} v);
                 ${if (!tp.containsRec()) "" else """
                     void free_${ce} (${tp.pos(true)} v);
+                    ${tp.pos()} copy_${ce} (${tp.pos(true)} v);
                 
                 """
             }
@@ -207,10 +239,23 @@ fun code_ft (tp: Type) {
                             }
                             .joinToString("")
                         }
-                        default:
-                            break;
                     }
                     ${ if (!exrec) "" else "free(${xv});\n" }
+                }
+                ${tp.pos()} copy_${ce} (${tp.pos(true)} v) {
+                    ${ if (!exrec) "" else "if (${xv} == NULL) return NULL;\n" }
+                    switch ((${xxv}).tag) {
+                        ${ tp.expand().vec
+                            .mapIndexed { i,tp2 ->
+                                if (!tp2.containsRec()) "return (${xxv})._${i+1};\n" else """
+                                    case ${i+1}:
+                                        return copy_${tp2.toce()}(&(${xxv})._${i+1});
+
+                                """.trimIndent()
+                            }
+                            .joinToString("")
+                        }
+                    }
                 }
 
             """.trimIndent())))

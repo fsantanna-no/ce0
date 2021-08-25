@@ -762,7 +762,7 @@ class Exec {
             var n: <<^^>> = new <.1 <.1 new <.1 <.1 <.0>>>>>
             output std \n
         """.trimIndent())
-        println(out)
+        //println(out)
         assert(out == "<.1 <.1 <.1 <.1 <.0>>>>>\n")
     }
     @Test
@@ -774,7 +774,19 @@ class Exec {
         assert(out == "[10,<.1 <.0>>]\n")
     }
     @Test
-    fun j10_tup_move_ok () {
+    fun j10_tup_copy_ok () {
+        val out = all("""
+            var l: <^> = <.0>
+            var t1: [<^>] = [move l]
+            var t2: [<^>] = copy t1
+            output std \t2
+        """.trimIndent())
+        //println(out)
+        //assert(out == "(ln 3, col 17): invalid `move` : expected recursive variable")
+        assert(out == "[<.0>]\n")
+    }
+    @Test
+    fun j11_tup_move_ok () {
         val out = all("""
             var l: <^> = <.0>
             var t1: [<^>] = [move l]
