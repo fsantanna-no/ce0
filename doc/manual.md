@@ -148,11 +148,12 @@ angle brackets `<` and `>`:
 <[_int,^]>          -- a recursive union
 ```
 
-The caret subtype `^` indicates recursion and refers to the enclosing union
-type.
-A recursive union always includes an implicit unit subcase at its index `.0`.
+The caret subtype `^` indicates recursion and refers to the enclosing recursive
+union type.
+Multiple `n` carets, e.g. `^^`, refer to the `n` outer enclosing recursive
+union type.
 
-`TODO: multiple ^`
+A recursive union always includes an implicit unit subcase at its index `.0`.
 
 ## Function
 
@@ -195,7 +196,7 @@ _printf    _(2+2)     _{f(x,y)}
 Symbols defined in *Ce* can also be accessed inside native expressions:
 
 ```
-var x: Int = 10
+var x: _int = _10
 output std _(x + 10)    -- outputs 20
 ```
 
@@ -291,8 +292,8 @@ Just like a `call`, the `input` & `output` keywords also invoke functions, but
 with the purpose of communicating with external I/O devices:
 
 ```
-input libsdl Delay 2000            -- waits 2 seconds
-output libsdl Draw Pixel (0,0)     -- draws a pixel on the screen
+input libsdl Delay _2000           -- waits 2 seconds
+output libsdl Draw Pixel (_0,_0)   -- draws a pixel on the screen
 ```
 
 The supported I/O functions and associated behaviors depend on the
@@ -301,7 +302,7 @@ The special device `std` works for the standard input & output device and
 accepts any value as argument:
 
 ```
-var x: Int = input std      -- reads an `Int` from stdin (`TODO: not implemented`)
+var x: _int = input std     -- reads an `_int` from stdin (`TODO: not implemented`)
 output std x                -- writes the value of `x` to stdout
 ```
 
@@ -340,8 +341,8 @@ A *dnref* (down reference) recovers the value given a pointer with the sufix
 backslash `\`:
 
 ```
-var x: Int = 10
-var y: \Int = \x    -- acquires a pointer to `x`
+var x: _int = _10
+var y: \_int = \x   -- acquires a pointer to `x`
 output std y\       -- recovers the value of `x`
 ```
 
@@ -357,8 +358,8 @@ var x : () = ()                                -- `x` of type `()` holds `()`
 var y : Bool = Bool.True                       -- `y` of type `Bool` holds `True`
 var z : (Bool,()) = (Bool.False,())            -- `z` of tuple type holds tuple
 var n : List = List.Cons(List.Cons(List.Nil))  -- `n` of type `List` holds result of constructor
-var u : Int = ?                                -- `x` of type `Int` is not initialized
-var p : ^ \Int = ?                             -- `p` of type `\Int` in outermost scope
+var u : _int = ?                               -- `x` of type `_int` is not initialized
+var p : ^ \_int = ?                            -- `p` of type `\_int` in outermost scope
 ```
 
 The assignment can be a question mark `?`, which keeps the variable uninitialized.
@@ -373,7 +374,7 @@ or discriminator:
 
 ```
 set x = ()
-set _n = 1
+set _n = _1
 set tup.1 = n
 set x.Student! = ()
 ```
@@ -385,7 +386,7 @@ The `call`, `input` & `output` statements invoke [functions](#TODO):
 ```
 call f()        -- calls f passing ()
 input std       -- input from stdin
-output std 10   -- output to stdout
+output std _10  -- output to stdout
 ```
 
 ## Sequences
@@ -476,12 +477,12 @@ native pre _{
 
 ```
 Stmt ::= `var´ VAR `:´ Type                 -- variable declaration     var x: () = ()
-            `=´ (Expr | `?´)
+            `=´ ([X] Expr | `?´)
       |  `type´ [`@rec´ [`@ptr`]] USER `{`  -- user type declaration    type @rec List {
             { USER `:´ Type [`;´] }         --    subcases                 Cons: List
          `}´                                                        }
       |  `type´ `@pre´ `@rec` [`@ptr`] USER -- type pre declaration     type @pre @rec List
-      |  `set´ Expr `=´ Expr                -- assignment               set x = 1
+      |  `set´ Expr `=´ [X] Expr            -- assignment               set x = 1
       |  (`call´ | `input´ |` output´)      -- call                     call f()
             (VAR|NAT) [Expr]                -- input & output           input std ; output std 10
       |  `if´ Expr `{´ Stmt `}´             -- conditional              if x { call f() } else { call g() }
@@ -491,7 +492,7 @@ Stmt ::= `var´ VAR `:´ Type                 -- variable declaration     var x:
       |  `func´ VAR `:´ Type `{´            -- function                 func f : ()->() { return () }
             Stmt
          `}´
-      |  `return´ [Expr]                    -- function return          return ()
+      |  `return´ [[X] Expr]                -- function return          return ()
       |  { Stmt [`;´] }                     -- sequence                 call f() ; call g()
       |  `{´ Stmt `}´                       -- block                    { call f() ; call g() }
       |  `native´ [`pre´] `{´ ... `}´       -- native                   native { printf("hi"); }
@@ -500,20 +501,23 @@ Expr ::= `(´ `)´                            -- unit value               ()
       |  NAT                                -- native expression        _printf
       |  VAR                                -- variable identifier      i
       |  `\´ Expr                           -- upref                    \x
-      |  Expr `\´                           -- dnref                    x\
-      |  `(´ Expr {`,´ Expr} `)´            -- tuple                    (x,())
-      |  USER.USER [Expr]                   -- constructor              True ()
+      |  `/´ Expr                           -- dnref                    /x
+      |  `[´ [X] Expr {`,´ [X] Expr} `]´    -- tuple constructor        [x,()]
+      |  `<´ `.´ NUM [[X] Expr] `>´         -- union constructor        <.1 ()>
       |  [`call´ | `input´ | `output´]      -- call                     f(x)
-            (VAR|NAT) [Expr]                -- input & output           input std ; output std 10
-      |  Expr `.´ NUM                       -- tuple index              x.1
-      |  Expr `.´ USER `!´                  -- discriminator            x.True!
-      |  Expr `.´ USER `?´                  -- predicate                x.Nil?
+            (VAR|NAT) [[X] Expr]            -- input & output           input std ; output std 10
+      |  Expr `.´ NUM                       -- tuple discriminator      x.1
+      |  Expr `!´ NUM                       -- union discriminator      x!1
+      |  Expr `?´ NUM                       -- union predicate          x?0
       |  `(´ Expr `)´                       -- group                    (x)
+
+X ::= `borrow´ | `copy´ | `move´ | `new´
 
 Type ::= `(´ `)´                            -- unit                     ()
       |  NAT                                -- native type              _char
-      |  USER                               -- user type                Bool
-      |  `(´ Type {`,´ Type} `)´            -- tuple                    ((),())
+      | `^` { `^` }                         -- recursive type           ^
+      |  `\` Type                           -- pointer                  \_int
+      |  `[´ Type {`,´ Type} `]´            -- tuple                    [(),()]
+      |  `<´ Type {`,´ Type} `>´            -- union                    <^,()>
       |  Type `->´ Type                     -- function                 () -> ()
-      |  `\` Type                           -- pointer                  \Int
 ```
