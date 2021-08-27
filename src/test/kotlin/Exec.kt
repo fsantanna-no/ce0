@@ -708,7 +708,7 @@ class Exec {
             var l: <^> = new <.1 new <.1 <.0>>>
             var p: \<^> = ?
             {
-                set p = \l!1
+                set p = borrow \l!1
             }
             output std p
         """.trimIndent())

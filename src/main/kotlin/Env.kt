@@ -201,9 +201,11 @@ fun check_xexprs (S: Stmt) {
         val e_iscst  = xe.e.isconst()
         val e_isvar  = xe.e is Expr.UCons
         val e_isnil  = e_isvar && ((xe.e as Expr.UCons).tk_.num==0)
+
+        val is_ptr_to_ctrec = (xp is Type.Ptr) && xp.pln.containsRec() && (xe.e !is Expr.Unk)
         when {
-            (xe.x == null) -> All_assert_tk(xe.e.tk, !xp_ctrec || (e_iscst && (!e_isvar||!xp_exrec||e_isnil))) {
-                "invalid expression : expected " + (if (e_iscst) "`new` " else "") + "operation modifier"
+            (xe.x == null) -> All_assert_tk(xe.e.tk, !is_ptr_to_ctrec && (!xp_ctrec || (e_iscst && (!e_isvar||!xp_exrec||e_isnil)))) {
+                "invalid expression : expected " + (if (is_ptr_to_ctrec) "`borrow` " else if (e_iscst) "`new` " else "") + "operation modifier"
             }
             (xe.x.enu == TK.BORROW) -> All_assert_tk(xe.x, xe.e.toType(env).let { it is Type.Ptr && it.pln.containsRec() }) {
                 "invalid `borrow` : expected pointer to recursive variable"
