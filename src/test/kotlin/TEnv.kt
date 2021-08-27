@@ -792,6 +792,13 @@ class TEnv {
         //assert(out == "(ln 3, col 17): invalid `move` : expected recursive variable")
         assert(out == "OK")
     }
+    @Test
+    fun j14_new_no () {
+        val out = inp2env("""
+            var l: <^> = new <.0>
+        """.trimIndent())
+        assert(out == "(ln 1, col 14): invalid `new` : expected variant constructor")
+    }
 
     // IF
 

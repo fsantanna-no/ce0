@@ -214,7 +214,7 @@ fun check_xexprs (S: Stmt) {
             (xe.x.enu == TK.MOVE) -> All_assert_tk(xe.x, xp_ctrec && !e_iscst) {
                 "invalid `move` : expected recursive variable"
             }
-            (xe.x.enu == TK.NEW) -> All_assert_tk(xe.x, xp_exrec && e_isvar) {
+            (xe.x.enu == TK.NEW) -> All_assert_tk(xe.x, xp_exrec && e_isvar && !e_isnil) {
                 "invalid `new` : expected variant constructor"
             }
             else -> error("bug found")
