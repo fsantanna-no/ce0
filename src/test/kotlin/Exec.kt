@@ -26,8 +26,8 @@ class Exec {
         if (!ok2) {
             return out2
         }
-        //val (_,out3) = exec("./out.exe")
-        val (_,out3) = exec("valgrind ./out.exe")
+        val (_,out3) = exec("./out.exe")
+        //val (_,out3) = exec("valgrind ./out.exe")
         return out3
     }
 
@@ -692,7 +692,7 @@ class Exec {
             var l: <^> = new <.1 <.0>>
             output std l!0
         """.trimIndent())
-        assert(out == "out.exe: out.c:84: main: Assertion `l == NULL' failed.\n")
+        assert(out == "out.exe: out.c:99: main: Assertion `l == NULL' failed.\n")
     }
     @Test
     fun j05_list_disc_null_err () {
@@ -700,7 +700,7 @@ class Exec {
             var l: <^> = <.0>
             output std \l!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:80: main: Assertion `l != NULL' failed.\n")
+        assert(out == "out.exe: out.c:95: main: Assertion `l != NULL' failed.\n")
     }
     @Test
     fun j06_list () {
@@ -786,10 +786,9 @@ class Exec {
             var l: <^> = <.0>
             var t1: [<^>] = [move l]
             var t2: [<^>] = move t1
+            output std \t2
         """.trimIndent())
-        println(out)
-        //assert(out == "(ln 3, col 17): invalid `move` : expected recursive variable")
-        assert(out == "OK")
+        assert(out == "[<.0>]\n")
     }
     @Test
     fun j11_tup_copy_ok () {
