@@ -239,6 +239,56 @@ class TEnv {
         assert(out == "(ln 3, col 5): invalid assignment : type mismatch")
     }
 
+    // TUPLE / UNION DISCRIMINATOR
+
+    @Test
+    fun c14_tup_disc_err () {
+        val out = inp2env("""
+            var x: [()] = ?
+            output std x!2
+        """.trimIndent())
+        assert(out == "(ln 2, col 14): invalid discriminator : type mismatch")
+    }
+    @Test
+    fun c15_tup_disc_err () {
+        val out = inp2env("""
+            var x: [()] = ?
+            output std x.2
+        """.trimIndent())
+        assert(out == "(ln 2, col 14): invalid discriminator : out of bounds")
+    }
+    @Test
+    fun c16_tup_disc_err () {
+        val out = inp2env("""
+            output std [()].2
+        """.trimIndent())
+        assert(out == "(ln 1, col 17): invalid discriminator : out of bounds")
+    }
+
+    @Test
+    fun c17_uni_disc_err () {
+        val out = inp2env("""
+            var x: <()> = ?
+            output std x.2
+        """.trimIndent())
+        assert(out == "(ln 2, col 14): invalid discriminator : type mismatch")
+    }
+    @Test
+    fun c18_uni_disc_err () {
+        val out = inp2env("""
+            var x: <()> = ?
+            output std x!2
+        """.trimIndent())
+        assert(out == "(ln 2, col 14): invalid discriminator : out of bounds")
+    }
+    @Test
+    fun c19_uni_disc_err () {
+        val out = inp2env("""
+            output std <.1>!2
+        """.trimIndent())
+        assert(out == "(ln 1, col 17): invalid discriminator : type mismatch")
+    }
+
     // DEPTH
 
     @Test

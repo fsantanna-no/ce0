@@ -26,8 +26,8 @@ class Exec {
         if (!ok2) {
             return out2
         }
-        //val (_,out3) = exec("./out.exe")
-        val (_,out3) = exec("valgrind ./out.exe")
+        val (_,out3) = exec("./out.exe")
+        //val (_,out3) = exec("valgrind ./out.exe")
         return out3
     }
 
