@@ -904,6 +904,18 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK")
     }
+    @Test
+    fun j20_rec_xepr_borrow_err () {
+        val out = inp2env("""
+            var x: [<^>] = ?
+            func f: \[<^>] -> ()
+            {
+                output std arg
+            }
+            call f \x
+        """.trimIndent())
+        assert(out == "(ln 6, col 8): invalid expression : expected `borrow` operation modifier")
+    }
 
     // IF
 
