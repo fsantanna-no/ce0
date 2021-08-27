@@ -113,9 +113,10 @@ fun code_ft (tp: Type) {
                     }
                 }
                 ${tp.pos()} copy_${ce} (${tp.pos(true)} v) {
+                    ${tp.pos()} ret;
                     ${tp.vec
-                        .mapIndexed { i, sub ->
-                            "v->_${i + 1} = " +
+                        .mapIndexed { i, sub -> if (sub is Type.Unit) "" else
+                            "ret._${i + 1} = " +
                             (if (!sub.containsRec()) {
                                 "v->_${i + 1}"
                             } else {
@@ -125,6 +126,7 @@ fun code_ft (tp: Type) {
                        }
                         .joinToString("")
                     }
+                    return ret;
                 }
                 void move_${ce} (${tp.pos(true)} v) {
                     ${tp.vec
@@ -145,12 +147,14 @@ fun code_ft (tp: Type) {
             """.trimIndent())))
         }
         is Type.Union -> {
+            val pos   = tp.pos()
             val ce    = tp.toce()
             val _ptr  = tp.toce(true)
             val ctrec = tp.containsRec()
             val exrec = tp.exactlyRec()
             val xxv   = (if (ctrec) "(*v)" else "v").let { if (exrec) "(*$it)" else it }
             val xv    = (if (exrec) "(*v)" else "v")
+            val ret   = (if (exrec) "(*ret)" else "ret")
 
             val struct = Pair ("""
                 struct $ce;
@@ -243,19 +247,30 @@ fun code_ft (tp: Type) {
                     ${ if (!exrec) "" else "free(${xv});\n" }
                 }
                 ${tp.pos()} copy_${ce} (${tp.pos(true)} v) {
-                    ${ if (!exrec) "" else "if (${xv} == NULL) return NULL;\n" }
+                    ${ if (!exrec) "$pos ret = { ${xxv}.tag };\n" else {
+                        """
+                            if (${xv} == NULL) return NULL;
+                            $pos ret = malloc(sizeof(*ret));
+                            assert(ret != NULL && "not enough memory");
+                            ($ret).tag = ($xxv).tag;
+
+                        """.trimIndent()
+                    } }
                     switch ((${xxv}).tag) {
                         ${ tp.expand().vec
-                            .mapIndexed { i,tp2 ->
-                                if (!tp2.containsRec()) "return (${xxv})._${i+1};\n" else """
-                                    case ${i+1}:
-                                        return copy_${tp2.toce()}(&(${xxv})._${i+1});
-
-                                """.trimIndent()
+                            .mapIndexed { i,sub -> if (sub is Type.Unit) "" else
+                                "case ${i+1}:\n" + (
+                                    if (sub.containsRec()) {
+                                        "($ret)._${i+1} = copy_${sub.toce()}(&($xxv)._${i+1});\nbreak;\n"
+                                    } else {
+                                        "($ret)._${i+1} = ($xxv)._${i + 1};\nbreak;\n"
+                                    }
+                                )
                             }
                             .joinToString("")
                         }
                     }
+                    return ret;
                 }
 
             """.trimIndent())))
@@ -353,12 +368,15 @@ fun code_fx (env: Env, xe: XExpr, xp: Type) {
             val xee = xe.e as Expr.UCons
             val sup = xp.pos()
             val pre = """
-                $sup $ID = ($sup) malloc(sizeof($sup));
+                $sup $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
                 *$ID = ${top.second};
 
             """.trimIndent()
             Pair(top.first+pre, if (xee.tk_.num == 0) "NULL" else ID)
+        }
+        (xe.x.enu == TK.COPY) -> {
+            Pair(top.first, "copy_${xp.toce()}(&${top.second})")
         }
         (xe.x.enu == TK.MOVE) -> {
             val pre = """

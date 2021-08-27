@@ -26,8 +26,8 @@ class Exec {
         if (!ok2) {
             return out2
         }
-        val (_,out3) = exec("./out.exe")
-        //val (_,out3) = exec("valgrind ./out.exe")
+        //val (_,out3) = exec("./out.exe")
+        val (_,out3) = exec("valgrind ./out.exe")
         return out3
     }
 
@@ -692,7 +692,7 @@ class Exec {
             var l: <^> = new <.1 <.0>>
             output std l!0
         """.trimIndent())
-        assert(out == "out.exe: out.c:71: main: Assertion `l == NULL' failed.\n")
+        assert(out == "out.exe: out.c:84: main: Assertion `l == NULL' failed.\n")
     }
     @Test
     fun j05_list_disc_null_err () {
@@ -700,7 +700,7 @@ class Exec {
             var l: <^> = <.0>
             output std \l!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:67: main: Assertion `l != NULL' failed.\n")
+        assert(out == "out.exe: out.c:80: main: Assertion `l != NULL' failed.\n")
     }
     @Test
     fun j06_list () {
@@ -722,7 +722,6 @@ class Exec {
             output std \l1
             output std \l2
         """.trimIndent())
-        println(out)
         assert(out == "<.0>\n<.1 <.0>>\n")
     }
     @Test
@@ -744,7 +743,6 @@ class Exec {
             output std \l1
             output std \l2.2
         """.trimIndent())
-        println(out)
         assert(out == "<.0>\n<.1 <.0>>\n")
     }
     @Test
@@ -753,16 +751,15 @@ class Exec {
             var n: <<^>> = <.1 new <.1 <.0>>>
             output std \n
         """.trimIndent())
-        println(out)
         assert(out == "<.1 <.1 <.0>>>\n")
     }
+
     @Test
     fun j11_rec_double () {
         val out = all("""
             var n: <<^^>> = new <.1 <.1 new <.1 <.1 <.0>>>>>
             output std \n
         """.trimIndent())
-        //println(out)
         assert(out == "<.1 <.1 <.1 <.1 <.0>>>>>\n")
     }
     @Test
@@ -781,8 +778,6 @@ class Exec {
             var t2: [<^>] = copy t1
             output std \t2
         """.trimIndent())
-        //println(out)
-        //assert(out == "(ln 3, col 17): invalid `move` : expected recursive variable")
         assert(out == "[<.0>]\n")
     }
     @Test
@@ -795,6 +790,54 @@ class Exec {
         println(out)
         //assert(out == "(ln 3, col 17): invalid `move` : expected recursive variable")
         assert(out == "OK")
+    }
+    @Test
+    fun j11_tup_copy_ok () {
+        val out = all("""
+            var l: <^> = new <.1 <.0>>
+            var t1: [<^>] = [move l]
+            var t2: [<^>] = copy t1
+            output std \t2
+        """.trimIndent())
+        assert(out == "[<.1 <.0>>]\n")
+    }
+    @Test
+    fun j12_tup_copy_ok () {
+        val out = all("""
+            var l: <(),^> = new <.2 new <.1>>
+            var t1: [<(),^>] = [move l]
+            var t2: [<(),^>] = copy t1
+            output std \t2
+        """.trimIndent())
+        assert(out == "[<.2 <.1>>]\n")
+    }
+    @Test
+    fun j13_tup_copy_ok () {
+        val out = all("""
+            var l: <(),^> = new <.2 new <.1>>
+            var t1: [(),<(),^>] = [(), move l]
+            var t2: [(),<(),^>] = copy t1
+            output std \t2
+        """.trimIndent())
+        assert(out == "[(),<.2 <.1>>]\n")
+    }
+    @Test
+    fun j14_tup_copy_ok () {
+        val out = all("""
+            var l1: <^> = <.0>
+            var l2: <^> = copy l1
+            output std \l2
+        """.trimIndent())
+        assert(out == "<.0>\n")
+    }
+    @Test
+    fun j15_tup_copy_ok () {
+        val out = all("""
+            var l1: <^> = new <.1 <.0>>
+            --var l2: <^> = copy l1
+            output std \l1
+        """.trimIndent())
+        assert(out == "<.1 <.0>>\n")
     }
 
     // SET - TUPLE - DATA
