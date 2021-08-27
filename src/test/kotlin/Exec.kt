@@ -26,8 +26,8 @@ class Exec {
         if (!ok2) {
             return out2
         }
-        val (_,out3) = exec("./out.exe")
-        //val (_,out3) = exec("valgrind ./out.exe")
+        //val (_,out3) = exec("./out.exe")
+        val (_,out3) = exec("valgrind ./out.exe")
         return out3
     }
 
@@ -833,10 +833,23 @@ class Exec {
     fun j15_tup_copy_ok () {
         val out = all("""
             var l1: <^> = new <.1 <.0>>
-            --var l2: <^> = copy l1
-            output std \l1
+            var l2: <^> = copy l1
+            output std \l2
         """.trimIndent())
         assert(out == "<.1 <.0>>\n")
+    }
+    @Test
+    fun j16_tup_move_copy_ok () {
+        val out = all("""
+            var l1: <^> = new <.1 <.0>>
+            var l2: <^> = new <.1 copy l1>
+            var t3: [(),<^>] = [(), new <.1 move l2!1>]
+            output std \l1
+            output std \l2
+            output std \t3
+        """.trimIndent())
+        println(out)
+        assert(out == "<.1 <.0>>\n<.1 <.0>>\n[(),<.1 <.1 <.0>>>]\n")
     }
 
     // SET - TUPLE - DATA
