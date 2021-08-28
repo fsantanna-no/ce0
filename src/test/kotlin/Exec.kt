@@ -753,6 +753,16 @@ class Exec {
         """.trimIndent())
         assert(out == "<.1 <.1 <.0>>>\n")
     }
+    @Test
+    fun j11_borrow () {
+        val out = all("""
+            var x: <^> = new <.1 new <.1 <.0>>>
+            var y: \<^> = borrow \x
+            output std y
+        """.trimIndent())
+        println(out)
+        assert(out == "<.1 <.1 <.0>>>\n")
+    }
 
     @Test
     fun j11_rec_double () {

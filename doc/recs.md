@@ -47,9 +47,9 @@ Deallocation occurs automatically when the scope of the owner terminates.
 Ownership can be transferred by reassigning the value to another assignee,
 which can live in another scope.
 Single ownership implies that recursive values can only form trees of
-ownerships, but not graphs with cycles or even generic DAGs.
-A value can also be shared with a pointer without transferring ownership, in
-which case generic graphs are possible.
+ownerships, but not generic DAGs (e.g., graphs with cycles).
+In some situations, a value can be shared with a pointer without transferring
+ownership, in which case generic graphs are possible.
 
 *Ce* ensures that deallocation occurs exactly once at the very moment when
 there are no more active pointers to the value.
@@ -61,43 +61,49 @@ In particular, *Ce* must prevent the following cases:
 
 ## Basics
 
-In *Ce*, a [new type](TODO) declaration supports variants (subcases) with
-tuples:
+*Ce* supports tuples (`[...]`) and tagged unions (`<...>`) to create
+user-defined composite types:
 
 ```
-type Character {
-    Warrior: (Int,Int)      -- variant Warrior has strength and stamina
-    Ranger:  (Int,Int)      -- variant Ranger has sight and speed
-    Wizard:  Int            -- variant Wizard has mana power
-}
+var x1: <(), [_int,_int]> = <.1>    -- <.1 ()> is optional
+var x2: <(), [_int,_int]> = <.2 [_4,_5]>
 ```
+
+A value of type `<(), [_int,_int]>` is either an unit or a pair of two `_int`
+values.
+The value `x1` is tagged with the first variant `.1` and holds unit.
+The value `x1` is tagged with the second variant `.2` and holds the pair
+`[4,5]`.
 
 These composite types are also known as *algebraic data types* because they are
-composed of sums (variants) and products (tuples).
+composed of sums (unions) and products (tuples).
 
-A new type declaration with the `@rec` modifier is recursive and can use itself
-in one of its subcases:
+An union is recursive if one of its variants is the caret symbol `^`:
 
 ```
-type @rec List {        -- a List is either empty (Nil) or
-    Item: (Int,List)    -- an Item that holds a number and a sublist
-}
-var l: List = Item (1, Item (2,Nil))   -- list `1 -> 2 -> empty`
+-- l = 10 -> 20 -> ()
+var l: <[_int,^]> = new <.1 [_10, new <.1 [_20, <.0>]>]>
 ```
 
-All recursive types have an implicit `Nil` empty subcase.
+Recursive unions always have an implicit `.0` variant of type unit.
+This way, the type of `l` represents a list which is either the empty variant
+`.0` or a pair that holds an `_int` and a sublist.
+Constructors of recursive variants require the operation modifier `new` to
+indicate that a memory allocation is taking place.
+The special `.0` unit constructor does not allocate memory and should not use
+`new`.
 
-A variable of a recursive type holds a *strong reference (ref)* to its value,
+A variable of a recursive union holds a *strong reference (ref)* to its value,
 but not the actual value.
 Constructors always dynamically allocate recursive values in the heap:
 
 ```
-var x: List = Item(1, Nil)
+var l: <[_int,^]> = new <.1 [_1, <.0>]>
     ^                ^
     |              __|__
    / \            /     \
-  | x |--------> |   1   | <-- actual allocated memory with the linked list
-   \_/   ref     |  null |
+  | l |--------> |   1   | <-- actual allocated memory with the linked list
+   \_/   ref     |  null | <-- .0 unit is the null terminator
     |             \_____/
     |                |
   stack             heap
@@ -108,9 +114,9 @@ automatically deallocated when the enclosing scope terminates:
 
 ```
 {
-    var x: List = Item(1, Nil)
+    var l: <[_int,^]> = new <.1 [_1, <.0>]>
 }
--- scope terminates, memory pointed by `x` is deallocated
+-- scope terminates, memory pointed by `l` is deallocated
 ```
 
 ## Pointers
@@ -120,8 +126,8 @@ A variable can be shared (or pointed, or borrowed) with the prefix backslash
 In this case, both the owner and the pointer refer to the same allocated value:
 
 ```
-var x: List  = Item(1, Nil)
-var y: \List = \x    ^
+var x:  <[_int,^]> = new <.1 [_1, <.0>]>
+var y: \<[_int,^]> = borrow \x
     ^                |
     |              __|__
    / \   ref      /     \
@@ -136,7 +142,8 @@ var y: \List = \x    ^
    \_/
 ```
 
-A pointer to a recursive type holds a *weak reference (ptr)* to its value and
+Sharing a recursive value requires the explicit `borrow` operation modifier.
+A pointer to a recursive value holds a *weak reference (ptr)* to its value and
 distinguishes from a reference (ref) as follows:
 
 - A pointer does not own the allocated value.
@@ -148,7 +155,7 @@ distinguishes from a reference (ref) as follows:
 `mutation in description`
 
 `type @rec`         <- sem-1: move, clone
-`type @rec @ptr`    <- sem-2: growonly, no clone/move
+`type @rec @ptr`    <- sem-2: growonly, no copy/move
 `type @rec @imm`    <- sem-0: share w/ refs (no pointers)
 
 - the three are incompatible
