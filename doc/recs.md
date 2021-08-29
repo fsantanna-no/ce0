@@ -149,10 +149,14 @@ distinguishes from a reference (ref) as follows:
 - A pointer does not own the allocated value.
 - A pointer requires [pointer operations](TODO) to manipulate the allocated value.
 
+`TODO: PAREI AQUI`
+
 <!--
 `TODO: pointers.md`
 `general rules for mutation`
 `mutation in description`
+
+- borrow somente em sem-1
 
 `type @rec`         <- sem-1: move, clone
 `type @rec @ptr`    <- sem-2: growonly, no copy/move
@@ -171,18 +175,25 @@ A recursive type that contains pointers to itself is classified as
 *append only* (as opposed to the default *movable*):
 
 ```
-type List_With_Tail {
-    List_WT: (List, \List)  -- list + pointer to tail
+var lt: [<^>,\<^>]  -- list + pointer to tail
 }
 ```
 
 Append-only values can only grow and cannot move its subparts:
 
 ```
+var l: <^> = 
+var lt: [<^>,\<^>] = [<.0>, ?]
+set lt.2 = \lt.1  -- lt.1 is held in a pointer
+set lt.List_WT!.1 = Nil             -- cannot free it or the pointer becomes dangling
+```
+
+```
 var lt: List_With_Tail = List_WT (Item (1,Nil), ?)
 set lt.List_WT!.2 = \lt.List_WT!.1  -- lt.1 is held in a pointer
 set lt.List_WT!.1 = Nil             -- cannot free it or the pointer becomes dangling
 ```
+
 
 ## Ownership and Borrowing
 
