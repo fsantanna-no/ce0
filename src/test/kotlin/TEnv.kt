@@ -927,4 +927,16 @@ class TEnv {
         assert(out == "(ln 1, col 1): invalid condition : type mismatch")
     }
 
+    // BORROW
+
+    @Test
+    fun l01_borrow_err () {
+        val out = inp2env("""
+            var x: <^> = ?
+            var y: \<^> = borrow \x
+            set x = <.0>
+        """.trimIndent())
+        assert(out == "OK")
+    }
+
 }
