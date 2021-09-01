@@ -17,6 +17,7 @@ class TEnv {
             check_types(s)
             check_xexprs(s)
             check_pointers(s)
+            //check_borrows(s)
             return "OK"
         } catch (e: Throwable) {
             //throw e
@@ -774,6 +775,14 @@ class TEnv {
         assert(out == "OK")
     }
     @Test
+    fun j02_rec_xepr_move_err () {
+        val out = inp2env("""
+            var x: <^> = ?
+            var y: \<^> = move \x
+        """.trimIndent())
+        assert(out == "(ln 2, col 15): invalid `move` : expected recursive variable")
+    }
+    @Test
     fun j03_rec_xepr_borrow_err () {
         val out = inp2env("""
             var x: <^> = ?
@@ -916,6 +925,14 @@ class TEnv {
         """.trimIndent())
         assert(out == "(ln 6, col 8): invalid expression : expected `borrow` operation modifier")
     }
+    @Test
+    fun j21_rec_xepr_borrow_err () {
+        val out = inp2env("""
+            var x: [<^>] = ?
+            var y: \[<^>] = \x
+        """.trimIndent())
+        assert(out == "(ln 2, col 17): invalid expression : expected `borrow` operation modifier")
+    }
 
     // IF
 
@@ -936,7 +953,8 @@ class TEnv {
             var y: \<^> = borrow \x
             set x = <.0>
         """.trimIndent())
-        assert(out == "OK")
+        println(out)
+        assert(out == "NO")
     }
 
 }
