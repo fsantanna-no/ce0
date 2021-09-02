@@ -66,7 +66,7 @@ fun check_dcls (s: Stmt) {
             }
         }
     }
-    s.visit(emptyList(), ::fs, ::fe)
+    s.visit(emptyList(), ::fs, null, ::fe)
 }
 
 fun Type.containsRec (): Boolean {
@@ -181,7 +181,7 @@ fun check_types (S: Stmt) {
             }
         }
     }
-    S.visit(emptyList(), ::fs, ::fe)
+    S.visit(emptyList(), ::fs, null, ::fe)
 }
 
 fun Expr.isconst (): Boolean {
@@ -301,7 +301,7 @@ fun check_pointers (S: Stmt) {
             }
         }
     }
-    S.visit(emptyList(), ::fs, null)
+    S.visit(emptyList(), ::fs, null, null)
 }
 
 fun check_borrows (S: Stmt) {
@@ -348,5 +348,5 @@ fun check_borrows (S: Stmt) {
             is Stmt.Set -> f(env.idToStmt(((s.dst as Attr.Var).toExpr() as Expr.Var).tk_.str) as Stmt.Var, s.src)
         }
     }
-    S.visit(emptyList(), ::fs, ::fe)
+    S.visit(emptyList(), ::fs, null, ::fe)
 }

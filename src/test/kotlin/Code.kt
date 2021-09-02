@@ -99,7 +99,7 @@ class Code {
     @Test
     fun c01_stmt_pass () {
         val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
-        s.visit(emptyList(), ::code_fs, null)
+        s.visit(emptyList(), ::code_fs, null, null)
         assert(CODE.removeFirst() == "")
         assert(CODE.size == 0)
     }
@@ -138,7 +138,7 @@ class Code {
         lexer(all)
         var s = parser_stmts(all, Pair(TK.EOF,null))
         s = env_prelude(s)
-        s.visit(emptyList(), ::code_fs, null)
+        s.visit(emptyList(), ::code_fs, null, null)
         return CODE.removeFirst()
     }
 }
