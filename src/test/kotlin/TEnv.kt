@@ -17,7 +17,7 @@ class TEnv {
             check_types(s)
             check_xexprs(s)
             check_pointers(s)
-            //check_borrows(s)
+            check_borrows(s)
             return "OK"
         } catch (e: Throwable) {
             //throw e
@@ -954,7 +954,7 @@ class TEnv {
             set x = <.0>
         """.trimIndent())
         println(out)
-        assert(out == "NO")
+        assert(out == "(ln 3, col 5): invalid access to \"x\" : borrowed in line 2")
     }
 
 }

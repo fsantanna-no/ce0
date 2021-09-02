@@ -303,3 +303,50 @@ fun check_pointers (S: Stmt) {
     }
     S.visit(emptyList(), ::fs, null)
 }
+
+fun check_borrows (S: Stmt) {
+    // y = borrow \x
+    // z = borrow y
+    // bws[x] = { y,z }
+    // bws[y] = { z }
+    val bws: MutableMap<Stmt.Var,MutableSet<Stmt.Var>> = mutableMapOf()
+
+    fun s2id (s: Stmt): String {
+        return when (s) {
+            is Stmt.Var -> s.tk_.str
+            is Stmt.Func -> s.tk_.str
+            else -> error("bug found")
+        }
+    }
+
+    fun fe (env: Env, e: Expr) {
+        if (e is Expr.Var) {
+            val s = env.idToStmt(e.tk_.str) as Stmt.Var
+            if (bws[s] != null) {
+                val ok = bws[s]!!.intersect(env).isEmpty()  // no borrow is on scope
+                All_assert_tk(e.tk, ok) {
+                    val ln = bws[s]!!.first().tk.lin
+                    "invalid access to \"${e.tk_.str}\" : borrowed in line $ln"
+                }
+            }
+        }
+    }
+
+    fun fs (env: Env, s: Stmt) {
+        fun f (dst: Stmt.Var, xsrc: XExpr) {
+            if (xsrc.x!=null && xsrc.x.enu==TK.BORROW) {
+                val src = env.idToStmt(((xsrc.e as Expr.Upref).pln as Expr.Var).tk_.str) as Stmt.Var
+                if (bws[src] == null) {
+                    bws[src] = mutableSetOf()
+                }
+                bws[src]!!.add(dst)
+                bws[src]!!.addAll(if (bws[dst] == null) emptySet() else bws[dst]!!)
+            }
+        }
+        when (s) {
+            is Stmt.Var -> f(s, s.src)
+            is Stmt.Set -> f(env.idToStmt(((s.dst as Attr.Var).toExpr() as Expr.Var).tk_.str) as Stmt.Var, s.src)
+        }
+    }
+    S.visit(emptyList(), ::fs, ::fe)
+}

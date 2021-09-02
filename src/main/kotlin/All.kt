@@ -21,6 +21,7 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
         check_types(s)
         check_xexprs(s)
         check_pointers(s)
+        check_borrows(s)
         return Pair(true, s.code())
     } catch (e: Throwable) {
         EXPRS.clear()
