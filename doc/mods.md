@@ -47,8 +47,8 @@ var c: <^> = borrow x   -- (ln 3, col 14): invalid `borrow` : expected pointer t
 
 ```
 var y: \<^> = borrow \x
-set x = <.0>            -- (ln 2, col 5): invalid move of "x" : borrowed in line 2
-var z: <^> = move x     -- (ln 2, col 5): invalid move of "x" : borrowed in line 2
+set x = <.0>            -- (ln 2, col 7): invalid assignment of "x" : borrowed in line 1
+var z: <^> = move x     -- (ln 3, col 19): invalid move of "x" : borrowed in line 1
 ... /y ...              -- prevents access to dangling pointer
 ```
 

@@ -17,7 +17,7 @@ class TEnv {
             check_types(s)
             check_xexprs(s)
             check_pointers(s)
-            //check_borrows(s)
+            check_borrows(s)
             return "OK"
         } catch (e: Throwable) {
             //throw e
@@ -953,8 +953,17 @@ class TEnv {
             var y: \<^> = borrow \x
             set x = <.0>
         """.trimIndent())
+        assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2")
+    }
+    @Test
+    fun l02_borrow_err () {
+        val out = inp2env("""
+            var x: <^> = ?
+            var y: \<^> = borrow \x
+            var z: <^> = move x
+        """.trimIndent())
         println(out)
-        assert(out == "(ln 3, col 5): invalid access to \"x\" : borrowed in line 2")
+        assert(out == "(ln 3, col 19): invalid move of \"x\" : borrowed in line 2")
     }
 
 }

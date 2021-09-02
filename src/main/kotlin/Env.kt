@@ -304,6 +304,17 @@ fun check_pointers (S: Stmt) {
     S.visit(emptyList(), ::fs, null, null)
 }
 
+fun Expr.leftMost (): Expr.Var? {
+    return when (this) {
+        is Expr.Var -> this
+        is Expr.TDisc -> this.tup.leftMost()
+        is Expr.UDisc -> this.uni.leftMost()
+        is Expr.Dnref -> this.ptr.leftMost()
+        is Expr.Upref -> this.pln.leftMost()
+        else -> null
+    }
+}
+
 fun check_borrows (S: Stmt) {
     // y = borrow \x
     // z = borrow y
@@ -311,42 +322,49 @@ fun check_borrows (S: Stmt) {
     // bws[y] = { z }
     val bws: MutableMap<Stmt.Var,MutableSet<Stmt.Var>> = mutableMapOf()
 
-    fun s2id (s: Stmt): String {
-        return when (s) {
-            is Stmt.Var -> s.tk_.str
-            is Stmt.Func -> s.tk_.str
-            else -> error("bug found")
+    fun chk (env: Env, s: Stmt.Var, tk: Tk, err: String) {
+        if (bws[s] != null) {
+            val ok = bws[s]!!.intersect(env).isEmpty()  // no borrow is on scope
+            val ln = bws[s]!!.first().tk.lin
+            All_assert_tk(tk, ok) { err + " : borrowed in line $ln" }
         }
     }
 
-    fun fe (env: Env, e: Expr) {
-        if (e is Expr.Var) {
-            val s = env.idToStmt(e.tk_.str) as Stmt.Var
-            if (bws[s] != null) {
-                val ok = bws[s]!!.intersect(env).isEmpty()  // no borrow is on scope
-                All_assert_tk(e.tk, ok) {
-                    val ln = bws[s]!!.first().tk.lin
-                    "invalid access to \"${e.tk_.str}\" : borrowed in line $ln"
-                }
+    fun fx (env: Env, xe: XExpr) {
+        if (xe.x!=null && xe.x.enu==TK.MOVE) {
+            val left = xe.e.leftMost()
+            if (left != null) {
+                val s = env.idToStmt(left.tk_.str) as Stmt.Var
+                chk(env, s, xe.e.tk, "invalid move of \"${left.tk_.str}\"")
             }
         }
     }
 
     fun fs (env: Env, s: Stmt) {
-        fun f (dst: Stmt.Var, xsrc: XExpr) {
+        fun add (dst: Stmt.Var, xsrc: XExpr) {
             if (xsrc.x!=null && xsrc.x.enu==TK.BORROW) {
-                val src = env.idToStmt(((xsrc.e as Expr.Upref).pln as Expr.Var).tk_.str) as Stmt.Var
-                if (bws[src] == null) {
-                    bws[src] = mutableSetOf()
+                val left = xsrc.e.leftMost()
+                if (left != null) {
+                    val src = env.idToStmt(left.tk_.str) as Stmt.Var
+                    if (bws[src] == null) {
+                        bws[src] = mutableSetOf()
+                    }
+                    bws[src]!!.add(dst)
+                    bws[src]!!.addAll(if (bws[dst] == null) emptySet() else bws[dst]!!)
                 }
-                bws[src]!!.add(dst)
-                bws[src]!!.addAll(if (bws[dst] == null) emptySet() else bws[dst]!!)
             }
         }
         when (s) {
-            is Stmt.Var -> f(s, s.src)
-            is Stmt.Set -> f(env.idToStmt(((s.dst as Attr.Var).toExpr() as Expr.Var).tk_.str) as Stmt.Var, s.src)
+            is Stmt.Var -> add(s, s.src)
+            is Stmt.Set -> {
+                val isrecptr = s.dst.toExpr().toType(env).let { it.containsRec() || (it is Type.Ptr && it.pln.containsRec()) }
+                if (isrecptr) {
+                    val dcl = env.idToStmt(((s.dst as Attr.Var).toExpr() as Expr.Var).tk_.str) as Stmt.Var
+                    add(dcl, s.src)
+                    chk(env, dcl, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
+                }
+            }
         }
     }
-    S.visit(emptyList(), ::fs, null, ::fe)
+    S.visit(emptyList(), ::fs, ::fx, null)
 }
