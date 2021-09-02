@@ -31,7 +31,18 @@ var c: _int = copy _10  -- (ln 3, col 15): invalid `copy` : expected recursive v
 var d: <^> = copy <.0>  -- (ln 1, col 14): invalid `copy` : expected recursive variable
 ```
 
-### Borrow
+- A `move` requires a plain value not from a *dnref* expression:
+
+```
+var y: <^> = move /x    -- (ln 1, col 14): invalid `move` : expected recursive variable
+```
+
+### Borrowing
+
+The main use of borrowing is to avoid moving ownership back and forth when
+calling simple functions:
+
+- https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html
 
 - A pointer assignment requires a `borrow` modifier:
 
@@ -39,6 +50,7 @@ var d: <^> = copy <.0>  -- (ln 1, col 14): invalid `copy` : expected recursive v
 var a: \<^> = borrow \x -- ok
 var b: \[<^>] = \x      -- (ln 2, col 17): invalid expression : expected `borrow` operation modifier
 var c: <^> = borrow x   -- (ln 3, col 14): invalid `borrow` : expected pointer to recursive variable
+call f (borrow \x)
 ```
 
 ## Borrowing
@@ -49,12 +61,25 @@ var c: <^> = borrow x   -- (ln 3, col 14): invalid `borrow` : expected pointer t
 var y: \<^> = borrow \x
 set x = <.0>            -- (ln 2, col 7): invalid assignment of "x" : borrowed in line 1
 var z: <^> = move x     -- (ln 3, col 19): invalid move of "x" : borrowed in line 1
-... /y ...              -- prevents access to dangling pointer
+... /y ...              -- prevent use-after-free situation
 ```
 
-- Only after xxx go out of scope:
+- Borrows are automatically released when they go out of scope:
 
 ```
-var y: \<^> = borrow \x
-set x = <.0>            -- (ln 2, col 5): invalid access to \"x\" : borrowed in line 2
+var x: <^> = ?
+{
+    var y: \<^> = borrow \x     -- automatic unborrow on scope termination
+}
+var z: <^> = move x     -- ok: no remaining borrows
 ```
+
+- Pointers in *dnref* expressions cannot be moved because they imply an active owner:
+
+```
+var l: <^> = ...        -- owner
+var x: \<^> = \l        -- pointer
+var y: <^> = move x\    -- (ln 3, col 14): invalid `move` : expected recursive variable
+```
+
+

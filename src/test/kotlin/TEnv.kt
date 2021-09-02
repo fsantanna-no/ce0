@@ -123,7 +123,6 @@ class TEnv {
             var l: <^> = <.1 <.0>>
             output std \l!0
         """.trimIndent())
-        println(out)
         assert(out == "(ln 1, col 16): invalid expression : expected `new` operation modifier")
     }
     @Test
@@ -933,6 +932,27 @@ class TEnv {
         """.trimIndent())
         assert(out == "(ln 2, col 17): invalid expression : expected `borrow` operation modifier")
     }
+    @Test
+    fun j23_rec_xexpr_move_err () {
+        val out = inp2env("""
+            var x: <^> = ?
+            var y: \<^> = borrow \x
+            var z: <^> = move /y
+        """.trimIndent())
+        assert(out == "(ln 3, col 14): invalid `move` : expected recursive variable")
+    }
+    @Test
+    fun j24_rec_xepr_borrow_ok () {
+        val out = inp2env("""
+            var x: [<^>] = ?
+            func f: \[<^>] -> ()
+            {
+                output std arg
+            }
+            call f borrow \x
+        """.trimIndent())
+        assert(out == "OK")
+    }
 
     // IF
 
@@ -975,5 +995,31 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK")
     }
-
+    @Test
+    fun l03_borrow_err () {
+        val out = inp2env("""
+            var x: <^> = ?
+            func f: \<^> -> ()
+            {
+                set x = <.0>
+            }
+            call f borrow \x
+        """.trimIndent())
+        println(out)
+        assert(out == "NO")
+    }
+    @Test
+    fun l04_borrow_err () {
+        val out = inp2env("""
+            var x: <^> = ?
+            func f: () -> ()
+            {
+                set x = <.0>
+            }
+            var y: \<^> = borrow \x
+            call f ()
+        """.trimIndent())
+        println(out)
+        assert(out == "NO")
+    }
 }

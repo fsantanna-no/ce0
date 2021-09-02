@@ -215,7 +215,7 @@ fun check_xexprs (S: Stmt) {
             (xe.x.enu == TK.COPY) -> All_assert_tk(xe.x, xp_ctrec && !e_iscst) {
                 "invalid `copy` : expected recursive variable"
             }
-            (xe.x.enu == TK.MOVE) -> All_assert_tk(xe.x, xp_ctrec && !e_iscst) {
+            (xe.x.enu == TK.MOVE) -> All_assert_tk(xe.x, xp_ctrec && !e_iscst && (xe.e !is Expr.Dnref)) {
                 "invalid `move` : expected recursive variable"
             }
             (xe.x.enu == TK.NEW) -> All_assert_tk(xe.x, xp_exrec && e_isvar && !e_isnil) {
@@ -366,5 +366,15 @@ fun check_borrows (S: Stmt) {
             }
         }
     }
-    S.visit(emptyList(), ::fs, ::fx, null)
+
+    fun fe (env: Env, e: Expr) {
+        if (e is Expr.Call && e.f !is Expr.Nat) {
+            val s = env.idToStmt((e.f as Expr.Var).tk_.str) as Stmt.Func
+            if (s.block != null) {
+                s.visit(env, ::fs, ::fx, ::fe)
+            }
+        }
+    }
+
+    S.visit(emptyList(), ::fs, ::fx, ::fe)
 }
