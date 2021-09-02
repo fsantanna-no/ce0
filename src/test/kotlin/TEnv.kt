@@ -51,8 +51,8 @@ class TEnv {
     }
     @Test
     fun a04_redeclared_func () {
-        val out = inp2env("var x:()=() ; func x:()->() {}")
-        assert(out == "(ln 1, col 20): invalid declaration : \"x\" is already declared (ln 1)")
+        val out = inp2env("var x:()=() ; var x:()->() = func ()->() {}")
+        assert(out == "(ln 1, col 19): invalid declaration : \"x\" is already declared (ln 1)")
     }
 
     // CONS
@@ -154,14 +154,14 @@ class TEnv {
     @Test
     fun c03_type_func_ret () {
         val out = inp2env("""
-            func f : () -> () { return [()] }
+            var f : () -> () = func () -> () { return [()] }
         """.trimIndent())
-        assert(out == "(ln 1, col 21): invalid return : type mismatch")
+        assert(out == "(ln 1, col 36): invalid return : type mismatch")
     }
     @Test
     fun c04_type_func_arg () {
         val out = inp2env("""
-            func f : [(),()] -> () { }
+            var f : [(),()] -> () = func ([(),()] -> ()) { }
             call f()
         """.trimIndent())
         assert(out == "(ln 2, col 6): invalid call : type mismatch")
@@ -304,11 +304,11 @@ class TEnv {
                 assert(s.getDepth(env,false) == 0)
             }
         }
-        s.visit(emptyList(), ::fs, null, ::fe)
+        s.visit(emptyList(), ::fs, null, ::fe, null)
     }
     @Test
     fun d02_func () {
-        val s = pre("var x: () = () ; func f: ()->() { var y: () = x ; output std y ; set x = () }")
+        val s = pre("var x: () = () ; var f: ()->() = func ()->() { var y: () = x ; output std y ; set x = () }")
         fun fe (env: Env, e: Expr) {
             if (e is Expr.Var) {
                 if (e.tk_.str == "x") {
@@ -332,7 +332,7 @@ class TEnv {
                 assert(0 == s.dst.toExpr().getDepth(env, s.getDepth(env,true), true).first)
             }
         }
-        s.visit(emptyList(), ::fs, null, ::fe)
+        s.visit(emptyList(), ::fs, null, ::fe, null)
     }
 
     // POINTERS
@@ -445,7 +445,7 @@ class TEnv {
     @Test
     fun g01_ptr_func_ok () {
         val out = inp2env("""
-            func f : \_int -> \_int {
+            var f : \_int -> \_int = func (\_int -> \_int) {
                 return arg
             }
             var v: _int = _10
@@ -458,7 +458,7 @@ class TEnv {
     fun g02_ptr_func_ok () {
         val out = inp2env("""
             var v: _int = _10
-            func f : () -> \_int {
+            var f : () -> \_int = func () -> \_int {
                 return \v
             }
             var p: \_int = f ()
@@ -469,7 +469,7 @@ class TEnv {
     @Test
     fun g03_ptr_func_err () {
         val out = inp2env("""
-            func f : () -> \_int {
+            var f : () -> \_int = func () -> \_int {
                 var v: _int = _10
                 return \v
             }
@@ -482,7 +482,7 @@ class TEnv {
     @Test
     fun g04_ptr_func_err () {
         val out = inp2env("""
-            func f : \_int -> \_int {
+            var f : \_int -> \_int = func (\_int -> \_int) {
                 var ptr: \_int = arg
                 return ptr
             }
@@ -495,7 +495,7 @@ class TEnv {
     @Test
     fun g05_ptr_caret_ok () {
         val out = inp2env("""
-            func f : \_int -> \_int {
+            var f : \_int -> \_int = func \_int -> \_int {
                 var ptr: ^\_int = arg
                 return ptr
             }
@@ -508,7 +508,7 @@ class TEnv {
     @Test
     fun g06_ptr_caret_err () {
         val out = inp2env("""
-            func f : \_int -> \_int {
+            var f : \_int -> \_int = func \_int -> \_int {
                 var x: _int = _10
                 var ptr: ^\_int = \x
                 return ptr
@@ -532,7 +532,7 @@ class TEnv {
     @Test
     fun g08_ptr_arg_err () {
         val out = inp2env("""
-            func f: _int -> \_int
+            var f: _int -> \_int = func _int -> \_int
             {
                 return \arg
             }
@@ -542,7 +542,7 @@ class TEnv {
     @Test
     fun g09_ptr_arg_err () {
         val out = inp2env("""
-            func f: _int -> \_int
+            var f: _int -> \_int = func _int -> \_int
             {
                 var ptr: ^\_int = \arg
                 return ptr
@@ -553,7 +553,7 @@ class TEnv {
     @Test
     fun g10_ptr_out_err () {
         val out = inp2env("""
-            func f: \_int -> \\_int
+            var f: \_int -> \\_int = func \_int -> \\_int
             {
                 var ptr: ^\_int = arg
                 return \ptr
@@ -565,7 +565,7 @@ class TEnv {
     fun g11_ptr_func () {
         val out = inp2env("""
             var v: _int = _10
-            func f : () -> \_int {
+            var f : () -> \_int = func () -> \_int {
                 return \v
             }
             var p: \_int = ?
@@ -579,7 +579,7 @@ class TEnv {
     fun g12_ptr_func () {
         val out = inp2env("""
             var v: _int = _10
-            func f : \_int -> \_int {
+            var f : \_int -> \_int = func \_int -> \_int {
                 return \v
             }
             var p: \_int = ?
@@ -593,7 +593,7 @@ class TEnv {
     fun g13_ptr_func () {
         val out = inp2env("""
             var v: \_int = ?
-            func f : \_int -> () {
+            var f : \_int -> () = func \_int -> () {
                 set v = arg
             }
         """.trimIndent())
@@ -916,7 +916,7 @@ class TEnv {
     fun j20_rec_xepr_borrow_err () {
         val out = inp2env("""
             var x: [<^>] = ?
-            func f: \[<^>] -> ()
+            var f: \[<^>] -> () = func \[<^>] -> ()
             {
                 output std arg
             }
@@ -945,7 +945,7 @@ class TEnv {
     fun j24_rec_xepr_borrow_ok () {
         val out = inp2env("""
             var x: [<^>] = ?
-            func f: \[<^>] -> ()
+            var f: \[<^>] -> () = func \[<^>] -> ()
             {
                 output std arg
             }
@@ -999,7 +999,7 @@ class TEnv {
     fun l03_borrow_err () {
         val out = inp2env("""
             var x: <^> = ?
-            func f: \<^> -> ()
+            var f: \<^> -> () = func \<^> -> ()
             {
                 set x = <.0>
             }
@@ -1012,7 +1012,7 @@ class TEnv {
     fun l04_borrow_err () {
         val out = inp2env("""
             var x: <^> = ?
-            func f: () -> ()
+            var f: () -> () = func () -> ()
             {
                 set x = <.0>
             }

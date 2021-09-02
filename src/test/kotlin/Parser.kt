@@ -492,24 +492,26 @@ class Parser {
 
     @Test
     fun c12_parser_func () {
-        val all = All_new(PushbackReader(StringReader("func f : () { }"), 2))
+        val all = All_new(PushbackReader(StringReader("var f : () = func () { }"), 2))
         lexer(all)
         try {
             parser_stmt(all)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 10): expected function type")
+            assert(e.message == "(ln 1, col 19): expected function type")
         }
     }
     @Test
     fun c13_parser_func () {
-        val all = All_new(PushbackReader(StringReader("func f : () -> () { return }"), 2))
+        val all = All_new(PushbackReader(StringReader("var f : () -> () = func () -> () { return }"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert (
-            s is Stmt.Func && s.tk_.str=="f" && s.type.inp is Type.Unit &&
-            s.block!!.body.let {
-                it is Stmt.Seq && it.s1 is Stmt.Var && it.s2 is Stmt.Seq
+            (s is Stmt.Var) && (s.tk_.str=="f") &&
+            s.src.e.let {
+                (it is Expr.Func) && (it.type.inp is Type.Unit) && it.block.body.let {
+                    it is Stmt.Seq && it.s1 is Stmt.Var && it.s2 is Stmt.Seq
+                }
             }
         )
     }

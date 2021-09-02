@@ -1,24 +1,24 @@
 fun env_prelude (s: Stmt): Stmt {
-    val stdo = Stmt.Func (
+    val stdo = Stmt.Var (
         Tk.Str(TK.XVAR,1,1,"output_std"),
+        false,
         Type.Func (
             Tk.Sym(TK.ARROW, 1, 1, "->"),
             Type.Any(Tk.Chr(TK.CHAR,1,1,'?')),
             Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
         ),
-        null
+        XExpr(null, Expr.Unk(Tk.Chr(TK.CHAR,s.tk.lin,s.tk.col,'?')))
     )
     return Stmt.Seq(stdo.tk, stdo, s)
 }
 
-fun Env.idToStmt (id: String): Stmt? {
+fun Env.idToStmt (id: String): Stmt.Var? {
     return this.find {
         id == when (it) {
             is Stmt.Var  -> it.tk_.str
-            is Stmt.Func -> it.tk_.str
             else         -> null
         }
-    }
+    } as Stmt.Var?
 }
 
 fun Expr.toType (env: Env): Type {
@@ -28,7 +28,7 @@ fun Expr.toType (env: Env): Type {
         is Expr.Nat   -> Type.Nat(this.tk_)
         is Expr.Upref -> Type.Ptr(this.tk_, this.pln.toType(env))
         is Expr.Dnref -> (this.ptr.toType(env) as Type.Ptr).pln
-        is Expr.Var   -> env.idToStmt(this.tk_.str)!!.typeVarFunc()
+        is Expr.Var   -> env.idToStmt(this.tk_.str)!!.type
         is Expr.TCons -> Type.Tuple(this.tk_, this.arg.map{it.e.toType(env)}.toTypedArray())
         is Expr.UCons -> Type.UCons(this.tk_, this.arg.e.toType(env))
         is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType(env) as Type.Func).out
@@ -42,6 +42,7 @@ fun Expr.toType (env: Env): Type {
             }
         }
         is Expr.UPred -> Type.Nat(Tk.Str(TK.XNAT, this.tk.lin, this.tk.col, "int"))
+        is Expr.Func  -> this.type
     }
 }
 
@@ -54,19 +55,14 @@ fun check_dcls (s: Stmt) {
         }
     }
     fun fs (env: Env, s: Stmt) {
-        val id = when (s) {
-            is Stmt.Var  -> s.tk_.str
-            is Stmt.Func -> s.tk_.str
-            else -> null
-        }
-        if (id != null) {
-            val dcl = env.idToStmt(id)
+        if (s is Stmt.Var) {
+            val dcl = env.idToStmt(s.tk_.str)
             All_assert_tk(s.tk, dcl==null) {
-                "invalid declaration : \"${id}\" is already declared (ln ${dcl!!.tk.lin})"
+                "invalid declaration : \"${s.tk_.str}\" is already declared (ln ${dcl!!.tk.lin})"
             }
         }
     }
-    s.visit(emptyList(), ::fs, null, ::fe)
+    s.visit(emptyList(), ::fs, null, ::fe, null)
 }
 
 fun Type.containsRec (): Boolean {
@@ -181,12 +177,12 @@ fun check_types (S: Stmt) {
             }
         }
     }
-    S.visit(emptyList(), ::fs, null, ::fe)
+    S.visit(emptyList(), ::fs, null, ::fe, null)
 }
 
 fun Expr.isconst (): Boolean {
     return when (this) {
-        is Expr.Unit, is Expr.Unk, is Expr.Call, is Expr.TCons, is Expr.UCons, is Expr.UPred -> true
+        is Expr.Unit, is Expr.Unk, is Expr.Call, is Expr.TCons, is Expr.UCons, is Expr.UPred, is Expr.Func -> true
         is Expr.Var, is Expr.Nat, is Expr.Dnref -> false
         is Expr.TDisc -> this.tup.isconst()
         is Expr.UDisc -> this.uni.isconst()
@@ -240,9 +236,9 @@ fun Stmt.getDepth (env: Env, drop: Boolean): Int {
     }
 }
 
-fun Expr.getDepth (env: Env, caller: Int, hold: Boolean): Pair<Int,Stmt?> {
+fun Expr.getDepth (env: Env, caller: Int, hold: Boolean): Pair<Int,Stmt.Var?> {
     return when (this) {
-        is Expr.Unk, is Expr.Unit, is Expr.Nat, is Expr.UPred -> Pair(0, null)
+        is Expr.Unk, is Expr.Unit, is Expr.Nat, is Expr.UPred, is Expr.Func -> Pair(0, null)
         is Expr.Var -> {
             val dcl = env.idToStmt(this.tk_.str)!!
             return if (hold) Pair(dcl.getDepth(env,true), dcl) else Pair(0, null)
@@ -275,20 +271,13 @@ fun Expr.getDepth (env: Env, caller: Int, hold: Boolean): Pair<Int,Stmt?> {
 }
 
 fun check_pointers (S: Stmt) {
-    fun s2id (s: Stmt): String {
-        return when (s) {
-            is Stmt.Var -> s.tk_.str
-            is Stmt.Func -> s.tk_.str
-            else -> error("bug found")
-        }
-    }
     fun fs (env: Env, s: Stmt) {
         when (s) {
             is Stmt.Var -> {
                 val dst_depth = s.getDepth(env,false)
                 val (src_depth, src_dcl) = s.src.e.getDepth(env, dst_depth, s.type.ishasptr())
                 All_assert_tk(s.tk, dst_depth >= src_depth) {
-                    "invalid assignment : cannot hold local pointer \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
+                    "invalid assignment : cannot hold local pointer \"${src_dcl!!.tk_.str}\" (ln ${src_dcl!!.tk.lin})"
                 }
             }
             is Stmt.Set -> {
@@ -296,12 +285,12 @@ fun check_pointers (S: Stmt) {
                 val (src_depth, src_dcl) = s.src.e.getDepth(env, set_depth, s.dst.toExpr().toType(env).ishasptr())
                 //println("${s.dst.toExpr().getDepth(env, set_depth, s.dst.toExpr().toType(env).ishasptr()).first} >= $src_depth")
                 All_assert_tk(s.tk, s.dst.toExpr().getDepth(env, set_depth, s.dst.toExpr().toType(env).ishasptr()).first >= src_depth) {
-                    "invalid assignment : cannot hold local pointer \"${s2id(src_dcl!!)}\" (ln ${src_dcl!!.tk.lin})"
+                    "invalid assignment : cannot hold local pointer \"${src_dcl!!.tk_.str}\" (ln ${src_dcl!!.tk.lin})"
                 }
             }
         }
     }
-    S.visit(emptyList(), ::fs, null, null)
+    S.visit(emptyList(), ::fs, null, null, null)
 }
 
 fun Expr.leftMost (): Expr.Var? {
@@ -369,12 +358,14 @@ fun check_borrows (S: Stmt) {
 
     fun fe (env: Env, e: Expr) {
         if (e is Expr.Call && e.f !is Expr.Nat) {
+            /*
             val s = env.idToStmt((e.f as Expr.Var).tk_.str) as Stmt.Func
             if (s.block != null) {
                 s.visit(env, ::fs, ::fx, ::fe)
             }
+             */
         }
     }
 
-    S.visit(emptyList(), ::fs, ::fx, ::fe)
+    S.visit(emptyList(), ::fs, ::fx, ::fe, null)
 }

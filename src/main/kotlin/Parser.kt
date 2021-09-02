@@ -61,6 +61,7 @@ sealed class Expr (val tk: Tk) {
     data class Dnref (val tk_: Tk,     val ptr: Expr): Expr(tk_)
     data class Upref (val tk_: Tk.Chr, val pln: Expr): Expr(tk_)
     data class Call  (val tk_: Tk.Key, val f: Expr, val arg: XExpr): Expr(tk_)
+    data class Func  (val tk_: Tk.Key, val type: Type.Func, val block: Stmt.Block) : Expr(tk_)
 }
 
 sealed class Attr (val tk: Tk) {
@@ -89,19 +90,10 @@ sealed class Stmt (val tk: Tk) {
     data class Call  (val tk_: Tk.Key, val call: Expr.Call) : Stmt(tk_)
     data class Seq   (val tk_: Tk, val s1: Stmt, val s2: Stmt) : Stmt(tk_)
     data class If    (val tk_: Tk.Key, val tst: Expr, val true_: Block, val false_: Block) : Stmt(tk_)
-    data class Func  (val tk_: Tk.Str, val type: Type.Func, val block: Block?) : Stmt(tk_)
     data class Ret   (val tk_: Tk.Key, val e: XExpr) : Stmt(tk_)
     data class Loop  (val tk_: Tk.Key, val block: Block) : Stmt(tk_)
     data class Break (val tk_: Tk.Key) : Stmt(tk_)
     data class Block (val tk_: Tk.Chr, val body: Stmt) : Stmt(tk_)
-}
-
-fun Stmt.typeVarFunc (): Type {
-    return when (this) {
-        is Stmt.Var  -> this.type
-        is Stmt.Func -> this.type
-        else -> error("bug found")
-    }
 }
 
 fun parser_type (all: All): Type {
@@ -226,6 +218,39 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 all.accept_err(TK.CHAR, '>')
                 Expr.UCons(tk0, cons)
             }
+            all.accept(TK.FUNC) -> {
+                val tk0 = all.tk0 as Tk.Key
+                //all.accept_err(TK.CHAR,'(')
+                val tp = parser_type(all)
+                all.assert_tk(all.tk0, tp is Type.Func) {
+                    "expected function type"
+                }
+                //all.accept_err(TK.CHAR,')')
+                val block = parser_block(all)
+
+                val lin = block.tk.lin
+                val col = block.tk.col
+                val xblock = Stmt.Block(block.tk_,
+                    Stmt.Seq(block.tk,
+                        Stmt.Var (
+                            Tk.Str(TK.XVAR,lin,col,"arg"),
+                            false,
+                            (tp as Type.Func).inp,
+                            XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,lin,col,"_arg_")))
+                        ),
+                        Stmt.Seq(block.tk,
+                            Stmt.Var (
+                                Tk.Str(TK.XVAR,lin,col,"_ret_"),
+                                false,
+                                tp.out,
+                                XExpr(null, Expr.Unk(Tk.Chr(TK.CHAR,lin,col,'?')))
+                            ),
+                            block,
+                        )
+                    )
+                )
+                Expr.Func(tk0, tp, xblock)
+            }
             else -> {
                 all.err_expected("expression")
                 error("unreachable")
@@ -317,14 +342,15 @@ fun parser_attr (all: All): Attr {
     return e1
 }
 
+fun parser_block (all: All): Stmt.Block {
+    all.accept_err(TK.CHAR,'{')
+    val tk0 = all.tk0 as Tk.Chr
+    val ret = parser_stmts(all, Pair(TK.CHAR,'}'))
+    all.accept_err(TK.CHAR,'}')
+    return Stmt.Block(tk0, ret)
+}
+
 fun parser_stmt (all: All): Stmt {
-    fun parser_block (): Stmt.Block {
-        all.accept_err(TK.CHAR,'{')
-        val tk0 = all.tk0 as Tk.Chr
-        val ret = parser_stmts(all, Pair(TK.CHAR,'}'))
-        all.accept_err(TK.CHAR,'}')
-        return Stmt.Block(tk0, ret)
-    }
     return when {
         all.accept(TK.VAR) -> {
             all.accept_err(TK.XVAR)
@@ -359,45 +385,12 @@ fun parser_stmt (all: All): Stmt {
         all.accept(TK.IF) -> {
             val tk0 = all.tk0 as Tk.Key
             val tst = parser_expr(all, false)
-            val true_ = parser_block()
+            val true_ = parser_block(all)
             if (!all.accept(TK.ELSE)) {
                 return Stmt.If(tk0, tst, true_, Stmt.Block(Tk.Chr(TK.CHAR,all.tk1.lin,all.tk1.col,'{'),Stmt.Pass(all.tk0)))
             }
-            val false_ = parser_block()
+            val false_ = parser_block(all)
             Stmt.If(tk0, tst, true_, false_)
-        }
-        all.accept(TK.FUNC) -> {
-            all.accept_err(TK.XVAR)
-            val tk_id = all.tk0 as Tk.Str
-            all.accept_err(TK.CHAR,':')
-            val tp = parser_type(all)
-            all.assert_tk(all.tk0, tp is Type.Func) {
-                "expected function type"
-            }
-            val block = parser_block()
-
-            val lin = block.tk.lin
-            val col = block.tk.col
-            val xblock = Stmt.Block(block.tk_,
-                Stmt.Seq(block.tk,
-                    Stmt.Var (
-                        Tk.Str(TK.XVAR,lin,col,"arg"),
-                        false,
-                        (tp as Type.Func).inp,
-                        XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,lin,col,"_arg_")))
-                    ),
-                    Stmt.Seq(block.tk,
-                        Stmt.Var (
-                            Tk.Str(TK.XVAR,lin,col,"_ret_"),
-                            false,
-                            tp.out,
-                            XExpr(null, Expr.Unk(Tk.Chr(TK.CHAR,lin,col,'?')))
-                        ),
-                        block,
-                    )
-                )
-            )
-            Stmt.Func(tk_id, tp, xblock)
         }
         all.accept(TK.RET) -> {
             val tk0 = all.tk0 as Tk.Key
@@ -420,11 +413,11 @@ fun parser_stmt (all: All): Stmt {
         }
         all.accept(TK.LOOP) -> {
             val tk0 = all.tk0 as Tk.Key
-            val block = parser_block()
+            val block = parser_block(all)
             Stmt.Loop(tk0, block)
         }
         all.accept(TK.BREAK) -> return Stmt.Break(all.tk0 as Tk.Key)
-        all.check(TK.CHAR,'{') -> return parser_block()
+        all.check(TK.CHAR,'{') -> return parser_block(all)
         else -> {
             all.err_expected("statement")
             error("unreachable")

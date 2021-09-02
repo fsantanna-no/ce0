@@ -66,7 +66,7 @@ class Code {
                 XExpr(null, Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))),
             )
         )
-        e.visitXP(emptyList(), ::code_fx, ::code_fe,
+        e.visitXP(emptyList(), null, ::code_fx, ::code_fe,
             Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray()))
         EXPRS.removeFirst().second.let {
             //println(it)
@@ -87,7 +87,7 @@ class Code {
                 XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
             )
         )
-        e.visitXP(env, ::code_fx, ::code_fe, tp_unit)
+        e.visitXP(env, null, ::code_fx, ::code_fe, tp_unit)
         EXPRS.removeFirst().second.let {
             //println(it)
             assert(it == "x._1")
@@ -99,7 +99,7 @@ class Code {
     @Test
     fun c01_stmt_pass () {
         val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
-        s.visit(emptyList(), ::code_fs, null, null)
+        s.visit(emptyList(), ::code_fs, null, null, null)
         assert(CODE.removeFirst() == "")
         assert(CODE.size == 0)
     }
@@ -138,7 +138,7 @@ class Code {
         lexer(all)
         var s = parser_stmts(all, Pair(TK.EOF,null))
         s = env_prelude(s)
-        s.visit(emptyList(), ::code_fs, null, null)
+        s.visit(emptyList(), ::code_fs, null, null, null)
         return CODE.removeFirst()
     }
 }

@@ -376,6 +376,18 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
                 ) + "(" + arg.second /*+ TODO("deref=true")*/ + ")"
             )
         }
+        is Expr.Func  -> {
+            val ID  = "_func_" + e.hashCode().absoluteValue
+            val out = e.type.out.let { if (it is Type.Unit) "void" else it.pos() }
+            val inp = e.type.inp.let { if (it is Type.Unit) "void" else (it.pos()+" _arg_") }
+            val pre = """
+                auto $out $ID ($inp) {
+                    ${CODE.removeFirst()}
+                }
+
+            """.trimIndent()
+            Pair(pre, ID)
+        }
     }.let {
         Pair (
             it.first,
@@ -462,28 +474,13 @@ fun code_fs (env: Env, s: Stmt) {
                 ) + ";\n"
             })
         }
-        is Stmt.Func  -> {
-            when (s.tk_.str) {
-                "output_std" -> ""
-                else -> {
-                    val out = s.type.out.let { if (it is Type.Unit) "void" else it.pos() }
-                    val inp = s.type.inp.let { if (it is Type.Unit) "void" else (it.pos()+" _arg_") }
-                    """
-                        auto $out ${s.tk_.str} ($inp) {
-                            ${CODE.removeFirst()}
-                        }
-
-                    """.trimIndent()
-                }
-            }
-        }
     })
 }
 
 fun Stmt.code (): String {
     TYPEX.clear()
     TYPES.clear()
-    this.visitTP(::code_ft)
+    this.visit(emptyList(), null, null, null, ::code_ft)
     this.visitXP(emptyList(), ::code_fs, ::code_fx, ::code_fe)
     //println(CODE)
     assert(EXPRS.size == 0)

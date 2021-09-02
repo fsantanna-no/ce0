@@ -188,7 +188,7 @@ class Exec {
     @Test
     fun d01_f_int () {
         val out = all("""
-            func f: _int -> _int { return arg }
+            var f: _int -> _int = func (_int -> _int) { return arg }
             var x: _int = call f _10
             output std x
         """.trimIndent())
@@ -197,7 +197,7 @@ class Exec {
     @Test
     fun d02_f_unit () {
         val out = all("""
-            func f: () -> () { return }
+            var f: () -> () = func ()->() { return }
             var x: () = call f
             output std x
         """.trimIndent())
@@ -206,8 +206,8 @@ class Exec {
     @Test
     fun d03_fg () {
         val out = all("""
-            func f: () -> () { var x: _int = _10 ; output std x }
-            func g: () -> () { return f () }
+            var f: () -> () = func ()->() { var x: _int = _10 ; output std x }
+            var g: () -> () = func ()->() { return f () }
             call g ()
         """.trimIndent())
         assert(out == "10\n")
@@ -215,7 +215,7 @@ class Exec {
     @Test
     fun d04_arg () {
         val out = all("""
-        func f : _int -> _int {
+        var f : _int -> _int = func _int->_int {
            set arg = _(arg+1)
            return arg
         }
@@ -226,7 +226,7 @@ class Exec {
     @Test
     fun d05_func_var () {
         val out = all("""
-        func f: _int->_int { return arg }
+        var f: _int->_int = func _int->_int { return arg }
         var p: _int->_int = f
         output std p _10
         """.trimIndent())
@@ -235,8 +235,8 @@ class Exec {
     @Test
     fun d06_func_fg () {
         val out = all("""
-            func f: _int->_int { return arg }
-            func g: [_int->_int, _int] -> _int {
+            var f: _int->_int = func _int->_int { return arg }
+            var g: [_int->_int, _int] -> _int = func ([_int->_int, _int] -> _int) {
                var f: _int->_int = arg.1
                var v: _int = call f arg.2
                return v
@@ -248,8 +248,8 @@ class Exec {
     @Test
     fun d07_func_fg () {
         val out = all("""
-            func f: _int->_int { return arg }
-            func g: [_int->_int, _int] -> _int {
+            var f: _int->_int = func _int->_int { return arg }
+            var g: [_int->_int, _int]-> _int = func ([_int->_int, _int]-> _int) {
                var fx: _int->_int = arg.1
                var v: _int = call fx arg.2
                return v
@@ -280,7 +280,7 @@ class Exec {
     @Test
     fun e03_out () {
         val out = all("""
-            func output_f: _int -> () { output std arg }
+            var output_f: _int -> () = func _int -> () { output std arg }
             output f _10
         """.trimIndent())
         assert(out == "10\n")
@@ -346,7 +346,7 @@ class Exec {
             var z: <(),()> = <.2>
             output std z!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:48: main: Assertion `z.tag == 1' failed.\n")
+        assert(out == "out.exe: out.c:49: main: Assertion `z.tag == 1' failed.\n")
     }
     @Test
     fun f12_user_disc_pred_idx () {
@@ -426,7 +426,7 @@ class Exec {
     @Test
     fun i02_ptr_func () {
         val out = all("""
-        func f : \_int -> () {
+        var f : \_int -> () = func \_int -> () {
            set /arg = _(*arg+1)
            return
         }
@@ -439,7 +439,7 @@ class Exec {
     @Test
     fun i03_ptr_func () {
         val out = all("""
-            func f: \_int->_int { return /arg }
+            var f: \_int->_int = func \_int->_int { return /arg }
             var g: \_int->_int = f
             var x: _int = _10
             output std g (\x)
@@ -479,7 +479,7 @@ class Exec {
     @Test
     fun i07_ptr_func_ok () {
         val out = all("""
-            func f : \_int -> \_int {
+            var f : \_int -> \_int = func \_int -> \_int {
                 return arg
             }
             var v: _int = _10
@@ -492,7 +492,7 @@ class Exec {
     fun i08_ptr_func_ok () {
         val out = all("""
             var v: _int = _10
-            func f : () -> \_int {
+            var f : () -> \_int = func () -> \_int {
                 return \v
             }
             var p: \_int = f ()
@@ -503,7 +503,7 @@ class Exec {
     @Test
     fun i09_ptr_func_err () {
         val out = all("""
-            func f : () -> \_int {
+            var f : () -> \_int = func () -> \_int {
                 var v: _int = _10
                 return \v
             }
@@ -516,7 +516,7 @@ class Exec {
     @Test
     fun i10_ptr_func_err () {
         val out = all("""
-            func f : \_int -> \_int {
+            var f : \_int -> \_int = func \_int -> \_int {
                 var ptr: \_int = arg
                 return ptr
             }
@@ -529,7 +529,7 @@ class Exec {
     @Test
     fun i11_ptr_func_ok () {
         val out = all("""
-            func f : \_int -> \_int {
+            var f : \_int -> \_int = func \_int -> \_int {
                 var ptr: ^\_int = arg
                 return ptr
             }
@@ -640,7 +640,7 @@ class Exec {
     fun f10_ptr_func () {
         val out = all("""
             var v: _int = _10
-            func f : \_int -> \_int {
+            var f : \_int -> \_int = func (\_int -> \_int) {
                 return \v
             }
             {
@@ -683,7 +683,7 @@ class Exec {
             var l: <^> = new <.1 <.0>>
             output std l!0
         """.trimIndent())
-        assert(out == "out.exe: out.c:99: main: Assertion `l == NULL' failed.\n")
+        assert(out == "out.exe: out.c:100: main: Assertion `l == NULL' failed.\n")
     }
     @Test
     fun j05_list_disc_null_err () {
@@ -691,7 +691,7 @@ class Exec {
             var l: <^> = <.0>
             output std \l!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:95: main: Assertion `l != NULL' failed.\n")
+        assert(out == "out.exe: out.c:96: main: Assertion `l != NULL' failed.\n")
     }
     @Test
     fun j06_list () {
@@ -871,7 +871,7 @@ class Exec {
     @Test
     fun z01 () {
         val out = all("""
-        func inv : <(),()> -> <(),()> {
+        var inv : <(),()> -> <(),()> = func (<(),()> -> <(),()>) {
             if arg?1 {
                 return <.2>
             } else {
