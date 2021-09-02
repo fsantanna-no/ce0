@@ -238,6 +238,14 @@ class TEnv {
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid assignment : type mismatch")
     }
+    @Test
+    fun c14_type_func_err () {
+        val out = inp2env("""
+            var x: ()->[(()->())] = ?
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 1, col 12): invalid type : cannot return function type : currently not supported")
+    }
 
     // TUPLE / UNION DISCRIMINATOR
 
@@ -755,7 +763,7 @@ class TEnv {
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"l\" (ln 3)")
     }
 
-    // XEPR
+    // XEXPR
 
     @Test
     fun j01_rec_xepr_null_err () {

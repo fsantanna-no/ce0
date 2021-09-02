@@ -83,6 +83,16 @@ fun Type.exactlyRec (): Boolean {
     }
 }
 
+fun Type.containsFunc (): Boolean {
+    return when (this) {
+        is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Rec -> false
+        is Type.Func  -> true
+        is Type.Tuple -> this.vec.any { it.containsFunc() }
+        is Type.Union -> this.vec.any { it.containsFunc() }
+        is Type.UCons -> this.arg.containsFunc()
+    }
+}
+
 fun Type.isSupOf (sub: Type): Boolean {
     return when {
         (this is Type.None || sub is Type.None) -> false
@@ -177,7 +187,14 @@ fun check_types (S: Stmt) {
             }
         }
     }
-    S.visit(emptyList(), ::fs, null, ::fe, null)
+    fun ft (tp: Type) {
+        if (tp is Type.Func) {
+            All_assert_tk(tp.out.tk, !tp.out.containsFunc()) {
+                "invalid type : cannot return function type : currently not supported"
+            }
+        }
+    }
+    S.visit(emptyList(), ::fs, null, ::fe, ::ft)
 }
 
 fun Expr.isconst (): Boolean {
