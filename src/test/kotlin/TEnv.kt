@@ -962,8 +962,18 @@ class TEnv {
             var y: \<^> = borrow \x
             var z: <^> = move x
         """.trimIndent())
-        println(out)
         assert(out == "(ln 3, col 19): invalid move of \"x\" : borrowed in line 2")
+    }
+    @Test
+    fun l02_borrow_ok () {
+        val out = inp2env("""
+            var x: <^> = ?
+            {
+                var y: \<^> = borrow \x
+            }
+            var z: <^> = move x
+        """.trimIndent())
+        assert(out == "OK")
     }
 
 }

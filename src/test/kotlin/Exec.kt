@@ -55,7 +55,6 @@ class Exec {
             var x: _int = _10
             output std x
         """.trimIndent())
-        println(out)
         assert(out == "10\n")
     }
     @Test
@@ -148,7 +147,6 @@ class Exec {
             var x: [[_int,_int],[_int,_int]] = [[n,n],[n,n]]
             output std x
         """.trimIndent())
-        println(out)
         assert(out == "[[1,1],[1,1]]\n")
     }
 
@@ -259,7 +257,6 @@ class Exec {
             --var n: _int = _10
             output std g [f,_10]
         """.trimIndent())
-        println(out)
         assert(out == "10\n")
     }
 
@@ -297,7 +294,6 @@ class Exec {
             var b : <(),()> = <.1>
             output std b
         """.trimIndent())
-        println(out)
         assert(out == "<.1>\n")
     }
     @Test
@@ -310,7 +306,6 @@ class Exec {
             var zz: <()> = yy!1
             output std zz
         """.trimIndent())
-        println(out)
         assert(out == "<.1>\n")
     }
     @Test
@@ -327,7 +322,6 @@ class Exec {
             var x: <[<()>,<()>]> = <.1 [<.1>,<.1>]>
             output std x
         """.trimIndent())
-        println(out)
         assert(out == "<.1 [<.1>,<.1>]>\n")
     }
     @Test
@@ -375,7 +369,6 @@ class Exec {
             var x: <<<()>>> = <.1 <.1 <.1>>>
             output std x!1!2
         """.trimIndent())
-        println(out)
         assert(out == "(ln 2, col 16): invalid discriminator : out of bounds")
     }
     @Test
@@ -395,7 +388,6 @@ class Exec {
             var x: <(),()> = <.2>
             if x?1 { } else { output std }
         """.trimIndent())
-        println(out)
         assert(out == "()\n")
     }
     @Test
@@ -576,7 +568,6 @@ class Exec {
             set /p = _20
             output std v
         """.trimIndent())
-        println(out)
         assert(out == "<.1 20>\n")
     }
     @Test
@@ -760,7 +751,6 @@ class Exec {
             var y: \<^> = borrow \x
             output std y
         """.trimIndent())
-        println(out)
         assert(out == "<.1 <.1 <.0>>>\n")
     }
 
@@ -858,7 +848,6 @@ class Exec {
             output std \l2
             output std \t3
         """.trimIndent())
-        println(out)
         assert(out == "<.1 <.0>>\n<.1 <.0>>\n[(),<.1 <.1 <.0>>>]\n")
     }
 
