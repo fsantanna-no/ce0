@@ -1005,8 +1005,7 @@ class TEnv {
             }
             call f borrow \x
         """.trimIndent())
-        println(out)
-        assert(out == "NO")
+        assert(out == "(ln 4, col 11): invalid assignment of \"x\" : borrowed in line 3")
     }
     @Test
     fun l04_borrow_err () {
@@ -1019,7 +1018,8 @@ class TEnv {
             var g: () -> () = f
             call g ()
         """.trimIndent())
-        println(out)
-        assert(out == "NO")
+        assert(out == "(ln 3, col 11): invalid assignment of \"x\" : borrowed in line 5")
     }
+
+    // testar borrows dentro de exprs
 }

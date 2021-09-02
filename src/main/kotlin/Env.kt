@@ -315,7 +315,7 @@ fun check_borrows (S: Stmt) {
     // g = func B ...
     // f = g
     // fs[f] = { A,B }
-    val fs: MutableMap<Stmt.Var,MutableSet<Expr.Func>> = mutableMapOf()
+    val fcs: MutableMap<Stmt.Var,MutableSet<Pair<Env,Expr.Func>>> = mutableMapOf()
 
     fun chk (env: Env, s: Stmt.Var, tk: Tk, err: String) {
         if (bws[s] != null) {
@@ -335,29 +335,30 @@ fun check_borrows (S: Stmt) {
         }
     }
 
-    fun fs (env: Env, s: Stmt) {
-        fun bws_add (dst: Stmt.Var, xsrc: XExpr) {
-            if (xsrc.x!=null && xsrc.x.enu==TK.BORROW) {
-                val lf = xsrc.e.leftMost()
-                assert(lf != null)
-                val src = env.idToStmt(lf!!.tk_.str) as Stmt.Var
-                if (bws[src] == null) {
-                    bws[src] = mutableSetOf()
-                }
-                bws[src]!!.add(dst)
-                bws[src]!!.addAll(if (bws[dst] == null) emptySet() else bws[dst]!!)
+    fun bws_add (env: Env, dst: Stmt.Var, xsrc: XExpr) {
+        if (xsrc.x!=null && xsrc.x.enu==TK.BORROW) {
+            val lf = xsrc.e.leftMost()
+            assert(lf != null)
+            val src = env.idToStmt(lf!!.tk_.str) as Stmt.Var
+            if (bws[src] == null) {
+                bws[src] = mutableSetOf()
             }
+            bws[src]!!.add(dst)
+            bws[src]!!.addAll(if (bws[dst] == null) emptySet() else bws[dst]!!)
         }
+    }
+
+    fun fs (env: Env, s: Stmt) {
         fun fs_add (dst: Stmt.Var, src: Expr) {
-            if (fs[dst] == null) {
-                fs[dst] = mutableSetOf()
+            if (fcs[dst] == null) {
+                fcs[dst] = mutableSetOf()
             }
             when (src) {
                 is Expr.Unk, is Expr.Nat -> {} // ok
-                is Expr.Func -> fs[dst]!!.add(src)
+                is Expr.Func -> fcs[dst]!!.add(Pair(env,src))
                 else -> env.idToStmt(src.leftMost()!!.tk_.str)!!.let {
                     // TODO: should substitute instead of addAll (but ifs...)
-                    fs[dst]!!.addAll(if (fs[it] == null) emptySet() else fs[it]!!)
+                    fcs[dst]!!.addAll(if (fcs[it] == null) emptySet() else fcs[it]!!)
                 }
             }
         }
@@ -366,7 +367,7 @@ fun check_borrows (S: Stmt) {
                 if (s.type is Type.Func) {
                     fs_add(s, s.src.e)
                 } else {
-                    bws_add(s, s.src)
+                    bws_add(env, s, s.src)
                 }
             }
             is Stmt.Set -> {
@@ -377,7 +378,7 @@ fun check_borrows (S: Stmt) {
                 } else {
                     val isrecptr = tp.containsRec() || (tp is Type.Ptr && tp.pln.containsRec())
                     if (isrecptr) {
-                        bws_add(lf, s.src)
+                        bws_add(env, lf, s.src)
                         chk(env, lf, s.tk, "invalid assignment of \"${lf.tk_.str}\"")
                     }
                 }
@@ -390,10 +391,16 @@ fun check_borrows (S: Stmt) {
             when {
                 e.f is Expr.Nat -> {} // ok
                 else -> env.idToStmt(e.f.leftMost()!!.tk_.str)!!.let {
-                    fs[it].let {
+                    fcs[it].let {
                         if (it != null) {
                             for (f in it) {
-                                f.block.visit(env, ::fs, ::fx, ::fe, null)
+                                val arg = (f.second.block.body as Stmt.Seq).s1 as Stmt.Var
+                                assert(arg.tk_.str == "arg")
+                                bws_add(env, arg, e.arg)
+                                // TODO: this env is not the correct one of f
+                                // it should be f.first, but than not all possible bws will be on scope
+                                f.second.block.visit(env, ::fs, ::fx, ::fe, null)
+                                bws.remove(arg)
                             }
                         }
                     }
