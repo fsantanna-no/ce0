@@ -1,8 +1,8 @@
-internal val X = mutableSetOf<String>()
+private val X = mutableSetOf<String>()
 
 typealias Env = List<Stmt>
 
-internal
+private
 fun Type.visit (ft: ((Type)->Unit)?) {
     this.toce().let {
         if (X.contains(it)) {
@@ -22,7 +22,7 @@ fun Type.visit (ft: ((Type)->Unit)?) {
     }
 }
 
-internal
+private
 fun Expr.visit (env: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env,XExpr)->Unit)?, fe: ((Env,Expr)->Unit)?, ft: ((Type)->Unit)?) {
     when (this) {
         is Expr.Unk, is Expr.Unit, is Expr.Var, is Expr.Nat -> {}
@@ -41,7 +41,7 @@ fun Expr.visit (env: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env,XExpr)->Unit)?, fe:
     }
 }
 
-internal
+private
 fun XExpr.visit (env: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env,XExpr)->Unit)?, fe: ((Env,Expr)->Unit)?, ft: ((Type)->Unit)?) {
     this.e.visit(env, fs, fx, fe, ft)
     if (fx != null) {
@@ -54,7 +54,7 @@ fun Stmt.visit (old: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env, XExpr)->Unit)?, fe
     return this.visit_(old, fs, fx, fe, ft)
 }
 
-internal
+private
 fun Stmt.visit_ (old: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env, XExpr)->Unit)?, fe: ((Env,Expr)->Unit)?, ft: ((Type)->Unit)?): Env {
     val new = when (this) {
         is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> emptyList()

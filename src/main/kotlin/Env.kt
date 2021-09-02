@@ -311,6 +311,12 @@ fun check_borrows (S: Stmt) {
     // bws[y] = { z }
     val bws: MutableMap<Stmt.Var,MutableSet<Stmt.Var>> = mutableMapOf()
 
+    // f = func A ...
+    // g = func B ...
+    // f = g
+    // fs[f] = { A,B }
+    val fs: MutableMap<Stmt.Var,MutableSet<Expr.Func>> = mutableMapOf()
+
     fun chk (env: Env, s: Stmt.Var, tk: Tk, err: String) {
         if (bws[s] != null) {
             val ok = bws[s]!!.intersect(env).isEmpty()  // no borrow is on scope
@@ -330,40 +336,69 @@ fun check_borrows (S: Stmt) {
     }
 
     fun fs (env: Env, s: Stmt) {
-        fun add (dst: Stmt.Var, xsrc: XExpr) {
+        fun bws_add (dst: Stmt.Var, xsrc: XExpr) {
             if (xsrc.x!=null && xsrc.x.enu==TK.BORROW) {
-                val left = xsrc.e.leftMost()
-                if (left != null) {
-                    val src = env.idToStmt(left.tk_.str) as Stmt.Var
-                    if (bws[src] == null) {
-                        bws[src] = mutableSetOf()
-                    }
-                    bws[src]!!.add(dst)
-                    bws[src]!!.addAll(if (bws[dst] == null) emptySet() else bws[dst]!!)
+                val lf = xsrc.e.leftMost()
+                assert(lf != null)
+                val src = env.idToStmt(lf!!.tk_.str) as Stmt.Var
+                if (bws[src] == null) {
+                    bws[src] = mutableSetOf()
+                }
+                bws[src]!!.add(dst)
+                bws[src]!!.addAll(if (bws[dst] == null) emptySet() else bws[dst]!!)
+            }
+        }
+        fun fs_add (dst: Stmt.Var, src: Expr) {
+            if (fs[dst] == null) {
+                fs[dst] = mutableSetOf()
+            }
+            when (src) {
+                is Expr.Unk, is Expr.Nat -> {} // ok
+                is Expr.Func -> fs[dst]!!.add(src)
+                else -> env.idToStmt(src.leftMost()!!.tk_.str)!!.let {
+                    // TODO: should substitute instead of addAll (but ifs...)
+                    fs[dst]!!.addAll(if (fs[it] == null) emptySet() else fs[it]!!)
                 }
             }
         }
         when (s) {
-            is Stmt.Var -> add(s, s.src)
+            is Stmt.Var -> {
+                if (s.type is Type.Func) {
+                    fs_add(s, s.src.e)
+                } else {
+                    bws_add(s, s.src)
+                }
+            }
             is Stmt.Set -> {
-                val isrecptr = s.dst.toExpr().toType(env).let { it.containsRec() || (it is Type.Ptr && it.pln.containsRec()) }
-                if (isrecptr) {
-                    val dcl = env.idToStmt(((s.dst as Attr.Var).toExpr() as Expr.Var).tk_.str) as Stmt.Var
-                    add(dcl, s.src)
-                    chk(env, dcl, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
+                val lf = env.idToStmt(s.dst.toExpr().leftMost()!!.tk_.str)!!
+                val tp = s.dst.toExpr().toType(env)
+                if (tp is Type.Func) {
+                    fs_add(lf, s.src.e)
+                } else {
+                    val isrecptr = tp.containsRec() || (tp is Type.Ptr && tp.pln.containsRec())
+                    if (isrecptr) {
+                        bws_add(lf, s.src)
+                        chk(env, lf, s.tk, "invalid assignment of \"${lf.tk_.str}\"")
+                    }
                 }
             }
         }
     }
 
     fun fe (env: Env, e: Expr) {
-        if (e is Expr.Call && e.f !is Expr.Nat) {
-            /*
-            val s = env.idToStmt((e.f as Expr.Var).tk_.str) as Stmt.Func
-            if (s.block != null) {
-                s.visit(env, ::fs, ::fx, ::fe)
+        if (e is Expr.Call) {
+            when {
+                e.f is Expr.Nat -> {} // ok
+                else -> env.idToStmt(e.f.leftMost()!!.tk_.str)!!.let {
+                    fs[it].let {
+                        if (it != null) {
+                            for (f in it) {
+                                f.block.visit(env, ::fs, ::fx, ::fe, null)
+                            }
+                        }
+                    }
+                }
             }
-             */
         }
     }
 

@@ -1012,12 +1012,12 @@ class TEnv {
     fun l04_borrow_err () {
         val out = inp2env("""
             var x: <^> = ?
-            var f: () -> () = func () -> ()
-            {
+            var f: () -> () = func () -> () {
                 set x = <.0>
             }
             var y: \<^> = borrow \x
-            call f ()
+            var g: () -> () = f
+            call g ()
         """.trimIndent())
         println(out)
         assert(out == "NO")
