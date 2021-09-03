@@ -3,16 +3,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
 import java.io.File
 
-fun exec (cmd: String): Pair<Boolean,String> {
-    val p = ProcessBuilder(cmd.split(' '))
-        //.redirectOutput(ProcessBuilder.Redirect.PIPE)
-        .redirectErrorStream(true)
-        .start()
-    val ret = p.waitFor()
-    val str = p.inputStream.bufferedReader().readText()
-    return Pair(ret==0, str)
-}
-
 @TestMethodOrder(Alphanumeric::class)
 class Exec {
 
