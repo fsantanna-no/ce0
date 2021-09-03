@@ -898,4 +898,18 @@ class Exec {
         """.trimIndent())
         assert(out == "()\n")
     }
+    @Test
+    fun z04_if_bool () {
+        val out = all("""
+        if _0 {
+        } else {
+            output std ()
+        }
+        if _1 {
+            output std ()
+        } else {
+        }
+        """.trimIndent())
+        assert(out == "()\n()\n")
+    }
 }

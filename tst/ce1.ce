@@ -12,15 +12,30 @@ native _{
 
 var finp: _(FILE*) = ?
 
+var lx_blanks: ()->() = func ()->() {
+    loop {
+        var c: _int = call _fgetc finp
+        if _(c=='\n' || c==' ') {
+            -- space
+        } else {
+            native _(ungetc(c, finp);)
+            return ()
+        }
+    }
+}
+
 var t_lexer: () -> () = func ()->() {
-    -- CHAR
+    -- CHAR / BLANK / CHAR
     {
-        set finp = _{stropen("r", 0, "- foo")}
+        set finp = _{stropen("r", 0, "- \n -")}
         var c1: _int = call _fgetc finp
         native _(assert(c1 == '-');)
         native _(ungetc(c1,finp);)
         var c2: _int = call _fgetc finp
         native _(assert(c2 == '-');)
+        call lx_blanks ()
+        var c3: _int = call _fgetc finp
+        native _(assert(c3 == '-');)
         call _fclose finp
     }
 }
