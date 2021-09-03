@@ -890,4 +890,12 @@ class Exec {
         """.trimIndent())
         assert(out == "15\n")
     }
+    @Test
+    fun z03 () {
+        val out = all("""
+        native _{}
+        output std ()
+        """.trimIndent())
+        assert(out == "()\n")
+    }
 }

@@ -57,7 +57,7 @@ fun Stmt.visit (old: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env, XExpr)->Unit)?, fe
 private
 fun Stmt.visit_ (old: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env, XExpr)->Unit)?, fe: ((Env,Expr)->Unit)?, ft: ((Type)->Unit)?): Env {
     val new = when (this) {
-        is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> emptyList()
+        is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> old
         is Stmt.Var   -> { this.type.visit(ft) ; this.src.visit(old,fs,fx,fe,ft) ; listOf(this)+old }
         is Stmt.Set   -> { this.dst.toExpr().visit(old,fs,fx,fe,ft) ; this.src.visit(old,fs,fx,fe,ft) ; old }
         is Stmt.Call  -> { this.call.visit(old,fs,fx,fe,ft) ; old }
