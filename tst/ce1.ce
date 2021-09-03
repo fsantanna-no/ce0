@@ -1,0 +1,29 @@
+native _{
+    #include <string.h>
+    #include <ctype.h>
+}
+
+native _{
+    FILE* stropen (const char* mode, size_t size, char* str) {
+        size = (size != 0) ? size : strlen(str);
+        return fmemopen(str, size, mode);
+    }
+}
+
+var finp: _(FILE*) = ?
+
+var t_lexer: () -> () = func ()->() {
+    -- CHAR
+    {
+        set finp = _{stropen("r", 0, "- foo")}
+        var c1: _int = call _fgetc finp
+        native _(assert(c1 == '-');)
+        native _(ungetc(c1,finp);)
+        var c2: _int = call _fgetc finp
+        native _(assert(c2 == '-');)
+        call _fclose finp
+    }
+}
+
+call t_lexer  ()
+output std ()
