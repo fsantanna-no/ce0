@@ -39,11 +39,6 @@ var y: <^> = move /x    -- (ln 1, col 14): invalid `move` : expected recursive v
 
 ### Borrowing
 
-The main use of borrowing is to avoid moving ownership back and forth when
-calling simple functions:
-
-- https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html
-
 - A pointer assignment requires a `borrow` modifier:
 
 ```
@@ -53,15 +48,33 @@ var c: <^> = borrow x   -- (ln 3, col 14): invalid `borrow` : expected pointer t
 call f (borrow \x)
 ```
 
+The main use of borrowing is to avoid moving ownership back and forth when
+calling simple functions:
+
+- https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html
+
+However, in the general case, borrowing can be dangerous due to moves and
+deallocation:
+
+```
+var x: <^> = new <.1 new <.1 <.0>>>
+var y: \<^> = borrow \x!1   -- holds pointer to subpart of x
+set x = <.0>                -- (!) releases pointed value
+cal f (move x)              -- (!) moves to function that will release pointed value
+... /y ...                  -- derefs pointer after free
+```
+
+For this reason, recursive subparts of a value cannot be reset while borrowed.
+
 ## Borrowing
 
 - A value cannot be transferred or reassigned while borrowed to prevent dangling pointers:
 
 ```
-var y: \<^> = borrow \x
+var y: \<^> = borrow \x!1   -- pointer to subpart of x
 set x = <.0>            -- (ln 2, col 7): invalid assignment of "x" : borrowed in line 1
 var z: <^> = move x     -- (ln 3, col 19): invalid move of "x" : borrowed in line 1
-... /y ...              -- prevent use-after-free situation
+... /y ...              -- prevent use-after-free situation, since subpart could be released
 ```
 
 - Borrows are automatically released when they go out of scope:

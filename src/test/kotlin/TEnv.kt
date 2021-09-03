@@ -1028,6 +1028,25 @@ class TEnv {
         """.trimIndent())
         assert(out == "(ln 3, col 11): invalid assignment of \"x\" : borrowed in line 5")
     }
+    @Test
+    fun l05_borrow_err () {
+        val out = inp2env("""
+            var x: <^> = ?
+            var y: \<^> = borrow \x
+            set x = <.0>
+        """.trimIndent())
+        assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2")
+    }
+    @Test
+    fun l06_borrow_err () {
+        val out = inp2env("""
+            var x: <^> = ?
+            var y: [(),\<^>] = [(), borrow \x]
+            set x = <.0>
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2")
+    }
 
     // testar borrows dentro de exprs
 }

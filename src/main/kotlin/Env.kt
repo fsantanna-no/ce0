@@ -310,14 +310,21 @@ fun check_pointers (S: Stmt) {
     S.visit(emptyList(), ::fs, null, null, null)
 }
 
-fun Expr.leftMost (): Expr.Var? {
+fun<T> Set<Set<T>>.unionAll (): Set<T> {
+    return this.fold(emptySet(), {x,y->x+y})
+}
+
+fun Expr.leftMost (tk: Tk?): Set<Pair<Tk?,Expr.Var>> {
     return when (this) {
-        is Expr.Var -> this
-        is Expr.TDisc -> this.tup.leftMost()
-        is Expr.UDisc -> this.uni.leftMost()
-        is Expr.Dnref -> this.ptr.leftMost()
-        is Expr.Upref -> this.pln.leftMost()
-        else -> null
+        is Expr.Var -> setOf(Pair(tk,this))
+        is Expr.TDisc -> this.tup.leftMost(tk)
+        is Expr.UDisc -> this.uni.leftMost(tk)
+        is Expr.Dnref -> this.ptr.leftMost(tk)
+        is Expr.Upref -> this.pln.leftMost(tk)
+        is Expr.TCons -> this.arg.map { it.e.leftMost(it.x) }.toSet().unionAll()
+        is Expr.UCons -> this.arg.e.leftMost((this.arg.x))
+        is Expr.Call  -> emptySet() //TODO("may return args")
+        else -> emptySet()
     }
 }
 
@@ -343,25 +350,24 @@ fun check_borrows (S: Stmt) {
     }
 
     fun fx (env: Env, xe: XExpr) {
-        if (xe.x!=null && xe.x.enu==TK.MOVE) {
-            val left = xe.e.leftMost()
-            if (left != null) {
-                val s = env.idToStmt(left.tk_.str) as Stmt.Var
-                chk(env, s, xe.e.tk, "invalid move of \"${left.tk_.str}\"")
+        for ((tk,lf) in xe.e.leftMost(xe.x)) {
+            if (tk!=null && tk.enu==TK.MOVE) {
+                val s = env.idToStmt(lf.tk_.str) as Stmt.Var
+                chk(env, s, xe.e.tk, "invalid move of \"${lf.tk_.str}\"")
             }
         }
     }
 
     fun bws_add (env: Env, dst: Stmt.Var, xsrc: XExpr) {
-        if (xsrc.x!=null && xsrc.x.enu==TK.BORROW) {
-            val lf = xsrc.e.leftMost()
-            assert(lf != null)
-            val src = env.idToStmt(lf!!.tk_.str) as Stmt.Var
-            if (bws[src] == null) {
-                bws[src] = mutableSetOf()
+        for ((tk,lf) in xsrc.e.leftMost(xsrc.x)) {
+            if (tk!=null && tk.enu==TK.BORROW) {
+                val src = env.idToStmt(lf.tk_.str) as Stmt.Var
+                if (bws[src] == null) {
+                    bws[src] = mutableSetOf()
+                }
+                bws[src]!!.add(dst)
+                bws[src]!!.addAll(if (bws[dst] == null) emptySet() else bws[dst]!!)
             }
-            bws[src]!!.add(dst)
-            bws[src]!!.addAll(if (bws[dst] == null) emptySet() else bws[dst]!!)
         }
     }
 
@@ -373,10 +379,12 @@ fun check_borrows (S: Stmt) {
             when (src) {
                 is Expr.Unk, is Expr.Nat -> {} // ok
                 is Expr.Func -> fcs[dst]!!.add(Pair(env,src))
-                else -> env.idToStmt(src.leftMost()!!.tk_.str)!!.let {
-                    // TODO: should substitute instead of addAll (but ifs...)
-                    fcs[dst]!!.addAll(if (fcs[it] == null) emptySet() else fcs[it]!!)
-                }
+                else -> src.leftMost(null)
+                    .map { env.idToStmt(it.second!!.tk_.str)!! }
+                    .forEach {
+                        // TODO: should substitute instead of addAll (but ifs...)
+                        fcs[dst]!!.addAll(if (fcs[it] == null) emptySet() else fcs[it]!!)
+                    }
             }
         }
         when (s) {
@@ -388,17 +396,20 @@ fun check_borrows (S: Stmt) {
                 }
             }
             is Stmt.Set -> {
-                val lf = env.idToStmt(s.dst.toExpr().leftMost()!!.tk_.str)!!
-                val tp = s.dst.toExpr().toType(env)
-                if (tp is Type.Func) {
-                    fs_add(lf, s.src.e)
-                } else {
-                    val isrecptr = tp.containsRec() || (tp is Type.Ptr && tp.pln.containsRec())
-                    if (isrecptr) {
-                        bws_add(env, lf, s.src)
-                        chk(env, lf, s.tk, "invalid assignment of \"${lf.tk_.str}\"")
+                s.dst.toExpr().leftMost(null)
+                    .map { env.idToStmt(it.second!!.tk_.str)!! }
+                    .forEach {
+                        val tp = s.dst.toExpr().toType(env)
+                        if (tp is Type.Func) {
+                            fs_add(it, s.src.e)
+                        } else {
+                            val isrecptr = tp.containsRec() || (tp is Type.Ptr && tp.pln.containsRec())
+                            if (isrecptr) {
+                                bws_add(env, it, s.src)
+                                chk(env, it, s.tk, "invalid assignment of \"${it.tk_.str}\"")
+                            }
+                        }
                     }
-                }
             }
         }
     }
@@ -407,24 +418,25 @@ fun check_borrows (S: Stmt) {
         if (e is Expr.Call) {
             when {
                 e.f is Expr.Nat -> {} // ok
-                else -> env.idToStmt(e.f.leftMost()!!.tk_.str)!!.let {
-                    fcs[it].let {
-                        if (it != null) {
-                            for (f in it) {
-                                val arg = (f.second.block.body as Stmt.Seq).s1 as Stmt.Var
-                                assert(arg.tk_.str == "arg")
-                                bws_add(env, arg, e.arg)
-                                // TODO: this env is not the correct one of f
-                                // it should be f.first, but than not all possible bws will be on scope
-                                f.second.block.visit(env, ::fs, ::fx, ::fe, null)
-                                bws.remove(arg)
+                else -> e.f.leftMost(null)
+                    .map { env.idToStmt(it.second!!.tk_.str)!! }
+                    .forEach {
+                        fcs[it].let {
+                            if (it != null) {
+                                for (f in it) {
+                                    val arg = (f.second.block.body as Stmt.Seq).s1 as Stmt.Var
+                                    assert(arg.tk_.str == "arg")
+                                    bws_add(env, arg, e.arg)
+                                    // TODO: this env is not the correct one of f
+                                    // it should be f.first, but than not all possible bws will be on scope
+                                    f.second.block.visit(env, ::fs, ::fx, ::fe, null)
+                                    bws.remove(arg)
+                                }
                             }
                         }
                     }
-                }
             }
         }
     }
-
     S.visit(emptyList(), ::fs, ::fx, ::fe, null)
 }
