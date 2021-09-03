@@ -748,7 +748,6 @@ class TEnv {
         println(out)
         assert(out == "(ln 4, col 13): invalid expression : expected `borrow` operation modifier")
     }
-
     @Test
     fun i02_list () {
         val out = inp2env("""
@@ -759,9 +758,16 @@ class TEnv {
             }
             output std p
         """.trimIndent())
-        println(out)
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"l\" (ln 3)")
     }
+    @Test
+    fun i03_list () {
+        val out = inp2env("""
+            var ret: <[_int,<^>]> = <.0>
+        """.trimIndent())
+        assert(out == "(ln 1, col 5): invalid assignment : type mismatch")
+    }
+
 
     // XEXPR
 

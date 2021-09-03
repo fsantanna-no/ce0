@@ -99,8 +99,8 @@ fun Type.isSupOf (sub: Type): Boolean {
         (this is Type.Any  || sub is Type.Any) -> true
         (this is Type.Nat  || sub is Type.Nat) -> true
         (this is Type.Union && sub is Type.UCons) -> {
-            if (sub.tk_.num==0 && this.exactlyRec()) {
-                sub.arg is Type.Unit
+            if (sub.tk_.num == 0) {
+                return this.exactlyRec() && sub.arg is Type.Unit
             } else {
                 val this2 = this.expand()
                 this2.vec[sub.tk_.num-1].isSupOf(sub.arg)

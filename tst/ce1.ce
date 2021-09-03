@@ -1,6 +1,6 @@
 native _{
-    #include <string.h>
-    #include <ctype.h>
+    \#include <string.h>
+    \#include <ctype.h>
 }
 
 native _{
@@ -8,6 +8,36 @@ native _{
         size = (size != 0) ? size : strlen(str);
         return fmemopen(str, size, mode);
     }
+}
+
+#define List(x) <[x,^]>
+#define String List(_int)
+
+output std _1
+
+var str2ce: _(char*)->String = func _(char*)->String {
+    var ret: String = <.0>
+    var n: _int = call _strlen arg
+    var i: _int = _0
+    output std n
+    loop {
+        output std i
+        if _(i == n) {
+            break
+        }
+        set ret = new <.1 [_(arg[i]), move ret]>
+        set i = _(i + 1)
+    }
+    return move ret
+}
+
+output std _2
+
+var keys: List(String) =
+    new <.1 [str2e _("var"), <.0>]>
+
+var eq_string: [\\String,\\String]->_int = func [\\String,\\String]->_int {
+    
 }
 
 var finp: _(FILE*) = ?
@@ -24,10 +54,71 @@ var lx_blanks: ()->() = func ()->() {
     }
 }
 
-var t_lexer: () -> () = func ()->() {
+var lx_token: ()-><(),_int> = func ()-><(),_int> {
+    loop {
+        var c: _int = call _fgetc finp
+        if _(c == EOF) {
+            return <.1>
+        }
+        if _(c=='{' || c==' ') {
+            return <.2 c>
+        }
+        if _(isalpha(c)) {
+            var str: <[_int,^]> = <.0>
+            loop {
+                set str = new <.1 move str>
+                var c2: _int = call _fgetc finp
+                if _(!isalpha(c2) {
+                    native _(ungetc(c, finp);)
+                    break
+                }
+            }
+        }
+
+        x1.isLowerCase() -> {
+            var pay = ""
+            do {
+                pay += x1
+                all.read().let { c1=it.first ; x1=it.second }
+            } while (x1.isLetterOrDigit() || x1=='_')
+            all.unread(c1)
+            all.tk1 = key2tk[pay].let {
+                if (it != null) Tk.Key(it, LIN, COL, pay) else Tk.Str(TK.XVAR, LIN, COL, pay)
+            }
+        }
+
+-- space
+        } else {
+            native _(ungetc(c, finp);)
+            return ()
+        }
+    }
+}
+
+var t_pre: ()->() = func ()->() {
+    var s1: String = str2ce _("oi")
+    var s2: String = new <.1 [_('o'), new <.1 ['i', <.0>]>]>
+    var ok1: _int = call eq_string(\s1,\s2)
+    call _assert ok1
+}
+
+var t_lexer: ()->() = func ()->() {
     -- CHAR / BLANK / CHAR
     {
         set finp = _{stropen("r", 0, "- \n -")}
+        var c1: _int = call _fgetc finp
+        native _(assert(c1 == '-');)
+        native _(ungetc(c1,finp);)
+        var c2: _int = call _fgetc finp
+        native _(assert(c2 == '-');)
+        call lx_blanks ()
+        var c3: _int = call _fgetc finp
+        native _(assert(c3 == '-');)
+        call _fclose finp
+    }
+    -- TOKENS / BLANK
+    {
+        set finp = _{stropen("r", 0, "{\nvar foo\n}")}
         var c1: _int = call _fgetc finp
         native _(assert(c1 == '-');)
         native _(ungetc(c1,finp);)

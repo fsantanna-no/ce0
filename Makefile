@@ -6,3 +6,7 @@ install:
 	#cp freechains-sync.sh         /usr/local/bin/freechains-sync
 	ls -l /usr/local/bin/[Cc]e*
 	#freechains --version
+
+ce1:
+	gpp tst/ce1.ce > /tmp/ce1.ce
+	ce /tmp/ce1.ce
