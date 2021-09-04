@@ -336,7 +336,7 @@ class Exec {
             var z: <(),()> = <.2>
             output std z!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:49: main: Assertion `z.tag == 1' failed.\n")
+        assert(out == "out.exe: out.c:50: main: Assertion `z.tag == 1' failed.\n")
     }
     @Test
     fun f12_user_disc_pred_idx () {
@@ -673,7 +673,7 @@ class Exec {
             var l: <^> = new <.1 <.0>>
             output std l!0
         """.trimIndent())
-        assert(out == "out.exe: out.c:100: main: Assertion `l == NULL' failed.\n")
+        assert(out == "out.exe: out.c:101: main: Assertion `l == NULL' failed.\n")
     }
     @Test
     fun j05_list_disc_null_err () {
@@ -681,7 +681,7 @@ class Exec {
             var l: <^> = <.0>
             output std \l!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:96: main: Assertion `l != NULL' failed.\n")
+        assert(out == "out.exe: out.c:97: main: Assertion `l != NULL' failed.\n")
     }
     @Test
     fun j06_list () {
@@ -918,5 +918,23 @@ class Exec {
         }
         """.trimIndent())
         assert(out == "()\n()\n")
+    }
+    @Test
+    fun z05_func_rec () {
+        val out = all("""
+        var i: _int = _0
+        var f: ()->() = func ()->() {
+            if _(i == 10) {
+                return
+            } else {
+                set i = _(i + 1)
+                return f ()
+            }
+        }
+        call f ()
+        output std i
+        """.trimIndent())
+        println(out)
+        assert(out == "10\n")
     }
 }

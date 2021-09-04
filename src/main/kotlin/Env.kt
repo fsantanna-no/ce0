@@ -57,7 +57,7 @@ fun check_dcls (s: Stmt) {
     fun fs (env: Env, s: Stmt) {
         if (s is Stmt.Var) {
             val dcl = env.idToStmt(s.tk_.str)
-            All_assert_tk(s.tk, dcl==null) {
+            All_assert_tk(s.tk, dcl==null || dcl.tk_.str in arrayOf("arg","_ret_")) {
                 "invalid declaration : \"${s.tk_.str}\" is already declared (ln ${dcl!!.tk.lin})"
             }
         }
@@ -414,6 +414,8 @@ fun check_borrows (S: Stmt) {
         }
     }
 
+    val X = ArrayDeque<Expr.Func>();
+
     fun fe (env: Env, e: Expr) {
         if (e is Expr.Call) {
             when {
@@ -429,7 +431,12 @@ fun check_borrows (S: Stmt) {
                                     bws_add(env, arg, e.arg)
                                     // TODO: this env is not the correct one of f
                                     // it should be f.first, but than not all possible bws will be on scope
-                                    f.second.block.visit(env, ::fs, ::fx, ::fe, null)
+                                    //f.second.block.visit(f.first, ::fs, ::fx, ::fe, null)
+                                    if (!X.contains(f.second)) {
+                                        X.addFirst(f.second)
+                                        f.second.block.visit(env, ::fs, ::fx, ::fe, null)
+                                        X.removeFirst()
+                                    }
                                     bws.remove(arg)
                                 }
                             }

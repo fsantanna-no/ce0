@@ -40,7 +40,7 @@ fun XExpr.visitXP (env: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env, XExpr, Type) ->
 fun Stmt.visitXP (old: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env, XExpr, Type) -> Unit)?, fe: ((Env,Expr,Type)->Unit)?): Env {
     val new = when (this) {
         is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> old
-        is Stmt.Var   -> { this.src.visitXP(old,fs,fx,fe,this.type) ; listOf(this)+old }
+        is Stmt.Var   -> { this.src.visitXP(listOf(this)+old,fs,fx,fe,this.type) ; listOf(this)+old }
         is Stmt.Set   -> {
             this.dst.toExpr().visitXP(old,fs,fx,fe,Type_Any(this.tk))
             this.src.visitXP(old,fs,fx,fe,this.dst.toExpr().toType(old))

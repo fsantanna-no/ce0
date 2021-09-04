@@ -968,7 +968,7 @@ class TEnv {
         assert(out == "OK")
     }
 
-    // IF
+    // IF / FUNC
 
     @Test
     fun k01_if () {
@@ -976,6 +976,17 @@ class TEnv {
             if () {} else {}
         """.trimIndent())
         assert(out == "(ln 1, col 1): invalid condition : type mismatch")
+    }
+    @Test
+    fun k02_func_arg () {
+        val out = inp2env("""
+            var f1: ()->() = func ()->() {
+                var f2: ()->() = func ()->() {
+                }
+            }
+        """.trimIndent())
+        println(out)
+        assert(out == "OK")
     }
 
     // BORROW

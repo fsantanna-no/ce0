@@ -462,17 +462,22 @@ fun code_fs (env: Env, s: Stmt) {
         }
         is Stmt.Var   -> {
             val src = EXPRS.removeFirst()
-            src.first + (if (s.type is Type.Unit) "" else {
-                "${s.type.pos()} ${s.tk_.str}" + (    // List* l
-                    if (s.tk_.str == "_ret_") "" else {
-                        (if (!s.type.containsRec()) "" else {
+            if (s.type is Type.Unit) {
+                src.first
+            } else {
+                val fst = "${s.type.pos()} ${s.tk_.str}" +
+                    (when {
+                        (s.tk_.str == "_ret_") -> ""
+                        !s.type.containsRec() -> ""
+                        else -> {
                             " __attribute__ ((__cleanup__(free_${s.type.toce()})))"
-                        }) + (if (s.src.e is Expr.Unk) "" else {
-                            " = " + src.second
-                        })
-                    }
-                ) + ";\n"
-            })
+                        }
+                    }) + ";\n"
+                val snd = if (s.src.e is Expr.Unk) "" else {
+                    "${s.tk_.str} = ${src.second};\n"
+                }
+                fst + src.first + snd
+            }
         }
     })
 }
