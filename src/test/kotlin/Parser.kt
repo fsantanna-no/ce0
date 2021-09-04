@@ -328,7 +328,6 @@ class Parser {
         val all = All_new(PushbackReader(StringReader("//x"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        //println(e)
         assert(e is Expr.Dnref && e.ptr is Expr.Dnref)
     }
 
@@ -355,6 +354,13 @@ class Parser {
         val e = parser_expr(all,false)
         assert(e is Expr.TDisc && e.tk_.num==10 && e.tup is Expr.Var)
     }
+    @Test
+    fun b28_parser_expr_disc () {
+        val all = All_new(PushbackReader(StringReader("(/arg.1)!1.1"), 2))
+        lexer(all)
+        val e = parser_expr(all,false)
+        assert(e is Expr.TDisc && e.tk_.num==1 && e.tup is Expr.UDisc)
+    }
 
     // STMT
 
@@ -380,7 +386,6 @@ class Parser {
             parser_stmt(all)
             error("impossible case")
         } catch (e: Throwable) {
-            println(e.message)
             assert(e.message == "(ln 1, col 9): expected pointer type")
         }
     }
@@ -536,6 +541,17 @@ class Parser {
         val s = parser_stmt(all)
         assert(s is Stmt.Nat && s.tk_.str=="xxx")
     }
+    @Test
+    fun c15_parser_nat () {
+        val all = All_new(PushbackReader(StringReader("_("), 2))
+        lexer(all)
+        try {
+            parser_stmt(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 1): expected statement : have \"unterminated token\"")
+        }
+    }
 
     // STMT_LOOP
 
@@ -547,7 +563,7 @@ class Parser {
         assert(s is Stmt.Loop && s.block.body is Stmt.Break)
     }
 
-    // STMT_SET
+    // STMT_SET / STMT_VAR
 
     @Test
     fun c16_parser_set () {
@@ -556,6 +572,21 @@ class Parser {
         val s = parser_stmt(all)
         assert(s is Stmt.Set && s.dst is Attr.Var && s.src.e is Expr.Unit)
     }
+    @Test
+    fun c17_parser_var () {
+        val all = All_new(PushbackReader(StringReader("var c: _int = (/arg.1)!1.1"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.Var && s.src.e is Expr.TDisc)
+    }
+    @Test
+    fun c18_parser_xepr () {
+        val all = All_new(PushbackReader(StringReader("(/arg.1)!1.1"), 2))
+        lexer(all)
+        val e = parser_xexpr(all,true)
+        //assert(s is Stmt.Var && s.src.e is Expr.TDisc)
+    }
+
 
     // XEXPR
 

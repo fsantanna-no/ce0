@@ -150,13 +150,18 @@ fun parser_type (all: All): Type {
 }
 
 fun parser_xexpr (all: All, canpre: Boolean): XExpr {
-    if (all.accept(TK.CHAR,'(')) {
-        val e = parser_xexpr(all, false)
-        all.accept_err(TK.CHAR,')')
-        return e
-    } else {
-        val tk = if (all.accept(TK.BORROW) || all.accept(TK.COPY) || all.accept(TK.MOVE) || all.accept(TK.NEW)) all.tk0 else null
+    val parens = all.check(TK.CHAR,'(')
+    try {
         val e = parser_expr(all, canpre)
+        return XExpr(null, e)
+    } catch (e: Throwable) {
+        val tk = if (all.accept(TK.BORROW) || all.accept(TK.COPY) || all.accept(TK.MOVE) || all.accept(TK.NEW)) all.tk0 else {
+            throw e
+        }
+        val e = parser_expr(all, canpre)
+        if (parens) {
+            all.accept_err(TK.CHAR,')')
+        }
         return XExpr(tk, e)
     }
 }

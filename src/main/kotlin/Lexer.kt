@@ -131,7 +131,11 @@ fun token (all: All) {
                 all.read().let { c2=it.first ; x2=it.second }
             }
 
-            while (close!=null || x2.isLetterOrDigit() || x2=='_') {
+            while ((close!=null || x2.isLetterOrDigit() || x2=='_')) {
+                if (c2 == -1) {
+                    all.tk1 = Tk.Err(TK.ERR, LIN, COL, "unterminated token")
+                    return
+                }
                 if (x2 == open) {
                     open_close += 1
                 } else if (x2 == close) {
@@ -170,7 +174,6 @@ fun token (all: All) {
         }
         else -> {
             all.tk1 = Tk.Err(TK.ERR, LIN, COL, x1.toString())
-            return
         }
     }
 }

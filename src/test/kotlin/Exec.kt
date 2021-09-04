@@ -841,7 +841,7 @@ class Exec {
         assert(out == "<.1 <.0>>\n<.1 <.0>>\n[(),<.1 <.1 <.0>>>]\n")
     }
 
-    // SET - TUPLE - DATA
+    // SET - TUPLE - UNION
 
     @Test
     fun k01_set_tuple () {
@@ -854,6 +854,13 @@ class Exec {
             output std v
         """.trimIndent())
         assert(out == "30\n")
+    }
+    @Test
+    fun k02_var_union () {
+        val out = all("""
+            var c: _int = (/arg.1)!1.1
+        """.trimIndent())
+        assert(out == "(ln 1, col 17): undeclared variable \"arg\"")
     }
 
     // ALL
