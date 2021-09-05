@@ -40,7 +40,6 @@ fun Type.output (arg: String): String {
 }
 
 fun deps (tps: Set<Type>): Set<String> {
-    println(tps.map { it.pos() })
     return tps
         .filter { it !is Type.Rec }
         .map { Pair(it.toce(),it.pos()) }
@@ -64,7 +63,6 @@ fun code_ft (tp: Type) {
             ""
         ))
         is Type.Tuple -> {
-            println("${tp.toce()} depends on ${deps(tp.vec.toSet())}")
             val ce    = tp.toce()
             val _ptr  = tp.toce(true)
             val ctrec = tp.containsRec()
@@ -170,7 +168,6 @@ fun code_ft (tp: Type) {
             val xv    = (if (exrec) "(*v)" else "v")
             val ret   = (if (exrec) "(*ret)" else "ret")
             val tpexp = tp.expand()
-            println("${tp.toce()} depends on ${deps(tpexp.vec.toSet())}")
 
             val struct = Pair ("""
                 struct $ce;
@@ -505,15 +502,14 @@ fun Stmt.code (): String {
     TYPES.clear()
     this.visit(emptyList(), null, null, null, ::code_ft)
     this.visitXP(emptyList(), ::code_fs, ::code_fx, ::code_fe)
-    //println(CODE)
-    val TPS = TYPES.sortedWith( Comparator { x: Triple<Pair<String,Set<String>>,String,String>, y: Triple<Pair<String,Set<String>>,String,String> ->
-        when {
-            (x.first.second.contains(y.first.first)) ->  1
-            (y.first.second.contains(x.first.first)) -> -1
-            else -> 0
-        }
-    })
-    //val TPS = TYPES
+    val TPS =
+        TYPES.sortedWith(Comparator { x: Triple<Pair<String, Set<String>>, String, String>, y: Triple<Pair<String, Set<String>>, String, String> ->
+            when {
+                (x.first.second.contains(y.first.first)) -> 1
+                (y.first.second.contains(x.first.first)) -> -1
+                else -> 0
+            }
+        })
     assert(EXPRS.size == 0)
     assert(CODE.size == 1)
     return ("""
@@ -528,11 +524,10 @@ fun Stmt.code (): String {
         #define output_std_char_(x)  (output_std_int_(x), puts(""))
         #define output_std_Ptr_(x)   printf("%p",x)
         #define output_std_Ptr(x)    (output_std_Ptr_(x), puts(""))
-        ${TPS.map { println(it.first.first) ; it.second }.joinToString("")}
-        ${TPS.map { it.third  }.joinToString("")}
+        ${TPS.map { it.second }.joinToString("")}
+        ${TPS.map { it.third }.joinToString("")}
         int main (void) {
             ${CODE.removeFirst()}
         }
     """).trimIndent()
-    //${TYPES.map { it.first+it.second }.joinToString("")}
 }

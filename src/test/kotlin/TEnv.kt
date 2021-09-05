@@ -1076,7 +1076,7 @@ class TEnv {
     @Test
     fun l08_borrow_err () {
         val out = inp2env("""
-            var x: [\<^>,<^>] = [?,<.0>] 
+            var x: [\<^>,<^>] = [?,<.0>]
             set x.1 = borrow \x.2
             var y: <^> = move x.2
         """.trimIndent())
