@@ -957,7 +957,6 @@ class Exec {
             var z: [(),\<[(),^]>] = [(), borrow \x]
             output std (/z.2)!0
         """.trimIndent())
-        //println(out)
         assert(out == "()\n")
     }
     @Test
@@ -966,7 +965,6 @@ class Exec {
             var y: [(),<[(),^]>] = [(), new <.1 [(),<.0>]>]
             output std \y
         """.trimIndent())
-        println(out)
         assert(out == "[(),<.1 [(),<.0>]>]\n")
     }
     @Test
@@ -984,7 +982,6 @@ class Exec {
             var ret: _int = _(y1 + y2 + y3)
             output std ret
         """.trimIndent())
-        println(out)
         assert(out == "2\n")
     }
 }

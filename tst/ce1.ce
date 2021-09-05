@@ -13,9 +13,24 @@ native _{
 #define List(x) <[x,^]>
 #define String List(_int)
 
-output std _1
+var string_ce2c: \\String->_(char*) = func \\String->_(char*) {
+    native _{static char STRING[256];}
+    var aux: [_int,\\String]->() = func [_int,\\String]->() {
+        var i: _int = arg.1
+        if (/arg.2)?0 {
+            native _{STRING[i] = '\0';}
+            return
+        } else {
+            var c: _int = (/arg.2)!1.1
+            native _{STRING[i] = c;}
+            return aux [_(i+1), borrow \\(/arg.2)!1.2]
+        }
+    }
+    call aux [_0, borrow arg]
+    return _STRING
+}
 
-var str2ce: _(char*)->String = func _(char*)->String {
+var string_c2ce: _(char*)->String = func _(char*)->String {
     var ret: String = <.0>
     var n: _int = call _strlen arg
     var i: _int = _0
@@ -31,13 +46,24 @@ var str2ce: _(char*)->String = func _(char*)->String {
     return move ret
 }
 
-output std _2
-
 var keys: List(String) =
-    new <.1 [str2e _("var"), <.0>]>
+    new <.1 [string_c2ce _("var"), <.0>]>
 
-var eq_string: [\\String,\\String]->_int = func [\\String,\\String]->_int {
-    
+var string_eq: [\\String,\\String]->_int = func [\\String,\\String]->_int {
+    var nil1: _int = (/arg.1)?0
+    var nil2: _int = (/arg.2)?0
+    if nil1 {
+        return nil2
+    }
+    if nil2 {
+        return nil1
+    }
+    var c1: _int = (/arg.1)!1.1
+    var c2: _int = (/arg.2)!1.1
+    if _(c1 == c2) {
+        return string_eq [borrow \\(/arg.1)!1.2, borrow \\(/arg.2)!1.2]
+    }
+    return _0
 }
 
 var finp: _(FILE*) = ?
@@ -54,7 +80,7 @@ var lx_blanks: ()->() = func ()->() {
     }
 }
 
-var lx_token: ()-><(),_int> = func ()-><(),_int> {
+var lx_token: ()-><(),_int> = func ()-><(),_int,String> {
     loop {
         var c: _int = call _fgetc finp
         if _(c == EOF) {
@@ -64,48 +90,34 @@ var lx_token: ()-><(),_int> = func ()-><(),_int> {
             return <.2 c>
         }
         if _(isalpha(c)) {
-            var str: <[_int,^]> = <.0>
+            var str: String = <.0>
             loop {
-                set str = new <.1 move str>
                 var c2: _int = call _fgetc finp
-                if _(!isalpha(c2) {
+                set str = new <.1 [c2,move str]>
+                if _(!isalpha(c2)) {
                     native _(ungetc(c, finp);)
                     break
                 }
             }
-        }
-
-        x1.isLowerCase() -> {
-            var pay = ""
-            do {
-                pay += x1
-                all.read().let { c1=it.first ; x1=it.second }
-            } while (x1.isLetterOrDigit() || x1=='_')
-            all.unread(c1)
-            all.tk1 = key2tk[pay].let {
-                if (it != null) Tk.Key(it, LIN, COL, pay) else Tk.Str(TK.XVAR, LIN, COL, pay)
-            }
-        }
-
--- space
-        } else {
-            native _(ungetc(c, finp);)
-            return ()
+            return <.3 move str>
         }
     }
 }
 
 var t_pre: ()->() = func ()->() {
-    var s1: String = str2ce _("oi")
-    var s2: String = new <.1 [_('o'), new <.1 ['i', <.0>]>]>
-    var ok1: _int = call eq_string(\s1,\s2)
-    call _assert ok1
+    var s1: String   = string_c2ce _("oi")
+    var s2: _(char*) = string_ce2c borrow \\s1
+    call _assert _(!strcmp(s2,"oi"))
+
+    var s3: String = new <.1 [_('o'), new <.1 [_('i'), <.0>]>]>
+    var ok: _int = call string_eq [borrow \\s1, borrow \\s3]
+    call _assert ok
 }
 
 var t_lexer: ()->() = func ()->() {
     -- CHAR / BLANK / CHAR
     {
-        set finp = _{stropen("r", 0, "- \n -")}
+        set finp = _{stropen("r", 0, "- \\n -")}
         var c1: _int = call _fgetc finp
         native _(assert(c1 == '-');)
         native _(ungetc(c1,finp);)
@@ -118,7 +130,7 @@ var t_lexer: ()->() = func ()->() {
     }
     -- TOKENS / BLANK
     {
-        set finp = _{stropen("r", 0, "{\nvar foo\n}")}
+        set finp = _{stropen("r", 0, "{\\nvar foo\\n}")}
         var c1: _int = call _fgetc finp
         native _(assert(c1 == '-');)
         native _(ungetc(c1,finp);)

@@ -10,3 +10,7 @@ install:
 ce1:
 	gpp tst/ce1.ce > /tmp/ce1.ce
 	ce /tmp/ce1.ce
+
+tmp:
+	gpp tst/tmp.ce > /tmp/tmp.ce
+	ce /tmp/tmp.ce
