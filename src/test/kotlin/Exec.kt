@@ -955,8 +955,9 @@ class Exec {
         val out = all("""
             var x: <[(),^]> = <.0>
             var z: [(),\<[(),^]>] = [(), borrow \x]
+            output std (/z.2)!0
         """.trimIndent())
-        println(out)
+        //println(out)
         assert(out == "()\n")
     }
     @Test
@@ -965,7 +966,7 @@ class Exec {
             var y: [(),<[(),^]>] = [(), new <.1 [(),<.0>]>]
             output std \y
         """.trimIndent())
-        println(out)
+        //println(out)
         assert(out == "[(),<.1 [(),<.0>]>]\n")
     }
 }

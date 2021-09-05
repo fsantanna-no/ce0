@@ -1,7 +1,7 @@
 import kotlin.math.absoluteValue
 
 fun Type.toce (ctrec: Boolean = false): String {
-    val _ptr = (if (this.exactlyRec()) "_ptr" else "") + (if (ctrec && this.containsRec()) "_ptr" else "")
+    val _ref_ptr = (if (this.exactlyRec()) "_ref" else "") + (if (ctrec && this.containsRec()) "_ptr" else "")
     return when (this) {
         is Type.None, is Type.UCons -> error("bug found")
         is Type.Rec   -> "Rec"
@@ -9,9 +9,9 @@ fun Type.toce (ctrec: Boolean = false): String {
         is Type.Unit  -> "Unit"
         is Type.Ptr   -> if (this.pln is Type.Tuple || this.pln is Type.Union) this.pln.toce(false) + "_ptr" else "Ptr"
         is Type.Nat   -> this.tk_.str.replace('*','_')
-        is Type.Tuple -> "TUPLE__" + this.vec.map { it.toce(false) }.joinToString("__") + _ptr
-        is Type.Union -> "UNION__" + this.vec.map { it.toce(false) }.joinToString("__") + _ptr
-        is Type.Func  -> "FUNC__" + this.inp.toce() + "__" + this.out.toce()
+        is Type.Tuple -> "TUPLE_p_" + this.vec.map { it.toce(false) }.joinToString("__") + "_d_" + _ref_ptr
+        is Type.Union -> "UNION_p_" + this.vec.map { it.toce(false) }.joinToString("__") + "_d_" + _ref_ptr
+        is Type.Func  -> "FUNC_p_" + this.inp.toce() + "__" + this.out.toce() + "_d_"
     }
 }
 

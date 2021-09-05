@@ -18,7 +18,7 @@ class Code {
     @Test
     fun a02_type_tuple () {
         val tp = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), arrayOf(tp_unit,tp_unit))
-        assert(tp.toce() == "TUPLE__Unit__Unit")
+        assert(tp.toce() == "TUPLE_p_Unit__Unit_d_")
     }
 
     // EXPR
@@ -70,7 +70,7 @@ class Code {
             Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray()))
         EXPRS.removeFirst().second.let {
             //println(it)
-            assert(it == "((struct TUPLE__Unit__Unit) {  })")
+            assert(it == "((struct TUPLE_p_Unit__Unit_d_) {  })")
         }
     }
     @Test
