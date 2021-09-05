@@ -107,12 +107,15 @@ fun Type.isSupOf (sub: Type): Boolean {
             }
         }
         (this::class != sub::class) -> false
+        (this is Type.Unit && sub is Type.Unit) -> true
+        (this is Type.Func && sub is Type.Func) -> (this.inp.isSupOf(sub.inp) && sub.inp.isSupOf(this.inp) && this.out.isSupOf(sub.out) && sub.out.isSupOf(this.out))
+        (this is Type.Rec  && sub is Type.Rec)  -> (this.tk_.up == sub.tk_.up)
         (this is Type.Ptr && sub is Type.Ptr) -> this.pln.isSupOf(sub.pln)
         (this is Type.Tuple && sub is Type.Tuple) ->
             (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
         (this is Type.Union && sub is Type.Union) ->
             (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
-        else -> true
+        else -> false
     }
 }
 

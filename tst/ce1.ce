@@ -80,7 +80,7 @@ var lx_blanks: ()->() = func ()->() {
     }
 }
 
-var lx_token: ()-><(),_int> = func ()-><(),_int,String> {
+var lx_token: ()-><(),_int,String> = func ()-><(),_int,String> {
     loop {
         var c: _int = call _fgetc finp
         if _(c == EOF) {
@@ -106,7 +106,9 @@ var lx_token: ()-><(),_int> = func ()-><(),_int,String> {
 
 var t_pre: ()->() = func ()->() {
     var s1: String   = string_c2ce _("oi")
+    output std \s1
     var s2: _(char*) = string_ce2c borrow \\s1
+    call _puts s2
     call _assert _(!strcmp(s2,"oi"))
 
     var s3: String = new <.1 [_('o'), new <.1 [_('i'), <.0>]>]>
@@ -143,5 +145,6 @@ var t_lexer: ()->() = func ()->() {
     }
 }
 
+call t_pre  ()
 call t_lexer  ()
 output std ()

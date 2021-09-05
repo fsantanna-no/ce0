@@ -91,7 +91,7 @@ fun code_ft (tp: Type) {
                     void free_${ce} (${tp.pos(true)} v);
                     ${tp.pos()} copy_${ce} (${tp.pos(true)} v);
                     ${tp.pos()} move_${ce} (${tp.pos(true)} v);
-                
+
                 """
                 }
             ""","""
@@ -189,7 +189,7 @@ fun code_ft (tp: Type) {
                     }
                     };
                 };
-            
+
             """.trimIndent())
 
             TYPES.add(Triple(
@@ -205,7 +205,7 @@ fun code_ft (tp: Type) {
 
                 """
             }
-                
+
             """.trimIndent(),
             """
                 ${if (tp.containsRec()) struct.second else "" }
@@ -216,6 +216,7 @@ fun code_ft (tp: Type) {
                                 printf("<.0>");
                                 return;
                             }
+
                         """.trimIndent()
                     }
                     printf("<.%d", $xxv.tag);
@@ -388,7 +389,7 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
         is Expr.UCons -> {
             val top = EXPRS.removeFirst()
             val ID  = "_tmp_" + e.hashCode().absoluteValue
-            val arg = if (e.arg.e.toType(env) is Type.Unit) "" else (", " + top.second)
+            val arg = if (e.arg.e.toType(env) is Type.Unit) "" else (", ._${e.tk_.num} = " + top.second)
             val sup = "struct " + xp.toce()
             val pre = "$sup $ID = (($sup) { ${e.tk_.num} $arg });\n"
             if (e.tk_.num == 0) Pair("","NULL") else Pair(top.first + pre, ID)
@@ -474,12 +475,14 @@ fun code_fs (env: Env, s: Stmt) {
                 } else {
                     ${false_}
                 }
+
             """.trimIndent()
         }
         is Stmt.Loop  -> """
             while (1) {
                 ${CODE.removeFirst()}
             }
+
         """.trimIndent()
         is Stmt.Break -> "break;\n"
         is Stmt.Call  -> {
@@ -545,5 +548,6 @@ fun Stmt.code (): String {
         int main (void) {
             ${CODE.removeFirst()}
         }
+
     """).trimIndent()
 }

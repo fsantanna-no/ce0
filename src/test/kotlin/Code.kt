@@ -128,6 +128,7 @@ class Code {
             int main (void) {
                 
             }
+
         """.trimIndent())
     }
 

@@ -12,7 +12,7 @@ class Exec {
             return out1
         }
         File("out.c").writeText(out1)
-        val (ok2,out2) = exec("gcc out.c -o out.exe")
+        val (ok2,out2) = exec("gcc -Werror out.c -o out.exe")
         if (!ok2) {
             return out2
         }
@@ -675,7 +675,7 @@ class Exec {
             var l: <^> = new <.1 <.0>>
             output std l!0
         """.trimIndent())
-        assert(out == "out.exe: out.c:101: main: Assertion `l == NULL' failed.\n")
+        assert(out == "out.exe: out.c:102: main: Assertion `l == NULL' failed.\n")
     }
     @Test
     fun j05_list_disc_null_err () {
@@ -683,7 +683,7 @@ class Exec {
             var l: <^> = <.0>
             output std \l!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:97: main: Assertion `l != NULL' failed.\n")
+        assert(out == "out.exe: out.c:98: main: Assertion `l != NULL' failed.\n")
     }
     @Test
     fun j06_list () {
@@ -983,5 +983,35 @@ class Exec {
             output std ret
         """.trimIndent())
         assert(out == "2\n")
+    }
+    @Test
+    fun z09_output_string () {
+        val out = all("""
+            var s: <[_int,^]> = <.0>
+            output std \s
+        """.trimIndent())
+        println(out)
+        assert(out == "2\n")
+    }
+    @Test
+    fun z10_return_move () {
+        val out = all("""
+            var f: ()-><(),_int,<[_int,^]>> = func ()-><(),_int,<[_int,^]>> {
+                var str: <[_int,^]> = <.0>
+                return <.3 move str>
+            }
+            var x: <(),_int,<[_int,^]>> = call f ()
+            output std \x!3
+        """.trimIndent())
+        println(out)
+        assert(out == "<.0>\n")
+    }
+    @Test
+    fun z11_func_err () {
+        val out = all("""
+            var f: ()->[()] = func ()->() {
+            }
+        """.trimIndent())
+        assert(out == "(ln 1, col 5): invalid assignment : type mismatch")
     }
 }
