@@ -322,7 +322,14 @@ fun code_ft (tp: Type) {
 
 val EXPRS = ArrayDeque<Pair<String,String>>()
 
-fun Expr.UDisc.defref (env: Env, str: String): String {
+fun Expr.UDisc.deref (env: Env, str: String): String {
+    return if (this.uni.toType(env).exactlyRec()) {
+        "(*($str))"
+    } else {
+        str
+    }
+}
+fun Expr.UPred.deref (env: Env, str: String): String {
     return if (this.uni.toType(env).exactlyRec()) {
         "(*($str))"
     } else {
@@ -344,9 +351,9 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
             val sub = EXPRS.removeFirst()
             Pair(sub.first, "(*" + sub.second + ")")
         }
-        is Expr.TDisc -> EXPRS.removeFirst().let { Pair(it.first, it.second /*+TODO("deref=true")*/ + "._" + e.tk_.num) }
+        is Expr.TDisc -> EXPRS.removeFirst().let { Pair(it.first, it.second + "._" + e.tk_.num) }
         is Expr.UDisc -> EXPRS.removeFirst().let {
-            val ee = e.defref(env,it.second)
+            val ee = e.deref(env,it.second)
             val pre = if (e.tk_.num == 0) {
                 """
                 assert(${it.second} == NULL);
@@ -361,7 +368,16 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
             }
             Pair(it.first + pre, ee + "._" + e.tk_.num)
         }
-        is Expr.UPred -> EXPRS.removeFirst().let { Pair(it.first, "(${it.second /*deref=true*/}.tag == ${e.tk_.num})") }
+        is Expr.UPred -> EXPRS.removeFirst().let {
+            val ee = e.deref(env,it.second)
+            val pre = if (e.tk_.num == 0) {
+                "(${it.second} == NULL)"
+            } else {
+                (if (e.uni.toType(env).exactlyRec()) "(${it.second} != NULL) && " else "") +
+                "($ee.tag == ${e.tk_.num})"
+            }
+            Pair(it.first, pre)
+        }
         is Expr.TCons -> {
             val (pre,pos) = (1..e.arg.size).map { EXPRS.removeFirst() }.reversed().unzip()
             Pair (
@@ -382,13 +398,13 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
             val f   = EXPRS.removeFirst()
             Pair (
                 f.first + arg.first,
-                f.second /*+ TODO("deref=true")*/ + (
+                f.second + (
                     if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
                         "_" + e.arg.e.toType(env).toce()
                     } else {
                         ""
                     }
-                ) + "(" + arg.second /*+ TODO("deref=true")*/ + ")"
+                ) + "(" + arg.second + ")"
             )
         }
         is Expr.Func  -> {
@@ -453,7 +469,7 @@ fun code_fs (env: Env, s: Stmt) {
             val false_ = CODE.removeFirst()
             val true_  = CODE.removeFirst()
             tst.first + """
-                if (${tst.second /*TODO("deref=true")*/}) {
+                if (${tst.second}) {
                     ${true_}
                 } else {
                     ${false_}
@@ -468,7 +484,7 @@ fun code_fs (env: Env, s: Stmt) {
         is Stmt.Break -> "break;\n"
         is Stmt.Call  -> {
             val e = EXPRS.removeFirst()
-            e.first + e.second /*+ TODO("deref=true")*/ + ";\n"
+            e.first + e.second + ";\n"
         }
         is Stmt.Block -> "{\n" + CODE.removeFirst() + "}\n"
         is Stmt.Ret   -> {

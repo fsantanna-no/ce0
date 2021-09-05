@@ -966,7 +966,25 @@ class Exec {
             var y: [(),<[(),^]>] = [(), new <.1 [(),<.0>]>]
             output std \y
         """.trimIndent())
-        //println(out)
+        println(out)
         assert(out == "[(),<.1 [(),<.0>]>]\n")
+    }
+    @Test
+    fun z08_func_arg () {
+        val out = all("""
+            var x1: <^> = <.0>
+            var y1: _int = x1?0
+            var x2: \<^> = borrow \x1
+            var y2: _int = (/x2)?1
+            set /x2 = new <.1 <.0>>
+            var f: \<^>->_int = func \<^>->_int {
+                return (/arg)?1
+            }
+            var y3: _int = f borrow x2
+            var ret: _int = _(y1 + y2 + y3)
+            output std ret
+        """.trimIndent())
+        println(out)
+        assert(out == "2\n")
     }
 }
