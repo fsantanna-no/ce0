@@ -4,20 +4,31 @@ typealias Env = List<Stmt>
 
 private
 fun Type.visit (ft: ((Type)->Unit)?) {
-    this.toce().let {
-        if (X.contains(it)) {
-            return
-        }
-        X.add(it)
+    //*
+    val ce = this.toce()
+    if (X.contains(ce)) {
+        return
     }
+    X.add(ce)
+    //*/
     when (this) {
         is Type.Tuple -> this.vec.forEach { it.visit(ft) }
-        is Type.Union -> this.expand().vec.forEach { it.visit(ft) }
+        is Type.Union -> this.expand().vec.forEach {
+            /*
+            val ce = it.toce()
+            if (!X.contains(ce)) {
+                X.add(ce)
+                it.visit(ft)
+            }
+            */
+            it.visit(ft)
+        }
         is Type.UCons -> this.arg.visit(ft)
         is Type.Func  -> { this.inp.visit(ft) ; this.out.visit(ft) }
         is Type.Ptr   -> this.pln.visit(ft)
     }
     if (ft != null) {
+        //println(this.toce())
         ft(this)
     }
 }

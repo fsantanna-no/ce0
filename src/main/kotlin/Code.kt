@@ -16,7 +16,7 @@ fun Type.toce (ctrec: Boolean = false): String {
 }
 
 val TYPEX = mutableSetOf<String>()
-val TYPES = mutableListOf<Pair<String,String>>()
+val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 
 fun Type.pos (ctrec: Boolean = false): String {
     val x = (if (this.exactlyRec())  "*" else "") + (if (ctrec && this.containsRec()) "*" else "")
@@ -39,6 +39,16 @@ fun Type.output (arg: String): String {
     }
 }
 
+fun deps (tps: Set<Type>): Set<String> {
+    println(tps.map { it.pos() })
+    return tps
+        .filter { it !is Type.Rec }
+        .map { Pair(it.toce(),it.pos()) }
+        .filter { it.second.last()!='*' }
+        .map { it.first }
+        .toSet()
+}
+
 fun code_ft (tp: Type) {
     tp.toce().let {
         if (TYPEX.contains(it)) {
@@ -48,11 +58,13 @@ fun code_ft (tp: Type) {
     }
 
     when (tp) {
-        is Type.Func -> TYPES.add(Pair(
+        is Type.Func -> TYPES.add(Triple(
+            Pair(tp.toce(), deps(setOf(tp.inp,tp.out))),
             "typedef ${tp.out.pos()} ${tp.toce()} (${tp.inp.pos()});\n",
             ""
         ))
         is Type.Tuple -> {
+            println("${tp.toce()} depends on ${deps(tp.vec.toSet())}")
             val ce    = tp.toce()
             val _ptr  = tp.toce(true)
             val ctrec = tp.containsRec()
@@ -71,7 +83,9 @@ fun code_ft (tp: Type) {
 
             """.trimIndent())
 
-            TYPES.add(Pair("""
+            TYPES.add(Triple(
+                Pair(ce, deps(tp.vec.toSet())),
+    """
                 ${if (tp.containsRec()) struct.first else struct.second }
                 void output_std_${_ptr}_ (${tp.pos(true)} v);
                 void output_std_${_ptr} (${tp.pos(true)} v);
@@ -155,6 +169,8 @@ fun code_ft (tp: Type) {
             val xxv   = (if (ctrec) "(*v)" else "v").let { if (exrec) "(*$it)" else it }
             val xv    = (if (exrec) "(*v)" else "v")
             val ret   = (if (exrec) "(*ret)" else "ret")
+            val tpexp = tp.expand()
+            println("${tp.toce()} depends on ${deps(tpexp.vec.toSet())}")
 
             val struct = Pair ("""
                 struct $ce;
@@ -164,7 +180,7 @@ fun code_ft (tp: Type) {
                 struct $ce {
                     int tag;
                     union {
-                        ${tp.expand().vec  // do not filter to keep correct i
+                        ${tpexp.vec  // do not filter to keep correct i
                         .mapIndexed { i,sub ->
                             when {
                                 sub is Type.Unit -> ""
@@ -179,7 +195,9 @@ fun code_ft (tp: Type) {
             
             """.trimIndent())
 
-            TYPES.add(Pair("""
+            TYPES.add(Triple(
+                Pair(ce, deps(tpexp.vec.toSet())),
+            """
                 ${if (tp.containsRec()) struct.first else struct.second }
                 void output_std_${_ptr}_ (${tp.pos(true)} v);
                 void output_std_${_ptr} (${tp.pos(true)} v);
@@ -205,7 +223,7 @@ fun code_ft (tp: Type) {
                     }
                     printf("<.%d", $xxv.tag);
                     switch ($xxv.tag) {
-                        ${tp.expand().vec
+                        ${tpexp.vec
                             .mapIndexed { i,sub -> """
                                 case ${i+1}:
                                 ${
@@ -233,7 +251,7 @@ fun code_ft (tp: Type) {
                 void free_${ce} (${tp.pos(true)} v) {
                     ${ if (!exrec) "" else "if (${xv} == NULL) return;\n" }
                     switch ((${xxv}).tag) {
-                        ${ tp.expand().vec
+                        ${ tpexp.vec
                             .mapIndexed { i,tp2 ->
                                 if (!tp2.containsRec()) "" else """
                                     case ${i+1}:
@@ -258,7 +276,7 @@ fun code_ft (tp: Type) {
                         """.trimIndent()
                     } }
                     switch ((${xxv}).tag) {
-                        ${ tp.expand().vec
+                        ${ tpexp.vec
                             .mapIndexed { i,sub -> if (sub is Type.Unit) "" else
                                 "case ${i+1}:\n" + (
                                     if (sub.containsRec()) {
@@ -284,7 +302,7 @@ fun code_ft (tp: Type) {
                     """.trimIndent()
                 } }
                     switch ((${xxv}).tag) {
-                        ${ tp.expand().vec
+                        ${ tpexp.vec
                             .mapIndexed { i,sub -> if (sub is Type.Unit) "" else
                                 "case ${i+1}:\n" + (
                                     if (sub.containsRec()) {
@@ -488,6 +506,14 @@ fun Stmt.code (): String {
     this.visit(emptyList(), null, null, null, ::code_ft)
     this.visitXP(emptyList(), ::code_fs, ::code_fx, ::code_fe)
     //println(CODE)
+    val TPS = TYPES.sortedWith( Comparator { x: Triple<Pair<String,Set<String>>,String,String>, y: Triple<Pair<String,Set<String>>,String,String> ->
+        when {
+            (x.first.second.contains(y.first.first)) ->  1
+            (y.first.second.contains(x.first.first)) -> -1
+            else -> 0
+        }
+    })
+    //val TPS = TYPES
     assert(EXPRS.size == 0)
     assert(CODE.size == 1)
     return ("""
@@ -502,10 +528,11 @@ fun Stmt.code (): String {
         #define output_std_char_(x)  (output_std_int_(x), puts(""))
         #define output_std_Ptr_(x)   printf("%p",x)
         #define output_std_Ptr(x)    (output_std_Ptr_(x), puts(""))
-        ${TYPES.map { it.first  }.joinToString("")}
-        ${TYPES.map { it.second }.joinToString("")}
+        ${TPS.map { println(it.first.first) ; it.second }.joinToString("")}
+        ${TPS.map { it.third  }.joinToString("")}
         int main (void) {
             ${CODE.removeFirst()}
         }
     """).trimIndent()
+    //${TYPES.map { it.first+it.second }.joinToString("")}
 }

@@ -284,6 +284,7 @@ class Exec {
             var b : <(),()> = <.1>
             output std b
         """.trimIndent())
+        println(out)
         assert(out == "<.1>\n")
     }
     @Test
@@ -649,6 +650,7 @@ class Exec {
             var l: <^> = <.0>
             output std \l
         """.trimIndent())
+        println(out)
         assert(out == "<.0>\n")
     }
     @Test
@@ -750,6 +752,7 @@ class Exec {
             var n: <<^^>> = new <.1 <.1 new <.1 <.1 <.0>>>>>
             output std \n
         """.trimIndent())
+        println(out)
         assert(out == "<.1 <.1 <.1 <.1 <.0>>>>>\n")
     }
     @Test
@@ -934,7 +937,35 @@ class Exec {
         call f ()
         output std i
         """.trimIndent())
-        println(out)
         assert(out == "10\n")
+    }
+    @Test
+    fun z06_type_complex () {
+        val out = all("""
+            var x: <[(),^]> = new <.1 [(),<.0>]>
+            var y: [(),<[(),^]>] = [(), new <.1 [(),<.0>]>]
+            var z: [(),\<[(),^]>] = [(), borrow \x]
+            output std (/z.2)!1.2!0
+        """.trimIndent())
+        println(out)
+        assert(out == "()\n")
+    }
+    @Test
+    fun z07_type_complex () {
+        val out = all("""
+            var x: <[(),^]> = <.0>
+            var z: [(),\<[(),^]>] = [(), borrow \x]
+        """.trimIndent())
+        println(out)
+        assert(out == "()\n")
+    }
+    @Test
+    fun z08_type_complex () {
+        val out = all("""
+            var y: [(),<[(),^]>] = [(), new <.1 [(),<.0>]>]
+            output std \y
+        """.trimIndent())
+        println(out)
+        assert(out == "[(),<.1 [(),<.0>]>]\n")
     }
 }
