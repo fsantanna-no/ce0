@@ -1,3 +1,5 @@
+#define COMMA ,
+
 native _{
     \#include <string.h>
     \#include <ctype.h>
@@ -52,8 +54,11 @@ var string_c2ce: _(char*)->String = func _(char*)->String {
     return move ret
 }
 
-var keys: List(String) =
-    new <.1 [string_c2ce _("var"), <.0>]>
+#define KEY <(),()>
+#define KEYS List([KEY COMMA String])
+var keys: KEYS =
+    new <.1 [[<.1>,string_c2ce _("set")],
+    new <.1 [[<.2>,string_c2ce _("var")], <.0>]>]>
 
 var string_eq: [\\String,\\String]->_int = func [\\String,\\String]->_int {
     var nil1: _int = (/arg.1)?0
@@ -86,7 +91,23 @@ var lx_blanks: ()->() = func ()->() {
     }
 }
 
-var lx_token: ()-><(),_int,String> = func ()-><(),_int,String> {
+var keys_find: \\String-><(),KEY> = func \\String-><(),KEY> {
+    var str: \\String = borrow arg
+    var aux: \\KEYS-><(),KEY> = func \\KEYS-><(),KEY> {
+        if (/arg)?0 {
+            return <.1>
+        }
+        if string_eq [borrow str, borrow \\(/arg)!1.1.2] {
+            return <.2 (/arg)!1.1.1>
+        }
+        return aux borrow \\(/arg)!1.2
+    }
+    return aux borrow \\keys
+}
+
+-- EOF,sym,key,var
+#define LX_TOKEN <(),_int,KEY,String>
+var lx_token: ()->LX_TOKEN = func ()->LX_TOKEN {
     loop {
         var c: _int = call _fgetc finp
         if _(c == EOF) {
@@ -105,7 +126,12 @@ var lx_token: ()-><(),_int,String> = func ()-><(),_int,String> {
                     break
                 }
             }
-            return <.3 move str>
+            var key: <(),KEY> = call keys_find borrow \\str
+            if key?2 {
+                return <.3 key!2>
+            } else {
+                return <.4 move str>
+            }
         }
     }
 }
@@ -136,21 +162,31 @@ var t_lexer: ()->() = func ()->() {
     }
     -- TOKENS / BLANK
     {
-        set finp = _{stropen("r", 0, "{\\nvar foo\\n}")}
+        set finp = _{stropen("r", 0, "{\\nvar foo set\\n}")}
         -- <(),_int,String>
 
-        var tk1: <(),_int,String> = call lx_token ()
+        var tk1: LX_TOKEN = call lx_token ()
         call lx_blanks ()
         call _assert (tk1?2)
         var c1: _int = tk1!2
         call _assert _(c1 == '{')
 
-        var tk2: <(),_int,String> = call lx_token ()
+        var tk2: LX_TOKEN = call lx_token ()
         call lx_blanks ()
         call _assert (tk2?3)
-        var s21: \\<[_int,^]> = borrow \\tk2!3
-        var s22: String = string_c2ce _("var")
-        call _assert string_eq [borrow s21, borrow \\s22]
+        call _assert (tk2!3?2)
+
+        var tk3: LX_TOKEN = call lx_token ()
+        call lx_blanks ()
+        call _assert (tk3?4)
+        var s31: \\<[_int,^]> = borrow \\tk3!4
+        var s32: String = string_c2ce _("foo")
+        call _assert string_eq [borrow s31, borrow \\s32]
+
+        var tk4: LX_TOKEN = call lx_token ()
+        call lx_blanks ()
+        call _assert (tk4?3)
+        call _assert (tk4!3?1)
 
         call _fclose finp
     }
