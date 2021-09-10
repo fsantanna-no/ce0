@@ -987,11 +987,24 @@ class Exec {
     @Test
     fun z09_output_string () {
         val out = all("""
-            var s: <[_int,^]> = <.0>
-            output std \s
+            var f: ()->() = func ()->() {
+                var s1: <[_int,^]> = new <.1 [_1,<.0>]>
+                output std \s1
+            }
+            call f
         """.trimIndent())
-        println(out)
-        assert(out == "2\n")
+        assert(out == "<.1 [1,<.0>]>\n")
+    }
+    @Test
+    fun z10_output_string () {
+        val out = all("""
+            var f: ()->() = func ()->() {
+                var s1: <[_int,^]> = new <.1 [_1,<.0>]>
+                output std \s1
+            }
+            call f
+        """.trimIndent())
+        assert(out == "<.1 [1,<.0>]>\n")
     }
     @Test
     fun z10_return_move () {
@@ -1003,7 +1016,6 @@ class Exec {
             var x: <(),_int,<[_int,^]>> = call f ()
             output std \x!3
         """.trimIndent())
-        println(out)
         assert(out == "<.0>\n")
     }
     @Test
@@ -1013,5 +1025,14 @@ class Exec {
             }
         """.trimIndent())
         assert(out == "(ln 1, col 5): invalid assignment : type mismatch")
+    }
+    @Test
+    fun z12_union_tuple () {
+        val out = all("""
+            var tk2: <(),_int,<[_int,^]>> = <.3 <.0>>
+            var s21: \<[_int,^]> = borrow \tk2!3
+            output std s21
+        """.trimIndent())
+        assert(out == "<.0>\n")
     }
 }
