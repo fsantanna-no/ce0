@@ -113,7 +113,7 @@ var lx_token: ()->LX_TOKEN = func ()->LX_TOKEN {
         if _(c == EOF) {
             return <.1>
         }
-        if _(c=='{' || c==' ') {
+        if _(c=='{' || c=='}') {
             return <.2 c>
         }
         if _(isalpha(c)) {
@@ -134,6 +134,13 @@ var lx_token: ()->LX_TOKEN = func ()->LX_TOKEN {
             }
         }
     }
+}
+
+var lexer: ()->LX_TOKEN = func ()->LX_TOKEN {
+    call lx_blanks
+    var ret: LX_TOKEN = call lx_token
+    call lx_blanks
+    return move ret
 }
 
 var t_pre: ()->() = func ()->() {
@@ -163,7 +170,6 @@ var t_lexer: ()->() = func ()->() {
     -- TOKENS / BLANK
     {
         set finp = _{stropen("r", 0, "{\\nvar foo set\\n}")}
-        -- <(),_int,String>
 
         var tk1: LX_TOKEN = call lx_token ()
         call lx_blanks ()
@@ -190,8 +196,25 @@ var t_lexer: ()->() = func ()->() {
 
         call _fclose finp
     }
+    -- LEXER
+    {
+        set finp = _{stropen("r", 0, "{\\nvar foo set\\n}")}
+
+        var tk1: LX_TOKEN = call lexer () ; call _assert (tk1?2)
+        var tk2: LX_TOKEN = call lexer () ; call _assert (tk2?3)
+        var tk3: LX_TOKEN = call lexer () ; call _assert (tk3?4)
+        var tk4: LX_TOKEN = call lexer () ; call _assert (tk4?3)
+        var tk5: LX_TOKEN = call lexer () ; call _assert (tk5?2)
+        var tk6: LX_TOKEN = call lexer () ; call _assert (tk6?1)
+
+        call _fclose finp
+    }
 }
 
-call t_pre  ()
-call t_lexer  ()
+var t_parser: ()->() = func ()->() {
+}
+
+call t_pre
+call t_lexer
+call t_parser
 output std ()
