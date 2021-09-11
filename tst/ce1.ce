@@ -153,7 +153,7 @@ var lexer: ()->() = func ()->() {
     call lx_blanks
 }
 
-var tk0_check: [_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
+var tk_check: [_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
     var enu: _int = arg.1
     if _(enu == 1) {
         return tk?1
@@ -178,18 +178,44 @@ var tk0_check: [_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
     call _assert _0
 }
 
-var tk0_accept: [_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
-    var ok: _int = tk0_check arg
+var tk_accept: [_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
+    var ok: _int = tk_check arg
     if ok {
         call lexer
     }
     return ok
 }
 
+-- EOF,sym,key,var,unit
 var parser_type: ()->Maybe(Type) = func ()->Maybe(Type) {
-    if tk0_accept [_5,<.1>] {
+    if tk_accept [_5,<.1>] {
         return <.2 new <.1>>
     }
+    var ok: _int = call tk_accept [_2, _('[')]
+    if _(!ok) {
+        set ok = call tk_accept [_2, _('<')]
+    }
+    if ok {
+        var open: _int = tk!2
+        var tp: Maybe(Type) = move parser_type ()
+        var tps: List(Type) = new <.1 [move tp!2, <.0>]>
+        loop {
+            set ok = tk_accept [_2, _(',')]
+            if _(!ok) {
+                break
+            }
+            set tp = move parser_type ()
+            set tps = new <.1 [move tp!2, move tps]>
+        }
+        if _(open == '[') {
+            call _assert tk_accept [_2, _(']')]
+            return <.2 <.2 move tps>>
+        } else {
+            call _assert tk_accept [_2, _('>')]
+            return <.2 <.3 move tps>>
+        }
+    }
+
     return <.1>
 }
 

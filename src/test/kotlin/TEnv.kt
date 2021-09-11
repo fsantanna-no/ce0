@@ -767,6 +767,26 @@ class TEnv {
         """.trimIndent())
         assert(out == "(ln 1, col 5): invalid assignment : type mismatch")
     }
+    @Test
+    fun i04_uni_rec () {
+        val out = inp2env("""
+            var ret: <(),<^^,^>> = <.1>
+        """.trimIndent())
+        println(out)
+        assert(out == "OK")
+    }
+    @Test
+    fun i05_f_rec () {
+        val out = inp2env("""
+            var f: ()-><^> = func ()-><^> {
+                return new <.1 <.0>>
+            }
+            var v: <^> = move f ()
+        """.trimIndent())
+        println(out)
+        assert(out == "OK")
+    }
+
 
 
     // XEXPR
