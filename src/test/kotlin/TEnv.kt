@@ -775,17 +775,6 @@ class TEnv {
         println(out)
         assert(out == "OK")
     }
-    @Test
-    fun i05_f_rec () {
-        val out = inp2env("""
-            var f: ()-><?^> = func ()-><?^> {
-                return new <.1 <.0>>
-            }
-            var v: <?^> = move f ()
-        """.trimIndent())
-        println(out)
-        assert(out == "OK")
-    }
 
     // XEXPR
 
@@ -991,6 +980,26 @@ class TEnv {
             var l: <^> = new <.1 ?>
         """.trimIndent())
         assert(out == "(ln 1, col 14): invalid `new` : expected variant constructor")
+    }
+    @Test
+    fun j26_func_move () {
+        val out = inp2env("""
+            var f: ()-><?^> = func ()-><?^> {
+                return new <.1 <.0>>
+            }
+            var v: <?^> = move f ()
+        """.trimIndent())
+        assert(out == "(ln 4, col 15): invalid `move` : expected recursive variable")
+    }
+    @Test
+    fun j27_f_rec () {
+        val out = inp2env("""
+            var f: ()-><?^> = func ()-><?^> {
+                return new <.1 <.0>>
+            }
+            var v: <?^> = call f ()
+        """.trimIndent())
+        assert(out == "OK")
     }
 
     // IF / FUNC
