@@ -128,6 +128,7 @@ class Exec {
             var z: () = y.2
             output std z
         """.trimIndent())
+        println(out)
         assert(out == "()\n")
     }
     @Test
@@ -762,14 +763,12 @@ class Exec {
         """.trimIndent())
         assert(out == "<.1 <.1 <.0>>>\n")
     }
-
     @Test
     fun j11_rec_double () {
         val out = all("""
             var n: <?<^^>> = new <.1 <.1 new <.1 <.1 <.0>>>>>
             output std \n
         """.trimIndent())
-        println(out)
         assert(out == "<.1 <.1 <.1 <.1 <.0>>>>>\n")
     }
     @Test
@@ -859,6 +858,16 @@ class Exec {
             output std \t3
         """.trimIndent())
         assert(out == "<.1 <.0>>\n<.1 <.0>>\n[(),<.1 <.1 <.0>>>]\n")
+    }
+    @Test
+    fun j17_uni_rec () {
+        val out = all("""
+            var v1: <(),<?[^^,^]>> = <.2 <.0>>
+            var v2: <(),<?[^^,^]>> = <.2 new <.1 [<.1>,<.0>]>>
+            output std \v1
+            output std \v2
+        """.trimIndent())
+        assert(out == "<.2 <.0>>\n<.2 <.1 [<.1>,<.0>]>>\n")
     }
 
     // SET - TUPLE - UNION

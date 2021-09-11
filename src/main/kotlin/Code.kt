@@ -42,6 +42,7 @@ fun Type.output (arg: String): String {
 fun deps (tps: Set<Type>): Set<String> {
     return tps
         .filter { it !is Type.Rec }
+        //.filter { !it.exactlyRec() }
         .map { Pair(it.toce(),it.pos()) }
         .filter { it.second.last()!='*' }
         .map { it.first }
@@ -82,6 +83,7 @@ fun code_ft (tp: Type) {
             """.trimIndent())
 
             TYPES.add(Triple(
+                //Pair(ce, deps(tp.vec.toSet()).let { println(ce);println(it);it }),
                 Pair(ce, deps(tp.vec.toSet())),
     """
                 ${if (tp.containsRec()) struct.first else struct.second }
@@ -193,6 +195,7 @@ fun code_ft (tp: Type) {
             """.trimIndent())
 
             TYPES.add(Triple(
+                //Pair(ce, deps(tpexp.vec.toSet()).let { println(ce);println(it);it }),
                 Pair(ce, deps(tpexp.vec.toSet())),
             """
                 ${if (tp.containsRec()) struct.first else struct.second }
@@ -521,14 +524,28 @@ fun Stmt.code (): String {
     TYPES.clear()
     this.visit(emptyList(), null, null, null, ::code_ft)
     this.visitXP(emptyList(), ::code_fs, ::code_fx, ::code_fe)
+    //val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
+
+    val ord = TYPES.map { it.first }.toMap() // [ce={ce}]
+    fun gt (a: String, b: String): Boolean {
+        return (ord[a]!=null && (ord[a]!!.contains(b) || ord[a]!!.any { gt(it,b) }))
+    }
     val TPS =
         TYPES.sortedWith(Comparator { x: Triple<Pair<String, Set<String>>, String, String>, y: Triple<Pair<String, Set<String>>, String, String> ->
             when {
-                (x.first.second.contains(y.first.first)) -> 1
+                gt(x.first.first, y.first.first) ->  1
+                gt(y.first.first, x.first.first) -> -1
+                else -> 0
+            }
+            /*
+            when {
+                (x.first.second.contains(y.first.first)) ->  1
                 (y.first.second.contains(x.first.first)) -> -1
                 else -> 0
             }
+             */
         })
+    //TPS.forEach { println(it.first.first) }
     assert(EXPRS.size == 0)
     assert(CODE.size == 1)
     return ("""

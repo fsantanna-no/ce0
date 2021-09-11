@@ -985,6 +985,13 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK")
     }
+    @Test
+    fun j25_new_no () {
+        val out = inp2env("""
+            var l: <^> = new <.1 ?>
+        """.trimIndent())
+        assert(out == "(ln 1, col 14): invalid `new` : expected variant constructor")
+    }
 
     // IF / FUNC
 
