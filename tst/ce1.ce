@@ -12,8 +12,15 @@ native _{
     }
 }
 
+#define Maybe(x) <(),x>
 #define List(x) <[x,^]>
 #define String List(_int)
+
+#define Token <(),_int,KEY,String,()>
+    -- EOF,sym,key,var,unit
+
+#define Type <(),List(^^),List(^^)>
+    -- Unit, Tuple, Union
 
 var string_len: \\String->_int = func \\String->_int {
     if (/arg)?0 {
@@ -78,6 +85,7 @@ var string_eq: [\\String,\\String]->_int = func [\\String,\\String]->_int {
 }
 
 var finp: _(FILE*) = ?
+var tk: Token = <.1>
 
 var lx_blanks: ()->() = func ()->() {
     loop {
@@ -91,9 +99,9 @@ var lx_blanks: ()->() = func ()->() {
     }
 }
 
-var keys_find: \\String-><(),KEY> = func \\String-><(),KEY> {
+var keys_find: \\String->Maybe(KEY) = func \\String->Maybe(KEY) {
     var str: \\String = borrow arg
-    var aux: \\KEYS-><(),KEY> = func \\KEYS-><(),KEY> {
+    var aux: \\KEYS->Maybe(KEY) = func \\KEYS->Maybe(KEY) {
         if (/arg)?0 {
             return <.1>
         }
@@ -105,9 +113,7 @@ var keys_find: \\String-><(),KEY> = func \\String-><(),KEY> {
     return aux borrow \\keys
 }
 
--- EOF,sym,key,var
-#define LX_TOKEN <(),_int,KEY,String>
-var lx_token: ()->LX_TOKEN = func ()->LX_TOKEN {
+var lx_token: ()->Token = func ()->Token {
     loop {
         var c: _int = call _fgetc finp
         if _(c == EOF) {
@@ -115,6 +121,11 @@ var lx_token: ()->LX_TOKEN = func ()->LX_TOKEN {
         }
         if _(c=='{' || c=='}') {
             return <.2 c>
+        }
+        if _{c=='('} {
+            set c = call _fgetc finp
+            call _assert _{c == ')'}
+            return <.5>
         }
         if _(isalpha(c)) {
             var str: String = <.0>
@@ -126,7 +137,7 @@ var lx_token: ()->LX_TOKEN = func ()->LX_TOKEN {
                     break
                 }
             }
-            var key: <(),KEY> = call keys_find borrow \\str
+            var key: Maybe(KEY) = call keys_find borrow \\str
             if key?2 {
                 return <.3 key!2>
             } else {
@@ -136,11 +147,50 @@ var lx_token: ()->LX_TOKEN = func ()->LX_TOKEN {
     }
 }
 
-var lexer: ()->LX_TOKEN = func ()->LX_TOKEN {
+var lexer: ()->() = func ()->() {
     call lx_blanks
-    var ret: LX_TOKEN = call lx_token
+    set tk = call lx_token
     call lx_blanks
-    return move ret
+}
+
+var tk0_check: [_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
+    var enu: _int = arg.1
+    if _(enu == 1) {
+        return tk?1
+    }
+    if _(enu == 2) {
+        if tk?2 {
+            var c1: _int = tk!2
+            var c2: _int = arg.2!2
+            return _(c1 == c2)
+        }
+        return _0
+    }
+    if _(enu == 3) {
+        return tk?3
+    }
+    if _(enu == 4) {
+        return tk?4
+    }
+    if _(enu == 5) {
+        return tk?5
+    }
+    call _assert _0
+}
+
+var tk0_accept: [_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
+    var ok: _int = tk0_check arg
+    if ok {
+        call lexer
+    }
+    return ok
+}
+
+var parser_type: ()->Maybe(Type) = func ()->Maybe(Type) {
+    if tk0_accept [_5,<.1>] {
+        return <.2 new <.1>>
+    }
+    return <.1>
 }
 
 var t_pre: ()->() = func ()->() {
@@ -171,50 +221,66 @@ var t_lexer: ()->() = func ()->() {
     {
         set finp = _{stropen("r", 0, "{\\nvar foo set\\n}")}
 
-        var tk1: LX_TOKEN = call lx_token ()
+        var k1: Token = call lx_token ()
         call lx_blanks ()
-        call _assert (tk1?2)
-        var c1: _int = tk1!2
+        call _assert (k1?2)
+        var c1: _int = k1!2
         call _assert _(c1 == '{')
 
-        var tk2: LX_TOKEN = call lx_token ()
+        var k2: Token = call lx_token ()
         call lx_blanks ()
-        call _assert (tk2?3)
-        call _assert (tk2!3?2)
+        call _assert (k2?3)
+        call _assert (k2!3?2)
 
-        var tk3: LX_TOKEN = call lx_token ()
+        var k3: Token = call lx_token ()
         call lx_blanks ()
-        call _assert (tk3?4)
-        var s31: \\<[_int,^]> = borrow \\tk3!4
+        call _assert (k3?4)
+        var s31: \\<[_int,^]> = borrow \\k3!4
         var s32: String = string_c2ce _("foo")
         call _assert string_eq [borrow s31, borrow \\s32]
 
-        var tk4: LX_TOKEN = call lx_token ()
+        var k4: Token = call lx_token ()
         call lx_blanks ()
-        call _assert (tk4?3)
-        call _assert (tk4!3?1)
+        call _assert (k4?3)
+        call _assert (k4!3?1)
 
         call _fclose finp
     }
     -- LEXER
     {
-        set finp = _{stropen("r", 0, "{\\nvar foo set\\n}")}
+        set finp = _{stropen("r", 0, "{\\nvar () \\n foo set\\n}")}
 
-        var tk1: LX_TOKEN = call lexer () ; call _assert (tk1?2)
-        var tk2: LX_TOKEN = call lexer () ; call _assert (tk2?3)
-        var tk3: LX_TOKEN = call lexer () ; call _assert (tk3?4)
-        var tk4: LX_TOKEN = call lexer () ; call _assert (tk4?3)
-        var tk5: LX_TOKEN = call lexer () ; call _assert (tk5?2)
-        var tk6: LX_TOKEN = call lexer () ; call _assert (tk6?1)
+        -- EOF,sym,key,var,unit
+        call lexer () ; call _assert (tk?2)
+        call lexer () ; call _assert (tk?3)
+        call lexer () ; call _assert (tk?5)
+        call lexer () ; call _assert (tk?4)
+        call lexer () ; call _assert (tk?3)
+        call lexer () ; call _assert (tk?2)
+        call lexer () ; call _assert (tk?1)
 
         call _fclose finp
     }
 }
 
+var t_parser_type: ()->Maybe(Type) = func ()->Maybe(Type) {
+    {
+        set finp = _{stropen("r", 0, "() x")}
+        call lexer
+        var tp1: Maybe(Type) = call parser_type
+        call _assert tp1!2?1
+        var tp2: Maybe(Type) = call parser_type
+        call _assert tp2?1
+        call _fclose finp
+    }
+}
+
 var t_parser: ()->() = func ()->() {
+    call t_parser_type
 }
 
 call t_pre
 call t_lexer
 call t_parser
+
 output std ()
