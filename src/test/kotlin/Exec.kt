@@ -645,18 +645,25 @@ class Exec {
     // REC
 
     @Test
-    fun j01_list () {
+    fun j00_list () {
         val out = all("""
             var l: <^> = <.0>
             output std \l
         """.trimIndent())
-        println(out)
+        assert(out == "(ln 1, col 5): invalid assignment : type mismatch")
+    }
+    @Test
+    fun j01_list () {
+        val out = all("""
+            var l: <?^> = <.0>
+            output std \l
+        """.trimIndent())
         assert(out == "<.0>\n")
     }
     @Test
     fun j02_list () {
         val out = all("""
-            var l: <^> = new <.1 <.0>>
+            var l: <?^> = new <.1 <.0>>
             output std \l
         """.trimIndent())
         assert(out == "<.1 <.0>>\n")
@@ -664,7 +671,7 @@ class Exec {
     @Test
     fun j03_list () {
         val out = all("""
-            var l: <^> = new <.1 new <.1 <.0>>>
+            var l: <?^> = new <.1 new <.1 <.0>>>
             output std \l!1
         """.trimIndent())
         assert(out == "<.1 <.0>>\n")
@@ -672,7 +679,7 @@ class Exec {
     @Test
     fun j04_list_disc_null_err () {
         val out = all("""
-            var l: <^> = new <.1 <.0>>
+            var l: <?^> = new <.1 <.0>>
             output std l!0
         """.trimIndent())
         assert(out == "out.exe: out.c:102: main: Assertion `l == NULL' failed.\n")
@@ -680,7 +687,7 @@ class Exec {
     @Test
     fun j05_list_disc_null_err () {
         val out = all("""
-            var l: <^> = <.0>
+            var l: <?^> = <.0>
             output std \l!1
         """.trimIndent())
         assert(out == "out.exe: out.c:98: main: Assertion `l != NULL' failed.\n")
@@ -688,8 +695,8 @@ class Exec {
     @Test
     fun j06_list () {
         val out = all("""
-            var l: <^> = new <.1 new <.1 <.0>>>
-            var p: \<^> = ?
+            var l: <?^> = new <.1 new <.1 <.0>>>
+            var p: \<?^> = ?
             {
                 set p = borrow \l!1
             }
@@ -700,18 +707,28 @@ class Exec {
     @Test
     fun j07_list_move () {
         val out = all("""
-            var l1: <^> = new <.1 <.0>>
-            var l2: <^> = move l1
+            var l1: <?^> = new <.1 <.0>>
+            var l2: <?^> = move l1
             output std \l1
             output std \l2
         """.trimIndent())
         assert(out == "<.0>\n<.1 <.0>>\n")
     }
     @Test
+    fun j07_list_move_err () {
+        val out = all("""
+            var l1: <?^> = new <.1 <.0>>
+            var l2: <^> = move l1
+            output std \l1
+            output std \l2
+        """.trimIndent())
+        assert(out == "(ln 2, col 5): invalid assignment : type mismatch")
+    }
+    @Test
     fun j08_list_move () {
         val out = all("""
-            var l1: <^> = new <.1 <.0>>
-            var l2: <^> = <.0>
+            var l1: <?^> = new <.1 <.0>>
+            var l2: <?^> = <.0>
             set l2 = new <.1 move l1>
             output std \l1
             output std \l2
@@ -721,8 +738,8 @@ class Exec {
     @Test
     fun j09_list_move () {
         val out = all("""
-            var l1: <^> = new <.1 <.0>>
-            var l2: [_int,<^>] = [_10, move l1]
+            var l1: <?^> = new <.1 <.0>>
+            var l2: [_int,<?^>] = [_10, move l1]
             output std \l1
             output std \l2.2
         """.trimIndent())
@@ -731,7 +748,7 @@ class Exec {
     @Test
     fun j10_rec () {
         val out = all("""
-            var n: <<^>> = <.1 new <.1 <.0>>>
+            var n: <<?^>> = <.1 new <.1 <.0>>>
             output std \n
         """.trimIndent())
         assert(out == "<.1 <.1 <.0>>>\n")
@@ -739,8 +756,8 @@ class Exec {
     @Test
     fun j11_borrow () {
         val out = all("""
-            var x: <^> = new <.1 new <.1 <.0>>>
-            var y: \<^> = borrow \x
+            var x: <?^> = new <.1 new <.1 <.0>>>
+            var y: \<?^> = borrow \x
             output std y
         """.trimIndent())
         assert(out == "<.1 <.1 <.0>>>\n")
@@ -749,7 +766,7 @@ class Exec {
     @Test
     fun j11_rec_double () {
         val out = all("""
-            var n: <<^^>> = new <.1 <.1 new <.1 <.1 <.0>>>>>
+            var n: <?<^^>> = new <.1 <.1 new <.1 <.1 <.0>>>>>
             output std \n
         """.trimIndent())
         println(out)
@@ -758,7 +775,7 @@ class Exec {
     @Test
     fun j09_tup_list_err () {
         val out = all("""
-            var t: [_int,<^>] = [_10, new <.1 <.0>>]
+            var t: [_int,<?^>] = [_10, new <.1 <.0>>]
             output std \t
         """.trimIndent())
         assert(out == "[10,<.1 <.0>>]\n")
@@ -766,9 +783,9 @@ class Exec {
     @Test
     fun j10_tup_copy_ok () {
         val out = all("""
-            var l: <^> = <.0>
-            var t1: [<^>] = [move l]
-            var t2: [<^>] = copy t1
+            var l: <?^> = <.0>
+            var t1: [<?^>] = [move l]
+            var t2: [<?^>] = copy t1
             output std \t2
         """.trimIndent())
         assert(out == "[<.0>]\n")
@@ -776,9 +793,9 @@ class Exec {
     @Test
     fun j11_tup_move_ok () {
         val out = all("""
-            var l: <^> = <.0>
-            var t1: [<^>] = [move l]
-            var t2: [<^>] = move t1
+            var l: <?^> = <.0>
+            var t1: [<?^>] = [move l]
+            var t2: [<?^>] = move t1
             output std \t2
         """.trimIndent())
         assert(out == "[<.0>]\n")
@@ -786,9 +803,9 @@ class Exec {
     @Test
     fun j11_tup_copy_ok () {
         val out = all("""
-            var l: <^> = new <.1 <.0>>
-            var t1: [<^>] = [move l]
-            var t2: [<^>] = copy t1
+            var l: <?^> = new <.1 <.0>>
+            var t1: [<?^>] = [move l]
+            var t2: [<?^>] = copy t1
             output std \t2
         """.trimIndent())
         assert(out == "[<.1 <.0>>]\n")
@@ -796,9 +813,9 @@ class Exec {
     @Test
     fun j12_tup_copy_ok () {
         val out = all("""
-            var l: <(),^> = new <.2 new <.1>>
-            var t1: [<(),^>] = [move l]
-            var t2: [<(),^>] = copy t1
+            var l: <?(),^> = new <.2 new <.1>>
+            var t1: [<?(),^>] = [move l]
+            var t2: [<?(),^>] = copy t1
             output std \t2
         """.trimIndent())
         assert(out == "[<.2 <.1>>]\n")
@@ -806,9 +823,9 @@ class Exec {
     @Test
     fun j13_tup_copy_ok () {
         val out = all("""
-            var l: <(),^> = new <.2 new <.1>>
-            var t1: [(),<(),^>] = [(), move l]
-            var t2: [(),<(),^>] = copy t1
+            var l: <?(),^> = new <.2 new <.1>>
+            var t1: [(),<?(),^>] = [(), move l]
+            var t2: [(),<?(),^>] = copy t1
             output std \t2
         """.trimIndent())
         assert(out == "[(),<.2 <.1>>]\n")
@@ -816,8 +833,8 @@ class Exec {
     @Test
     fun j14_tup_copy_ok () {
         val out = all("""
-            var l1: <^> = <.0>
-            var l2: <^> = copy l1
+            var l1: <?^> = <.0>
+            var l2: <?^> = copy l1
             output std \l2
         """.trimIndent())
         assert(out == "<.0>\n")
@@ -825,8 +842,8 @@ class Exec {
     @Test
     fun j15_tup_copy_ok () {
         val out = all("""
-            var l1: <^> = new <.1 <.0>>
-            var l2: <^> = copy l1
+            var l1: <?^> = new <.1 <.0>>
+            var l2: <?^> = copy l1
             output std \l2
         """.trimIndent())
         assert(out == "<.1 <.0>>\n")
@@ -834,9 +851,9 @@ class Exec {
     @Test
     fun j16_tup_move_copy_ok () {
         val out = all("""
-            var l1: <^> = new <.1 <.0>>
-            var l2: <^> = new <.1 copy l1>
-            var t3: [(),<^>] = [(), new <.1 move l2!1>]
+            var l1: <?^> = new <.1 <.0>>
+            var l2: <?^> = new <.1 copy l1>
+            var t3: [(),<?^>] = [(), new <.1 move l2!1>]
             output std \l1
             output std \l2
             output std \t3
@@ -942,19 +959,18 @@ class Exec {
     @Test
     fun z06_type_complex () {
         val out = all("""
-            var x: <[(),^]> = new <.1 [(),<.0>]>
-            var y: [(),<[(),^]>] = [(), new <.1 [(),<.0>]>]
-            var z: [(),\<[(),^]>] = [(), borrow \x]
+            var x: <?[(),^]> = new <.1 [(),<.0>]>
+            var y: [(),<?[(),^]>] = [(), new <.1 [(),<.0>]>]
+            var z: [(),\<?[(),^]>] = [(), borrow \x]
             output std (/z.2)!1.2!0
         """.trimIndent())
-        println(out)
         assert(out == "()\n")
     }
     @Test
     fun z07_type_complex () {
         val out = all("""
-            var x: <[(),^]> = <.0>
-            var z: [(),\<[(),^]>] = [(), borrow \x]
+            var x: <?[(),^]> = <.0>
+            var z: [(),\<?[(),^]>] = [(), borrow \x]
             output std (/z.2)!0
         """.trimIndent())
         assert(out == "()\n")
@@ -962,7 +978,7 @@ class Exec {
     @Test
     fun z08_type_complex () {
         val out = all("""
-            var y: [(),<[(),^]>] = [(), new <.1 [(),<.0>]>]
+            var y: [(),<?[(),^]>] = [(), new <.1 [(),<.0>]>]
             output std \y
         """.trimIndent())
         assert(out == "[(),<.1 [(),<.0>]>]\n")
@@ -970,12 +986,12 @@ class Exec {
     @Test
     fun z08_func_arg () {
         val out = all("""
-            var x1: <^> = <.0>
+            var x1: <?^> = <.0>
             var y1: _int = x1?0
-            var x2: \<^> = borrow \x1
+            var x2: \<?^> = borrow \x1
             var y2: _int = (/x2)?1
             set /x2 = new <.1 <.0>>
-            var f: \<^>->_int = func \<^>->_int {
+            var f: \<?^>->_int = func \<?^>->_int {
                 return (/arg)?1
             }
             var y3: _int = f borrow x2
@@ -988,7 +1004,7 @@ class Exec {
     fun z09_output_string () {
         val out = all("""
             var f: ()->() = func ()->() {
-                var s1: <[_int,^]> = new <.1 [_1,<.0>]>
+                var s1: <?[_int,^]> = new <.1 [_1,<.0>]>
                 output std \s1
             }
             call f
@@ -999,7 +1015,7 @@ class Exec {
     fun z10_output_string () {
         val out = all("""
             var f: ()->() = func ()->() {
-                var s1: <[_int,^]> = new <.1 [_1,<.0>]>
+                var s1: <?[_int,^]> = new <.1 [_1,<.0>]>
                 output std \s1
             }
             call f
@@ -1009,11 +1025,11 @@ class Exec {
     @Test
     fun z10_return_move () {
         val out = all("""
-            var f: ()-><(),_int,<[_int,^]>> = func ()-><(),_int,<[_int,^]>> {
-                var str: <[_int,^]> = <.0>
+            var f: ()-><(),_int,<?[_int,^]>> = func ()-><(),_int,<?[_int,^]>> {
+                var str: <?[_int,^]> = <.0>
                 return <.3 move str>
             }
-            var x: <(),_int,<[_int,^]>> = call f ()
+            var x: <(),_int,<?[_int,^]>> = call f ()
             output std \x!3
         """.trimIndent())
         assert(out == "<.0>\n")
@@ -1029,8 +1045,8 @@ class Exec {
     @Test
     fun z12_union_tuple () {
         val out = all("""
-            var tk2: <(),_int,<[_int,^]>> = <.3 <.0>>
-            var s21: \<[_int,^]> = borrow \tk2!3
+            var tk2: <(),_int,<?[_int,^]>> = <.3 <.0>>
+            var s21: \<?[_int,^]> = borrow \tk2!3
             output std s21
         """.trimIndent())
         assert(out == "<.0>\n")

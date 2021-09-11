@@ -120,15 +120,15 @@ class TEnv {
     @Test
     fun b12_user_empty_err () {
         val out = inp2env("""
-            var l: <^> = <.1 <.0>>
+            var l: <?^> = <.1 <.0>>
             output std \l!0
         """.trimIndent())
-        assert(out == "(ln 1, col 16): invalid expression : expected `new` operation modifier")
+        assert(out == "(ln 1, col 17): invalid expression : expected `new` operation modifier")
     }
     @Test
     fun b13_user_empty_ok () {
         val out = inp2env("""
-            var l: <^> = new <.1 <.0>>
+            var l: <?^> = new <.1 <.0>>
             output std \l!0
         """.trimIndent())
         assert(out == "OK")
@@ -738,9 +738,9 @@ class TEnv {
     @Test
     fun i01_list () {
         val out = inp2env("""
-            var p: \<^> = ?
+            var p: \<?^> = ?
             {
-                var l: <^> = new <.1 (new <.1 <.0>>)>
+                var l: <?^> = new <.1 (new <.1 <.0>>)>
                 set p = \l
             }
             output std p
@@ -751,9 +751,9 @@ class TEnv {
     @Test
     fun i02_list () {
         val out = inp2env("""
-            var p: \<^> = ?
+            var p: \<?^> = ?
             {
-                var l: <^> = new <.1 (new <.1 <.0>>)>
+                var l: <?^> = new <.1 (new <.1 <.0>>)>
                 set p = borrow \l
             }
             output std p
@@ -770,7 +770,7 @@ class TEnv {
     @Test
     fun i04_uni_rec () {
         val out = inp2env("""
-            var ret: <(),<^^,^>> = <.1>
+            var ret: <(),<?^^,^>> = <.1>
         """.trimIndent())
         println(out)
         assert(out == "OK")
@@ -778,16 +778,14 @@ class TEnv {
     @Test
     fun i05_f_rec () {
         val out = inp2env("""
-            var f: ()-><^> = func ()-><^> {
+            var f: ()-><?^> = func ()-><?^> {
                 return new <.1 <.0>>
             }
-            var v: <^> = move f ()
+            var v: <?^> = move f ()
         """.trimIndent())
         println(out)
         assert(out == "OK")
     }
-
-
 
     // XEXPR
 
@@ -849,52 +847,52 @@ class TEnv {
     @Test
     fun j07_rec_xepr_copy_err () {
         val out = inp2env("""
-            var x: <^> = copy <.1 <.0>>
+            var x: <?^> = copy <.1 <.0>>
         """.trimIndent())
-        assert(out == "(ln 1, col 14): invalid `copy` : expected recursive variable")
+        assert(out == "(ln 1, col 15): invalid `copy` : expected recursive variable")
         //assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
     }
     @Test
     fun j08_rec_xepr_double_rec () {
         val out = inp2env("""
-            var x: <<^^>> = new <.1 <.1 <.0>>>
+            var x: <?<^^>> = new <.1 <.1 <.0>>>
         """.trimIndent())
         assert(out == "OK")
     }
     @Test
     fun j09_rec_xepr_double_rec () {
         val out = inp2env("""
-            var x: <<^^>> = new <.1 <.1 new <.1 <.1 <.0>>>>>
+            var x: <?<^^>> = new <.1 <.1 new <.1 <.1 <.0>>>>>
         """.trimIndent())
         assert(out == "OK")
     }
     @Test
     fun j10_rec_xepr_double_rec () {
         val out = inp2env("""
-            var x: <<[^^,^]>> = new <.1 new <.1 [<.0>,<.0>]>>
+            var x: <?<?[^^,^]>> = new <.1 new <.1 [<.0>,<.0>]>>
         """.trimIndent())
         assert(out == "OK")
     }
     @Test
     fun j11_rec_xepr_double_rec () {
         val out = inp2env("""
-            var x: <<[^^,^]>> = new <.1 new <.1 [<.0>,new <.1 [<.0>,<.0>]>]>>
+            var x: <?<?[^^,^]>> = new <.1 new <.1 [<.0>,new <.1 [<.0>,<.0>]>]>>
         """.trimIndent())
         assert(out == "OK")
     }
     @Test
     fun j12_rec_xepr_double_rec_err () {
         val out = inp2env("""
-            var x: <<[^^,^]>> = new <.1 <.1 [<.0>,<.0>]>>
+            var x: <?<?[^^,^]>> = new <.1 <.1 [<.0>,<.0>]>>
         """.trimIndent())
-        assert(out == "(ln 1, col 31): invalid expression : expected `new` operation modifier")
+        assert(out == "(ln 1, col 33): invalid expression : expected `new` operation modifier")
     }
     @Test
     fun j13_tup_move_ok () {
         val out = inp2env("""
-            var l: <^> = <.0>
-            var t1: [<^>] = [move l]
-            var t2: [<^>] = move t1
+            var l: <?^> = <.0>
+            var t1: [<?^>] = [move l]
+            var t2: [<?^>] = move t1
         """.trimIndent())
         //assert(out == "(ln 3, col 17): invalid `move` : expected recursive variable")
         assert(out == "OK")
@@ -902,9 +900,9 @@ class TEnv {
     @Test
     fun j14_new_no () {
         val out = inp2env("""
-            var l: <^> = new <.0>
+            var l: <?^> = new <.0>
         """.trimIndent())
-        assert(out == "(ln 1, col 14): invalid `new` : expected variant constructor")
+        assert(out == "(ln 1, col 15): invalid `new` : expected variant constructor")
     }
     @Test
     fun j15_rec_xepr_borrow_err () {
@@ -1014,8 +1012,8 @@ class TEnv {
     @Test
     fun l01_borrow_err () {
         val out = inp2env("""
-            var x: <^> = ?
-            var y: \<^> = borrow \x
+            var x: <?^> = ?
+            var y: \<?^> = borrow \x
             set x = <.0>
         """.trimIndent())
         assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2")
@@ -1043,8 +1041,8 @@ class TEnv {
     @Test
     fun l03_borrow_err () {
         val out = inp2env("""
-            var x: <^> = ?
-            var f: \<^> -> () = func \<^> -> ()
+            var x: <?^> = ?
+            var f: \<?^> -> () = func \<?^> -> ()
             {
                 set x = <.0>
             }
@@ -1055,11 +1053,11 @@ class TEnv {
     @Test
     fun l04_borrow_err () {
         val out = inp2env("""
-            var x: <^> = ?
+            var x: <?^> = ?
             var f: () -> () = func () -> () {
                 set x = <.0>
             }
-            var y: \<^> = borrow \x
+            var y: \<?^> = borrow \x
             var g: () -> () = f
             call g ()
         """.trimIndent())
@@ -1068,8 +1066,8 @@ class TEnv {
     @Test
     fun l05_borrow_err () {
         val out = inp2env("""
-            var x: <^> = ?
-            var y: \<^> = borrow \x
+            var x: <?^> = ?
+            var y: \<?^> = borrow \x
             set x = <.0>
         """.trimIndent())
         assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2")
@@ -1077,8 +1075,8 @@ class TEnv {
     @Test
     fun l06_borrow_err () {
         val out = inp2env("""
-            var x: <^> = ?
-            var y: [(),\<^>] = [(), borrow \x]
+            var x: <?^> = ?
+            var y: [(),\<?^>] = [(), borrow \x]
             set x = <.0>
         """.trimIndent())
         println(out)
@@ -1087,8 +1085,8 @@ class TEnv {
     @Test
     fun l07_borrow_err () {
         val out = inp2env("""
-            var x: <^> = ?
-            var y: <\<^>> = <.1 borrow \x>
+            var x: <?^> = ?
+            var y: <\<?^>> = <.1 borrow \x>
             set x = <.0>
         """.trimIndent())
         assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2")
@@ -1096,9 +1094,9 @@ class TEnv {
     @Test
     fun l08_borrow_err () {
         val out = inp2env("""
-            var x: [\<^>,<^>] = [?,<.0>]
+            var x: [\<?^>,<?^>] = [?,<.0>]
             set x.1 = borrow \x.2
-            var y: <^> = move x.2
+            var y: <?^> = move x.2
         """.trimIndent())
         assert(out == "(ln 2, col 9): invalid assignment of \"x\" : borrowed in line 1")
     }

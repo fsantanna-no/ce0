@@ -71,13 +71,13 @@ fun Type.containsRec (): Boolean {
         is Type.Rec   -> true
         is Type.Tuple -> this.vec.any { it.containsRec() }
         is Type.Union -> this.vec.any { it.containsRec() }
-        is Type.UCons  -> this.arg.containsRec()
+        is Type.UCons -> this.arg.containsRec()
     }
 }
 
 fun Type.exactlyRec (): Boolean {
     return when (this) {
-        is Type.Union -> (this.expand().toString() != this.toString())
+        is Type.Union -> this.isrec
         is Type.UCons -> error("bug found")
         else -> false
     }
@@ -114,7 +114,7 @@ fun Type.isSupOf (sub: Type): Boolean {
         (this is Type.Tuple && sub is Type.Tuple) ->
             (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
         (this is Type.Union && sub is Type.Union) ->
-            (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
+            (this.isrec == sub.isrec) && (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
         else -> false
     }
 }
