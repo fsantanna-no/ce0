@@ -220,12 +220,12 @@ fun check_xexprs (S: Stmt) {
 
         //println(xe)
         //println(xp)
-        val is_ptr_to_ctrec = (xp is Type.Ptr) && xp.pln.containsRec() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
+        val is_ptr_to_udisc = (xp is Type.Ptr) && xe.e.containsUDisc() //xp.pln.containsUDisc() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
         when {
-            (xe.x == null) -> All_assert_tk(xe.e.tk, !is_ptr_to_ctrec && (!xp_ctrec || (e_iscst && (!e_isvar||!xp_exrec||e_isnil)))) {
-                "invalid expression : expected " + (if (is_ptr_to_ctrec) "`borrow` " else if (e_iscst) "`new` " else "") + "operation modifier"
+            (xe.x == null) -> All_assert_tk(xe.e.tk, !is_ptr_to_udisc && (!xp_ctrec || (e_iscst && (!e_isvar||!xp_exrec||e_isnil)))) {
+                "invalid expression : expected " + (if (is_ptr_to_udisc) "`borrow` " else if (e_iscst) "`new` " else "") + "operation modifier"
             }
-            (xe.x.enu == TK.BORROW) -> All_assert_tk(xe.x, xe.e.toType(env).let { it is Type.Ptr && it.pln.containsRec() }) {
+            (xe.x.enu == TK.BORROW) -> All_assert_tk(xe.x, is_ptr_to_udisc) {
                 "invalid `borrow` : expected pointer to recursive variable"
             }
             (xe.x.enu == TK.COPY) -> All_assert_tk(xe.x, xp_ctrec && !e_iscst) {
@@ -331,6 +331,25 @@ fun Expr.leftMost (tk: Tk?): Set<Pair<Tk?,Expr.Var>> {
     }
 }
 
+fun Expr.containsUDisc (): Boolean {
+    return when (this) {
+        is Expr.UDisc -> true
+        is Expr.TDisc -> this.tup.containsUDisc()
+        is Expr.Dnref -> this.ptr.containsUDisc()
+        is Expr.Upref -> this.pln.containsUDisc()
+        else          -> false
+    }
+}
+
+fun Type.containsUnion (): Boolean {
+    return when (this) {
+        is Type.Union -> true
+        is Type.Tuple -> this.vec.any { it.containsUnion() }
+        is Type.Ptr   -> this.pln.containsUnion()
+        else          -> false
+    }
+}
+
 fun check_borrows (S: Stmt) {
     // y = borrow \x
     // z = borrow y
@@ -406,7 +425,8 @@ fun check_borrows (S: Stmt) {
                         if (tp is Type.Func) {
                             fs_add(it, s.src.e)
                         } else {
-                            val isrecptr = tp.containsRec() || (tp is Type.Ptr && tp.pln.containsRec())
+                            //if (s.src.x!=null && s.src.x.enu==TK.BORROW) {
+                            val isrecptr = tp.containsUnion() || (tp is Type.Ptr && tp.pln.containsUnion())
                             if (isrecptr) {
                                 bws_add(env, it, s.src)
                                 chk(env, it, s.tk, "invalid assignment of \"${it.tk_.str}\"")

@@ -553,13 +553,22 @@ class Exec {
         assert(out == "[20,20]\n")
     }
     @Test
-    fun i14_ptr_type () {
+    fun i14_ptr_type_err () {
         val out = all("""
             var v: <_int> = <.1 _10>
             var p: \_int = \v!1
+        """.trimIndent())
+        assert(out == "(ln 2, col 16): invalid expression : expected `borrow` operation modifier")
+    }
+    @Test
+    fun i14_ptr_type () {
+        val out = all("""
+            var v: <_int> = <.1 _10>
+            var p: \_int = borrow \v!1
             set /p = _20
             output std v
         """.trimIndent())
+        println(out)
         assert(out == "<.1 20>\n")
     }
     @Test
@@ -641,6 +650,18 @@ class Exec {
             }
         """.trimIndent())
         assert(out == "10\n")
+    }
+    @Test
+    fun i20_ptr_uni_err () {
+        val out = all("""
+            var uni: <_(char*),_int> = <.1 _("oi")>
+            var str: _(char*) = uni!1
+            var ptr: \_(char*) = borrow \uni!1
+            set uni = <.2 _65>
+            call _puts /ptr
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 4, col 9): invalid assignment of \"uni\" : borrowed in line 3")
     }
 
     // REC
@@ -755,13 +776,22 @@ class Exec {
         assert(out == "<.1 <.1 <.0>>>\n")
     }
     @Test
-    fun j11_borrow () {
+    fun j11_borrow_1 () {
         val out = all("""
             var x: <?^> = new <.1 new <.1 <.0>>>
-            var y: \<?^> = borrow \x
+            var y: \<?^> = \x
             output std y
         """.trimIndent())
         assert(out == "<.1 <.1 <.0>>>\n")
+    }
+    @Test
+    fun j11_borrow_2 () {
+        val out = all("""
+            var x: <?^> = new <.1 new <.1 <.0>>>
+            var y: \<?^> = borrow \x!1
+            output std y
+        """.trimIndent())
+        assert(out == "<.1 <.0>>\n")
     }
     @Test
     fun j11_rec_double () {
@@ -970,7 +1000,7 @@ class Exec {
         val out = all("""
             var x: <?[(),^]> = new <.1 [(),<.0>]>
             var y: [(),<?[(),^]>] = [(), new <.1 [(),<.0>]>]
-            var z: [(),\<?[(),^]>] = [(), borrow \x]
+            var z: [(),\<?[(),^]>] = [(), \x]
             output std (/z.2)!1.2!0
         """.trimIndent())
         assert(out == "()\n")
@@ -979,7 +1009,7 @@ class Exec {
     fun z07_type_complex () {
         val out = all("""
             var x: <?[(),^]> = <.0>
-            var z: [(),\<?[(),^]>] = [(), borrow \x]
+            var z: [(),\<?[(),^]>] = [(), \x]
             output std (/z.2)!0
         """.trimIndent())
         assert(out == "()\n")
@@ -997,13 +1027,13 @@ class Exec {
         val out = all("""
             var x1: <?^> = <.0>
             var y1: _int = x1?0
-            var x2: \<?^> = borrow \x1
+            var x2: \<?^> = \x1
             var y2: _int = (/x2)?1
             set /x2 = new <.1 <.0>>
             var f: \<?^>->_int = func \<?^>->_int {
                 return (/arg)?1
             }
-            var y3: _int = f borrow x2
+            var y3: _int = f x2
             var ret: _int = _(y1 + y2 + y3)
             output std ret
         """.trimIndent())
