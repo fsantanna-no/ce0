@@ -31,7 +31,7 @@ var string_len: \\String->_int = func \\String->_int {
 
 var string_ce2c: \\String->_(char*) = func \\String->_(char*) {
     native _{static char STRING[256];}
-    var n: _int = string_len (borrow arg)
+    var n: _int = string_len arg
     var aux: [_int,\\String]->() = func [_int,\\String]->() {
         var i: _int = arg.1
         if (/arg.2)?1 {
@@ -40,7 +40,7 @@ var string_ce2c: \\String->_(char*) = func \\String->_(char*) {
             return aux [_(i+1), borrow \\(/arg.2)!1.2]
         }
     }
-    call aux [_1, borrow arg]
+    call aux [_1, arg]
     native _{STRING[n] = '\\0';}
     return _STRING
 }
@@ -98,17 +98,17 @@ var lx_blanks: ()->() = func ()->() {
 }
 
 var keys_find: \\String->Maybe(KEY) = func \\String->Maybe(KEY) {
-    var str: \\String = borrow arg
+    var str: \\String = arg
     var aux: \\KEYS->Maybe(KEY) = func \\KEYS->Maybe(KEY) {
         if (/arg)?0 {
             return <.1>
         }
-        if string_eq [borrow str, borrow \\(/arg)!1.1.2] {
+        if string_eq [str, borrow \\(/arg)!1.1.2] {
             return <.2 (/arg)!1.1.1>
         }
         return aux borrow \\(/arg)!1.2
     }
-    return aux borrow \\keys
+    return aux \\keys
 }
 
 var lx_token: ()->Token = func ()->Token {
@@ -135,7 +135,7 @@ var lx_token: ()->Token = func ()->Token {
                     break
                 }
             }
-            var key: Maybe(KEY) = call keys_find borrow \\str
+            var key: Maybe(KEY) = call keys_find \\str
             if key?2 {
                 return <.3 key!2>
             } else {
@@ -220,11 +220,11 @@ var parser_type: ()->Maybe(Type) = func ()->Maybe(Type) {
 
 var t_pre: ()->() = func ()->() {
     var s1: String   = string_c2ce _("oi")
-    var s2: _(char*) = string_ce2c borrow \\s1
+    var s2: _(char*) = string_ce2c \\s1
     call _assert _(!strcmp(s2,"oi"))
 
     var s3: String = new <.1 [_('i'), new <.1 [_('o'), <.0>]>]>
-    var ok: _int = call string_eq [borrow \\s1, borrow \\s3]
+    var ok: _int = call string_eq [\\s1, \\s3]
     call _assert ok
 }
 
@@ -262,7 +262,7 @@ var t_lexer: ()->() = func ()->() {
         call _assert (k3?4)
         var s31: \\String = borrow \\k3!4
         var s32: String = string_c2ce _("foo")
-        call _assert string_eq [borrow s31, borrow \\s32]
+        call _assert string_eq [s31, \\s32]
 
         var k4: Token = call lx_token ()
         call lx_blanks ()
