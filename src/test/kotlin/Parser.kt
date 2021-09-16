@@ -594,7 +594,17 @@ class Parser {
     fun c17_stmt_xexpr () {
         val all = All_new(PushbackReader(StringReader("set s = (move ())"), 2))
         lexer(all)
-        val s = parser_stmt(all)
-        assert(s is Stmt.Set && s.src is XExpr && s.src.x!!.enu==TK.MOVE)
+        try {
+            parser_stmt(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 15): expected expression : have `()´")
+        }
     }
-}
+    @Test
+    fun c18_stmt_xexpr () {
+        val all = All_new(PushbackReader(StringReader("set s = (move a = ())"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.Set && s.src is XExpr.Move)
+    }}

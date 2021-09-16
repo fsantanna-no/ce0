@@ -824,7 +824,7 @@ class TEnv {
     fun j02_rec_xepr_move_ok () {
         val out = inp2env("""
             var x: <^> = ?
-            var y: <^> = move x
+            var y: <^> = move x = <.0>
         """.trimIndent())
         assert(out == "OK")
     }
@@ -834,7 +834,7 @@ class TEnv {
             var x: <^> = ?
             var y: \<^> = move \x
         """.trimIndent())
-        assert(out == "(ln 2, col 15): invalid `move` : expected recursive variable")
+        assert(out == "(ln 2, col 20): expected expression : have `\\´")
     }
     @Test
     fun j03_rec_xepr_borrow_err () {
@@ -842,14 +842,15 @@ class TEnv {
             var x: <^> = ?
             var y: <^> = borrow x
         """.trimIndent())
-        assert(out == "(ln 2, col 14): invalid `borrow` : expected pointer to recursive variable")
+        println(out)
+        assert(out == "(ln 2, col 21): invalid `borrow` : expected pointer to recursive variable")
     }
     @Test
     fun j04_rec_xepr_copy_err () {
         val out = inp2env("""
             var x: _int = copy _10
         """.trimIndent())
-        assert(out == "(ln 1, col 15): invalid `copy` : expected recursive variable")
+        assert(out == "(ln 1, col 20): invalid `copy` : expected recursive variable")
     }
     @Test
     fun j05_rec_xepr_borrow_ok () {
@@ -865,14 +866,15 @@ class TEnv {
             var x: _int = ?
             var y: \_int = borrow \x
         """.trimIndent())
-        assert(out == "(ln 2, col 16): invalid `borrow` : expected pointer to recursive variable")
+        assert(out == "(ln 2, col 23): invalid `borrow` : expected pointer to recursive variable")
     }
     @Test
     fun j07_rec_xepr_copy_err () {
         val out = inp2env("""
             var x: <?^> = copy <.1 <.0>>
         """.trimIndent())
-        assert(out == "(ln 1, col 15): invalid `copy` : expected recursive variable")
+        assert(out == "(ln 1, col 20): expected expression : have `<´")
+        //assert(out == "(ln 1, col 20): invalid `copy` : expected recursive variable")
         //assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
     }
     @Test
@@ -914,8 +916,8 @@ class TEnv {
     fun j13_tup_move_ok () {
         val out = inp2env("""
             var l: <?^> = <.0>
-            var t1: [<?^>] = [move l]
-            var t2: [<?^>] = move t1
+            var t1: [<?^>] = [move l=<.0>]
+            var t2: [<?^>] = move t1=<.0>
         """.trimIndent())
         //assert(out == "(ln 3, col 17): invalid `move` : expected recursive variable")
         assert(out == "OK")
@@ -925,7 +927,8 @@ class TEnv {
         val out = inp2env("""
             var l: <?^> = new <.0>
         """.trimIndent())
-        assert(out == "(ln 1, col 15): invalid `new` : expected variant constructor")
+        println(out)
+        assert(out == "(ln 1, col 21): invalid `new` : expected variant constructor")
     }
     @Test
     fun j15_rec_xepr_borrow_err () {
@@ -933,7 +936,7 @@ class TEnv {
             var x: [()] = ?
             var y: \_int = borrow \x
         """.trimIndent())
-        assert(out == "(ln 2, col 16): invalid `borrow` : expected pointer to recursive variable")
+        assert(out == "(ln 2, col 23): invalid `borrow` : expected pointer to recursive variable")
     }
     @Test
     fun j16_rec_xepr_borrow_err () {
@@ -993,9 +996,28 @@ class TEnv {
         val out = inp2env("""
             var x: <^> = ?
             var y: \<^> = borrow \x!1
+            var z: <^> = move /y=<.0>
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 3, col 19): invalid `move` : expected recursive variable")
+    }
+    @Test
+    fun j23_rec_xexpr_move_err2 () {
+        val out = inp2env("""
+            var x: <^> = ?
+            var y: \<^> = borrow \x!1
+            var z: <^> = move /y=
+        """.trimIndent())
+        assert(out == "(ln 3, col 22): expected expression : have end of file")
+    }
+    @Test
+    fun j23_rec_xexpr_move_err3 () {
+        val out = inp2env("""
+            var x: <^> = ?
+            var y: \<^> = borrow \x!1
             var z: <^> = move /y
         """.trimIndent())
-        assert(out == "(ln 3, col 14): invalid `move` : expected recursive variable")
+        assert(out == "(ln 3, col 21): expected `=´ : have end of file")
     }
     @Test
     fun j24_rec_xepr_borrow_ok () {
@@ -1024,7 +1046,8 @@ class TEnv {
             }
             var v: <?^> = move f ()
         """.trimIndent())
-        assert(out == "(ln 4, col 15): invalid `move` : expected recursive variable")
+        //assert(out == "(ln 4, col 20): invalid `move` : expected recursive variable")
+        assert(out == "(ln 4, col 22): expected `=´ : have `()´")
     }
     @Test
     fun j27_f_rec () {
@@ -1080,9 +1103,9 @@ class TEnv {
         val out = inp2env("""
             var x: <^> = ?
             var y: \<^> = borrow \x!1
-            var z: <^> = move x
+            var z: <^> = move x=<.0>
         """.trimIndent())
-        assert(out == "(ln 3, col 19): invalid move of \"x\" : borrowed in line 2")
+        assert(out == "(ln 3, col 24): invalid move of \"x\" : borrowed in line 2")
     }
     @Test
     fun l02_borrow_ok () {
@@ -1091,7 +1114,7 @@ class TEnv {
             {
                 var y: \<^> = borrow \x!1
             }
-            var z: <^> = move x
+            var z: <^> = move x=<.0>
         """.trimIndent())
         assert(out == "OK")
     }
@@ -1152,8 +1175,8 @@ class TEnv {
         val out = inp2env("""
             var x: [\<?^>,<?^>] = [?,<.0>]
             set x.1 = borrow \x.2!1
-            var y: <?^> = move x.2
+            var y: <?^> = move x.2=<.0>
         """.trimIndent())
-        assert(out == "(ln 2, col 9): invalid assignment of \"x\" : borrowed in line 1")
+        assert(out == "(ln 2, col 16): invalid assignment of \"x\" : borrowed in line 1")
     }
 }

@@ -37,7 +37,7 @@ class Code {
                 Tk.Str(TK.XVAR,1,1,"xxx"),
                 false,
                 Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
-                XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
+                XExpr.None(Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
             )
         )
         code_fe(env, e, tp_unit)
@@ -51,7 +51,7 @@ class Code {
                 Tk.Str(TK.XVAR,1,1,"xxx"),
                 false,
                 Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
-                XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
+                XExpr.None(Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
             )
         )
         code_fe(env, e, tp_unit)
@@ -62,8 +62,8 @@ class Code {
         val e = Expr.TCons (
             Tk.Chr(TK.CHAR,0, 0, '('),
             arrayOf (
-                XExpr(null, Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))),
-                XExpr(null, Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))),
+                XExpr.None(Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))),
+                XExpr.None(Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))),
             )
         )
         e.visitXP(emptyList(), null, ::code_fx, ::code_fe,
@@ -84,7 +84,7 @@ class Code {
                 Tk.Str(TK.XVAR,1,1,"x"),
                 false,
                 Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int")))),
-                XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
+                XExpr.None(Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
             )
         )
         e.visitXP(env, null, ::code_fx, ::code_fe, tp_unit)

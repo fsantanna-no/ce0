@@ -7,7 +7,7 @@ fun env_prelude (s: Stmt): Stmt {
             Type.Any(Tk.Chr(TK.CHAR,1,1,'?')),
             Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
         ),
-        XExpr(null, Expr.Unk(Tk.Chr(TK.CHAR,s.tk.lin,s.tk.col,'?')))
+        XExpr.None(Expr.Unk(Tk.Chr(TK.CHAR,s.tk.lin,s.tk.col,'?')))
     )
     return Stmt.Seq(stdo.tk, stdo, s)
 }
@@ -227,26 +227,22 @@ fun check_xexprs (S: Stmt) {
         val e_isvar  = xe.e is Expr.UCons
         val e_isnil  = e_isvar && ((xe.e as Expr.UCons).tk_.num==0)
 
-        if (xe.x!=null && xe.x.enu==TK.MOVE) {
-            println(xe.e.leftMost(xe.x))
-            println(xe.e.toType(env))
-        }
         //println(xp)
         val is_ptr_to_udisc = (xp is Type.Ptr) && xe.e.containsUDisc() //xp.pln.containsUDisc() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
-        when {
-            (xe.x == null) -> All_assert_tk(xe.e.tk, !is_ptr_to_udisc && (!xp_ctrec || (e_iscst && (!e_isvar||!xp_exrec||e_isnil)))) {
+        when (xe) {
+            is XExpr.None -> All_assert_tk(xe.e.tk, !is_ptr_to_udisc && (!xp_ctrec || (e_iscst && (!e_isvar||!xp_exrec||e_isnil)))) {
                 "invalid expression : expected " + (if (is_ptr_to_udisc) "`borrow` " else if (e_iscst) "`new` " else "") + "operation modifier"
             }
-            (xe.x.enu == TK.BORROW) -> All_assert_tk(xe.x, is_ptr_to_udisc) {
+            is XExpr.Borrow -> All_assert_tk(xe.e.tk, is_ptr_to_udisc) {
                 "invalid `borrow` : expected pointer to recursive variable"
             }
-            (xe.x.enu == TK.COPY) -> All_assert_tk(xe.x, xp_ctrec && !e_iscst) {
+            is XExpr.Copy -> All_assert_tk(xe.e.tk, xp_ctrec && !e_iscst) {
                 "invalid `copy` : expected recursive variable"
             }
-            (xe.x.enu == TK.MOVE) -> All_assert_tk(xe.x, xp_ctrec && !e_iscst && (xe.e !is Expr.Dnref)) {
+            is XExpr.Move -> All_assert_tk(xe.e.tk, xp_ctrec && !e_iscst && (xe.e !is Expr.Dnref)) {
                 "invalid `move` : expected recursive variable"
             }
-            (xe.x.enu == TK.NEW) -> All_assert_tk(xe.x, xp_exrec && e_isvar && !e_isnil) {
+            is XExpr.New -> All_assert_tk(xe.e.tk, xp_exrec && e_isvar && !e_isnil) {
                 "invalid `new` : expected variant constructor"
             }
             else -> error("bug found")
@@ -329,15 +325,15 @@ fun<T> Set<Set<T>>.unionAll (): Set<T> {
     return this.fold(emptySet(), {x,y->x+y})
 }
 
-fun Expr.leftMost (tk: Tk?): Set<Pair<Tk?,Expr.Var>> {
+fun Expr.leftMost (xe: XExpr?): Set<Pair<XExpr?,Expr.Var>> {
     return when (this) {
-        is Expr.Var -> setOf(Pair(tk,this))
-        is Expr.TDisc -> this.tup.leftMost(tk)
-        is Expr.UDisc -> this.uni.leftMost(tk)
-        is Expr.Dnref -> this.ptr.leftMost(tk)
-        is Expr.Upref -> this.pln.leftMost(tk)
-        is Expr.TCons -> this.arg.map { it.e.leftMost(it.x) }.toSet().unionAll()
-        is Expr.UCons -> this.arg.e.leftMost((this.arg.x))
+        is Expr.Var -> setOf(Pair(xe,this))
+        is Expr.TDisc -> this.tup.leftMost(xe)
+        is Expr.UDisc -> this.uni.leftMost(xe)
+        is Expr.Dnref -> this.ptr.leftMost(xe)
+        is Expr.Upref -> this.pln.leftMost(xe)
+        is Expr.TCons -> this.arg.map { it.e.leftMost(it) }.toSet().unionAll()
+        is Expr.UCons -> this.arg.e.leftMost((this.arg))
         is Expr.Call  -> emptySet() //TODO("may return args")
         else -> emptySet()
     }
@@ -384,8 +380,8 @@ fun check_borrows (S: Stmt) {
     }
 
     fun fx (env: Env, xe: XExpr) {
-        for ((tk,lf) in xe.e.leftMost(xe.x)) {
-            if (tk!=null && tk.enu==TK.MOVE) {
+        for ((xe,lf) in xe.e.leftMost(xe)) {
+            if (xe is XExpr.Move) {
                 val s = env.idToStmt(lf.tk_.str) as Stmt.Var
                 chk(env, s, xe.e.tk, "invalid move of \"${lf.tk_.str}\"")
             }
@@ -393,8 +389,8 @@ fun check_borrows (S: Stmt) {
     }
 
     fun bws_add (env: Env, dst: Stmt.Var, xsrc: XExpr) {
-        for ((tk,lf) in xsrc.e.leftMost(xsrc.x)) {
-            if (tk!=null && tk.enu==TK.BORROW) {
+        for ((xe,lf) in xsrc.e.leftMost(xsrc)) {
+            if (xe is XExpr.Borrow) {
                 val src = env.idToStmt(lf.tk_.str) as Stmt.Var
                 if (bws[src] == null) {
                     bws[src] = mutableSetOf()

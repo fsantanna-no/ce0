@@ -436,11 +436,11 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
 
 fun code_fx (env: Env, xe: XExpr, xp: Type) {
     val top = EXPRS.removeFirst()
-    val ID  = "_tmp_" + xe.hashCode().absoluteValue
+    val ID  = "__tmp_" + xe.hashCode().absoluteValue
 
-    EXPRS.addFirst(when {
-        (xe.x == null) -> top
-        (xe.x.enu == TK.NEW) -> {
+    EXPRS.addFirst(when (xe) {
+        is XExpr.None, is XExpr.Borrow -> top
+        is XExpr.New  -> {
             assert(xe.e is Expr.UCons)
             val xee = xe.e as Expr.UCons
             val sup = xp.pos()
@@ -452,9 +452,8 @@ fun code_fx (env: Env, xe: XExpr, xp: Type) {
             """.trimIndent()
             Pair(top.first+pre, if (xee.tk_.num == 0) "NULL" else ID)
         }
-        (xe.x.enu == TK.COPY) -> Pair(top.first, "copy_${xp.toce()}(&${top.second})")
-        (xe.x.enu == TK.MOVE) -> Pair(top.first, "move_${xp.toce()}(&${top.second})")
-        else -> top
+        is XExpr.Copy -> Pair(top.first, "copy_${xp.toce()}(&${top.second})")
+        is XExpr.Move -> Pair(top.first, "move_${xp.toce()}(&${top.second})")
     })
 }
 

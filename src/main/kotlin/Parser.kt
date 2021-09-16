@@ -46,7 +46,15 @@ fun Type.Union.expand (): Type.Union {
 }
 
 //typealias XEpr = Pair<Tk,Expr>
-data class XExpr (val x: Tk?, val e: Expr)
+//data class XExpr (val x: Tk?, val e: Expr)
+
+sealed class XExpr (val e: Expr) {
+    data class None   (val e_: Expr): XExpr(e_)
+    data class New    (val e_: Expr.UCons): XExpr(e_)
+    data class Move   (val e_: Attr, val new: Expr): XExpr(e_.toExpr())
+    data class Copy   (val e_: Attr): XExpr(e_.toExpr())
+    data class Borrow (val e_: Expr): XExpr(e_)
+}
 
 sealed class Expr (val tk: Tk) {
     data class Unk   (val tk_: Tk.Chr): Expr(tk_)
@@ -154,16 +162,34 @@ fun parser_xexpr (all: All, canpre: Boolean): XExpr {
     val parens = all.check(TK.CHAR,'(')
     try {
         val e = parser_expr(all, canpre)
-        return XExpr(null, e)
+        return XExpr.None(e)
     } catch (e: Throwable) {
-        val tk = if (all.accept(TK.BORROW) || all.accept(TK.COPY) || all.accept(TK.MOVE) || all.accept(TK.NEW)) all.tk0 else {
-            throw e
+        val ret = when {
+            all.accept(TK.NEW) -> {
+                val e = parser_expr(all, canpre)
+                assert(e is Expr.UCons)
+                XExpr.New(e as Expr.UCons)
+            }
+            all.accept(TK.MOVE) -> {
+                val a = parser_attr(all)
+                all.accept_err(TK.CHAR,'=')
+                val b = parser_expr(all,false)
+                XExpr.Move(a,b)
+            }
+            all.accept(TK.COPY) -> {
+                val e = parser_attr(all)
+                XExpr.Copy(e)
+            }
+            all.accept(TK.BORROW) -> {
+                val e = parser_expr(all, canpre)
+                XExpr.Borrow(e)
+            }
+            else -> throw e
         }
-        val e = parser_expr(all, canpre)
         if (parens) {
             all.accept_err(TK.CHAR,')')
         }
-        return XExpr(tk, e)
+        return ret
     }
 }
 
@@ -219,7 +245,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                     assert(!all.consumed(tk0)) {
                         e.message!!
                     }
-                    XExpr(null, Expr.Unit(Tk.Sym(TK.UNIT, all.tk1.lin, all.tk1.col, "()")))
+                    XExpr.None(Expr.Unit(Tk.Sym(TK.UNIT, all.tk1.lin, all.tk1.col, "()")))
                 }
                 all.accept_err(TK.CHAR, '>')
                 Expr.UCons(tk0, cons)
@@ -242,14 +268,14 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                             Tk.Str(TK.XVAR,lin,col,"arg"),
                             false,
                             (tp as Type.Func).inp,
-                            XExpr(null, Expr.Nat(Tk.Str(TK.XNAT,lin,col,"_arg_")))
+                            XExpr.None(Expr.Nat(Tk.Str(TK.XNAT,lin,col,"_arg_")))
                         ),
                         Stmt.Seq(block.tk,
                             Stmt.Var (
                                 Tk.Str(TK.XVAR,lin,col,"_ret_"),
                                 false,
                                 tp.out,
-                                XExpr(null, Expr.Unk(Tk.Chr(TK.CHAR,lin,col,'?')))
+                                XExpr.None(Expr.Unk(Tk.Chr(TK.CHAR,lin,col,'?')))
                             ),
                             block,
                         )
@@ -293,7 +319,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 return e1
             }
             // call f -> call f ()
-            XExpr(null, Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()")))
+            XExpr.None(Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()")))
         }
 
         all.assert_tk(e1.tk, e1 is Expr.Var || (e1 is Expr.Nat && (!ispre || tk_pre.enu==TK.CALL))) {
@@ -406,7 +432,7 @@ fun parser_stmt (all: All): Stmt {
                 assert(!all.consumed(tk0)) {
                     e.message!!
                 }
-                XExpr(null, Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()")))
+                XExpr.None(Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()")))
             }
             Stmt.Seq (tk0,
                 Stmt.Set (
