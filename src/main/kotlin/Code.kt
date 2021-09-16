@@ -214,7 +214,7 @@ fun code_ft (tp: Type) {
                 ${if (tp.containsRec()) struct.second else "" }
                 void output_std_${_ptr}_ (${tp.pos(true)} v) {
                     ${
-                        if (!ctrec) "" else """
+                        if (!tp.isnullable) "" else """
                             if ($xv == NULL) {
                                 printf("<.0>");
                                 return;
@@ -250,7 +250,7 @@ fun code_ft (tp: Type) {
 
             """.trimIndent() + (if (!tp.containsRec()) "" else """
                 void free_${ce} (${tp.pos(true)} v) {
-                    ${ if (!exrec) "" else "if (${xv} == NULL) return;\n" }
+                    ${ if (!tp.isnullable) "" else "if (${xv} == NULL) return;\n" }
                     switch ((${xxv}).tag) {
                         ${ tpexp.vec
                             .mapIndexed { i,tp2 ->
@@ -268,8 +268,9 @@ fun code_ft (tp: Type) {
                 }
                 ${tp.pos()} copy_${ce} (${tp.pos(true)} v) {
                     ${ if (!exrec) "${tp.pos()} ret = { ${xxv}.tag };\n" else {
+                        val nul = if (!tp.isnullable) "" else "if (${xv} == NULL) return NULL;"
                         """
-                            if (${xv} == NULL) return NULL;
+                            $nul
                             ${tp.pos()} ret = malloc(sizeof(*ret));
                             assert(ret != NULL && "not enough memory");
                             ($ret).tag = ($xxv).tag;
@@ -294,8 +295,9 @@ fun code_ft (tp: Type) {
                 }
                 ${tp.pos()} move_${ce} (${tp.pos(true)} v) {
                     ${ if (!exrec) "${tp.pos()} ret = { ${xxv}.tag };\n" else {
+                    val nul = if (!tp.isnullable) "" else "if (${xv} == NULL) return NULL;"
                     """
-                        if (${xv} == NULL) return NULL;
+                        $nul
                         ${tp.pos()} ret = $xv;
                         $xv = NULL;
                         return ret;
@@ -365,7 +367,7 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
                 """.trimIndent()
             } else {
                 """
-                ${ if (e.uni.toType(env).exactlyRec()) "assert(${it.second} != NULL);\n" else "" }
+                ${ if (e.uni.toType(env).let { it is Type.Union && it.isnullable }) "assert(${it.second} != NULL);\n" else "" }
                 assert($ee.tag == ${e.tk_.num});
 
                 """.trimIndent()
@@ -377,7 +379,7 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
             val pre = if (e.tk_.num == 0) {
                 "(${it.second} == NULL)"
             } else {
-                (if (e.uni.toType(env).exactlyRec()) "(${it.second} != NULL) && " else "") +
+                (if (e.uni.toType(env).let { it is Type.Union && it.isnullable }) "(${it.second} != NULL) && " else "") +
                 "($ee.tag == ${e.tk_.num})"
             }
             Pair(it.first, pre)

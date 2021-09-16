@@ -243,7 +243,6 @@ class TEnv {
         val out = inp2env("""
             var x: ()->[(()->())] = ?
         """.trimIndent())
-        println(out)
         assert(out == "(ln 1, col 12): invalid type : cannot return function type : currently not supported")
     }
 
@@ -790,12 +789,25 @@ class TEnv {
         assert(out == "(ln 1, col 5): invalid assignment : type mismatch")
     }
     @Test
-    fun i04_uni_rec () {
+    fun i04_uni_rec_err () {
         val out = inp2env("""
             var ret: <(),<?^^,^>> = <.1>
         """.trimIndent())
-        println(out)
+        assert(out == "(ln 1, col 27): invalid expression : expected `new` operation modifier")
+    }
+    @Test
+    fun i05_uni_rec_ok () {
+        val out = inp2env("""
+            var ret: <(),<?^^,^>> = new <.1>
+        """.trimIndent())
         assert(out == "OK")
+    }
+    @Test
+    fun i06_uni_rec_err () {
+        val out = inp2env("""
+            var ret: <(),<?^^,^>> = new <.2 <.1 <.1>>>
+        """.trimIndent())
+        assert(out == "(ln 1, col 39): invalid expression : expected `new` operation modifier")
     }
 
     // XEXPR
@@ -1002,7 +1014,7 @@ class TEnv {
         val out = inp2env("""
             var l: <^> = new <.1 ?>
         """.trimIndent())
-        assert(out == "(ln 1, col 14): invalid `new` : expected variant constructor")
+        assert(out == "OK")
     }
     @Test
     fun j26_func_move () {
@@ -1024,6 +1036,13 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK")
     }
+    @Test
+    fun j28_nonrec_nullable () {
+        val out = inp2env("""
+            var l: <?()> = ?
+        """.trimIndent())
+        assert(out == "(ln 1, col 8): invalid type declaration : unexpected `?´")
+    }
 
     // IF / FUNC
 
@@ -1042,7 +1061,6 @@ class TEnv {
                 }
             }
         """.trimIndent())
-        println(out)
         assert(out == "OK")
     }
 
@@ -1055,7 +1073,6 @@ class TEnv {
             var y: \<?^> = borrow \x!1
             set x = <.0>
         """.trimIndent())
-        println(out)
         assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2")
     }
     @Test
@@ -1119,7 +1136,6 @@ class TEnv {
             var y: [(),\<?^>] = [(), borrow \x!1]
             set x = <.0>
         """.trimIndent())
-        println(out)
         assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2")
     }
     @Test

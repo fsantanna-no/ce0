@@ -110,7 +110,6 @@ class Code {
     fun d01 () {
         val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
         val out = s.code()
-        println(out)
         assert(out == """
             #include <assert.h>
             #include <stdio.h>

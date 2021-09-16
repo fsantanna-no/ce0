@@ -128,7 +128,6 @@ class Exec {
             var z: () = y.2
             output std z
         """.trimIndent())
-        println(out)
         assert(out == "()\n")
     }
     @Test
@@ -285,7 +284,6 @@ class Exec {
             var b : <(),()> = <.1>
             output std b
         """.trimIndent())
-        println(out)
         assert(out == "<.1>\n")
     }
     @Test
@@ -568,7 +566,6 @@ class Exec {
             set /p = _20
             output std v
         """.trimIndent())
-        println(out)
         assert(out == "<.1 20>\n")
     }
     @Test
@@ -660,7 +657,6 @@ class Exec {
             set uni = <.2 _65>
             call _puts /ptr
         """.trimIndent())
-        println(out)
         assert(out == "(ln 4, col 9): invalid assignment of \"uni\" : borrowed in line 3")
     }
 
@@ -892,8 +888,8 @@ class Exec {
     @Test
     fun j17_uni_rec () {
         val out = all("""
-            var v1: <(),<?[^^,^]>> = <.2 <.0>>
-            var v2: <(),<?[^^,^]>> = <.2 new <.1 [<.1>,<.0>]>>
+            var v1: <(),<?[^^,^]>> = new <.2 <.0>>
+            var v2: <(),<?[^^,^]>> = new <.2 new <.1 [new <.1>,<.0>]>>
             output std \v1
             output std \v2
         """.trimIndent())
@@ -1089,5 +1085,13 @@ class Exec {
             output std s21
         """.trimIndent())
         assert(out == "<.0>\n")
+    }
+    @Test
+    fun z13_union_rec () {
+        val out = all("""
+            var x: <(),^> = new <.2 new <.1>>
+            output std \x
+        """.trimIndent())
+        assert(out == "<.2 <.1>>\n")
     }
 }

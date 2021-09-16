@@ -47,6 +47,14 @@ fun Expr.toType (env: Env): Type {
 }
 
 fun check_dcls (s: Stmt) {
+    fun ft (tp: Type) {
+        when (tp) {
+            is Type.Union -> All_assert_tk(tp.tk, !tp.isnullable || tp.exactlyRec()) {
+                "invalid type declaration : unexpected `?´"
+            }
+            else -> {}
+        }
+    }
     fun fe (env: Env, e: Expr) {
         if (e is Expr.Var) {
             All_assert_tk(e.tk, env.idToStmt(e.tk_.str) != null) {
@@ -62,7 +70,7 @@ fun check_dcls (s: Stmt) {
             }
         }
     }
-    s.visit(emptyList(), ::fs, null, ::fe, null)
+    s.visit(emptyList(), ::fs, null, ::fe, ::ft)
 }
 
 fun Type.containsRec (): Boolean {
@@ -77,7 +85,8 @@ fun Type.containsRec (): Boolean {
 
 fun Type.exactlyRec (): Boolean {
     return when (this) {
-        is Type.Union -> this.isrec
+        //is Type.Union -> this.isrec
+        is Type.Union -> (this.expand().toString() != this.toString())
         is Type.UCons -> error("bug found")
         else -> false
     }
@@ -100,7 +109,7 @@ fun Type.isSupOf (sub: Type): Boolean {
         (this is Type.Nat  || sub is Type.Nat) -> true
         (this is Type.Union && sub is Type.UCons) -> {
             if (sub.tk_.num == 0) {
-                return this.exactlyRec() && sub.arg is Type.Unit
+                this.exactlyRec() && this.isnullable && sub.arg is Type.Unit
             } else {
                 val this2 = this.expand()
                 this2.vec[sub.tk_.num-1].isSupOf(sub.arg)
@@ -114,7 +123,7 @@ fun Type.isSupOf (sub: Type): Boolean {
         (this is Type.Tuple && sub is Type.Tuple) ->
             (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
         (this is Type.Union && sub is Type.Union) ->
-            (this.isrec == sub.isrec) && (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
+            (this.isnullable == sub.isnullable) && (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
         else -> false
     }
 }
