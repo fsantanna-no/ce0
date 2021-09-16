@@ -20,6 +20,11 @@ native _{
 #define Type <(),List(^^),List(^^)>
     -- Unit, Tuple, Union
 
+#define Stmt ()
+
+#define Expr <(), Token, List(^^), ^, [_int,^], [_int,^], [^,^], [Type,Stmt]>
+    -- Unit, Var, TCons, UCons, TDisc, UDisc, Call, Func
+
 var string_len: \\String->_int = func \\String->_int {
     if (/arg)?0 {
         return _0
@@ -187,7 +192,7 @@ var tk_accept: [_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
 -- EOF,sym,key,var,unit
 var parser_type: ()->Maybe(Type) = func ()->Maybe(Type) {
     if tk_accept [_5,<.1>] {
-        return <.2 <.1>>
+        return <.2 new <.1>>        -- Unit
     }
     var tk0: Token = copy tk
     var ok: _int = call tk_accept [_2, <.2 _('[')>]
@@ -208,13 +213,21 @@ var parser_type: ()->Maybe(Type) = func ()->Maybe(Type) {
         }
         if _(open == '[') {
             call _assert tk_accept [_2, <.2 _(']')>]
-            return <.2 <.2 move tps>>
+            return <.2 new <.2 move tps>>
         } else {
             call _assert tk_accept [_2, <.2 _('>')>]
-            return <.2 <.3 move tps>>
+            return <.2 new <.3 move tps>>
         }
     }
 
+    return <.1>
+}
+
+-- EOF,sym,key,var,unit
+var parser_expr: ()->Maybe(Expr) = func ()->Maybe(Expr) {
+    if tk_accept [_5,<.1>] {
+        return <.2 new <.1>>        -- Unit
+    }
     return <.1>
 }
 
@@ -288,7 +301,7 @@ var t_lexer: ()->() = func ()->() {
     }
 }
 
-var t_parser_type: ()->Maybe(Type) = func ()->Maybe(Type) {
+var t_parser_type: ()->() = func ()->() {
     {
         set finp = _{stropen("r", 0, "() x [(),()] <()>")}
         call lexer
@@ -305,8 +318,19 @@ var t_parser_type: ()->Maybe(Type) = func ()->Maybe(Type) {
     }
 }
 
+var t_parser_expr: ()->() = func ()->() {
+    {
+        set finp = _{stropen("r", 0, "() x [(),()] <()>")}
+        call lexer
+        var e1: Maybe(Expr) = call parser_expr
+        call _assert e1!2?1
+        call _fclose finp
+    }
+}
+
 var t_parser: ()->() = func ()->() {
     call t_parser_type
+    call t_parser_expr
 }
 
 call t_pre

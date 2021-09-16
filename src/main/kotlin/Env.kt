@@ -227,7 +227,10 @@ fun check_xexprs (S: Stmt) {
         val e_isvar  = xe.e is Expr.UCons
         val e_isnil  = e_isvar && ((xe.e as Expr.UCons).tk_.num==0)
 
-        //println(xe)
+        if (xe.x!=null && xe.x.enu==TK.MOVE) {
+            println(xe.e.leftMost(xe.x))
+            println(xe.e.toType(env))
+        }
         //println(xp)
         val is_ptr_to_udisc = (xp is Type.Ptr) && xe.e.containsUDisc() //xp.pln.containsUDisc() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
         when {

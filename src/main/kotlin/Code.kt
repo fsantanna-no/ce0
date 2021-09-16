@@ -250,7 +250,8 @@ fun code_ft (tp: Type) {
 
             """.trimIndent() + (if (!tp.containsRec()) "" else """
                 void free_${ce} (${tp.pos(true)} v) {
-                    ${ if (!tp.isnullable) "" else "if (${xv} == NULL) return;\n" }
+                    ${ "" /*if (!tp.isnullable) "" else "if (${xv} == NULL) return;\n"*/ }
+                    if (${xv} == NULL) return;
                     switch ((${xxv}).tag) {
                         ${ tpexp.vec
                             .mapIndexed { i,tp2 ->

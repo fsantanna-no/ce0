@@ -18,6 +18,7 @@ class Exec {
         }
         val (_,out3) = exec("./out.exe")
         //val (_,out3) = exec("valgrind ./out.exe")
+        //println(out3)
         return out3
     }
 
@@ -1092,6 +1093,39 @@ class Exec {
             var x: <(),^> = new <.2 new <.1>>
             output std \x
         """.trimIndent())
+        assert(out == "<.2 <.1>>\n")
+    }
+    @Test
+    fun z14_acc_aft_move () {
+        val out = all("""
+            var x: <(),^> = new <.2 new <.1>>
+            var y: <(),^> = move x
+            output std \x
+            output std \y
+        """.trimIndent())
+        println(out)
+        assert(out == "<.2 <.1>>\n")
+    }
+    @Test
+    fun z15_acc_move_sub () {
+        val out = all("""
+            var x: <(),^> = new <.2 new <.1>>
+            var y: <(),^> = move x!2
+            output std \x
+            output std \y
+        """.trimIndent())
+        println(out)
+        assert(out == "<.2 <.1>>\n")
+    }
+    @Test
+    fun z16_acc_move_sub () {
+        val out = all("""
+            var x: <(),[(),^]> = new <.2 [(),new <.1>]>
+            var y: [(),<(),[(),^]>] = move x!2
+            output std \x
+            output std \y
+        """.trimIndent())
+        println(out)
         assert(out == "<.2 <.1>>\n")
     }
 }
