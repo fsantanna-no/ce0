@@ -813,7 +813,7 @@ class Exec {
         val out = all("""
             var l: <?^> = <.0>
             var t1: [<?^>] = [move l=<.0>]
-            var t2: [<?^>] = copy t1
+            var t2: [<?^>] = [copy t1.1]
             output std \t2
         """.trimIndent())
         assert(out == "[<.0>]\n")
@@ -823,7 +823,7 @@ class Exec {
         val out = all("""
             var l: <?^> = <.0>
             var t1: [<?^>] = [move l=<.0>]
-            var t2: [<?^>] = move t1=<.0>
+            var t2: [<?^>] = [move t1.1=<.0>]
             output std \t2
         """.trimIndent())
         assert(out == "[<.0>]\n")
@@ -833,7 +833,7 @@ class Exec {
         val out = all("""
             var l: <?^> = new <.1 <.0>>
             var t1: [<?^>] = [move l=<.0>]
-            var t2: [<?^>] = copy t1
+            var t2: [<?^>] = [copy t1.1]
             output std \t2
         """.trimIndent())
         assert(out == "[<.1 <.0>>]\n")
@@ -843,7 +843,7 @@ class Exec {
         val out = all("""
             var l: <?(),^> = new <.2 new <.1>>
             var t1: [<?(),^>] = [move l=<.0>]
-            var t2: [<?(),^>] = copy t1
+            var t2: [<?(),^>] = [copy t1.1]
             output std \t2
         """.trimIndent())
         assert(out == "[<.2 <.1>>]\n")
@@ -853,7 +853,7 @@ class Exec {
         val out = all("""
             var l: <?(),^> = new <.2 new <.1>>
             var t1: [(),<?(),^>] = [(), move l=<.0>]
-            var t2: [(),<?(),^>] = copy t1
+            var t2: [(),<?(),^>] = [(), copy t1.2]
             output std \t2
         """.trimIndent())
         assert(out == "[(),<.2 <.1>>]\n")

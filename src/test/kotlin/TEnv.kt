@@ -913,11 +913,19 @@ class TEnv {
         assert(out == "(ln 1, col 33): invalid expression : expected `new` operation modifier")
     }
     @Test
+    fun j13_tup_move_no () {
+        val out = inp2env("""
+            var t1: [<?^>] = [<.0>]
+            var t2: [<?^>] = move t1=<.0>
+        """.trimIndent())
+        assert(out == "(ln 2, col 23): invalid `move` : expected recursive variable")
+    }
+    @Test
     fun j13_tup_move_ok () {
         val out = inp2env("""
             var l: <?^> = <.0>
             var t1: [<?^>] = [move l=<.0>]
-            var t2: [<?^>] = move t1=<.0>
+            var t2: [<?^>] = [move t1.1=<.0>]
         """.trimIndent())
         //assert(out == "(ln 3, col 17): invalid `move` : expected recursive variable")
         assert(out == "OK")
@@ -1105,7 +1113,8 @@ class TEnv {
             var y: \<^> = borrow \x!1
             var z: <^> = move x=<.0>
         """.trimIndent())
-        assert(out == "(ln 3, col 24): invalid move of \"x\" : borrowed in line 2")
+        println(out)
+        assert(out == "(ln 3, col 19): invalid move of \"x\" : borrowed in line 2")
     }
     @Test
     fun l02_borrow_ok () {
@@ -1177,6 +1186,6 @@ class TEnv {
             set x.1 = borrow \x.2!1
             var y: <?^> = move x.2=<.0>
         """.trimIndent())
-        assert(out == "(ln 2, col 16): invalid assignment of \"x\" : borrowed in line 1")
+        assert(out == "(ln 2, col 9): invalid assignment of \"x\" : borrowed in line 1")
     }
 }

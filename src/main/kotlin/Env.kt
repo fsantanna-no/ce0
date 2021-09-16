@@ -221,7 +221,7 @@ fun Expr.isconst (): Boolean {
 
 fun check_xexprs (S: Stmt) {
     fun fx (env: Env, xe: XExpr, xp: Type) {
-        val xp_ctrec = xp.containsRec()
+        //val xp_ctrec = xp.containsRec()
         val xp_exrec = xp.exactlyRec()
         val e_iscst  = xe.e.isconst()
         val e_isvar  = xe.e is Expr.UCons
@@ -230,16 +230,16 @@ fun check_xexprs (S: Stmt) {
         //println(xp)
         val is_ptr_to_udisc = (xp is Type.Ptr) && xe.e.containsUDisc() //xp.pln.containsUDisc() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
         when (xe) {
-            is XExpr.None -> All_assert_tk(xe.e.tk, !is_ptr_to_udisc && (!xp_ctrec || (e_iscst && (!e_isvar||!xp_exrec||e_isnil)))) {
+            is XExpr.None -> All_assert_tk(xe.e.tk, !is_ptr_to_udisc && (!xp_exrec || (e_iscst && (!e_isvar||!xp_exrec||e_isnil)))) {
                 "invalid expression : expected " + (if (is_ptr_to_udisc) "`borrow` " else if (e_iscst) "`new` " else "") + "operation modifier"
             }
             is XExpr.Borrow -> All_assert_tk(xe.e.tk, is_ptr_to_udisc) {
                 "invalid `borrow` : expected pointer to recursive variable"
             }
-            is XExpr.Copy -> All_assert_tk(xe.e.tk, xp_ctrec && !e_iscst) {
+            is XExpr.Copy -> All_assert_tk(xe.e.tk, xp_exrec && !e_iscst) {
                 "invalid `copy` : expected recursive variable"
             }
-            is XExpr.Move -> All_assert_tk(xe.e.tk, xp_ctrec && !e_iscst && (xe.e !is Expr.Dnref)) {
+            is XExpr.Move -> All_assert_tk(xe.e.tk, xp_exrec && !e_iscst && (xe.e !is Expr.Dnref)) {
                 "invalid `move` : expected recursive variable"
             }
             is XExpr.New -> All_assert_tk(xe.e.tk, xp_exrec && e_isvar && !e_isnil) {
