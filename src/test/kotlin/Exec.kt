@@ -729,7 +729,7 @@ class Exec {
     fun j07_list_move () {
         val out = all("""
             var l1: <?^> = new <.1 <.0>>
-            var l2: <?^> = move l1=<.0>
+            var l2: <?^> = replace l1=<.0>
             output std \l1
             output std \l2
         """.trimIndent())
@@ -739,7 +739,7 @@ class Exec {
     fun j07_list_move_err () {
         val out = all("""
             var l1: <?^> = new <.1 <.0>>
-            var l2: <^> = move l1=<.0>
+            var l2: <^> = replace l1=<.0>
             output std \l1
             output std \l2
         """.trimIndent())
@@ -750,7 +750,7 @@ class Exec {
         val out = all("""
             var l1: <?^> = new <.1 <.0>>
             var l2: <?^> = <.0>
-            set l2 = new <.1 move l1=<.0>>
+            set l2 = new <.1 replace l1=<.0>>
             output std \l1
             output std \l2
         """.trimIndent())
@@ -760,7 +760,7 @@ class Exec {
     fun j09_list_move () {
         val out = all("""
             var l1: <?^> = new <.1 <.0>>
-            var l2: [_int,<?^>] = [_10, move l1=<.0>]
+            var l2: [_int,<?^>] = [_10, replace l1=<.0>]
             output std \l1
             output std \l2.2
         """.trimIndent())
@@ -812,7 +812,7 @@ class Exec {
     fun j10_tup_copy_ok () {
         val out = all("""
             var l: <?^> = <.0>
-            var t1: [<?^>] = [move l=<.0>]
+            var t1: [<?^>] = [replace l=<.0>]
             var t2: [<?^>] = [copy t1.1]
             output std \t2
         """.trimIndent())
@@ -822,8 +822,8 @@ class Exec {
     fun j11_tup_move_ok () {
         val out = all("""
             var l: <?^> = <.0>
-            var t1: [<?^>] = [move l=<.0>]
-            var t2: [<?^>] = [move t1.1=<.0>]
+            var t1: [<?^>] = [replace l=<.0>]
+            var t2: [<?^>] = [replace t1.1=<.0>]
             output std \t2
         """.trimIndent())
         assert(out == "[<.0>]\n")
@@ -832,7 +832,7 @@ class Exec {
     fun j11_tup_copy_ok () {
         val out = all("""
             var l: <?^> = new <.1 <.0>>
-            var t1: [<?^>] = [move l=<.0>]
+            var t1: [<?^>] = [replace l=<.0>]
             var t2: [<?^>] = [copy t1.1]
             output std \t2
         """.trimIndent())
@@ -842,7 +842,7 @@ class Exec {
     fun j12_tup_copy_ok () {
         val out = all("""
             var l: <?(),^> = new <.2 new <.1>>
-            var t1: [<?(),^>] = [move l=<.0>]
+            var t1: [<?(),^>] = [replace l=<.0>]
             var t2: [<?(),^>] = [copy t1.1]
             output std \t2
         """.trimIndent())
@@ -852,7 +852,7 @@ class Exec {
     fun j13_tup_copy_ok () {
         val out = all("""
             var l: <?(),^> = new <.2 new <.1>>
-            var t1: [(),<?(),^>] = [(), move l=<.0>]
+            var t1: [(),<?(),^>] = [(), replace l=<.0>]
             var t2: [(),<?(),^>] = [(), copy t1.2]
             output std \t2
         """.trimIndent())
@@ -881,7 +881,7 @@ class Exec {
         val out = all("""
             var l1: <?^> = new <.1 <.0>>
             var l2: <?^> = new <.1 copy l1>
-            var t3: [(),<?^>] = [(), new <.1 move l2!1=<.0>>]
+            var t3: [(),<?^>] = [(), new <.1 replace l2!1=<.0>>]
             output std \l1
             output std \l2
             output std \t3
@@ -1065,7 +1065,7 @@ class Exec {
         val out = all("""
             var f: ()-><(),_int,<?[_int,^]>> = func ()-><(),_int,<?[_int,^]>> {
                 var str: <?[_int,^]> = <.0>
-                return <.3 move str=<.0>>
+                return <.3 replace str=<.0>>
             }
             var x: <(),_int,<?[_int,^]>> = call f ()
             output std \x!3
@@ -1101,7 +1101,7 @@ class Exec {
     fun z14_acc_aft_move () {
         val out = all("""
             var x: <(),^> = new <.2 new <.1>>
-            var y: <(),^> = move x=new <.1>
+            var y: <(),^> = replace x=new <.1>
             output std \x
             output std \y
         """.trimIndent())
@@ -1112,7 +1112,7 @@ class Exec {
     fun z15_acc_move_sub () {
         val out = all("""
             var x: <(),^> = new <.2 new <.1>>
-            var y: <(),^> = move x!2=new <.1>
+            var y: <(),^> = replace x!2=new <.1>
             output std \x
             output std \y
         """.trimIndent())
@@ -1123,7 +1123,7 @@ class Exec {
     fun z16_acc_move_sub () {
         val out = all("""
             var x: <(),[(),^]> = new <.2 [(),new <.1>]>
-            var y: [(),<(),[(),^]>] = [(), move x!2.2=new <.1>]
+            var y: [(),<(),[(),^]>] = [(), replace x!2.2=new <.1>]
             output std \x
             output std \y
         """.trimIndent())

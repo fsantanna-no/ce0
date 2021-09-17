@@ -239,8 +239,8 @@ fun check_xexprs (S: Stmt) {
             is XExpr.Copy -> All_assert_tk(xe.e.tk, xp_exrec && !e_iscst) {
                 "invalid `copy` : expected recursive variable"
             }
-            is XExpr.Move -> All_assert_tk(xe.e.tk, xp_exrec && !e_iscst && (xe.e !is Expr.Dnref)) {
-                "invalid `move` : expected recursive variable"
+            is XExpr.Replace -> All_assert_tk(xe.e.tk, xp_exrec && !e_iscst && (xe.e !is Expr.Dnref)) {
+                "invalid `replace` : expected recursive variable"
             }
             is XExpr.New -> All_assert_tk(xe.e.tk, xp_exrec && e_isvar && !e_isnil) {
                 "invalid `new` : expected variant constructor"
@@ -381,9 +381,9 @@ fun check_borrows (S: Stmt) {
 
     fun fx (env: Env, xe: XExpr) {
         for ((xe,lf) in xe.e.leftMost(xe)) {
-            if (xe is XExpr.Move) {
+            if (xe is XExpr.Replace) {
                 val s = env.idToStmt(lf.tk_.str) as Stmt.Var
-                chk(env, s, xe.e.tk, "invalid move of \"${lf.tk_.str}\"")
+                chk(env, s, xe.e.tk, "invalid replace of \"${lf.tk_.str}\"")
             }
         }
     }

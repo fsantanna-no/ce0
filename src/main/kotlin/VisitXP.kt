@@ -31,7 +31,7 @@ fun Expr.visitXP (env: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env, XExpr, Type) -> 
 }
 
 fun XExpr.visitXP (env: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env, XExpr, Type) -> Unit)?, fe: ((Env, Expr, Type) -> Unit)?, xp: Type) {
-    if (this is XExpr.Move) {
+    if (this is XExpr.Replace) {
         this.new.visitXP(env, fs, fx, fe, xp)
     }
     this.e.visitXP(env, fs, fx, fe, xp)

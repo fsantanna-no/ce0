@@ -408,7 +408,7 @@ fun code_fx (env: Env, xe: XExpr, xp: Type) {
             Pair(top.first+pre, if (xee.tk_.num == 0) "NULL" else ID)
         }
         is XExpr.Copy -> Pair(top.first, "copy_${xp.toce()}(&${top.second})")
-        is XExpr.Move -> {
+        is XExpr.Replace -> {
             val new = EXPRS.removeFirst()
             val pre = """
                 ${xp.pos()} $ID = ${top.second};

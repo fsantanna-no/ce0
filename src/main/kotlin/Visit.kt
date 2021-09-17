@@ -42,7 +42,7 @@ fun Expr.visit (env: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env,XExpr)->Unit)?, fe:
 
 private
 fun XExpr.visit (env: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env,XExpr)->Unit)?, fe: ((Env,Expr)->Unit)?, ft: ((Type)->Unit)?) {
-    if (this is XExpr.Move) {
+    if (this is XExpr.Replace) {
         this.new.visit(env, fs, fx, fe, ft)
     }
     this.e.visit(env, fs, fx, fe, ft)

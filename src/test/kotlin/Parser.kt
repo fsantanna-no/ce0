@@ -592,19 +592,19 @@ class Parser {
 
     @Test
     fun c17_stmt_xexpr () {
-        val all = All_new(PushbackReader(StringReader("set s = (move ())"), 2))
+        val all = All_new(PushbackReader(StringReader("set s = (replace ())"), 2))
         lexer(all)
         try {
             parser_stmt(all)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 15): expected expression : have `()´")
+            assert(e.message == "(ln 1, col 18): expected expression : have `()´")
         }
     }
     @Test
     fun c18_stmt_xexpr () {
-        val all = All_new(PushbackReader(StringReader("set s = (move a = ())"), 2))
+        val all = All_new(PushbackReader(StringReader("set s = (replace a = ())"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Set && s.src is XExpr.Move)
+        assert(s is Stmt.Set && s.src is XExpr.Replace)
     }}
