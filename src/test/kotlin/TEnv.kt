@@ -17,7 +17,7 @@ class TEnv {
             check_types(s)
             check_xexprs(s)
             check_pointers(s)
-            check_borrows(s)
+            check_borrows_consumes(s)
             return "OK"
         } catch (e: Throwable) {
             //throw e
@@ -824,7 +824,7 @@ class TEnv {
     fun j02_rec_xepr_move_ok () {
         val out = inp2env("""
             var x: <^> = ?
-            var y: <^> = replace x = <.0>
+            var y: <^> = consume x
         """.trimIndent())
         assert(out == "OK")
     }
@@ -925,7 +925,7 @@ class TEnv {
     fun j13_tup_move_ok () {
         val out = inp2env("""
             var l: <?^> = <.0>
-            var t1: [<?^>] = [replace l=<.0>]
+            var t1: [<?^>] = [consume l]
             var t2: [<?^>] = [replace t1.1=<.0>]
         """.trimIndent())
         //assert(out == "(ln 3, col 17): invalid `replace` : expected recursive variable")
@@ -1005,10 +1005,10 @@ class TEnv {
         val out = inp2env("""
             var x: <^> = ?
             var y: \<^> = borrow \x!1
-            var z: <^> = replace /y=<.0>
+            var z: <^> = consume /y
         """.trimIndent())
         println(out)
-        assert(out == "(ln 3, col 22): invalid `replace` : expected recursive variable")
+        assert(out == "(ln 3, col 22): invalid `consume` : expected recursive variable")
     }
     @Test
     fun j23_rec_xexpr_move_err2 () {
@@ -1096,7 +1096,7 @@ class TEnv {
         assert(out == "OK")
     }
 
-    // BORROW
+    // BORROW / CONSUME
 
     @Test
     fun l01_borrow_err () {
@@ -1112,10 +1112,10 @@ class TEnv {
         val out = inp2env("""
             var x: <^> = ?
             var y: \<^> = borrow \x!1
-            var z: <^> = replace x=<.0>
+            var z: <^> = consume x
         """.trimIndent())
         println(out)
-        assert(out == "(ln 3, col 22): invalid replace of \"x\" : borrowed in line 2")
+        assert(out == "(ln 3, col 22): invalid operation on \"x\" : borrowed in line 2")
     }
     @Test
     fun l02_borrow_ok () {

@@ -49,11 +49,12 @@ fun Type.Union.expand (): Type.Union {
 //data class XExpr (val x: Tk?, val e: Expr)
 
 sealed class XExpr (val e: Expr) {
-    data class None   (val e_: Expr): XExpr(e_)
-    data class New    (val e_: Expr.UCons): XExpr(e_)
-    data class Replace   (val e_: Attr, val new: XExpr): XExpr(e_.toExpr())
-    data class Copy   (val e_: Attr): XExpr(e_.toExpr())
-    data class Borrow (val e_: Expr): XExpr(e_)
+    data class None    (val e_: Expr): XExpr(e_)
+    data class New     (val e_: Expr.UCons): XExpr(e_)
+    data class Replace (val e_: Attr, val new: XExpr): XExpr(e_.toExpr())
+    data class Consume (val e_: Attr): XExpr(e_.toExpr())
+    data class Copy    (val e_: Attr): XExpr(e_.toExpr())
+    data class Borrow  (val e_: Expr): XExpr(e_)
 }
 
 sealed class Expr (val tk: Tk) {
@@ -175,6 +176,10 @@ fun parser_xexpr (all: All, canpre: Boolean): XExpr {
                 all.accept_err(TK.CHAR,'=')
                 val b = parser_xexpr(all,false)
                 XExpr.Replace(a,b)
+            }
+            all.accept(TK.CONSUME) -> {
+                val e = parser_attr(all)
+                XExpr.Consume(e)
             }
             all.accept(TK.COPY) -> {
                 val e = parser_attr(all)

@@ -242,6 +242,9 @@ fun check_xexprs (S: Stmt) {
             is XExpr.Replace -> All_assert_tk(xe.e.tk, xp_exrec && !e_iscst && (xe.e !is Expr.Dnref)) {
                 "invalid `replace` : expected recursive variable"
             }
+            is XExpr.Consume -> All_assert_tk(xe.e.tk, xp_exrec && !e_iscst && (xe.e !is Expr.Dnref)) {
+                "invalid `consume` : expected recursive variable"
+            }
             is XExpr.New -> All_assert_tk(xe.e.tk, xp_exrec && e_isvar && !e_isnil) {
                 "invalid `new` : expected variant constructor"
             }

@@ -417,6 +417,14 @@ fun code_fx (env: Env, xe: XExpr, xp: Type) {
             """.trimIndent()
             Pair(new.first+top.first+pre, ID)
         }
+        is XExpr.Consume -> {
+            val pre = """
+                ${xp.pos()} $ID = ${top.second};
+                ${top.second} = NULL;
+
+            """.trimIndent()
+            Pair(top.first+pre, ID)
+        }
     })
 }
 

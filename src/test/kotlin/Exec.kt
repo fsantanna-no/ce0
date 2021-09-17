@@ -729,7 +729,7 @@ class Exec {
     fun j07_list_move () {
         val out = all("""
             var l1: <?^> = new <.1 <.0>>
-            var l2: <?^> = replace l1=<.0>
+            var l2: <?^> = consume l1
             output std \l1
             output std \l2
         """.trimIndent())
@@ -750,7 +750,7 @@ class Exec {
         val out = all("""
             var l1: <?^> = new <.1 <.0>>
             var l2: <?^> = <.0>
-            set l2 = new <.1 replace l1=<.0>>
+            set l2 = new <.1 consume l1>
             output std \l1
             output std \l2
         """.trimIndent())
@@ -812,7 +812,7 @@ class Exec {
     fun j10_tup_copy_ok () {
         val out = all("""
             var l: <?^> = <.0>
-            var t1: [<?^>] = [replace l=<.0>]
+            var t1: [<?^>] = [consume l]
             var t2: [<?^>] = [copy t1.1]
             output std \t2
         """.trimIndent())
@@ -823,7 +823,7 @@ class Exec {
         val out = all("""
             var l: <?^> = <.0>
             var t1: [<?^>] = [replace l=<.0>]
-            var t2: [<?^>] = [replace t1.1=<.0>]
+            var t2: [<?^>] = [consume t1.1]
             output std \t2
         """.trimIndent())
         assert(out == "[<.0>]\n")
@@ -842,7 +842,7 @@ class Exec {
     fun j12_tup_copy_ok () {
         val out = all("""
             var l: <?(),^> = new <.2 new <.1>>
-            var t1: [<?(),^>] = [replace l=<.0>]
+            var t1: [<?(),^>] = [consume l]
             var t2: [<?(),^>] = [copy t1.1]
             output std \t2
         """.trimIndent())
@@ -881,7 +881,7 @@ class Exec {
         val out = all("""
             var l1: <?^> = new <.1 <.0>>
             var l2: <?^> = new <.1 copy l1>
-            var t3: [(),<?^>] = [(), new <.1 replace l2!1=<.0>>]
+            var t3: [(),<?^>] = [(), new <.1 consume l2!1>]
             output std \l1
             output std \l2
             output std \t3
