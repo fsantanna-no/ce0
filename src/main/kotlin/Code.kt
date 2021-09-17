@@ -187,7 +187,6 @@ fun code_ft (tp: Type) {
                 ${if (!tp.containsRec()) "" else """
                     void free_${ce} (${tp.pos(true)} v);
                     ${tp.pos()} copy_${ce} (${tp.pos(true)} v);
-                    ${tp.pos()} move_${ce} (${tp.pos(true)} v);
 
                 """
             }
@@ -278,14 +277,7 @@ fun code_ft (tp: Type) {
                     return ret;
                 }
 
-            """.trimIndent() + (if (!tp.exactlyRec()) "" else """
-                ${tp.pos()} move_${ce} (${tp.pos(true)} v) {
-                    ${tp.pos()} ret = $xv;
-                    $xv = NULL;
-                    return ret;
-                }
-
-            """.trimIndent()))))
+            """.trimIndent())))
         }
     }
 }
@@ -416,7 +408,13 @@ fun code_fx (env: Env, xe: XExpr, xp: Type) {
             Pair(top.first+pre, if (xee.tk_.num == 0) "NULL" else ID)
         }
         is XExpr.Copy -> Pair(top.first, "copy_${xp.toce()}(&${top.second})")
-        is XExpr.Move -> Pair(top.first, "move_${xp.toce()}(&${top.second})")
+        is XExpr.Move -> {
+            val pre = """
+                ${xp.pos()} $ID = ${top.second};
+                ${top.second} = NULL;
+            """.trimIndent()
+            Pair(top.first+pre, ID)
+        }
     })
 }
 
