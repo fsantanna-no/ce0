@@ -409,11 +409,13 @@ fun code_fx (env: Env, xe: XExpr, xp: Type) {
         }
         is XExpr.Copy -> Pair(top.first, "copy_${xp.toce()}(&${top.second})")
         is XExpr.Move -> {
+            val new = EXPRS.removeFirst()
             val pre = """
                 ${xp.pos()} $ID = ${top.second};
-                ${top.second} = NULL;
+                ${top.second} = ${new.second};
+
             """.trimIndent()
-            Pair(top.first+pre, ID)
+            Pair(new.first+top.first+pre, ID)
         }
     })
 }

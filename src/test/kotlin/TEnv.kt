@@ -916,8 +916,9 @@ class TEnv {
     fun j13_tup_move_no () {
         val out = inp2env("""
             var t1: [<?^>] = [<.0>]
-            var t2: [<?^>] = move t1=<.0>
+            var t2: [<?^>] = move t1=[<.0>]
         """.trimIndent())
+        println(out)
         assert(out == "(ln 2, col 23): invalid `move` : expected recursive variable")
     }
     @Test

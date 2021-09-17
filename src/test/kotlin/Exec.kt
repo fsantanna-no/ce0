@@ -1101,33 +1101,33 @@ class Exec {
     fun z14_acc_aft_move () {
         val out = all("""
             var x: <(),^> = new <.2 new <.1>>
-            var y: <(),^> = move x=<.1>
+            var y: <(),^> = move x=new <.1>
             output std \x
             output std \y
         """.trimIndent())
         println(out)
-        assert(out == "<.2 <.1>>\n")
+        assert(out == "<.1>\n<.2 <.1>>\n")
     }
     @Test
     fun z15_acc_move_sub () {
         val out = all("""
             var x: <(),^> = new <.2 new <.1>>
-            var y: <(),^> = move x!2=<.1>
+            var y: <(),^> = move x!2=new <.1>
             output std \x
             output std \y
         """.trimIndent())
         println(out)
-        assert(out == "<.2 <.1>>\n")
+        assert(out == "<.2 <.1>>\n<.1>\n")
     }
     @Test
     fun z16_acc_move_sub () {
         val out = all("""
             var x: <(),[(),^]> = new <.2 [(),new <.1>]>
-            var y: [(),<(),[(),^]>] = move x!2= <.0>
+            var y: [(),<(),[(),^]>] = [(), move x!2.2=new <.1>]
             output std \x
             output std \y
         """.trimIndent())
         println(out)
-        assert(out == "<.2 <.1>>\n")
+        assert(out == "<.2 [(),<.1>]>\n[(),<.1>]\n")
     }
 }
