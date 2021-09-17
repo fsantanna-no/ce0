@@ -905,6 +905,15 @@ class Exec {
         """.trimIndent())
         assert(out == "[<.1 <.0>>]\n")
     }
+    @Test
+    fun j19_consume_okr () {
+        val out = all("""
+            var x: <?^> = new <.1 <.0>>
+            set x = consume x
+            output std \x
+        """.trimIndent())
+        assert(out == "<.1 <.0>>\n") { out }
+    }
 
     // SET - TUPLE - UNION
 

@@ -1235,6 +1235,7 @@ class TEnv {
         val out = inp2env("""
             var x: <?^> = <.0>
             set x = consume x
+            output std \x
         """.trimIndent())
         assert(out == "OK") { out }
     }

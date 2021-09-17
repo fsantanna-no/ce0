@@ -463,7 +463,9 @@ fun check_borrows_consumes (S: Stmt) {
                             }
                         }
 
-                        if (s.dst !is Attr.Var) {
+                        if (s.dst is Attr.Var) {
+                            cns.remove(dcl)
+                        } else {
                             chk_cn(env, dcl, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
                         }
                     }
