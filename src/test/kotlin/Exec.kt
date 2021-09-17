@@ -703,7 +703,7 @@ class Exec {
             var l: <?^> = new <.1 <.0>>
             output std l!0
         """.trimIndent())
-        assert(out == "out.exe: out.c:102: main: Assertion `l == NULL' failed.\n")
+        assert(out == "out.exe: out.c:95: main: Assertion `l == NULL' failed.\n")
     }
     @Test
     fun j05_list_disc_null_err () {
@@ -711,7 +711,7 @@ class Exec {
             var l: <?^> = <.0>
             output std \l!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:98: main: Assertion `l != NULL' failed.\n")
+        assert(out == "out.exe: out.c:91: main: Assertion `l != NULL' failed.\n")
     }
     @Test
     fun j06_list () {

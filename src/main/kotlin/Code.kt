@@ -294,8 +294,10 @@ fun code_ft (tp: Type) {
                     }
                     return ret;
                 }
+
+            """.trimIndent() + (if (!tp.exactlyRec()) "" else """
                 ${tp.pos()} move_${ce} (${tp.pos(true)} v) {
-                    ${ if (!exrec) "${tp.pos()} ret = { ${xxv}.tag };\n" else {
+                    ${ run {
                     val nul = if (!tp.isnullable) "" else "if (${xv} == NULL) return NULL;"
                     """
                         $nul
@@ -304,25 +306,10 @@ fun code_ft (tp: Type) {
                         return ret;
 
                     """.trimIndent()
-                } }
-                    switch ((${xxv}).tag) {
-                        ${ tpexp.vec
-                            .mapIndexed { i,sub -> if (sub is Type.Unit) "" else
-                                "case ${i+1}:\n" + (
-                                    if (sub.containsRec()) {
-                                        "($ret)._${i+1} = move_${sub.toce()}(&($xxv)._${i+1});\nbreak;\n"
-                                    } else {
-                                        "($ret)._${i+1} = ($xxv)._${i + 1};\nbreak;\n"
-                                    }
-                                )
-                            }
-                            .joinToString("")
-                        }
-                    }
-                    return ret;
+                    } }
                 }
 
-            """.trimIndent())))
+            """.trimIndent()))))
         }
     }
 }
