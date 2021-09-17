@@ -297,16 +297,9 @@ fun code_ft (tp: Type) {
 
             """.trimIndent() + (if (!tp.exactlyRec()) "" else """
                 ${tp.pos()} move_${ce} (${tp.pos(true)} v) {
-                    ${ run {
-                    val nul = if (!tp.isnullable) "" else "if (${xv} == NULL) return NULL;"
-                    """
-                        $nul
-                        ${tp.pos()} ret = $xv;
-                        $xv = NULL;
-                        return ret;
-
-                    """.trimIndent()
-                    } }
+                    ${tp.pos()} ret = $xv;
+                    $xv = NULL;
+                    return ret;
                 }
 
             """.trimIndent()))))
