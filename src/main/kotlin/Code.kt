@@ -92,7 +92,6 @@ fun code_ft (tp: Type) {
                 ${if (!tp.containsRec()) "" else """
                     void free_${ce} (${tp.pos(true)} v);
                     ${tp.pos()} copy_${ce} (${tp.pos(true)} v);
-                    ${tp.pos()} move_${ce} (${tp.pos(true)} v);
 
                 """
                 }
@@ -138,22 +137,6 @@ fun code_ft (tp: Type) {
                                 }) +
                             ";\n"
                        }
-                        .joinToString("")
-                    }
-                    return ret;
-                }
-                ${tp.pos()} move_${ce} (${tp.pos(true)} v) {
-                    ${tp.pos()} ret;
-                    ${tp.vec
-                        .mapIndexed { i, sub -> if (sub is Type.Unit) "" else
-                            "ret._${i + 1} = " +
-                                (if (!sub.containsRec()) {
-                                    "v->_${i + 1}"
-                                } else {
-                                    "move_${sub.toce()}(&v->_${i + 1})"
-                                }) +
-                            ";\n"
-                        }
                         .joinToString("")
                     }
                     return ret;
