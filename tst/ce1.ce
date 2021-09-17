@@ -233,11 +233,11 @@ var parser_expr: ()->Maybe(Expr) = func ()->Maybe(Expr) {
 
 var t_pre: ()->() = func ()->() {
     var s1: String   = string_c2ce _("oi")
-    var s2: _(char*) = string_ce2c \\s1
+    var s2: _(char*) = string_ce2c borrow \\s1
     call _assert _(!strcmp(s2,"oi"))
 
     var s3: String = new <.1 [_('i'), new <.1 [_('o'), <.0>]>]>
-    var ok: _int = call string_eq [\\s1, \\s3]
+    var ok: _int = call string_eq [borrow \\s1, borrow \\s3]
     call _assert ok
 }
 
@@ -275,7 +275,7 @@ var t_lexer: ()->() = func ()->() {
         call _assert (k3?4)
         var s31: \\String = borrow \\k3!4
         var s32: String = string_c2ce _("foo")
-        call _assert string_eq [s31, \\s32]
+        call _assert string_eq [borrow s31, borrow \\s32]
 
         var k4: Token = call lx_token ()
         call lx_blanks ()

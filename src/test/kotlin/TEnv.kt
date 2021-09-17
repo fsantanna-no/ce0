@@ -1230,4 +1230,20 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK")
     }
+    @Test
+    fun l13_consume_okr () {
+        val out = inp2env("""
+            var x: <?^> = <.0>
+            set x = consume x
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun l13_consume_err () {
+        val out = inp2env("""
+            var x: <?^> = <.0>
+            set x!1 = consume x
+        """.trimIndent())
+        assert(out == "(ln 2, col 9): invalid assignment of \"x\" : consumed in line 2") { out }
+    }
 }

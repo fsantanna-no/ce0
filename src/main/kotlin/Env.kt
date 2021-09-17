@@ -444,19 +444,27 @@ fun check_borrows_consumes (S: Stmt) {
             }
             is Stmt.Set -> {
                 s.dst.toExpr().leftMost(null)
-                    .map { env.idToStmt(it.second!!.tk_.str)!! }
-                    .forEach {
+                    .let { assert(it.size<=1) ; it }
+                    .first()
+                    .let {
+                        if (it == null) return
+                        val dcl = env.idToStmt(it.second!!.tk_.str)!!
+
                         val tp = s.dst.toExpr().toType(env)
                         if (tp is Type.Func) {
-                            fs_add(it, s.src.e)
+                            fs_add(dcl, s.src.e)
                         } else {
                             //if (s.src.x!=null && s.src.x.enu==TK.BORROW) {
                             val isuniptr = tp.containsUnion() || (tp is Type.Ptr && tp.pln.containsUnion())
                             val isrecptr = tp.containsRec() || (tp is Type.Ptr && tp.pln.containsRec())
                             if (isuniptr || isrecptr) {
-                                bws_cns_add(env, it, s.src)
-                                chk_bw(env, it, s.tk, "invalid assignment of \"${it.tk_.str}\"")
+                                bws_cns_add(env, dcl, s.src)
+                                chk_bw(env, dcl, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
                             }
+                        }
+
+                        if (s.dst !is Attr.Var) {
+                            chk_cn(env, dcl, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
                         }
                     }
             }
