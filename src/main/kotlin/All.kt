@@ -1,7 +1,6 @@
 import java.io.PushbackReader
 import java.io.StringReader
 import java.lang.AssertionError
-import java.lang.Exception
 
 data class All(
     val inp: PushbackReader,
@@ -21,7 +20,7 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
         check_types(s)
         check_xexprs(s)
         check_pointers(s)
-        check_borrows(s)
+        check_borrows_consumes(s)
         return Pair(true, s.code())
     } catch (e: Throwable) {
         EXPRS.clear()

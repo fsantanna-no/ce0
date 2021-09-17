@@ -361,12 +361,13 @@ fun Type.containsUnion (): Boolean {
     }
 }
 
-fun check_borrows (S: Stmt) {
+fun check_borrows_consumes (S: Stmt) {
     // y = borrow \x
     // z = borrow y
     // bws[x] = { y,z }
     // bws[y] = { z }
     val bws: MutableMap<Stmt.Var,MutableSet<Stmt.Var>> = mutableMapOf()
+    val cns: MutableMap<Stmt.Var,Int> = mutableMapOf()
 
     // f = func A ...
     // g = func B ...
@@ -374,7 +375,7 @@ fun check_borrows (S: Stmt) {
     // fs[f] = { A,B }
     val fcs: MutableMap<Stmt.Var,MutableSet<Pair<Env,Expr.Func>>> = mutableMapOf()
 
-    fun chk (env: Env, s: Stmt.Var, tk: Tk, err: String) {
+    fun chk_bw (env: Env, s: Stmt.Var, tk: Tk, err: String) {
         if (bws[s] != null) {
             val ok = bws[s]!!.intersect(env).isEmpty()  // no borrow is on scope
             val ln = bws[s]!!.first().tk.lin
@@ -382,16 +383,20 @@ fun check_borrows (S: Stmt) {
         }
     }
 
+    fun chk_cn (env: Env, s: Stmt.Var, tk: Tk, err: String) {
+        All_assert_tk(tk, !cns.contains(s)) { err + " : consumed in line ${cns[s]}" }
+    }
+
     fun fx (env: Env, xe: XExpr) {
         for ((xe,lf) in xe.e.leftMost(xe)) {
-            if (xe is XExpr.Replace) {
+            if (xe is XExpr.Replace || xe is XExpr.Consume) {
                 val s = env.idToStmt(lf.tk_.str) as Stmt.Var
-                chk(env, s, xe.e.tk, "invalid replace of \"${lf.tk_.str}\"")
+                chk_bw(env, s, xe.e.tk, "invalid operation on \"${lf.tk_.str}\"")
             }
         }
     }
 
-    fun bws_add (env: Env, dst: Stmt.Var, xsrc: XExpr) {
+    fun bws_cns_add (env: Env, dst: Stmt.Var, xsrc: XExpr) {
         for ((xe,lf) in xsrc.e.leftMost(xsrc)) {
             if (xe is XExpr.Borrow) {
                 val src = env.idToStmt(lf.tk_.str) as Stmt.Var
@@ -400,6 +405,14 @@ fun check_borrows (S: Stmt) {
                 }
                 bws[src]!!.add(dst)
                 bws[src]!!.addAll(if (bws[dst] == null) emptySet() else bws[dst]!!)
+            }
+            if (xe is XExpr.Consume) {
+                // x = consume y
+                val src = env.idToStmt(lf.tk_.str) as Stmt.Var
+                cns[src] = xsrc.e.tk.lin // <- y consumed, all bws containing y are also consumed
+                bws.filterValues { it.contains(src) }.keys.forEach {
+                    cns[it] = xsrc.e.tk.lin
+                }
             }
         }
     }
@@ -425,7 +438,7 @@ fun check_borrows (S: Stmt) {
                 if (s.type is Type.Func) {
                     fs_add(s, s.src.e)
                 } else {
-                    bws_add(env, s, s.src)
+                    bws_cns_add(env, s, s.src)
                 }
             }
             is Stmt.Set -> {
@@ -439,8 +452,8 @@ fun check_borrows (S: Stmt) {
                             //if (s.src.x!=null && s.src.x.enu==TK.BORROW) {
                             val isrecptr = tp.containsUnion() || (tp is Type.Ptr && tp.pln.containsUnion())
                             if (isrecptr) {
-                                bws_add(env, it, s.src)
-                                chk(env, it, s.tk, "invalid assignment of \"${it.tk_.str}\"")
+                                bws_cns_add(env, it, s.src)
+                                chk_bw(env, it, s.tk, "invalid assignment of \"${it.tk_.str}\"")
                             }
                         }
                     }
@@ -451,31 +464,35 @@ fun check_borrows (S: Stmt) {
     val X = ArrayDeque<Expr.Func>();
 
     fun fe (env: Env, e: Expr) {
-        if (e is Expr.Call) {
-            when {
-                e.f is Expr.Nat -> {} // ok
-                else -> e.f.leftMost(null)
-                    .map { env.idToStmt(it.second!!.tk_.str)!! }
-                    .forEach {
-                        fcs[it].let {
-                            if (it != null) {
-                                for (f in it) {
-                                    val arg = (f.second.block.body as Stmt.Seq).s1 as Stmt.Var
-                                    assert(arg.tk_.str == "arg")
-                                    bws_add(env, arg, e.arg)
-                                    // TODO: this env is not the correct one of f
-                                    // it should be f.first, but than not all possible bws will be on scope
-                                    //f.second.block.visit(f.first, ::fs, ::fx, ::fe, null)
-                                    if (!X.contains(f.second)) {
-                                        X.addFirst(f.second)
-                                        f.second.block.visit(env, ::fs, ::fx, ::fe, null)
-                                        X.removeFirst()
+        when (e) {
+            is Expr.Var -> chk_cn(env, env.idToStmt(e.tk_.str)!!, e.tk_, "invalid access to \"${e.tk_.str}\"")
+            is Expr.Call -> {
+                when {
+                    e.f is Expr.Nat -> {
+                    } // ok
+                    else -> e.f.leftMost(null)
+                        .map { env.idToStmt(it.second!!.tk_.str)!! }
+                        .forEach {
+                            fcs[it].let {
+                                if (it != null) {
+                                    for (f in it) {
+                                        val arg = (f.second.block.body as Stmt.Seq).s1 as Stmt.Var
+                                        assert(arg.tk_.str == "arg")
+                                        bws_cns_add(env, arg, e.arg)
+                                        // TODO: this env is not the correct one of f
+                                        // it should be f.first, but than not all possible bws will be on scope
+                                        //f.second.block.visit(f.first, ::fs, ::fx, ::fe, null)
+                                        if (!X.contains(f.second)) {
+                                            X.addFirst(f.second)
+                                            f.second.block.visit(env, ::fs, ::fx, ::fe, null)
+                                            X.removeFirst()
+                                        }
+                                        bws.remove(arg)
                                     }
-                                    bws.remove(arg)
                                 }
                             }
                         }
-                    }
+                }
             }
         }
     }

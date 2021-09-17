@@ -733,7 +733,7 @@ class Exec {
             output std \l1
             output std \l2
         """.trimIndent())
-        assert(out == "<.0>\n<.1 <.0>>\n")
+        assert(out == "(ln 3, col 13): invalid access to \"l1\" : consumed in line 2")
     }
     @Test
     fun j07_list_move_err () {
@@ -751,10 +751,9 @@ class Exec {
             var l1: <?^> = new <.1 <.0>>
             var l2: <?^> = <.0>
             set l2 = new <.1 consume l1>
-            output std \l1
             output std \l2
         """.trimIndent())
-        assert(out == "<.0>\n<.1 <.1 <.0>>>\n")
+        assert(out == "<.1 <.1 <.0>>>\n")
     }
     @Test
     fun j09_list_move () {
@@ -883,10 +882,9 @@ class Exec {
             var l2: <?^> = new <.1 copy l1>
             var t3: [(),<?^>] = [(), new <.1 consume l2!1>]
             output std \l1
-            output std \l2
             output std \t3
         """.trimIndent())
-        assert(out == "<.1 <.0>>\n<.1 <.0>>\n[(),<.1 <.1 <.0>>>]\n")
+        assert(out == "<.1 <.0>>\n[(),<.1 <.1 <.0>>>]\n")
     }
     @Test
     fun j17_uni_rec () {

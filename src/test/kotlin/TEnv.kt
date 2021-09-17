@@ -131,6 +131,7 @@ class TEnv {
             var l: <?^> = new <.1 <.0>>
             output std \l!0
         """.trimIndent())
+        println(out)
         assert(out == "OK")
     }
 
@@ -1185,8 +1186,28 @@ class TEnv {
         val out = inp2env("""
             var x: [\<?^>,<?^>] = [?,<.0>]
             set x.1 = borrow \x.2!1
-            var y: <?^> = replace x.2=<.0>
+            var y: <?^> = consume x.2
         """.trimIndent())
         assert(out == "(ln 2, col 9): invalid assignment of \"x\" : borrowed in line 1")
+    }
+    @Test
+    fun l09_consume_err () {
+        val out = inp2env("""
+            var x: <?^> = <.0>
+            var y: <?^> = consume x
+            set x = <.0>
+        """.trimIndent())
+        // TODO: could accept b/c x is being reassigned
+        assert(out == "(ln 3, col 5): invalid access to \"x\" : consumed in line 2")
+    }
+    @Test
+    fun l10_consume_err () {
+        val out = inp2env("""
+            var x: <?^> = <.0>
+            var y: <?^> = consume x
+            output std \x
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 3, col 13): invalid access to \"x\" : consumed in line 2")
     }
 }
