@@ -777,7 +777,7 @@ class Exec {
     fun j11_borrow_1 () {
         val out = all("""
             var x: <?^> = new <.1 new <.1 <.0>>>
-            var y: \<?^> = \x
+            var y: \<?^> = borrow \x
             output std y
         """.trimIndent())
         assert(out == "<.1 <.1 <.0>>>\n")
@@ -997,7 +997,7 @@ class Exec {
         val out = all("""
             var x: <?[(),^]> = new <.1 [(),<.0>]>
             var y: [(),<?[(),^]>] = [(), new <.1 [(),<.0>]>]
-            var z: [(),\<?[(),^]>] = [(), \x]
+            var z: [(),\<?[(),^]>] = [(), borrow \x]
             output std (/z.2)!1.2!0
         """.trimIndent())
         assert(out == "()\n")
@@ -1006,7 +1006,7 @@ class Exec {
     fun z07_type_complex () {
         val out = all("""
             var x: <?[(),^]> = <.0>
-            var z: [(),\<?[(),^]>] = [(), \x]
+            var z: [(),\<?[(),^]>] = [(), borrow \x]
             output std (/z.2)!0
         """.trimIndent())
         assert(out == "()\n")
@@ -1024,16 +1024,17 @@ class Exec {
         val out = all("""
             var x1: <?^> = <.0>
             var y1: _int = x1?0
-            var x2: \<?^> = \x1
+            var x2: \<?^> = borrow \x1
             var y2: _int = (/x2)?1
             set /x2 = new <.1 <.0>>
             var f: \<?^>->_int = func \<?^>->_int {
                 return (/arg)?1
             }
-            var y3: _int = f x2
+            var y3: _int = f borrow x2
             var ret: _int = _(y1 + y2 + y3)
             output std ret
         """.trimIndent())
+        println(out)
         assert(out == "2\n")
     }
     @Test

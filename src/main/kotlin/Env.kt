@@ -229,20 +229,21 @@ fun check_xexprs (S: Stmt) {
 
         //println(xp)
         val is_ptr_to_udisc = (xp is Type.Ptr) && xe.e.containsUDisc() //xp.pln.containsUDisc() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
+        val is_ptr_to_ctrec = (xp is Type.Ptr) && xp.pln.containsRec() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
         when (xe) {
-            is XExpr.None -> All_assert_tk(xe.e.tk, !is_ptr_to_udisc && (!xp_exrec || (e_iscst && (!e_isvar||!xp_exrec||e_isnil)))) {
-                "invalid expression : expected " + (if (is_ptr_to_udisc) "`borrow` " else if (e_iscst) "`new` " else "") + "operation modifier"
+            is XExpr.None -> All_assert_tk(xe.e.tk, !is_ptr_to_udisc && !is_ptr_to_ctrec && (!xp_exrec || (e_iscst && (!e_isvar||!xp_exrec||e_isnil)))) {
+                "invalid expression : expected " + (if (is_ptr_to_udisc||is_ptr_to_ctrec) "`borrow` " else if (e_iscst) "`new` " else "") + "operation modifier"
             }
-            is XExpr.Borrow -> All_assert_tk(xe.e.tk, is_ptr_to_udisc) {
+            is XExpr.Borrow -> All_assert_tk(xe.e.tk, is_ptr_to_udisc||is_ptr_to_ctrec) {
                 "invalid `borrow` : expected pointer to recursive variable"
             }
             is XExpr.Copy -> All_assert_tk(xe.e.tk, xp_exrec && !e_iscst) {
                 "invalid `copy` : expected recursive variable"
             }
-            is XExpr.Replace -> All_assert_tk(xe.e.tk, xp_exrec && !e_iscst && (xe.e !is Expr.Dnref)) {
+            is XExpr.Replace -> All_assert_tk(xe.e.tk, xp_exrec && !e_iscst) {
                 "invalid `replace` : expected recursive variable"
             }
-            is XExpr.Consume -> All_assert_tk(xe.e.tk, xp_exrec && !e_iscst && (xe.e !is Expr.Dnref)) {
+            is XExpr.Consume -> All_assert_tk(xe.e.tk, xp_exrec && !e_iscst) {
                 "invalid `consume` : expected recursive variable"
             }
             is XExpr.New -> All_assert_tk(xe.e.tk, xp_exrec && e_isvar && !e_isnil) {
@@ -450,8 +451,9 @@ fun check_borrows_consumes (S: Stmt) {
                             fs_add(it, s.src.e)
                         } else {
                             //if (s.src.x!=null && s.src.x.enu==TK.BORROW) {
-                            val isrecptr = tp.containsUnion() || (tp is Type.Ptr && tp.pln.containsUnion())
-                            if (isrecptr) {
+                            val isuniptr = tp.containsUnion() || (tp is Type.Ptr && tp.pln.containsUnion())
+                            val isrecptr = tp.containsRec() || (tp is Type.Ptr && tp.pln.containsRec())
+                            if (isuniptr || isrecptr) {
                                 bws_cns_add(env, it, s.src)
                                 chk_bw(env, it, s.tk, "invalid assignment of \"${it.tk_.str}\"")
                             }

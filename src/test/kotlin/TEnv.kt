@@ -752,7 +752,7 @@ class TEnv {
             var p: \<?^> = ?
             {
                 var l: <?^> = new <.1 (new <.1 <.0>>)>
-                set p = \l
+                set p = borrow \l
             }
             output std p
         """.trimIndent())
@@ -857,7 +857,7 @@ class TEnv {
     fun j05_rec_xepr_borrow_ok () {
         val out = inp2env("""
             var x: <^> = ?
-            var y: \<^> = \x
+            var y: \<^> = borrow \x
         """.trimIndent())
         assert(out == "OK")
     }
@@ -1008,8 +1008,8 @@ class TEnv {
             var y: \<^> = borrow \x!1
             var z: <^> = consume /y
         """.trimIndent())
-        println(out)
-        assert(out == "(ln 3, col 22): invalid `consume` : expected recursive variable")
+        assert(out == "OK")
+        //assert(out == "(ln 3, col 22): invalid `consume` : expected recursive variable")
     }
     @Test
     fun j23_rec_xexpr_move_err2 () {
@@ -1207,7 +1207,27 @@ class TEnv {
             var y: <?^> = consume x
             output std \x
         """.trimIndent())
-        println(out)
         assert(out == "(ln 3, col 13): invalid access to \"x\" : consumed in line 2")
+    }
+    @Test
+    fun l11_consume_err () {
+        val out = inp2env("""
+            var x: <?^> = <.0>
+            var y: \<?^> = borrow \x
+            var z: <?^> = consume /y
+            output std \x
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 4, col 13): invalid access to \"x\" : consumed in line 3")
+    }
+    @Test
+    fun l12_replace_ok () {
+        val out = inp2env("""
+            var x: <?^> = <.0>
+            var y: \<?^> = borrow \x
+            var z: <?^> = replace /y=<.0>
+            output std \x
+        """.trimIndent())
+        assert(out == "OK")
     }
 }

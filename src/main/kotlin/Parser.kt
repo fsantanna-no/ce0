@@ -52,7 +52,7 @@ sealed class XExpr (val e: Expr) {
     data class None    (val e_: Expr): XExpr(e_)
     data class New     (val e_: Expr.UCons): XExpr(e_)
     data class Replace (val e_: Attr, val new: XExpr): XExpr(e_.toExpr())
-    data class Consume (val e_: Attr): XExpr(e_.toExpr())
+    data class Consume (val e_: Expr): XExpr(e_)
     data class Copy    (val e_: Attr): XExpr(e_.toExpr())
     data class Borrow  (val e_: Expr): XExpr(e_)
 }
@@ -178,7 +178,7 @@ fun parser_xexpr (all: All, canpre: Boolean): XExpr {
                 XExpr.Replace(a,b)
             }
             all.accept(TK.CONSUME) -> {
-                val e = parser_attr(all)
+                val e = parser_expr(all, canpre)
                 XExpr.Consume(e)
             }
             all.accept(TK.COPY) -> {
