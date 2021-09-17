@@ -896,6 +896,15 @@ class Exec {
         """.trimIndent())
         assert(out == "<.2 <.0>>\n<.2 <.1 [<.1>,<.0>]>>\n")
     }
+    @Test
+    fun j18_tup_copy_rec_ok () {
+        val out = all("""
+            var l1: [<?^>] = [new <.1 <.0>>]
+            var l2: [<?^>] = copy l1
+            output std \l2
+        """.trimIndent())
+        assert(out == "[<.1 <.0>>]\n")
+    }
 
     // SET - TUPLE - UNION
 

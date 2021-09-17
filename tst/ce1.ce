@@ -36,7 +36,7 @@ var string_len: \\String->_int = func \\String->_int {
 
 var string_ce2c: \\String->_(char*) = func \\String->_(char*) {
     native _{static char STRING[256];}
-    var n: _int = string_len arg
+    var n: _int = string_len borrow arg
     var aux: [_int,\\String]->() = func [_int,\\String]->() {
         var i: _int = arg.1
         if (/arg.2)?1 {
@@ -45,7 +45,7 @@ var string_ce2c: \\String->_(char*) = func \\String->_(char*) {
             return aux [_(i+1), borrow \\(/arg.2)!1.2]
         }
     }
-    call aux [_1, arg]
+    call aux [_1, borrow arg]
     native _{STRING[n] = '\\0';}
     return _STRING
 }
@@ -58,10 +58,10 @@ var string_c2ce: _(char*)->String = func _(char*)->String {
         if _(i == n) {
             break
         }
-        set ret = new <.1 [_(arg[i]), move ret]>
+        set ret = new <.1 [_(arg[i]), consume ret]>
         set i = _(i + 1)
     }
-    return move ret
+    return consume ret
 }
 
 #define KEY <(),()>
@@ -103,17 +103,17 @@ var lx_blanks: ()->() = func ()->() {
 }
 
 var keys_find: \\String->Maybe(KEY) = func \\String->Maybe(KEY) {
-    var str: \\String = arg
+    var str: \\String = borrow arg
     var aux: \\KEYS->Maybe(KEY) = func \\KEYS->Maybe(KEY) {
         if (/arg)?0 {
             return <.1>
         }
-        if string_eq [str, borrow \\(/arg)!1.1.2] {
+        if string_eq [borrow str, borrow \\(/arg)!1.1.2] {
             return <.2 (/arg)!1.1.1>
         }
         return aux borrow \\(/arg)!1.2
     }
-    return aux \\keys
+    return aux borrow \\keys
 }
 
 var lx_token: ()->Token = func ()->Token {
@@ -133,18 +133,18 @@ var lx_token: ()->Token = func ()->Token {
         if _(isalpha(c)) {
             var str: String = <.0>
             loop {
-                set str = new <.1 [c,move str]>
+                set str = new <.1 [c,consume str]>
                 set c = call _fgetc finp
                 if _(!isalpha(c)) {
                     native _(ungetc(c, finp);)
                     break
                 }
             }
-            var key: Maybe(KEY) = call keys_find \\str
+            var key: Maybe(KEY) = call keys_find borrow \\str
             if key?2 {
                 return <.3 key!2>
             } else {
-                return <.4 move str>
+                return <.4 consume str>
             }
         }
     }
@@ -202,21 +202,21 @@ var parser_type: ()->Maybe(Type) = func ()->Maybe(Type) {
     if ok {
         var open: _int = tk0!2
         var tp: Maybe(Type) = call parser_type ()
-        var tps: List(Type) = new <.1 [move tp!2, <.0>]>
+        var tps: List(Type) = new <.1 [consume tp!2, <.0>]>
         loop {
             set ok = tk_accept [_2, <.2 _(',')>]
             if _(!ok) {
                 break
             }
             set tp = call parser_type ()
-            set tps = new <.1 [move tp!2, move tps]>
+            set tps = new <.1 [consume tp!2, consume tps]>
         }
         if _(open == '[') {
             call _assert tk_accept [_2, <.2 _(']')>]
-            return <.2 new <.2 move tps>>
+            return <.2 new <.2 consume tps>>
         } else {
             call _assert tk_accept [_2, <.2 _('>')>]
-            return <.2 new <.3 move tps>>
+            return <.2 new <.3 consume tps>>
         }
     }
 
