@@ -5,7 +5,7 @@ import java.io.PushbackReader
 import java.io.StringReader
 
 @TestMethodOrder(Alphanumeric::class)
-class Parser {
+class TParser {
 
     // TYPE
 

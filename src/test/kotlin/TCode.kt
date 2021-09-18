@@ -5,7 +5,7 @@ import java.io.PushbackReader
 import java.io.StringReader
 
 @TestMethodOrder(Alphanumeric::class)
-class Code {
+class TCode {
 
     val tp_unit = Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
 

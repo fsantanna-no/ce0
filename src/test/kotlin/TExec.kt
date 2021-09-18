@@ -4,7 +4,7 @@ import org.junit.jupiter.api.TestMethodOrder
 import java.io.File
 
 @TestMethodOrder(Alphanumeric::class)
-class Exec {
+class TExec {
 
     fun all (inp: String): String {
         val (ok1,out1) = All_inp2c(inp)
