@@ -13,6 +13,7 @@ class TEnv {
         try {
             var s = parser_stmts(all, Pair(TK.EOF,null))
             s = env_prelude(s)
+            ups(s)
             check_dcls(s)
             check_types(s)
             check_xexprs(s)
@@ -155,9 +156,12 @@ class TEnv {
     @Test
     fun c03_type_func_ret () {
         val out = inp2env("""
-            var f : () -> () = func () -> () { return [()] }
+            var f : () -> () =
+                func () -> () {
+                    return [()]
+                }
         """.trimIndent())
-        assert(out == "(ln 1, col 36): invalid return : type mismatch")
+        assert(out == "(ln 3, col 9): invalid return : type mismatch") { out }
     }
     @Test
     fun c04_type_func_arg () {

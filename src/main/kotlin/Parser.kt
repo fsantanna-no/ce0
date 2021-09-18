@@ -76,7 +76,7 @@ sealed class Expr (val tk: Tk) {
 sealed class Attr (val tk: Tk) {
     data class Var   (val tk_: Tk.Str): Attr(tk_)
     data class Nat   (val tk_: Tk.Str): Attr(tk_)
-    data class Dnref (val tk_: Tk, val sub: Attr): Attr(tk_)
+    data class Dnref (val tk_: Tk, val ptr: Attr): Attr(tk_)
     data class TDisc (val tk_: Tk.Num, val tup: Attr): Attr(tk_)
     data class UDisc (val tk_: Tk.Num, val uni: Attr): Attr(tk_)
 }
@@ -85,7 +85,7 @@ fun Attr.toExpr (): Expr {
     return when (this) {
         is Attr.Var   -> Expr.Var(this.tk_)
         is Attr.Nat   -> Expr.Nat(this.tk_)
-        is Attr.Dnref -> Expr.Dnref(this.tk_,this.sub.toExpr())
+        is Attr.Dnref -> Expr.Dnref(this.tk_,this.ptr.toExpr())
         is Attr.TDisc -> Expr.TDisc(this.tk_,this.tup.toExpr())
         is Attr.UDisc -> Expr.UDisc(this.tk_,this.uni.toExpr())
     }
@@ -99,7 +99,7 @@ sealed class Stmt (val tk: Tk) {
     data class Call  (val tk_: Tk.Key, val call: Expr.Call) : Stmt(tk_)
     data class Seq   (val tk_: Tk, val s1: Stmt, val s2: Stmt) : Stmt(tk_)
     data class If    (val tk_: Tk.Key, val tst: Expr, val true_: Block, val false_: Block) : Stmt(tk_)
-    data class Ret   (val tk_: Tk.Key, val e: XExpr) : Stmt(tk_)
+    data class Ret   (val tk_: Tk.Key) : Stmt(tk_)
     data class Loop  (val tk_: Tk.Key, val block: Block) : Stmt(tk_)
     data class Break (val tk_: Tk.Key) : Stmt(tk_)
     data class Block (val tk_: Tk.Chr, val body: Stmt) : Stmt(tk_)
@@ -431,7 +431,7 @@ fun parser_stmt (all: All): Stmt {
         }
         all.accept(TK.RET) -> {
             val tk0 = all.tk0 as Tk.Key
-            var e = try {
+            val e = try {
                 parser_xexpr(all, false)
             } catch (e: Throwable) {
                 assert(!all.consumed(tk0)) {
@@ -445,7 +445,7 @@ fun parser_stmt (all: All): Stmt {
                     Attr.Var(Tk.Str(TK.XVAR,tk0.lin,tk0.col,"_ret_")),
                     e
                 ),
-                Stmt.Ret(tk0, e)
+                Stmt.Ret(tk0)
             )
         }
         all.accept(TK.LOOP) -> {

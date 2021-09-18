@@ -468,7 +468,8 @@ fun code_fs (env: Env, s: Stmt) {
         is Stmt.Block -> "{\n" + CODE.removeFirst() + "}\n"
         is Stmt.Ret   -> {
             //EXPRS.removeFirst()
-            "return" + if (s.e.e.toType(env) is Type.Unit) ";\n" else " _ret_;\n"
+            val f = s.ups_first { it is Expr.Func }!! as Expr.Func
+            "return" + if (f.type.out is Type.Unit) ";\n" else " _ret_;\n"
         }
         is Stmt.Var   -> {
             val src = EXPRS.removeFirst()

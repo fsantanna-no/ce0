@@ -527,7 +527,7 @@ class TParser {
         val s = parser_stmt(all)
         assert (
             s is Stmt.Seq && s.s1 is Stmt.Set && s.s2.let {
-                it is Stmt.Ret && it.e.e is Expr.Unit
+                it is Stmt.Ret //&& it.e.e is Expr.Unit
             }
         )
     }
