@@ -183,7 +183,7 @@ class Exec {
             var x: _int = call f _10
             output std x
         """.trimIndent())
-        assert(out == "10\n")
+        assert(out == "10\n") { out }
     }
     @Test
     fun d02_f_unit () {

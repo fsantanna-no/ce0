@@ -1197,8 +1197,9 @@ class TEnv {
             var y: <?^> = consume x
             set x = <.0>
         """.trimIndent())
+        assert(out == "OK") { out }
         // TODO: could accept b/c x is being reassigned
-        assert(out == "(ln 3, col 5): invalid access to \"x\" : consumed in line 2")
+        //assert(out == "(ln 3, col 5): invalid access to \"x\" : consumed in line 2") { out }
     }
     @Test
     fun l10_consume_err () {
@@ -1207,7 +1208,7 @@ class TEnv {
             var y: <?^> = consume x
             output std \x
         """.trimIndent())
-        assert(out == "(ln 3, col 13): invalid access to \"x\" : consumed in line 2")
+        assert(out == "(ln 3, col 13): invalid access to \"x\" : consumed in line 2") { out }
     }
     @Test
     fun l11_consume_err () {
@@ -1240,11 +1241,36 @@ class TEnv {
         assert(out == "OK") { out }
     }
     @Test
+    fun l13_consume_ok2 () {
+        val out = inp2env("""
+            var f: ()-><?^> = func ()-><?^> {
+                var x: <?^> = <.0>
+                return consume x
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
     fun l13_consume_err () {
         val out = inp2env("""
             var x: <?^> = <.0>
             set x!1 = consume x
         """.trimIndent())
         assert(out == "(ln 2, col 9): invalid assignment of \"x\" : consumed in line 2") { out }
+    }
+    @Test
+    fun l14_consume_ok () {
+        val out = inp2env("""
+            var string_c2ce: _(char*)-><?[_int,^]> = func _(char*)-><?[_int,^]> {
+                var ret: <?^> = <.0>
+                loop {
+                    set ret = consume ret
+                }
+                var zzz: <?^> = consume ret
+                --return consume ret
+            }
+            call string_c2ce _x
+        """.trimIndent())
+        assert(out == "OK") { out }
     }
 }

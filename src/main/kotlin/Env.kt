@@ -444,11 +444,11 @@ fun check_borrows_consumes (S: Stmt) {
             }
             is Stmt.Set -> {
                 s.dst.toExpr().leftMost(null)
-                    .let { assert(it.size<=1) ; it }
+                    //.let { assert(it.size==1) ; it }
                     .first()
                     .let {
-                        if (it == null) return
-                        val dcl = env.idToStmt(it.second!!.tk_.str)!!
+                        //if (it == null) return
+                        val dcl = env.idToStmt(it.second.tk_.str)!!
 
                         val tp = s.dst.toExpr().toType(env)
                         if (tp is Type.Func) {
@@ -473,11 +473,20 @@ fun check_borrows_consumes (S: Stmt) {
         }
     }
 
-    val X = ArrayDeque<Expr.Func>();
+    //val X = ArrayDeque<Expr.Func>();
 
     fun fe (env: Env, e: Expr) {
         when (e) {
-            is Expr.Var -> chk_cn(env, env.idToStmt(e.tk_.str)!!, e.tk_, "invalid access to \"${e.tk_.str}\"")
+            is Expr.Var -> {
+                val top = VISIT.first()
+                if (top is Stmt.Set && top.dst.toExpr()==e) {
+                    // set x = ... -- x is consumed, but I want to reset it, it's not an access
+                } else {
+                    chk_cn(env, env.idToStmt(e.tk_.str)!!, e.tk_, "invalid access to \"${e.tk_.str}\"")
+                }
+            }
+            // TODO: handle globals inside functions
+            /*
             is Expr.Call -> {
                 when {
                     e.f is Expr.Nat -> {
@@ -504,8 +513,10 @@ fun check_borrows_consumes (S: Stmt) {
                                 }
                             }
                         }
+                    }
                 }
             }
+            */
         }
     }
     S.visit(emptyList(), ::fs, ::fx, ::fe, null)

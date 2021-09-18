@@ -2,6 +2,8 @@ private val X = mutableSetOf<String>()
 
 typealias Env = List<Stmt>
 
+val VISIT = ArrayDeque<Stmt>()
+
 private
 fun Type.visit (ft: ((Type)->Unit)?) {
     val ce = this.toce()
@@ -58,6 +60,7 @@ fun Stmt.visit (old: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env, XExpr)->Unit)?, fe
 
 private
 fun Stmt.visit_ (old: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env, XExpr)->Unit)?, fe: ((Env,Expr)->Unit)?, ft: ((Type)->Unit)?): Env {
+    VISIT.addFirst(this)
     val new = when (this) {
         is Stmt.Pass, is Stmt.Nat, is Stmt.Break -> old
         is Stmt.Var   -> { this.type.visit(ft) ; this.src.visit(listOf(this)+old,fs,fx,fe,ft) ; listOf(this)+old }
@@ -65,10 +68,11 @@ fun Stmt.visit_ (old: Env, fs: ((Env,Stmt)->Unit)?, fx: ((Env, XExpr)->Unit)?, f
         is Stmt.Call  -> { this.call.visit(old,fs,fx,fe,ft) ; old }
         is Stmt.Seq   -> { val e1=this.s1.visit(old,fs,fx,fe,ft) ; val e2=this.s2.visit(e1,fs,fx,fe,ft) ; e2}
         is Stmt.If    -> { this.tst.visit(old,fs,fx,fe,ft) ; this.true_.visit(old,fs,fx,fe,ft) ; this.false_.visit(old,fs,fx,fe,ft) ; old }
-        is Stmt.Ret   -> { this.e.visit(old,fs,fx,fe,ft) ; old }
+        is Stmt.Ret   -> old //{ this.e.visit(old,fs,fx,fe,ft) ; old }
         is Stmt.Loop  -> { this.block.visit(old,fs,fx,fe,ft) ; old }
         is Stmt.Block -> { this.body.visit(listOf(this)+old,fs,fx,fe,ft) ; old }
     }
+    VISIT.removeFirst()
     if (fs != null) {
         fs(old, this)
     }

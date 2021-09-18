@@ -467,7 +467,7 @@ fun code_fs (env: Env, s: Stmt) {
         }
         is Stmt.Block -> "{\n" + CODE.removeFirst() + "}\n"
         is Stmt.Ret   -> {
-            EXPRS.removeFirst()
+            //EXPRS.removeFirst()
             "return" + if (s.e.e.toType(env) is Type.Unit) ";\n" else " _ret_;\n"
         }
         is Stmt.Var   -> {
