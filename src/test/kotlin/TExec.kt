@@ -906,11 +906,25 @@ class TExec {
         assert(out == "[<.1 <.0>>]\n")
     }
     @Test
-    fun j19_consume_okr () {
+    fun j19_consume_ok () {
         val out = all("""
             var x: <?^> = new <.1 <.0>>
             set x = consume x
             output std \x
+        """.trimIndent())
+        assert(out == "<.1 <.0>>\n") { out }
+    }
+    @Test
+    fun j20_consume_ok () {
+        val out = all("""
+            var x: <?^> = new <.1 <.0>>
+            var y: <?^> = ?
+            if _1 {
+                set y = consume x
+            } else {
+                set y = consume x
+            }
+            output std \y
         """.trimIndent())
         assert(out == "<.1 <.0>>\n") { out }
     }

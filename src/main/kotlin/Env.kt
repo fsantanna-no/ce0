@@ -57,16 +57,24 @@ fun check_dcls (s: Stmt) {
     }
     fun fe (env: Env, e: Expr) {
         if (e is Expr.Var) {
-            All_assert_tk(e.tk, env.idToStmt(e.tk_.str) != null) {
+            All_assert_tk(e.tk, e.tk_.str=="_ret_" || env.idToStmt(e.tk_.str)!=null) {
                 "undeclared variable \"${e.tk_.str}\""
             }
         }
     }
     fun fs (env: Env, s: Stmt) {
-        if (s is Stmt.Var) {
-            val dcl = env.idToStmt(s.tk_.str)
-            All_assert_tk(s.tk, dcl==null || dcl.tk_.str in arrayOf("arg","_ret_")) {
-                "invalid declaration : \"${s.tk_.str}\" is already declared (ln ${dcl!!.tk.lin})"
+        when (s) {
+            is Stmt.Var -> {
+                val dcl = env.idToStmt(s.tk_.str)
+                All_assert_tk(s.tk, dcl == null || dcl.tk_.str in arrayOf("arg", "_ret_")) {
+                    "invalid declaration : \"${s.tk_.str}\" is already declared (ln ${dcl!!.tk.lin})"
+                }
+            }
+            is Stmt.Ret -> {
+                val ok = s.ups_first { it is Expr.Func } != null
+                All_assert_tk(s.tk, ok) {
+                    "invalid return : no enclosing function"
+                }
             }
         }
     }

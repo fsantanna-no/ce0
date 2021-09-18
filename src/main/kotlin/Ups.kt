@@ -13,6 +13,10 @@ fun Any.ups_first (f: (Any)->Boolean): Any? {
     }
 }
 
+fun Any.ups_env (id: String): Stmt.Var? {
+    return this.ups_first { it is Stmt.Var && it.tk_.str==id } as Stmt.Var?
+}
+
 private
 fun ups_add (v: Any, up: Any) {
     assert(UPS[v] == null)

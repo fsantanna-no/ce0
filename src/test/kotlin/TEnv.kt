@@ -55,6 +55,11 @@ class TEnv {
         val out = inp2env("var x:()=() ; var x:()->() = func ()->() {}")
         assert(out == "(ln 1, col 19): invalid declaration : \"x\" is already declared (ln 1)")
     }
+    @Test
+    fun a05_return_err () {
+        val out = inp2env("return ()")
+        assert(out == "(ln 1, col 1): invalid return : no enclosing function") { out }
+    }
 
     // CONS
 
