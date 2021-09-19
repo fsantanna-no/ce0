@@ -21,8 +21,6 @@ class TSimul {
         val s = all("output std ()")
         val l = mutableListOf<Expr>()
         class State: IState {
-            override fun ok () {
-            }
             override fun copy (): State {
                 return this
             }
@@ -41,13 +39,10 @@ class TSimul {
 
     @Test
     fun a02 () {
-        val s = all("if _0 { call _f _1 } else { call _g _2 }")
+        val S = all("if _0 { call _f _1 } else { call _g _2 }")
         val lall = mutableListOf<Expr>()
         class State: IState {
             var lcur = mutableListOf<Expr>()
-            override fun ok () {
-                println(this.lcur)
-            }
             override fun copy (): State {
                 val new = State()
                 new.lcur.addAll(this.lcur)
@@ -57,11 +52,16 @@ class TSimul {
                 return emptySet()
             }
         }
-        fun fe (e: Expr, st: IState) {
+        fun fe (e: Expr, st: State) {
             st.lcur.add(e)
             lall.add(e)
         }
-        s.simul(State(), null, null, ::fe)
+        fun fs (s: Stmt, st: State) {
+            if (s == S) {
+                println(st.lcur)
+            }
+        }
+        S.simul(State(), ::fs, null, ::fe)
         println(lall)
     }
 }
