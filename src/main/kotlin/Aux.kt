@@ -1,6 +1,6 @@
 val UPS = mutableMapOf<Any,Any>()
 val ENV = mutableMapOf<Any,Env>()
-val XPS = mutableMapOf<Any,Type>()
+val XPS = mutableMapOf<Expr,Type>()
 
 data class Env (val s: Stmt.Var, val prv: Env?)
 
@@ -124,7 +124,7 @@ fun Type.aux (up: Any) {
 private
 fun XExpr.aux (up: Any, env: Env?, xp: Type) {
     ups_add(this, up)
-    env_add(this, env)
+    //env_add(this, env)
     //xps_add(this, xp)
     if (this is XExpr.Replace) {
         this.new.aux(this, env, xp)
