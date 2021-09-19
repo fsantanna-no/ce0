@@ -327,7 +327,7 @@ class TEnv {
         }
         fun fs (s: Stmt) {
             if (s is Stmt.Block) {
-                assert(s.getDepth(false) == 0)
+                assert(s.getDepth() == 0)
             }
         }
         s.visit(::fs, null, ::fe, null)
@@ -348,14 +348,14 @@ class TEnv {
         fun fs (s: Stmt) {
             if (s is Stmt.Var) {
                 if (s.tk_.str == "x") {
-                    assert(0 == s.getDepth(false))
+                    assert(0 == s.getDepth())
                 }
                 if (s.tk_.str == "y") {
-                    assert(2 == s.getDepth(false))
+                    assert(2 == s.getDepth())
                 }
             }
             if (s is Stmt.Set) {
-                assert(0 == s.dst.getDepth(s.getDepth(true), true).first)
+                assert(0 == s.dst.getDepth(s.getDepth(), true).first)
             }
         }
         s.visit(::fs, null, ::fe, null)
