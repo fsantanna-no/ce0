@@ -3,8 +3,7 @@ interface IState {
     fun fs (f: Expr): Set<Expr.Func>
 }
 
-private
-fun <T: IState> Expr.simul (st: T, fs: ((Stmt, T)->Unit)?, fx: ((XExpr, T)->Unit)?, fe: ((Expr, T)->Unit)?) {
+fun Expr.simul (st: IState, fs: ((Stmt, IState)->Unit)?, fx: ((XExpr, IState)->Unit)?, fe: ((Expr, IState)->Unit)?) {
     when (this) {
         is Expr.TCons -> this.arg.forEach { it.simul(st,fs,fx,fe) }
         is Expr.UCons -> this.arg.simul(st,fs,fx,fe)
@@ -17,7 +16,7 @@ fun <T: IState> Expr.simul (st: T, fs: ((Stmt, T)->Unit)?, fx: ((XExpr, T)->Unit
         is Expr.Call  -> {
             this.arg.simul(st, fs, fx, fe)
             st.fs(this.f).forEach {
-                it.simul(st.copy() as T, fs, fx, fe)
+                it.simul(st.copy(), fs, fx, fe)
             }
         }
     }
@@ -27,7 +26,7 @@ fun <T: IState> Expr.simul (st: T, fs: ((Stmt, T)->Unit)?, fx: ((XExpr, T)->Unit
 }
 
 private
-fun <T: IState> XExpr.simul (st: T, fs: ((Stmt, T)->Unit)?, fx: ((XExpr, T)->Unit)?, fe: ((Expr, T)->Unit)?) {
+fun XExpr.simul (st: IState, fs: ((Stmt, IState)->Unit)?, fx: ((XExpr, IState)->Unit)?, fe: ((Expr, IState)->Unit)?) {
     if (this is XExpr.Replace) {
         this.new.simul(st,fs, fx, fe)
     }
@@ -37,7 +36,7 @@ fun <T: IState> XExpr.simul (st: T, fs: ((Stmt, T)->Unit)?, fx: ((XExpr, T)->Uni
     }
 }
 
-fun <T: IState> Stmt.simul (st: T, fs: ((Stmt, T)->Unit)?, fx: ((XExpr, T)->Unit)?, fe: ((Expr, T)->Unit)?) {
+fun Stmt.simul (st: IState, fs: ((Stmt, IState)->Unit)?, fx: ((XExpr, IState)->Unit)?, fe: ((Expr, IState)->Unit)?) {
     when (this) {
         is Stmt.Var   -> this.src.simul(st,fs,fx,fe)
         is Stmt.Set   -> { this.src.simul(st,fs,fx,fe) ; this.dst.simul(st,fs,fx,fe) }
@@ -48,8 +47,8 @@ fun <T: IState> Stmt.simul (st: T, fs: ((Stmt, T)->Unit)?, fx: ((XExpr, T)->Unit
         is Stmt.Block -> { this.body.simul(st,fs,fx,fe) }
         is Stmt.If    -> {
             this.tst.simul(st,fs,fx,fe)
-            this.true_.simul(st.copy() as T,fs,fx,fe)
-            this.false_.simul(st.copy() as T,fs,fx,fe)
+            this.true_.simul(st.copy(),fs,fx,fe)
+            this.false_.simul(st.copy(),fs,fx,fe)
         }
     }
     if (fs != null) {

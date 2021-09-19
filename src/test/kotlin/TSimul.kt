@@ -28,7 +28,7 @@ class TSimul {
                 return emptySet()
             }
         }
-        fun fe (e: Expr, st: State) {
+        fun fe (e: Expr, st: IState) {
             l.add(e)
         }
         s.simul(State(), null, null, ::fe)
@@ -52,13 +52,13 @@ class TSimul {
                 return emptySet()
             }
         }
-        fun fe (e: Expr, st: State) {
-            st.lcur.add(e)
+        fun fe (e: Expr, st: IState) {
+            (st as State).lcur.add(e)
             lall.add(e)
         }
-        fun fs (s: Stmt, st: State) {
+        fun fs (s: Stmt, st: IState) {
             if (s == S) {
-                println(st.lcur)
+                println((st as State).lcur)
             }
         }
         S.simul(State(), ::fs, null, ::fe)
