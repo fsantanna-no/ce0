@@ -30,7 +30,7 @@ fun check_dcls (s: Stmt) {
                 }
             }
             is Stmt.Ret -> {
-                val ok = s.ups_first { it is Expr.Func } != null
+                val ok = s.ups_tolist().first { it is Expr.Func } != null
                 All_assert_tk(s.tk, ok) {
                     "invalid return : no enclosing function"
                 }
@@ -227,7 +227,7 @@ fun Stmt.getDepth (): Int {
     return if (this is Stmt.Var && this.outer) {
         this.env("arg")!!.getDepth()
     } else {
-        this.env_all { it is Stmt.Block }.size
+        this.ups_tolist().count { it is Stmt.Block }
     }
 }
 

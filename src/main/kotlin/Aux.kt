@@ -2,7 +2,7 @@ val UPS = mutableMapOf<Any,Any>()
 val ENV = mutableMapOf<Any,Env>()
 val XPS = mutableMapOf<Any,Type>()
 
-data class Env (val s: Stmt, val prv: Env?)
+data class Env (val s: Stmt.Var, val prv: Env?)
 
 fun aux (s: Stmt) {
     UPS.clear()
@@ -31,13 +31,16 @@ fun xps_add (e: Expr, tp: Type) {
     XPS[e] = tp
 }
 
-fun Any.ups_first (f: (Any)->Boolean): Any? {
+//////////////////////////////////////////////////////////////////////////////
+
+fun Any.ups_tolist (): List<Any> {
     return when {
-        f(this) -> this
-        (UPS[this] == null) -> null
-        else -> UPS[this]!!.ups_first(f)
+        (UPS[this] == null) -> emptyList()
+        else -> UPS[this]!!.let { listOf(it) + it.ups_tolist() }
     }
 }
+
+//////////////////////////////////////////////////////////////////////////////
 
 fun Any.env_first (f: (Stmt)->Boolean): Stmt? {
     fun aux (env: Env?): Stmt? {
@@ -72,6 +75,8 @@ fun Any.env (id: String): Stmt.Var? {
 fun Expr.Var.env (): Stmt.Var? {
     return this.env_first { it is Stmt.Var && it.tk_.str==this.tk_.str } as Stmt.Var?
 }
+
+//////////////////////////////////////////////////////////////////////////////
 
 fun Expr.toType (): Type {
     return when (this) {
@@ -185,7 +190,7 @@ fun Stmt.aux (up: Any?, env: Env?): Env? {
             env
         }
         is Stmt.Loop  -> { this.block.aux(this,env) ; env }
-        is Stmt.Block -> { this.body.aux(this, Env(this,env)) ; env }
+        is Stmt.Block -> { this.body.aux(this,env) ; env }
         else -> env
     }
 }
