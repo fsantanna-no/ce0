@@ -284,23 +284,24 @@ fun code_ft (tp: Type) {
 
 val EXPRS = ArrayDeque<Pair<String,String>>()
 
-fun Expr.UDisc.deref (env: Env, str: String): String {
-    return if (this.uni.toType(env).exactlyRec()) {
+fun Expr.UDisc.deref (str: String): String {
+    return if (this.uni.toType().exactlyRec()) {
         "(*($str))"
     } else {
         str
     }
 }
-fun Expr.UPred.deref (env: Env, str: String): String {
-    return if (this.uni.toType(env).exactlyRec()) {
+fun Expr.UPred.deref (str: String): String {
+    return if (this.uni.toType().exactlyRec()) {
         "(*($str))"
     } else {
         str
     }
 }
 
-fun code_fe (env: Env, e: Expr, xp: Type) {
-    val tp = e.toType(env)
+fun code_fe (e: Expr) {
+    val xp = XPS[e]!!
+    val tp = e.toType()
     EXPRS.addFirst(when (e) {
         is Expr.Unk, is Expr.Unit -> Pair("", "")
         is Expr.Nat -> Pair("", e.tk_.str)
@@ -315,7 +316,7 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
         }
         is Expr.TDisc -> EXPRS.removeFirst().let { Pair(it.first, it.second + "._" + e.tk_.num) }
         is Expr.UDisc -> EXPRS.removeFirst().let {
-            val ee = e.deref(env,it.second)
+            val ee = e.deref(it.second)
             val pre = if (e.tk_.num == 0) {
                 """
                 assert(${it.second} == NULL);
@@ -323,7 +324,7 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
                 """.trimIndent()
             } else {
                 """
-                ${ if (e.uni.toType(env).let { it is Type.Union && it.isnullable }) "assert(${it.second} != NULL);\n" else "" }
+                ${ if (e.uni.toType().let { it is Type.Union && it.isnullable }) "assert(${it.second} != NULL);\n" else "" }
                 assert($ee.tag == ${e.tk_.num});
 
                 """.trimIndent()
@@ -331,11 +332,11 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
             Pair(it.first + pre, ee + "._" + e.tk_.num)
         }
         is Expr.UPred -> EXPRS.removeFirst().let {
-            val ee = e.deref(env,it.second)
+            val ee = e.deref(it.second)
             val pre = if (e.tk_.num == 0) {
                 "(${it.second} == NULL)"
             } else {
-                (if (e.uni.toType(env).let { it is Type.Union && it.isnullable }) "(${it.second} != NULL) && " else "") +
+                (if (e.uni.toType().let { it is Type.Union && it.isnullable }) "(${it.second} != NULL) && " else "") +
                 "($ee.tag == ${e.tk_.num})"
             }
             Pair(it.first, pre)
@@ -350,7 +351,7 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
         is Expr.UCons -> {
             val top = EXPRS.removeFirst()
             val ID  = "_tmp_" + e.hashCode().absoluteValue
-            val arg = if (e.arg.e.toType(env) is Type.Unit) "" else (", ._${e.tk_.num} = " + top.second)
+            val arg = if (e.arg.e.toType() is Type.Unit) "" else (", ._${e.tk_.num} = " + top.second)
             val sup = "struct " + xp.toce()
             val pre = "$sup $ID = (($sup) { ${e.tk_.num} $arg });\n"
             if (e.tk_.num == 0) Pair("","NULL") else Pair(top.first + pre, ID)
@@ -362,7 +363,7 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
                 f.first + arg.first,
                 f.second + (
                     if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
-                        "_" + e.arg.e.toType(env).toce()
+                        "_" + e.arg.e.toType().toce()
                     } else {
                         ""
                     }
@@ -389,7 +390,8 @@ fun code_fe (env: Env, e: Expr, xp: Type) {
     })
 }
 
-fun code_fx (env: Env, xe: XExpr, xp: Type) {
+fun code_fx (xe: XExpr) {
+    val xp = XPS[xe.e]!!
     val top = EXPRS.removeFirst()
     val ID  = "__tmp_" + xe.hashCode().absoluteValue
 
@@ -430,7 +432,7 @@ fun code_fx (env: Env, xe: XExpr, xp: Type) {
 
 val CODE = ArrayDeque<String>()
 
-fun code_fs (env: Env, s: Stmt) {
+fun code_fs (s: Stmt) {
     CODE.addFirst(when (s) {
         is Stmt.Pass -> ""
         is Stmt.Nat  -> s.tk_.str + "\n"
@@ -439,7 +441,7 @@ fun code_fs (env: Env, s: Stmt) {
             val src = EXPRS.removeFirst()
             val dst = EXPRS.removeFirst()
             dst.first + src.first +
-                (if (s.dst.toExpr().toType(env) is Type.Unit) "" else (dst.second+" = ")) + src.second + ";\n"
+                (if (s.dst.toType() is Type.Unit) "" else (dst.second+" = ")) + src.second + ";\n"
         }
         is Stmt.If -> {
             val tst = EXPRS.removeFirst()
@@ -470,7 +472,7 @@ fun code_fs (env: Env, s: Stmt) {
             //EXPRS.removeFirst()
             val f = s.ups_first { it is Expr.Func }!! as Expr.Func
             "return" + if (f.type.out is Type.Unit) ";\n" else " _ret_;\n"
-            //"return" + if (s.e.e.toType(env) is Type.Unit) ";\n" else " _ret_;\n"
+            //"return" + if (s.e.e.toType() is Type.Unit) ";\n" else " _ret_;\n"
         }
         is Stmt.Var   -> {
             val src = EXPRS.removeFirst()
@@ -497,8 +499,8 @@ fun code_fs (env: Env, s: Stmt) {
 fun Stmt.code (): String {
     TYPEX.clear()
     TYPES.clear()
-    this.visit(emptyList(), null, null, null, ::code_ft)
-    this.visitXP(emptyList(), ::code_fs, ::code_fx, ::code_fe)
+    this.visit( null, null, null, ::code_ft)
+    this.visit(::code_fs, ::code_fx, ::code_fe, null)
     //val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 
     val ord = TYPES.map { it.first }.toMap() // [ce={ce}]

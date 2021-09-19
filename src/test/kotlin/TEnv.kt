@@ -13,7 +13,7 @@ class TEnv {
         try {
             var s = parser_stmts(all, Pair(TK.EOF,null))
             s = env_prelude(s)
-            ups(s)
+            aux(s)
             check_dcls(s)
             check_types(s)
             check_xexprs(s)
@@ -30,6 +30,7 @@ class TEnv {
         val all = All_new(PushbackReader(StringReader(inp), 2))
         lexer(all)
         var s = parser_stmts(all, Pair(TK.EOF,null))
+        aux(s)
         return s
     }
 
@@ -38,7 +39,7 @@ class TEnv {
     @Test
     fun a01_undeclared_var () {
         val out = inp2env("output std x")
-        assert(out == "(ln 1, col 12): undeclared variable \"x\"")
+        assert(out == "(ln 1, col 12): undeclared variable \"x\"") { out }
     }
     @Test
     fun a02_undeclared_func () {
@@ -58,7 +59,8 @@ class TEnv {
     @Test
     fun a05_return_err () {
         val out = inp2env("return ()")
-        assert(out == "(ln 1, col 1): invalid return : no enclosing function") { out }
+        //assert(out == "(ln 1, col 1): invalid return : no enclosing function") { out }
+        assert(out == "(ln 1, col 1): undeclared variable \"_ret_\"") { out }
     }
 
     // CONS
@@ -69,7 +71,7 @@ class TEnv {
             var x: [(),()] = ?
             output std(x.3)
         """.trimIndent())
-        assert(out == "(ln 2, col 14): invalid discriminator : out of bounds")
+        assert(out == "(ln 2, col 14): invalid discriminator : out of bounds") { out }
     }
     @Test
     fun b02_user_sub_undeclared () {
@@ -98,7 +100,7 @@ class TEnv {
         val out = inp2env("""
             var x: (^) = ?
         """.trimIndent())
-        assert(out == "OK")
+        assert(out == "OK") { out }
     }
     @Test
     fun b09_user_err () {
@@ -189,7 +191,7 @@ class TEnv {
             var x: [(),()] = [(),()]
             set x.1 = [()]
         """.trimIndent())
-        assert(out == "(ln 2, col 9): invalid assignment : type mismatch")
+        assert(out == "(ln 2, col 9): invalid assignment : type mismatch") { out }
     }
     @Test
     fun c07_type_upref () {
@@ -212,7 +214,7 @@ class TEnv {
             var y: () = ()
             var x: \() = \y
         """.trimIndent())
-        assert(out == "OK")
+        assert(out == "OK") { out }
     }
     @Test
     fun c10_type_upref () {
@@ -303,53 +305,60 @@ class TEnv {
         val out = inp2env("""
             output std <.1>!2
         """.trimIndent())
-        assert(out == "(ln 1, col 17): invalid discriminator : type mismatch")
+        assert(out == "(ln 1, col 17): invalid discriminator : type mismatch") { out }
+    }
+    @Test
+    fun c20_uni_disc_ok () {
+        val out = inp2env("""
+            output std <.2>!2
+        """.trimIndent())
+        assert(out == "(ln 1, col 17): invalid discriminator : type mismatch") { out }
     }
 
     // DEPTH
 
     @Test
     fun d01_block () {
-        val s = pre("var x: () = () ; { output std x }")
-        fun fe (env: Env, e: Expr) {
+        val s = pre("var x: () = () ; { call x }")
+        fun fe (e: Expr) {
             if (e is Expr.Var && e.tk_.str=="x") {
-                assert(0 == e.getDepth(env,0,true).first)
+                assert(0 == e.getDepth(0,true).first)
             }
         }
-        fun fs (env: Env, s: Stmt) {
+        fun fs (s: Stmt) {
             if (s is Stmt.Block) {
-                assert(s.getDepth(env,false) == 0)
+                assert(s.getDepth(false) == 0)
             }
         }
-        s.visit(emptyList(), ::fs, null, ::fe, null)
+        s.visit(::fs, null, ::fe, null)
     }
     @Test
     fun d02_func () {
-        val s = pre("var x: () = () ; var f: ()->() = func ()->() { var y: () = x ; output std y ; set x = () }")
-        fun fe (env: Env, e: Expr) {
+        val s = pre("var x: () = () ; var f: ()->() = func ()->() { var y: () = x ; call y ; set x = () }")
+        fun fe (e: Expr) {
             if (e is Expr.Var) {
                 if (e.tk_.str == "x") {
-                    assert(0 == e.getDepth(env, 0, true).first)
+                    assert(0 == e.getDepth(0, true).first)
                 }
                 if (e.tk_.str == "y") {
-                    assert(2 == s.getDepth(env,false))
+                    //assert(2 == s.getDepth(false))
                 }
             }
         }
-        fun fs (env: Env, s: Stmt) {
+        fun fs (s: Stmt) {
             if (s is Stmt.Var) {
                 if (s.tk_.str == "x") {
-                    assert(0 == s.getDepth(env,false))
+                    assert(0 == s.getDepth(false))
                 }
                 if (s.tk_.str == "y") {
-                    assert(2 == s.getDepth(env,false))
+                    assert(2 == s.getDepth(false))
                 }
             }
             if (s is Stmt.Set) {
-                assert(0 == s.dst.toExpr().getDepth(env, s.getDepth(env,true), true).first)
+                assert(0 == s.dst.getDepth(s.getDepth(true), true).first)
             }
         }
-        s.visit(emptyList(), ::fs, null, ::fe, null)
+        s.visit(::fs, null, ::fe, null)
     }
 
     // POINTERS
@@ -911,9 +920,16 @@ class TEnv {
     @Test
     fun j11_rec_xepr_double_rec () {
         val out = inp2env("""
+            var x: <?<?[^^,^]>> = new <.1 new <.1 [<.0>,<.0>]>>
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun j11_rec_xepr_double_rec2 () {
+        val out = inp2env("""
             var x: <?<?[^^,^]>> = new <.1 new <.1 [<.0>,new <.1 [<.0>,<.0>]>]>>
         """.trimIndent())
-        assert(out == "OK")
+        assert(out == "OK") { out }
     }
     @Test
     fun j12_rec_xepr_double_rec_err () {
@@ -939,7 +955,7 @@ class TEnv {
             var t2: [<?^>] = [replace t1.1=<.0>]
         """.trimIndent())
         //assert(out == "(ln 3, col 17): invalid `replace` : expected recursive variable")
-        assert(out == "OK")
+        assert(out == "OK") { out }
     }
     @Test
     fun j14_new_no () {
@@ -1115,7 +1131,7 @@ class TEnv {
             var y: \<?^> = borrow \x!1
             set x = <.0>
         """.trimIndent())
-        assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2")
+        assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2") { out }
     }
     @Test
     fun l02_borrow_err () {

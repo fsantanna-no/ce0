@@ -26,35 +26,40 @@ class TCode {
     @Test
     fun b01_expr_unit () {
         val e = Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
-        code_fe(emptyList(), e, tp_unit)
+        XPS[e] = tp_unit
+        code_fe(e)
         assert(EXPRS.removeFirst().second == "")
     }
     @Test
     fun b02_expr_var () {
         val e = Expr.Var(Tk.Str(TK.XVAR,1,1,"xxx"))
-        val env = listOf (
+        ENV[e] = Env (
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"xxx"),
                 false,
                 Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
                 XExpr.None(Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
-            )
+            ),
+            null
         )
-        code_fe(env, e, tp_unit)
+        XPS[e] = tp_unit
+        code_fe(e)
         assert(EXPRS.removeFirst().second == "xxx")
     }
     @Test
     fun b03_expr_nat () {
         val e = Expr.Var(Tk.Str(TK.XNAT,1,1,"xxx"))
-        val env = listOf (
+        ENV[e] = Env (
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"xxx"),
                 false,
                 Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
                 XExpr.None(Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
-            )
+            ),
+            null
         )
-        code_fe(env, e, tp_unit)
+        XPS[e] = tp_unit
+        code_fe(e)
         assert(EXPRS.removeFirst().second == "xxx")
     }
     @Test
@@ -66,8 +71,8 @@ class TCode {
                 XExpr.None(Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))),
             )
         )
-        e.visitXP(emptyList(), null, ::code_fx, ::code_fe,
-            Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray()))
+        XPS[e] = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray())
+        e.visit(null, ::code_fx, ::code_fe, null)
         EXPRS.removeFirst().second.let {
             //println(it)
             assert(it == "((struct TUPLE_p_Unit__Unit_d_) {  })")
@@ -79,17 +84,20 @@ class TCode {
             Tk.Num(TK.XNUM,1,1,1),
             Expr.Var(Tk.Str(TK.XVAR,1,1,"x"))
         )
-        val env = listOf (
+        ENV[e.tup] = Env (
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"x"),
                 false,
                 Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int")))),
                 XExpr.None(Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
-            )
+            ),
+            null
         )
-        e.visitXP(env, null, ::code_fx, ::code_fe, tp_unit)
+        XPS[e] = tp_unit
+        XPS[e.tup] = tp_unit
+        e.visit(null, ::code_fx, ::code_fe, null)
         EXPRS.removeFirst().second.let {
-            //println(it)
+            println(it)
             assert(it == "x._1")
         }
     }
@@ -99,7 +107,7 @@ class TCode {
     @Test
     fun c01_stmt_pass () {
         val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
-        s.visit(emptyList(), ::code_fs, null, null, null)
+        s.visit(::code_fs, null, null, null)
         assert(CODE.removeFirst() == "")
         assert(CODE.size == 0)
     }
@@ -138,7 +146,7 @@ class TCode {
         lexer(all)
         var s = parser_stmts(all, Pair(TK.EOF,null))
         s = env_prelude(s)
-        s.visit(emptyList(), ::code_fs, null, null, null)
+        s.visit(::code_fs, null, null, null)
         return CODE.removeFirst()
     }
 }

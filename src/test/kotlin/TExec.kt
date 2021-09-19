@@ -81,7 +81,7 @@ class TExec {
             set x = _(-20)
             output std x
         """.trimIndent())
-        assert(out == "-20\n")
+        assert(out == "-20\n") { out }
     }
     @Test
     fun a11_unk () {
@@ -118,7 +118,7 @@ class TExec {
         val out = all("""
             output std ([(),()].1)
         """.trimIndent())
-        assert(out == "()\n")
+        assert(out == "()\n") { out }
     }
     @Test
     fun b03_tuple_tuples () {
@@ -138,7 +138,7 @@ class TExec {
             var x: [[_int,_int],[_int,_int]] = [[n,n],[n,n]]
             output std x
         """.trimIndent())
-        assert(out == "[[1,1],[1,1]]\n")
+        assert(out == "[[1,1],[1,1]]\n") { out }
     }
 
     // NATIVE

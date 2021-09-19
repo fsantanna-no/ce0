@@ -51,9 +51,9 @@ fun Type.Union.expand (): Type.Union {
 sealed class XExpr (val e: Expr) {
     data class None    (val e_: Expr): XExpr(e_)
     data class New     (val e_: Expr.UCons): XExpr(e_)
-    data class Replace (val e_: Attr, val new: XExpr): XExpr(e_.toExpr())
+    data class Replace (val e_: Expr, val new: XExpr): XExpr(e_)
     data class Consume (val e_: Expr): XExpr(e_)
-    data class Copy    (val e_: Attr): XExpr(e_.toExpr())
+    data class Copy    (val e_: Expr): XExpr(e_)
     data class Borrow  (val e_: Expr): XExpr(e_)
 }
 
@@ -81,6 +81,7 @@ sealed class Attr (val tk: Tk) {
     data class UDisc (val tk_: Tk.Num, val uni: Attr): Attr(tk_)
 }
 
+private
 fun Attr.toExpr (): Expr {
     return when (this) {
         is Attr.Var   -> Expr.Var(this.tk_)
@@ -94,7 +95,7 @@ fun Attr.toExpr (): Expr {
 sealed class Stmt (val tk: Tk) {
     data class Pass  (val tk_: Tk) : Stmt(tk_)
     data class Var   (val tk_: Tk.Str, val outer: Boolean, val type: Type, val src: XExpr) : Stmt(tk_)
-    data class Set   (val tk_: Tk.Chr, val dst: Attr, val src: XExpr) : Stmt(tk_)
+    data class Set   (val tk_: Tk.Chr, val dst: Expr, val src: XExpr) : Stmt(tk_)
     data class Nat   (val tk_: Tk.Str) : Stmt(tk_)
     data class Call  (val tk_: Tk.Key, val call: Expr.Call) : Stmt(tk_)
     data class Seq   (val tk_: Tk, val s1: Stmt, val s2: Stmt) : Stmt(tk_)
@@ -175,15 +176,15 @@ fun parser_xexpr (all: All, canpre: Boolean): XExpr {
                 val a = parser_attr(all)
                 all.accept_err(TK.CHAR,'=')
                 val b = parser_xexpr(all,false)
-                XExpr.Replace(a,b)
+                XExpr.Replace(a.toExpr(),b)
             }
             all.accept(TK.CONSUME) -> {
                 val e = parser_expr(all, canpre)
                 XExpr.Consume(e)
             }
             all.accept(TK.COPY) -> {
-                val e = parser_attr(all)
-                XExpr.Copy(e)
+                val a = parser_attr(all)
+                XExpr.Copy(a.toExpr())
             }
             all.accept(TK.BORROW) -> {
                 val e = parser_expr(all, canpre)
@@ -408,7 +409,7 @@ fun parser_stmt (all: All): Stmt {
             all.accept_err(TK.CHAR,'=')
             val tk0 = all.tk0 as Tk.Chr
             val src = parser_xexpr(all, true)
-            Stmt.Set(tk0, dst, src)
+            Stmt.Set(tk0, dst.toExpr(), src)
         }
         all.accept(TK.NAT) -> {
             all.accept_err(TK.XNAT)
@@ -442,7 +443,7 @@ fun parser_stmt (all: All): Stmt {
             Stmt.Seq (tk0,
                 Stmt.Set (
                     Tk.Chr(TK.CHAR,tk0.lin,tk0.col,'='),
-                    Attr.Var(Tk.Str(TK.XVAR,tk0.lin,tk0.col,"_ret_")),
+                    Expr.Var(Tk.Str(TK.XVAR,tk0.lin,tk0.col,"_ret_")),
                     e
                 ),
                 Stmt.Ret(tk0)
