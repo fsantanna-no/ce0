@@ -470,7 +470,7 @@ fun code_fs (s: Stmt) {
         is Stmt.Block -> "{\n" + CODE.removeFirst() + "}\n"
         is Stmt.Ret   -> {
             //EXPRS.removeFirst()
-            val f = s.ups_tolist().first { it is Expr.Func }!! as Expr.Func
+            val f = s.ups_tolist().first { it is Expr.Func } as Expr.Func
             "return" + if (f.type.out is Type.Unit) ";\n" else " _ret_;\n"
             //"return" + if (s.e.e.toType() is Type.Unit) ";\n" else " _ret_;\n"
         }

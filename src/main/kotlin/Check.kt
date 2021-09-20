@@ -30,7 +30,7 @@ fun check_dcls (s: Stmt) {
                 }
             }
             is Stmt.Ret -> {
-                val ok = s.ups_tolist().first { it is Expr.Func } != null
+                val ok = s.ups_tolist().firstOrNull { it is Expr.Func } != null
                 All_assert_tk(s.tk, ok) {
                     "invalid return : no enclosing function"
                 }
