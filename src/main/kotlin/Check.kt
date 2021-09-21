@@ -195,7 +195,6 @@ fun check_xexprs (S: Stmt) {
         val e_isvar  = xe.e is Expr.UCons
         val e_isnil  = e_isvar && ((xe.e as Expr.UCons).tk_.num==0)
 
-        //println(xp)
         val is_ptr_to_udisc = (xp is Type.Ptr) && xe.e.containsUDisc() //xp.pln.containsUDisc() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
         val is_ptr_to_ctrec = (xp is Type.Ptr) && xp.pln.containsRec() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
         when (xe) {
@@ -278,7 +277,6 @@ fun check_pointers (S: Stmt) {
             is Stmt.Set -> {
                 val set_depth = s.getDepth()
                 val (src_depth, src_dcl) = s.src.e.getDepth(set_depth, s.dst.toType().ishasptr())
-                //println("${s.dst.getDepth(env, set_depth, s.dst.toType().ishasptr()).first} >= $src_depth")
                 All_assert_tk(s.tk, s.dst.getDepth(set_depth, s.dst.toType().ishasptr()).first >= src_depth) {
                     "invalid assignment : cannot hold local pointer \"${src_dcl!!.tk_.str}\" (ln ${src_dcl!!.tk.lin})"
                 }
@@ -394,8 +392,6 @@ fun check_borrows_consumes (S: Stmt) {
                 }
                 .toSet()
                 .unionAll()
-            //println(f)
-            //println(ret)
             return ret
         }
     }
@@ -462,6 +458,27 @@ fun check_borrows_consumes (S: Stmt) {
                         }
                     }
             }
+            is Stmt.Block -> {
+                if (UPS[s] is Expr.Func) {
+                    val arg = (s.body as Stmt.Seq).s1 as Stmt.Var
+                    assert(arg.tk_.str == "arg")
+                    assert(SIMUL_STACK.first().first is Expr.Call)
+                    st.bws_cns_add(arg, (SIMUL_STACK.first().first as Expr.Call).arg)
+                    //TODO("xxx")
+                    /*
+                    // TODO: this env is not the correct one of f
+                    // it should be f.first, but than not all possible bws will be on scope
+                    //f.second.block.visit(f.first, ::fs, ::fx, ::fe, null)
+                    if (!X.contains(f)) {
+                        X.addFirst(f)
+                        TODO()
+                        //f.block.visit(::fs, ::fx, ::fe, null)
+                        X.removeFirst()
+                    }
+                    st.bws.remove(arg)
+                     */
+                }
+            }
         }
     }
 
@@ -485,28 +502,6 @@ fun check_borrows_consumes (S: Stmt) {
                     st.chk_cn(e.env()!!, e, e.tk_, "invalid access to \"${e.tk_.str}\"")
                 }
             }
-            /*
-            is Expr.Call -> {
-                when {
-                    e.f is Expr.Nat -> {} // ok
-                    else -> {
-                        val arg = (f.block.body as Stmt.Seq).s1 as Stmt.Var
-                        assert(arg.tk_.str == "arg")
-                        st.bws_cns_add(arg, e.arg)
-                        // TODO: this env is not the correct one of f
-                        // it should be f.first, but than not all possible bws will be on scope
-                        //f.second.block.visit(f.first, ::fs, ::fx, ::fe, null)
-                        if (!X.contains(f)) {
-                            X.addFirst(f)
-                            TODO()
-                            //f.block.visit(::fs, ::fx, ::fe, null)
-                            X.removeFirst()
-                        }
-                        st.bws.remove(arg)
-                    }
-                }
-            }
-             */
         }
     }
     S.simul(State(), ::fs, ::fx, ::fe, emptyList())
