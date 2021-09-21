@@ -1164,7 +1164,7 @@ class TEnv {
             }
             call f borrow \x!1
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment of \"x\" : borrowed in line 3")
+        assert(out == "(ln 4, col 11): invalid assignment of \"x\" : borrowed in line 3") { out }
     }
     @Test
     fun l04_borrow_err () {

@@ -381,7 +381,22 @@ fun check_borrows_consumes (S: Stmt) {
             return new
         }
         override fun funcs (f: Expr): Set<Stmt.Block> {
-            return emptySet()
+            val ret = f.leftMost(null)
+                .map { it.second.env()!! }
+                .map {
+                    this.fcs[it].let {
+                        if (it == null) {
+                            emptySet()
+                        } else {
+                            it.map { it.block }.toSet()
+                        }
+                    }
+                }
+                .toSet()
+                .unionAll()
+            //println(f)
+            //println(ret)
+            return ret
         }
     }
 
@@ -473,31 +488,22 @@ fun check_borrows_consumes (S: Stmt) {
             /*
             is Expr.Call -> {
                 when {
-                    e.f is Expr.Nat -> {
-                    } // ok
-                    else -> e.f.leftMost(null)
-                        .map { it.second.env()!! }
-                        .forEach {
-                            st.fcs[it].let {
-                                if (it != null) {
-                                    for (f in it) {
-                                        val arg = (f.block.body as Stmt.Seq).s1 as Stmt.Var
-                                        assert(arg.tk_.str == "arg")
-                                        st.bws_cns_add(arg, e.arg)
-                                        // TODO: this env is not the correct one of f
-                                        // it should be f.first, but than not all possible bws will be on scope
-                                        //f.second.block.visit(f.first, ::fs, ::fx, ::fe, null)
-                                        if (!X.contains(f)) {
-                                            X.addFirst(f)
-                                            TODO()
-                                            //f.block.visit(::fs, ::fx, ::fe, null)
-                                            X.removeFirst()
-                                        }
-                                        st.bws.remove(arg)
-                                    }
-                                }
-                            }
+                    e.f is Expr.Nat -> {} // ok
+                    else -> {
+                        val arg = (f.block.body as Stmt.Seq).s1 as Stmt.Var
+                        assert(arg.tk_.str == "arg")
+                        st.bws_cns_add(arg, e.arg)
+                        // TODO: this env is not the correct one of f
+                        // it should be f.first, but than not all possible bws will be on scope
+                        //f.second.block.visit(f.first, ::fs, ::fx, ::fe, null)
+                        if (!X.contains(f)) {
+                            X.addFirst(f)
+                            TODO()
+                            //f.block.visit(::fs, ::fx, ::fe, null)
+                            X.removeFirst()
                         }
+                        st.bws.remove(arg)
+                    }
                 }
             }
              */
