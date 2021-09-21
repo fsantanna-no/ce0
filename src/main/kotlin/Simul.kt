@@ -39,6 +39,7 @@ fun Any.simul (
         is Stmt  -> this.simul(st, fs, fx, fe, nxts)
         is XExpr -> this.simul(st, fs, fx, fe, nxts)
         is Expr  -> this.simul(st, fs, fx, fe, nxts)
+        is Unit  -> { stack_rem { it is Stmt.Block } ; nxt(st,fs,fx,fe,nxts) }
         else -> error("impossible case")
     }
 }
@@ -109,12 +110,18 @@ fun Stmt.simul (
     }
 
     when (this) {
-        is Stmt.Var   -> this.src.simul(st, fs, fx, fe, nxts)
+        is Stmt.Var   -> {
+            SIMUL_STACK.addFirst(Pair(this,emptyList()))
+            this.src.simul(st, fs, fx, fe, nxts)
+        }
         is Stmt.Set   -> this.src.simul(st, fs, fx, fe, listOf(this.dst)+nxts)
         is Stmt.Call  -> this.call.simul(st, fs, fx, fe, nxts)
         is Stmt.Break -> nxt(st, fs, fx, fe, stack_rem { it is Stmt.Loop })
         is Stmt.Ret   -> nxt(st, fs, fx, fe, stack_rem { it is Expr.Call })
-        is Stmt.Block -> this.body.simul(st, fs, fx, fe, nxts)
+        is Stmt.Block -> {
+            SIMUL_STACK.addFirst(Pair(this,emptyList()))
+            this.body.simul(st, fs, fx, fe, listOf(Unit)+nxts)
+        }
         is Stmt.Seq   -> this.s1.simul(st, fs, fx, fe, listOf(this.s2)+nxts)
         is Stmt.Loop  -> {
             SIMUL_STACK.addFirst(Pair(this,nxts))
