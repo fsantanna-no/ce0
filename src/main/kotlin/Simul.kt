@@ -71,6 +71,9 @@ fun Expr.simul (
                 SIMUL_STACK.addFirst(Pair(this,nxts))
                 val s = ArrayDeque(SIMUL_STACK)
                 funcs.forEach {
+                    if (SIMUL_STACK.map { it.first }.filter { x->x==it }.count() == 2) {
+                        return  // two recursive instances, stop
+                    }
                     this.arg.simul(st.copy(), fs, fx, fe, listOf(it) + nxts)
                     SIMUL_STACK = s
                 }
