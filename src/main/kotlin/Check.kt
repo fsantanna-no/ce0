@@ -326,74 +326,88 @@ fun Type.containsUnion (): Boolean {
 }
 
 fun check_borrows_consumes (S: Stmt) {
-    // y = borrow \x
-    // z = borrow y
-    // bws[x] = { y,z }
-    // bws[y] = { z }
-    val bws: MutableMap<Stmt.Var,MutableSet<Stmt.Var>> = mutableMapOf()
-    val cns: MutableMap<Stmt.Var,Int> = mutableMapOf()
+    class State: IState {
+        // y = borrow \x
+        // z = borrow y
+        // bws[x] = { y,z }
+        // bws[y] = { z }
+        var bws: MutableMap<Stmt.Var,MutableSet<Stmt.Var>> = mutableMapOf()
+        var cns: MutableMap<Stmt.Var,Expr.Var> = mutableMapOf()
 
-    // f = func A ...
-    // g = func B ...
-    // f = g
-    // fs[f] = { A,B }
-    val fcs: MutableMap<Stmt.Var,MutableSet<Expr.Func>> = mutableMapOf()
+        // f = func A ...
+        // g = func B ...
+        // f = g
+        // fs[f] = { A,B }
+        var fcs: MutableMap<Stmt.Var,MutableSet<Expr.Func>> = mutableMapOf()
 
-    fun chk_bw (env: Set<Stmt>, s: Stmt.Var, tk: Tk, err: String) {
-        if (bws[s] != null) {
-            val ok = bws[s]!!.intersect(env).isEmpty()  // no borrow is on scope
-            val ln = bws[s]!!.first().tk.lin
-            All_assert_tk(tk, ok) { err + " : borrowed in line $ln" }
+        fun chk_bw (env: Set<Stmt>, s: Stmt.Var, tk: Tk, err: String) {
+            if (this.bws[s] != null) {
+                val ok = this.bws[s]!!.intersect(env).isEmpty()  // no borrow is on scope
+                val ln = this.bws[s]!!.first().tk.lin
+                All_assert_tk(tk, ok) { err + " : borrowed in line $ln" }
+            }
+        }
+
+        fun chk_cn (s: Stmt.Var, e: Expr.Var?, tk: Tk, err: String) {
+            All_assert_tk(tk, !this.cns.contains(s) || this.cns[s]==e) { err + " : consumed in line ${this.cns[s]!!.tk.lin}" }
+        }
+
+        fun bws_cns_add (dst: Stmt.Var, xsrc: XExpr) {
+            for ((xe,lf) in xsrc.e.leftMost(xsrc)) {
+                if (xe is XExpr.Borrow) {
+                    val src = lf.env() as Stmt.Var
+                    if (this.bws[src] == null) {
+                        this.bws[src] = mutableSetOf()
+                    }
+                    this.bws[src]!!.add(dst)
+                    this.bws[src]!!.addAll(if (this.bws[dst] == null) emptySet() else this.bws[dst]!!)
+                }
+                if (xe is XExpr.Consume) {
+                    // x = consume y
+                    val src = lf.env() as Stmt.Var
+                    this.cns[src] = lf // <- y consumed, all bws containing y are also consumed
+                    this.bws.filterValues { it.contains(src) }.keys.forEach {
+                        this.cns[it] = lf
+                    }
+                }
+            }
+        }
+
+        override fun copy (): State {
+            val new = State()
+            new.bws = this.bws.toMutableMap()
+            new.cns = this.cns.toMutableMap()
+            new.fcs = this.fcs.toMutableMap()
+            return new
+        }
+        override fun funcs (f: Expr): Set<Stmt.Block> {
+            return emptySet()
         }
     }
 
-    fun chk_cn (s: Stmt.Var, tk: Tk, err: String) {
-        All_assert_tk(tk, !cns.contains(s)) { err + " : consumed in line ${cns[s]}" }
-    }
-
-    fun fx (xe: XExpr) {
+    fun fx (xe: XExpr, st: IState) {
         for ((xe,lf) in xe.e.leftMost(xe)) {
             if (xe is XExpr.Replace || xe is XExpr.Consume) {
                 val s = lf.env() as Stmt.Var
-                chk_bw(lf.env_toset(), s, xe.e.tk, "invalid operation on \"${lf.tk_.str}\"")
+                (st as State).chk_bw(lf.env_toset(), s, xe.e.tk, "invalid operation on \"${lf.tk_.str}\"")
             }
         }
     }
 
-    fun bws_cns_add (dst: Stmt.Var, xsrc: XExpr) {
-        for ((xe,lf) in xsrc.e.leftMost(xsrc)) {
-            if (xe is XExpr.Borrow) {
-                val src = lf.env() as Stmt.Var
-                if (bws[src] == null) {
-                    bws[src] = mutableSetOf()
-                }
-                bws[src]!!.add(dst)
-                bws[src]!!.addAll(if (bws[dst] == null) emptySet() else bws[dst]!!)
-            }
-            if (xe is XExpr.Consume) {
-                // x = consume y
-                val src = lf.env() as Stmt.Var
-                cns[src] = xsrc.e.tk.lin // <- y consumed, all bws containing y are also consumed
-                bws.filterValues { it.contains(src) }.keys.forEach {
-                    cns[it] = xsrc.e.tk.lin
-                }
-            }
-        }
-    }
-
-    fun fs (s: Stmt) {
+    fun fs (s: Stmt, st_: IState) {
+        val st = st_ as State
         fun fs_add (dst: Stmt.Var, src: Expr) {
-            if (fcs[dst] == null) {
-                fcs[dst] = mutableSetOf()
+            if (st.fcs[dst] == null) {
+                st.fcs[dst] = mutableSetOf()
             }
             when (src) {
                 is Expr.Unk, is Expr.Nat -> {} // ok
-                is Expr.Func -> fcs[dst]!!.add(src)
+                is Expr.Func -> st.fcs[dst]!!.add(src)
                 else -> src.leftMost(null)
-                    .map { it.second!!.env()!! }
+                    .map { it.second.env()!! }
                     .forEach {
                         // TODO: should substitute instead of addAll (but ifs...)
-                        fcs[dst]!!.addAll(if (fcs[it] == null) emptySet() else fcs[it]!!)
+                        st.fcs[dst]!!.addAll(if (st.fcs[it] == null) emptySet() else st.fcs[it]!!)
                     }
             }
         }
@@ -402,7 +416,7 @@ fun check_borrows_consumes (S: Stmt) {
                 if (s.type is Type.Func) {
                     fs_add(s, s.src.e)
                 } else {
-                    bws_cns_add(s, s.src)
+                    st.bws_cns_add(s, s.src)
                 }
             }
             is Stmt.Set -> {
@@ -421,66 +435,73 @@ fun check_borrows_consumes (S: Stmt) {
                             val isuniptr = tp.containsUnion() || (tp is Type.Ptr && tp.pln.containsUnion())
                             val isrecptr = tp.containsRec() || (tp is Type.Ptr && tp.pln.containsRec())
                             if (isuniptr || isrecptr) {
-                                bws_cns_add(dcl, s.src)
-                                chk_bw(it.second.env_toset(), dcl, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
+                                st.bws_cns_add(dcl, s.src)
+                                st.chk_bw(it.second.env_toset(), dcl, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
                             }
                         }
 
                         if (s.dst is Expr.Var) {
-                            cns.remove(dcl)
+                            st.cns.remove(dcl)
                         } else {
-                            chk_cn(dcl, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
+                            st.chk_cn(dcl, null, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
                         }
                     }
             }
         }
     }
 
-    //val X = ArrayDeque<Expr.Func>();
+    val X = ArrayDeque<Expr.Func>()
 
-    fun fe (e: Expr) {
+    fun fe (e: Expr, st_: IState) {
+        val st = st_ as State
         when (e) {
             is Expr.Var -> {
-                val top = VISIT.first()
-                if (top is Stmt.Set && top.dst is Expr.Var && top.dst.env()==e.env()) {
+                var ok = false
+                val up = UPS[e]
+                if (up is Stmt.Set) {
+                    val dst = up.dst
+                    if (dst is Expr.Var) {
+                        ok = (dst.env() == e.env())
+                    }
+                }
+                if (ok) {
                     // set x = ... -- x is consumed, but I want to reset it, it's not an access
                 } else {
-                    chk_cn(e.env()!!, e.tk_, "invalid access to \"${e.tk_.str}\"")
+                    st.chk_cn(e.env()!!, e, e.tk_, "invalid access to \"${e.tk_.str}\"")
                 }
             }
-            // TODO: handle globals inside functions
             /*
             is Expr.Call -> {
                 when {
                     e.f is Expr.Nat -> {
                     } // ok
                     else -> e.f.leftMost(null)
-                        .map { env.idToStmt(it.second!!.tk_.str)!! }
+                        .map { it.second.env()!! }
                         .forEach {
-                            fcs[it].let {
+                            st.fcs[it].let {
                                 if (it != null) {
                                     for (f in it) {
-                                        val arg = (f.second.block.body as Stmt.Seq).s1 as Stmt.Var
+                                        val arg = (f.block.body as Stmt.Seq).s1 as Stmt.Var
                                         assert(arg.tk_.str == "arg")
-                                        bws_cns_add(env, arg, e.arg)
+                                        st.bws_cns_add(arg, e.arg)
                                         // TODO: this env is not the correct one of f
                                         // it should be f.first, but than not all possible bws will be on scope
                                         //f.second.block.visit(f.first, ::fs, ::fx, ::fe, null)
-                                        if (!X.contains(f.second)) {
-                                            X.addFirst(f.second)
-                                            f.second.block.visit(env, ::fs, ::fx, ::fe, null)
+                                        if (!X.contains(f)) {
+                                            X.addFirst(f)
+                                            TODO()
+                                            //f.block.visit(::fs, ::fx, ::fe, null)
                                             X.removeFirst()
                                         }
-                                        bws.remove(arg)
+                                        st.bws.remove(arg)
                                     }
                                 }
                             }
                         }
-                    }
                 }
             }
-            */
+             */
         }
     }
-    S.visit(::fs, ::fx, ::fe, null)
+    S.simul(State(), ::fs, ::fx, ::fe, emptyList())
 }

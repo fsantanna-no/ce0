@@ -478,7 +478,7 @@ class TEnv {
             var p: \_int = f \v
             output std /p
         """.trimIndent())
-        assert(out == "OK")
+        assert(out == "OK") { out }
     }
     @Test
     fun g02_ptr_func_ok () {
@@ -845,7 +845,7 @@ class TEnv {
             var x: <^> = ?
             var y: <^> = consume x
         """.trimIndent())
-        assert(out == "OK")
+        assert(out == "OK") { out }
     }
     @Test
     fun j02_rec_xepr_move_err () {
@@ -1177,7 +1177,7 @@ class TEnv {
             var g: () -> () = f
             call g ()
         """.trimIndent())
-        assert(out == "(ln 3, col 11): invalid assignment of \"x\" : borrowed in line 5")
+        assert(out == "(ln 3, col 11): invalid assignment of \"x\" : borrowed in line 5") { out }
     }
     @Test
     fun l05_borrow_err () {

@@ -116,7 +116,6 @@ fun Stmt.simul (
         is Stmt.Ret   -> nxt(st, fs, fx, fe, stack_rem { it is Expr.Call })
         is Stmt.Block -> this.body.simul(st, fs, fx, fe, nxts)
         is Stmt.Seq   -> this.s1.simul(st, fs, fx, fe, listOf(this.s2)+nxts)
-        is Stmt.Ret   -> {}
         is Stmt.Loop  -> {
             STACK.addFirst(Pair(this,nxts))
             this.block.simul(st, fs, fx, fe, emptyList())

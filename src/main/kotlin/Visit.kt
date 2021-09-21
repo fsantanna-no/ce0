@@ -55,7 +55,6 @@ fun Stmt.visit (fs: ((Stmt)->Unit)?, fx: ((XExpr)->Unit)?, fe: ((Expr)->Unit)?, 
 
 private
 fun Stmt.visit_ (fs: ((Stmt)->Unit)?, fx: ((XExpr)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
-    VISIT.addFirst(this)
     when (this) {
         is Stmt.Var   -> { this.type.visit(ft) ; this.src.visit(fs,fx,fe,ft)  }
         is Stmt.Set   -> { this.dst.visit(fs,fx,fe,ft) ; this.src.visit(fs,fx,fe,ft) }
@@ -66,7 +65,6 @@ fun Stmt.visit_ (fs: ((Stmt)->Unit)?, fx: ((XExpr)->Unit)?, fe: ((Expr)->Unit)?,
         is Stmt.Loop  -> { this.block.visit(fs,fx,fe,ft) }
         is Stmt.Block -> { this.body.visit(fs,fx,fe,ft) }
     }
-    VISIT.removeFirst()
     if (fs != null) {
         fs(this)
     }
