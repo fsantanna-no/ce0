@@ -216,7 +216,6 @@ fun check_xexprs (S: Stmt) {
             is XExpr.New -> All_assert_tk(xe.e.tk, xp_exrec && e_isvar && !e_isnil) {
                 "invalid `new` : expected variant constructor"
             }
-            else -> error("bug found")
         }
     }
     S.visit(null, ::fx, null, null)
@@ -379,13 +378,10 @@ fun check_borrows_consumes (S: Stmt) {
             new.fcs = this.fcs.toMutableMap()
             return new
         }
-        override fun funcs (f: Expr): Set<Stmt.Block> {
-            return emptySet()
-        }
     }
 
-    fun fx (xe: XExpr, st: IState) {
-        for ((xe,lf) in xe.e.leftMost(xe)) {
+    fun fx (xe_: XExpr, st: IState) {
+        for ((xe,lf) in xe_.e.leftMost(xe_)) {
             if (xe is XExpr.Replace || xe is XExpr.Consume) {
                 val s = lf.env() as Stmt.Var
                 (st as State).chk_bw(lf.env_toset(), s, xe.e.tk, "invalid operation on \"${lf.tk_.str}\"")
@@ -449,8 +445,6 @@ fun check_borrows_consumes (S: Stmt) {
         }
     }
 
-    val X = ArrayDeque<Expr.Func>()
-
     fun fe (e: Expr, st_: IState) {
         val st = st_ as State
         when (e) {
@@ -471,5 +465,12 @@ fun check_borrows_consumes (S: Stmt) {
             }
         }
     }
+
+    fun funcs (e: Expr) {
+        if (e is Expr.Func) {
+            e.block.simul(State(), ::fs, ::fx, ::fe, emptyList())
+        }
+    }
+    S.visit(null, null, ::funcs, null)
     S.simul(State(), ::fs, ::fx, ::fe, emptyList())
 }

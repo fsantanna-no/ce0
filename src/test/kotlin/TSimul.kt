@@ -24,9 +24,6 @@ class TSimul {
             override fun copy (): State {
                 return this
             }
-            override fun funcs (f: Expr): Set<Stmt.Block> {
-                return emptySet()
-            }
         }
         fun fe (e: Expr, st: IState) {
             l.add(e)
@@ -45,9 +42,6 @@ class TSimul {
                 val new = State()
                 new.lcur.addAll(this.lcur)
                 return new
-            }
-            override fun funcs (f: Expr): Set<Stmt.Block> {
-                return emptySet()
             }
         }
         fun fe (e: Expr, st: IState) {
@@ -86,9 +80,6 @@ class TSimul {
                 val new = State()
                 new.lcur.addAll(this.lcur)
                 return new
-            }
-            override fun funcs (f: Expr): Set<Stmt.Block> {
-                return emptySet()
             }
         }
         fun fe (e: Expr, st: IState) {
@@ -133,9 +124,6 @@ class TSimul {
                 new.lcur.addAll(this.lcur)
                 return new
             }
-            override fun funcs (f: Expr): Set<Stmt.Block> {
-                return emptySet()
-            }
         }
         var n = 0
         fun fs (s: Stmt, st: IState) {
@@ -156,6 +144,7 @@ class TSimul {
         S.simul(State(), ::fs, null, null, mutableListOf())
         assert(n == 2)
     }
+    /* SIMUL CALLS REMOVED
     @Test
     fun a05 () {
         val S = all("""
@@ -266,4 +255,5 @@ class TSimul {
         S.simul(State(), ::fs, null, null, emptyList())
         assert(n == 2)
     }
+     */
 }

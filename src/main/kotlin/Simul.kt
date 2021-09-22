@@ -1,6 +1,5 @@
 interface IState {
     fun copy (): IState
-    fun funcs (f: Expr): Set<Stmt.Block>
 }
 
 fun nxt (
@@ -62,19 +61,7 @@ fun Expr.simul (
         is Expr.UDisc -> this.uni.simul(st,fs,fx,fe,nxts)
         is Expr.UPred -> this.uni.simul(st,fs,fx,fe,nxts)
         //is Expr.Func  -> this.block.simul(st,fs,fx,fe)
-        is Expr.Call  -> {
-            val funcs = st.funcs(this.f)
-            if (funcs.size == 0) {
-                this.arg.simul(st, fs, fx, fe, nxts)
-            } else {
-                STACK.addFirst(Pair(this,nxts))
-                val s = ArrayDeque(STACK)
-                funcs.forEach {
-                    this.arg.simul(st.copy(), fs, fx, fe, listOf(it) + nxts)
-                    STACK = s
-                }
-            }
-        }
+        is Expr.Call  -> this.arg.simul(st,fs,fx,fe,nxts)
         else -> nxt(st, fs, fx, fe, nxts)
     }
 }

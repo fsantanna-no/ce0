@@ -1144,6 +1144,18 @@ class TEnv {
         assert(out == "(ln 3, col 22): invalid operation on \"x\" : borrowed in line 2")
     }
     @Test
+    fun l02_borrow_func_err () {
+        val out = inp2env("""
+            var f: ()->() = func ()->() {
+                var x: <^> = ?
+                var y: \<^> = borrow \x!1
+                var z: <^> = consume x
+            }
+        """.trimIndent())
+        println(out)
+        assert(out == "(ln 4, col 26): invalid operation on \"x\" : borrowed in line 3")
+    }
+    @Test
     fun l02_borrow_ok () {
         val out = inp2env("""
             var x: <^> = ?
