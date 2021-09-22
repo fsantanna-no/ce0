@@ -64,6 +64,10 @@ fun Any.env_all (f: (Stmt)->Boolean): Set<Stmt> {
     return aux (ENV[this])
 }
 
+fun Any.env_toset (): Set<Stmt> {
+    return this.env_all { it is Stmt.Var }
+}
+
 fun Any.env (id: String): Stmt.Var? {
     return this.env_first { it is Stmt.Var && it.tk_.str==id } as Stmt.Var?
 }

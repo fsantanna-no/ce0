@@ -338,9 +338,8 @@ fun check_borrows_consumes (S: Stmt) {
         // fs[f] = { A,B }
         var fcs: MutableMap<Stmt.Var,MutableSet<Expr.Func>> = mutableMapOf()
 
-        fun chk_bw (s: Stmt.Var, tk: Tk, err: String) {
+        fun chk_bw (env: Set<Stmt>, s: Stmt.Var, tk: Tk, err: String) {
             if (this.bws[s] != null) {
-                val env = SIMUL_STACK.map { it.first }.filter { it is Stmt.Var }
                 val ok = this.bws[s]!!.intersect(env).isEmpty()  // no borrow is on scope
                 //val ok = this.bws[s]!!.isEmpty()  // no borrow is on scope
                 val ln = this.bws[s]!!.first().tk.lin
@@ -381,20 +380,7 @@ fun check_borrows_consumes (S: Stmt) {
             return new
         }
         override fun funcs (f: Expr): Set<Stmt.Block> {
-            val ret = f.leftMost(null)
-                .map { it.second.env()!! }
-                .map {
-                    this.fcs[it].let {
-                        if (it == null) {
-                            emptySet()
-                        } else {
-                            it.map { it.block }.toSet()
-                        }
-                    }
-                }
-                .toSet()
-                .unionAll()
-            return ret
+            return emptySet()
         }
     }
 
@@ -402,7 +388,7 @@ fun check_borrows_consumes (S: Stmt) {
         for ((xe,lf) in xe.e.leftMost(xe)) {
             if (xe is XExpr.Replace || xe is XExpr.Consume) {
                 val s = lf.env() as Stmt.Var
-                (st as State).chk_bw(s, xe.e.tk, "invalid operation on \"${lf.tk_.str}\"")
+                (st as State).chk_bw(lf.env_toset(), s, xe.e.tk, "invalid operation on \"${lf.tk_.str}\"")
             }
         }
     }
@@ -449,7 +435,7 @@ fun check_borrows_consumes (S: Stmt) {
                             val isrecptr = tp.containsRec() || (tp is Type.Ptr && tp.pln.containsRec())
                             if (isuniptr || isrecptr) {
                                 st.bws_cns_add(dcl, s.src)
-                                st.chk_bw(dcl, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
+                                st.chk_bw(it.second.env_toset(), dcl, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
                             }
                         }
 
@@ -459,27 +445,6 @@ fun check_borrows_consumes (S: Stmt) {
                             st.chk_cn(dcl, null, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
                         }
                     }
-            }
-            is Stmt.Block -> {
-                if (UPS[s] is Expr.Func) {
-                    val arg = (s.body as Stmt.Seq).s1 as Stmt.Var
-                    assert(arg.tk_.str == "arg")
-                    assert(SIMUL_STACK.first().first is Expr.Call)
-                    st.bws_cns_add(arg, (SIMUL_STACK.first().first as Expr.Call).arg)
-                    //TODO("xxx")
-                    /*
-                    // TODO: this env is not the correct one of f
-                    // it should be f.first, but than not all possible bws will be on scope
-                    //f.second.block.visit(f.first, ::fs, ::fx, ::fe, null)
-                    if (!X.contains(f)) {
-                        X.addFirst(f)
-                        TODO()
-                        //f.block.visit(::fs, ::fx, ::fe, null)
-                        X.removeFirst()
-                    }
-                    st.bws.remove(arg)
-                     */
-                }
             }
         }
     }

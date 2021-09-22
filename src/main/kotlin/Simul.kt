@@ -16,12 +16,12 @@ fun nxt (
     }
 }
 
-//private
-var SIMUL_STACK = ArrayDeque<Pair<Any,List<Any>>>()
+private
+var STACK = ArrayDeque<Pair<Any,List<Any>>>()
 
 fun stack_rem (f: (Any)->Boolean): List<Any> {
     while (true) {
-        val s = SIMUL_STACK.removeFirst()!!
+        val s = STACK.removeFirst()!!
         if (f(s.first)) {
             return s.second
         }
@@ -39,7 +39,6 @@ fun Any.simul (
         is Stmt  -> this.simul(st, fs, fx, fe, nxts)
         is XExpr -> this.simul(st, fs, fx, fe, nxts)
         is Expr  -> this.simul(st, fs, fx, fe, nxts)
-        is Unit  -> { stack_rem { it is Stmt.Block } ; nxt(st,fs,fx,fe,nxts) }
         else -> error("impossible case")
     }
 }
@@ -68,14 +67,11 @@ fun Expr.simul (
             if (funcs.size == 0) {
                 this.arg.simul(st, fs, fx, fe, nxts)
             } else {
-                SIMUL_STACK.addFirst(Pair(this,nxts))
-                val s = ArrayDeque(SIMUL_STACK)
+                STACK.addFirst(Pair(this,nxts))
+                val s = ArrayDeque(STACK)
                 funcs.forEach {
-                    if (SIMUL_STACK.map { it.first }.filter { x->x==it }.count() == 2) {
-                        return  // two recursive instances, stop
-                    }
                     this.arg.simul(st.copy(), fs, fx, fe, listOf(it) + nxts)
-                    SIMUL_STACK = s
+                    STACK = s
                 }
             }
         }
@@ -113,27 +109,21 @@ fun Stmt.simul (
     }
 
     when (this) {
-        is Stmt.Var   -> {
-            SIMUL_STACK.addFirst(Pair(this,emptyList()))
-            this.src.simul(st, fs, fx, fe, nxts)
-        }
+        is Stmt.Var   -> this.src.simul(st, fs, fx, fe, nxts)
         is Stmt.Set   -> this.src.simul(st, fs, fx, fe, listOf(this.dst)+nxts)
         is Stmt.Call  -> this.call.simul(st, fs, fx, fe, nxts)
         is Stmt.Break -> nxt(st, fs, fx, fe, stack_rem { it is Stmt.Loop })
         is Stmt.Ret   -> nxt(st, fs, fx, fe, stack_rem { it is Expr.Call })
-        is Stmt.Block -> {
-            SIMUL_STACK.addFirst(Pair(this,emptyList()))
-            this.body.simul(st, fs, fx, fe, listOf(Unit)+nxts)
-        }
+        is Stmt.Block -> this.body.simul(st, fs, fx, fe, nxts)
         is Stmt.Seq   -> this.s1.simul(st, fs, fx, fe, listOf(this.s2)+nxts)
         is Stmt.Loop  -> {
-            SIMUL_STACK.addFirst(Pair(this,nxts))
+            STACK.addFirst(Pair(this,nxts))
             this.block.simul(st, fs, fx, fe, emptyList())
         }
         is Stmt.If -> {
-            val s = ArrayDeque(SIMUL_STACK)
+            val s = ArrayDeque(STACK)
             this.tst.simul(st.copy(), fs, fx, fe, listOf(this.true_)+nxts)
-            SIMUL_STACK = s
+            STACK = s
             this.tst.simul(st.copy(), fs, fx, fe, listOf(this.false_)+nxts)
         }
         else -> nxt(st, fs, fx, fe, nxts)
