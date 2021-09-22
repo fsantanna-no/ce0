@@ -1176,7 +1176,8 @@ class TEnv {
             }
             call f borrow \x!1
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment of \"x\" : borrowed in line 3") { out }
+        assert(out == "(ln 4, col 9): undeclared variable \"x\"") { out }
+        //assert(out == "(ln 4, col 11): invalid assignment of \"x\" : borrowed in line 3") { out }
     }
     @Test
     fun l03_borrow_err2 () {
@@ -1189,7 +1190,8 @@ class TEnv {
             var y: \<?^> = borrow \x!1
             call f borrow y
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment of \"x\" : borrowed in line 6") { out }
+        assert(out == "(ln 4, col 9): undeclared variable \"x\"") { out }
+        //assert(out == "(ln 4, col 11): invalid assignment of \"x\" : borrowed in line 6") { out }
     }
     @Test
     fun l04_borrow_err () {
@@ -1202,7 +1204,8 @@ class TEnv {
             var g: () -> () = f
             call g ()
         """.trimIndent())
-        assert(out == "(ln 3, col 11): invalid assignment of \"x\" : borrowed in line 5") { out }
+        assert(out == "(ln 3, col 9): undeclared variable \"x\"") { out }
+        //assert(out == "(ln 3, col 11): invalid assignment of \"x\" : borrowed in line 5") { out }
     }
     @Test
     fun l05_borrow_err () {
@@ -1251,7 +1254,8 @@ class TEnv {
         }
         call f ()
         """.trimIndent())
-        assert(out == "(ln 3, col 11): invalid assignment of \"x\" : borrowed in line 4") { out }
+        assert(out == "(ln 3, col 9): undeclared variable \"x\"")
+        //assert(out == "(ln 3, col 11): invalid assignment of \"x\" : borrowed in line 4") { out }
     }
     @Test
     fun l09_consume_err () {

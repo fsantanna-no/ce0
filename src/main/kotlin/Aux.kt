@@ -42,11 +42,12 @@ fun Any.ups_tolist (): List<Any> {
 
 //////////////////////////////////////////////////////////////////////////////
 
-fun Any.env_first (f: (Stmt)->Boolean): Stmt? {
+fun Any.env_first (cross: Boolean=true, f: (Stmt)->Boolean): Stmt? {
     fun aux (env: Env?): Stmt? {
         return when {
             (env == null) -> null
             f(env.s) -> env.s
+            (!cross && env.s.tk_.str=="_ret_") -> null
             else -> aux(env.prv)
         }
     }
@@ -73,7 +74,11 @@ fun Any.env (id: String): Stmt.Var? {
 }
 
 fun Expr.Var.env (): Stmt.Var? {
-    return this.env_first { it is Stmt.Var && it.tk_.str==this.tk_.str } as Stmt.Var?
+    val ret = this.env_first { it is Stmt.Var && it.tk_.str==this.tk_.str } as Stmt.Var?
+    if (ret!=null && ret.type.let { it !is Type.Func && it.containsRec() }) {
+        return this.env_first(false) { it is Stmt.Var && it.tk_.str==this.tk_.str } as Stmt.Var?
+    }
+    return ret
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -157,7 +162,7 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
             val xp2 = this.f.toType().let { it.keepAnyNat{it} }
             this.arg.aux(this, env, if (xp2 is Type.Func) xp2.keepAnyNat{ xp2.inp } else Type_Any(this.tk))
         }
-        is Expr.Func  -> { /*this.type.ups(this)*/ ; this.block.aux(this, env) }
+        is Expr.Func  -> this.block.aux(this, env) //{ this.type.ups(this) ; this.block.aux(this, env) }
     }
 }
 
