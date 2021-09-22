@@ -1016,7 +1016,7 @@ class TEnv {
             }
             call f \x.1!1
         """.trimIndent())
-        assert(out == "(ln 6, col 8): invalid expression : expected `borrow` operation modifier")
+        assert(out == "(ln 6, col 8): invalid expression : expected `borrow` operation modifier") { out }
     }
     @Test
     fun j21_rec_xepr_borrow_err () {
