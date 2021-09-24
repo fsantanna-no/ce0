@@ -89,7 +89,7 @@ fun token (all: All) {
     var (c1,x1) = all.read()
     when {
         (c1 == -1) -> all.tk1 = Tk.Sym(TK.EOF, LIN, COL, "")
-        (x1 in arrayOf(')', '{', '}', '[', ']', '<' , '>' , ';' , ':' , '=' , ',' , '\\', '/' , '.', '!' , '?')) -> {
+        (x1 in arrayOf(')', '{', '}', '[', ']', '<' , '>' , ';' , ':' , '=' , ',' , '\\', '/' , '.', '!' , '?', '@')) -> {
             all.tk1 = Tk.Chr(TK.CHAR, LIN, COL, x1)
         }
         (x1 == '^') -> {

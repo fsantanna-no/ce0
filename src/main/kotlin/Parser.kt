@@ -94,7 +94,7 @@ fun Attr.toExpr (): Expr {
 
 sealed class Stmt (val tk: Tk) {
     data class Pass  (val tk_: Tk) : Stmt(tk_)
-    data class Var   (val tk_: Tk.Str, val outer: Boolean, val type: Type, val src: XExpr) : Stmt(tk_)
+    data class Var   (val tk_: Tk.Str, val isout: Boolean, val isglb: Boolean, val type: Type, val src: XExpr) : Stmt(tk_)
     data class Set   (val tk_: Tk.Chr, val dst: Expr, val src: XExpr) : Stmt(tk_)
     data class Nat   (val tk_: Tk.Str) : Stmt(tk_)
     data class Call  (val tk_: Tk.Key, val call: Expr.Call) : Stmt(tk_)
@@ -272,14 +272,14 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                     Stmt.Seq(block.tk,
                         Stmt.Var (
                             Tk.Str(TK.XVAR,lin,col,"arg"),
-                            false,
+                            false, false,
                             (tp as Type.Func).inp,
                             XExpr.None(Expr.Nat(Tk.Str(TK.XNAT,lin,col,"_arg_")))
                         ),
                         Stmt.Seq(block.tk,
                             Stmt.Var (
                                 Tk.Str(TK.XVAR,lin,col,"_ret_"),
-                                false,
+                                false, false,
                                 tp.out,
                                 XExpr.None(Expr.Unk(Tk.Chr(TK.CHAR,lin,col,'?')))
                             ),
@@ -394,15 +394,16 @@ fun parser_stmt (all: All): Stmt {
             all.accept_err(TK.XVAR)
             val tk_id = all.tk0 as Tk.Str
             all.accept_err(TK.CHAR,':')
-            val outer = all.accept(TK.XUP)
-            if (outer && (all.tk0 as Tk.Up).up > 1) { TODO("multiple ^") }
+            val isout = all.accept(TK.XUP)
+            if (isout && (all.tk0 as Tk.Up).up > 1) { TODO("multiple ^") }
+            val isglb = all.accept(TK.CHAR,'@')
             val tp = parser_type(all)
-            all.assert_tk(tp.tk, !outer || tp is Type.Ptr) {
+            all.assert_tk(tp.tk, !isout || tp is Type.Ptr) {
                 "expected pointer type"
             }
             all.accept_err(TK.CHAR,'=')
             val e = parser_xexpr(all, true)
-            Stmt.Var(tk_id, outer, tp, e)
+            Stmt.Var(tk_id, isout, isglb, tp, e)
         }
         all.accept(TK.SET) -> {
             val dst = parser_attr(all)

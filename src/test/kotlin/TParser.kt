@@ -379,7 +379,7 @@ class TParser {
         assert(s is Stmt.Var && s.type is Type.Tuple && s.src.e is Expr.TCons)
     }
     @Test
-    fun c05_parser_stmt_var_caret () {
+    fun c04_parser_stmt_var_caret () {
         val all = All_new(PushbackReader(StringReader("var x: ^() = ())"), 2))
         lexer(all)
         try {
@@ -388,6 +388,13 @@ class TParser {
         } catch (e: Throwable) {
             assert(e.message == "(ln 1, col 9): expected pointer type")
         }
+    }
+    @Test
+    fun c05_parser_stmt_var_global () {
+        val all = All_new(PushbackReader(StringReader("var x: @() = ()"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.Var && s.isglb && s.type is Type.Unit && s.src.e is Expr.Unit)
     }
 
     // STMT_CALL
