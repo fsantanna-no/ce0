@@ -334,7 +334,7 @@ class TEnv {
     }
     @Test
     fun d02_func () {
-        val s = pre("var x: @() = () ; var f: ()->() = func ()->() { var y: () = x ; call y ; set x = () }")
+        val s = pre("var@ x: () = () ; var f: ()->() = func ()->() { var y: () = x ; call y ; set x = () }")
         fun fe (e: Expr) {
             if (e is Expr.Var) {
                 if (e.tk_.str == "x") {
@@ -495,7 +495,7 @@ class TEnv {
     @Test
     fun g02_ptr_func_ok () {
         val out = inp2env("""
-            var v: @_int = _10
+            var@ v: _int = _10
             var f : () -> \_int = func () -> \_int {
                 return \v
             }
@@ -602,8 +602,8 @@ class TEnv {
     @Test
     fun g11_ptr_func () {
         val out = inp2env("""
-            var v: @_int = _10
-            var f : @ () -> \_int = func () -> \_int {
+            var@ v: _int = _10
+            var@ f : () -> \_int = func () -> \_int {
                 return \v
             }
             var p: \_int = ?
@@ -616,8 +616,8 @@ class TEnv {
     @Test
     fun g12_ptr_func () {
         val out = inp2env("""
-            var v: @_int = _10
-            var f : @\_int -> \_int = func \_int -> \_int {
+            var@ v: _int = _10
+            var @ f : \_int -> \_int = func \_int -> \_int {
                 return \v
             }
             var p: \_int = ?
@@ -630,7 +630,7 @@ class TEnv {
     @Test
     fun g13_ptr_func () {
         val out = inp2env("""
-            var v: @\_int = ?
+            var @ v: \_int = ?
             var f : \_int -> () = func \_int -> () {
                 set v = arg
             }

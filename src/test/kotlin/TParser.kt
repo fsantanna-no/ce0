@@ -391,7 +391,7 @@ class TParser {
     }
     @Test
     fun c05_parser_stmt_var_global () {
-        val all = All_new(PushbackReader(StringReader("var x: @() = ()"), 2))
+        val all = All_new(PushbackReader(StringReader("var @x: () = ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert(s is Stmt.Var && s.isglb && s.type is Type.Unit && s.src.e is Expr.Unit)

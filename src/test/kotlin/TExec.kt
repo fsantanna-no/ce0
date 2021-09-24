@@ -197,7 +197,7 @@ class TExec {
     @Test
     fun d03_fg () {
         val out = all("""
-            var f: @() -> () = func ()->() { var x: _int = _10 ; output std x }
+            var@ f: () -> () = func ()->() { var x: _int = _10 ; output std x }
             var g: () -> () = func ()->() { return f () }
             call g ()
         """.trimIndent())
@@ -482,7 +482,7 @@ class TExec {
     @Test
     fun i08_ptr_func_ok () {
         val out = all("""
-            var v: @ _int = _10
+            var@ v: _int = _10
             var f : () -> \_int = func () -> \_int {
                 return \v
             }
@@ -638,7 +638,7 @@ class TExec {
     @Test
     fun f10_ptr_func () {
         val out = all("""
-            var v: @ _int = _10
+            var@ v: _int = _10
             var f : \_int -> \_int = func (\_int -> \_int) {
                 return \v
             }
@@ -1010,8 +1010,8 @@ class TExec {
     @Test
     fun z05_func_rec () {
         val out = all("""
-        var i: @ _int = _0
-        var f: @ ()->() = func ()->() {
+        var@ i: _int = _0
+        var@ f: ()->() = func ()->() {
             if _(i == 10) {
                 return
             } else {

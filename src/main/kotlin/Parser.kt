@@ -391,12 +391,12 @@ fun parser_block (all: All): Stmt.Block {
 fun parser_stmt (all: All): Stmt {
     return when {
         all.accept(TK.VAR) -> {
+            val isglb = all.accept(TK.CHAR,'@')
             all.accept_err(TK.XVAR)
             val tk_id = all.tk0 as Tk.Str
             all.accept_err(TK.CHAR,':')
             val isout = all.accept(TK.XUP)
             if (isout && (all.tk0 as Tk.Up).up > 1) { TODO("multiple ^") }
-            val isglb = all.accept(TK.CHAR,'@')
             val tp = parser_type(all)
             all.assert_tk(tp.tk, !isout || tp is Type.Ptr) {
                 "expected pointer type"

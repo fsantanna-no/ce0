@@ -25,7 +25,7 @@ native _{
 #define Expr <(), Token, List(^^), ^, [_int,^], [_int,^], [^,^], [Type,Stmt]>
     -- Unit, Var, TCons, UCons, TDisc, UDisc, Call, Func
 
-var string_len: @\\String->_int = func \\String->_int {
+var@ string_len: \\String->_int = func \\String->_int {
     if (/arg)?0 {
         return _0
     } else {
@@ -34,10 +34,10 @@ var string_len: @\\String->_int = func \\String->_int {
     }
 }
 
-var string_ce2c: @\\String->_(char*) = func \\String->_(char*) {
+var@ string_ce2c: \\String->_(char*) = func \\String->_(char*) {
     native _{static char STRING[256];}
     var n: _int = string_len borrow arg
-    var aux: @[_int,\\String]->() = func [_int,\\String]->() {
+    var@ aux: [_int,\\String]->() = func [_int,\\String]->() {
         var i: _int = arg.1
         if (/arg.2)?1 {
             var c: _int = (/arg.2)!1.1
@@ -50,7 +50,7 @@ var string_ce2c: @\\String->_(char*) = func \\String->_(char*) {
     return _STRING
 }
 
-var string_c2ce: @_(char*)->String = func _(char*)->String {
+var@ string_c2ce: _(char*)->String = func _(char*)->String {
     var ret: String = <.0>
     var n: _int = call _strlen arg
     var i: _int = _0
@@ -66,11 +66,11 @@ var string_c2ce: @_(char*)->String = func _(char*)->String {
 
 #define KEY <(),()>
 #define KEYS List([KEY \, String])
-var keys: @KEYS =
+var@ keys: KEYS =
     new <.1 [[<.1>,string_c2ce _("set")],
     new <.1 [[<.2>,string_c2ce _("var")], <.0>]>]>
 
-var string_eq: @[\\String,\\String]->_int = func [\\String,\\String]->_int {
+var@ string_eq: [\\String,\\String]->_int = func [\\String,\\String]->_int {
     var nil1: _int = (/arg.1)?0
     var nil2: _int = (/arg.2)?0
     if nil1 {
@@ -87,10 +87,10 @@ var string_eq: @[\\String,\\String]->_int = func [\\String,\\String]->_int {
     return _0
 }
 
-var finp: @_(FILE*) = ?
-var tk: @Token = <.1>
+var@ finp: _(FILE*) = ?
+var@ tk: Token = <.1>
 
-var lx_blanks: @()->() = func ()->() {
+var@ lx_blanks: ()->() = func ()->() {
     loop {
         var c: _int = call _fgetc finp
         if _(c=='\\n' || c==' ') {
@@ -102,8 +102,8 @@ var lx_blanks: @()->() = func ()->() {
     }
 }
 
-var keys_find: @\\String->Maybe(KEY) = func \\String->Maybe(KEY) {
-    var aux: @[\\String,\\KEYS]->Maybe(KEY) = func [\\String,\\KEYS]->Maybe(KEY) {
+var@ keys_find: \\String->Maybe(KEY) = func \\String->Maybe(KEY) {
+    var@ aux: [\\String,\\KEYS]->Maybe(KEY) = func [\\String,\\KEYS]->Maybe(KEY) {
         if (/arg.2)?0 {
             return <.1>
         }
@@ -115,7 +115,7 @@ var keys_find: @\\String->Maybe(KEY) = func \\String->Maybe(KEY) {
     return aux [borrow arg, borrow \\keys]
 }
 
-var lx_token: @()->Token = func ()->Token {
+var@ lx_token: ()->Token = func ()->Token {
     loop {
         var c: _int = call _fgetc finp
         if _(c == EOF) {
@@ -149,13 +149,13 @@ var lx_token: @()->Token = func ()->Token {
     }
 }
 
-var lexer: @()->() = func ()->() {
+var@ lexer: ()->() = func ()->() {
     call lx_blanks
     set tk = call lx_token
     call lx_blanks
 }
 
-var tk_check: @[_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
+var@ tk_check: [_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
     var enu: _int = arg.1
     if _(enu == 1) {
         return tk?1
@@ -180,7 +180,7 @@ var tk_check: @[_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
     call _assert _0
 }
 
-var tk_accept: @[_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
+var@ tk_accept: [_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
     var ok: _int = tk_check arg
     if ok {
         call lexer
@@ -189,7 +189,7 @@ var tk_accept: @[_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
 }
 
 -- EOF,sym,key,var,unit
-var parser_type: @()->Maybe(Type) = func ()->Maybe(Type) {
+var@ parser_type: ()->Maybe(Type) = func ()->Maybe(Type) {
     if tk_accept [_5,<.1>] {
         return <.2 new <.1>>        -- Unit
     }
@@ -223,7 +223,7 @@ var parser_type: @()->Maybe(Type) = func ()->Maybe(Type) {
 }
 
 -- EOF,sym,key,var,unit
-var parser_expr: @()->Maybe(Expr) = func ()->Maybe(Expr) {
+var@ parser_expr: ()->Maybe(Expr) = func ()->Maybe(Expr) {
     if tk_accept [_5,<.1>] {
         return <.2 new <.1>>        -- Unit
     }
