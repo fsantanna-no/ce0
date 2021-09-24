@@ -1235,7 +1235,7 @@ class TEnv {
             var y: [(),\<?^>] = [(), borrow \x!1]
             set x = <.0>
         """.trimIndent())
-        assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2")
+        assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2") { out }
     }
     @Test
     fun l07_borrow_err () {

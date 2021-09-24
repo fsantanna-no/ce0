@@ -195,6 +195,7 @@ fun check_xexprs (S: Stmt) {
         val e_isvar  = xe.e is Expr.UCons
         val e_isnil  = e_isvar && ((xe.e as Expr.UCons).tk_.num==0)
 
+        val isglb = xe.e.leftMost()
         val is_ptr_to_udisc = (xp is Type.Ptr) && xe.e.containsUDisc() //xp.pln.containsUDisc() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
         val is_ptr_to_ctrec = (xp is Type.Ptr) && xp.pln.containsRec() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
         when (xe) {
@@ -289,17 +290,28 @@ fun<T> Set<Set<T>>.unionAll (): Set<T> {
     return this.fold(emptySet(), {x,y->x+y})
 }
 
-fun Expr.leftMost (xe: XExpr?): Set<Pair<XExpr?,Expr.Var>> {
+fun Expr.leftMosts (xe: XExpr?): Set<Pair<XExpr?,Expr.Var>> {
     return when (this) {
         is Expr.Var -> setOf(Pair(xe,this))
-        is Expr.TDisc -> this.tup.leftMost(xe)
-        is Expr.UDisc -> this.uni.leftMost(xe)
-        is Expr.Dnref -> this.ptr.leftMost(xe)
-        is Expr.Upref -> this.pln.leftMost(xe)
-        is Expr.TCons -> this.arg.map { it.e.leftMost(it) }.toSet().unionAll()
-        is Expr.UCons -> this.arg.e.leftMost((this.arg))
+        is Expr.TDisc -> this.tup.leftMosts(xe)
+        is Expr.UDisc -> this.uni.leftMosts(xe)
+        is Expr.Dnref -> this.ptr.leftMosts(xe)
+        is Expr.Upref -> this.pln.leftMosts(xe)
+        is Expr.TCons -> this.arg.map { it.e.leftMosts(it) }.toSet().unionAll()
+        is Expr.UCons -> this.arg.e.leftMosts((this.arg))
         is Expr.Call  -> emptySet() //TODO("may return args")
         else -> emptySet()
+    }
+}
+
+fun Expr.leftMost (): Expr.Var? {
+    return when (this) {
+        is Expr.Var -> this
+        is Expr.TDisc -> this.tup.leftMost()
+        is Expr.UDisc -> this.uni.leftMost()
+        is Expr.Dnref -> this.ptr.leftMost()
+        is Expr.Upref -> this.pln.leftMost()
+        else -> null
     }
 }
 
@@ -351,7 +363,7 @@ fun check_borrows_consumes (S: Stmt) {
         }
 
         fun bws_cns_add (dst: Stmt.Var, xsrc: XExpr) {
-            for ((xe,lf) in xsrc.e.leftMost(xsrc)) {
+            for ((xe,lf) in xsrc.e.leftMosts(xsrc)) {
                 if (xe is XExpr.Borrow) {
                     val src = lf.env() as Stmt.Var
                     if (this.bws[src] == null) {
@@ -380,12 +392,11 @@ fun check_borrows_consumes (S: Stmt) {
         }
     }
 
-    fun fx (xe_: XExpr, st: IState) {
-        for ((xe,lf) in xe_.e.leftMost(xe_)) {
-            if (xe is XExpr.Replace || xe is XExpr.Consume) {
-                val s = lf.env() as Stmt.Var
-                (st as State).chk_bw(lf.env_toset(), s, xe.e.tk, "invalid operation on \"${lf.tk_.str}\"")
-            }
+    fun fx (xe: XExpr, st: IState) {
+        if (xe is XExpr.Replace || xe is XExpr.Consume) {
+            val lf = xe.e.leftMost()!!
+            val s = lf.env() as Stmt.Var
+            (st as State).chk_bw(lf.env_toset(), s, xe.e.tk, "invalid operation on \"${lf.tk_.str}\"")
         }
     }
 
@@ -398,7 +409,7 @@ fun check_borrows_consumes (S: Stmt) {
             when (src) {
                 is Expr.Unk, is Expr.Nat -> {} // ok
                 is Expr.Func -> st.fcs[dst]!!.add(src)
-                else -> src.leftMost(null)
+                else -> src.leftMosts(null)
                     .map { it.second.env()!! }
                     .forEach {
                         // TODO: should substitute instead of addAll (but ifs...)
@@ -415,32 +426,27 @@ fun check_borrows_consumes (S: Stmt) {
                 }
             }
             is Stmt.Set -> {
-                s.dst.leftMost(null)
-                    //.let { assert(it.size==1) ; it }
-                    .first()
-                    .let {
-                        //if (it == null) return
-                        val dcl = it.second.env(it.second.tk_.str)!!
+                val lf = s.dst.leftMost()!!
+                val dcl = lf.env(lf.tk_.str)!!
 
-                        val tp = s.dst.toType()
-                        if (tp is Type.Func) {
-                            fs_add(dcl, s.src.e)
-                        } else {
-                            //if (s.src.x!=null && s.src.x.enu==TK.BORROW) {
-                            val isuniptr = tp.containsUnion() || (tp is Type.Ptr && tp.pln.containsUnion())
-                            val isrecptr = tp.containsRec() || (tp is Type.Ptr && tp.pln.containsRec())
-                            if (isuniptr || isrecptr) {
-                                st.bws_cns_add(dcl, s.src)
-                                st.chk_bw(it.second.env_toset(), dcl, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
-                            }
-                        }
-
-                        if (s.dst is Expr.Var) {
-                            st.cns.remove(dcl)
-                        } else {
-                            st.chk_cn(dcl, null, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
-                        }
+                val tp = s.dst.toType()
+                if (tp is Type.Func) {
+                    fs_add(dcl, s.src.e)
+                } else {
+                    //if (s.src.x!=null && s.src.x.enu==TK.BORROW) {
+                    val isuniptr = tp.containsUnion() || (tp is Type.Ptr && tp.pln.containsUnion())
+                    val isrecptr = tp.containsRec() || (tp is Type.Ptr && tp.pln.containsRec())
+                    if (isuniptr || isrecptr) {
+                        st.bws_cns_add(dcl, s.src)
+                        st.chk_bw(lf.env_toset(), dcl, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
                     }
+                }
+
+                if (s.dst is Expr.Var) {
+                    st.cns.remove(dcl)
+                } else {
+                    st.chk_cn(dcl, null, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
+                }
             }
         }
     }
