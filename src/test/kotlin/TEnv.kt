@@ -822,7 +822,7 @@ class TEnv {
     @Test
     fun i03_list () {
         val out = inp2env("""
-            var ret: <[_int,<^>]> = <.0>
+            var ret: <[_int,<^>]> = <.1>
         """.trimIndent())
         assert(out == "(ln 1, col 5): invalid assignment : type mismatch")
     }
@@ -846,6 +846,13 @@ class TEnv {
             var ret: <(),<?^^,^>> = new <.2 <.1 <.1>>>
         """.trimIndent())
         assert(out == "(ln 1, col 39): invalid expression : expected `new` operation modifier")
+    }
+    @Test
+    fun i03_list_err () {
+        val out = inp2env("""
+            var ret: <[_int,<^>]> = <.0>
+        """.trimIndent())
+        assert(out == "(ln 1, col 27): invalid constructor : out of bounds") { out }
     }
 
     // XEXPR
