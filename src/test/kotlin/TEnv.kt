@@ -314,6 +314,13 @@ class TEnv {
         """.trimIndent())
         assert(out == "(ln 1, col 17): invalid discriminator : type mismatch") { out }
     }
+    @Test
+    fun c21_uni_disc_err () {
+        val out = inp2env("""
+            var x: <()> = <.2>
+        """.trimIndent())
+        assert(out == "(ln 1, col 17): invalid constructor : out of bounds") { out }
+    }
 
     // DEPTH
 

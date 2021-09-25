@@ -88,7 +88,8 @@ var@ string_eq: [\\String,\\String]->_int = func [\\String,\\String]->_int {
 }
 
 var@ finp: _(FILE*) = ?
-var@ tk: Token = <.1>
+var@ tk0: Token = <.1>
+var@ tk1: Token = <.1>
 
 var@ lx_blanks: ()->() = func ()->() {
     loop {
@@ -151,31 +152,32 @@ var@ lx_token: ()->Token = func ()->Token {
 
 var@ lexer: ()->() = func ()->() {
     call lx_blanks
-    set tk = call lx_token
+    set tk0 = copy tk1
+    set tk1 = call lx_token
     call lx_blanks
 }
 
 var@ tk_check: [_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
     var enu: _int = arg.1
     if _(enu == 1) {
-        return tk?1
+        return tk1?1
     }
     if _(enu == 2) {
-        if tk?2 {
-            var c1: _int = tk!2
+        if tk1?2 {
+            var c1: _int = tk1!2
             var c2: _int = arg.2!2
             return _(c1 == c2)
         }
         return _0
     }
     if _(enu == 3) {
-        return tk?3
+        return tk1?3
     }
     if _(enu == 4) {
-        return tk?4
+        return tk1?4
     }
     if _(enu == 5) {
-        return tk?5
+        return tk1?5
     }
     call _assert _0
 }
@@ -193,7 +195,6 @@ var@ parser_type: ()->Maybe(Type) = func ()->Maybe(Type) {
     if tk_accept [_5,<.1>] {
         return <.2 new <.1>>        -- Unit
     }
-    var tk0: Token = copy tk
     var ok: _int = call tk_accept [_2, <.2 _('[')>]
     if _(!ok) {
         set ok = call tk_accept [_2, <.2 _('<')>]
@@ -223,9 +224,27 @@ var@ parser_type: ()->Maybe(Type) = func ()->Maybe(Type) {
 }
 
 -- EOF,sym,key,var,unit
+-- Unit, Var, TCons, UCons, TDisc, UDisc, Call, Func
 var@ parser_expr: ()->Maybe(Expr) = func ()->Maybe(Expr) {
-    if tk_accept [_5,<.1>] {
-        return <.2 new <.1>>        -- Unit
+    if tk_accept [_5,<.1>] {    -- Unit
+        return <.2 new <.1>>
+    }
+    if tk_accept [_4,<.1>] {    -- Var
+        return <.2 new <.2 copy tk0>>
+    }
+    if tk_accept [_2, <.2 _('[')>] {
+        var e: Maybe(Expr) = call parser_expr ()
+        var es: List(Expr) = new <.1 [consume e!2, <.0>]>
+        loop {
+            if tk_accept [_2, <.2 _(',')>] {
+                set e = call parser_expr ()
+                set es = new <.1 [consume e!2, consume es]>
+            } else {
+                break
+            }
+        }
+        call _assert tk_accept [_2, <.2 _(']')>]
+        return <.3 consume es>
     }
     return <.1>
 }
@@ -288,13 +307,13 @@ var t_lexer: ()->() = func ()->() {
         set finp = _{stropen("r", 0, "{\\nvar () \\n foo set\\n}")}
 
         -- EOF,sym,key,var,unit
-        call lexer () ; call _assert (tk?2)
-        call lexer () ; call _assert (tk?3)
-        call lexer () ; call _assert (tk?5)
-        call lexer () ; call _assert (tk?4)
-        call lexer () ; call _assert (tk?3)
-        call lexer () ; call _assert (tk?2)
-        call lexer () ; call _assert (tk?1)
+        call lexer () ; call _assert (tk1?2)
+        call lexer () ; call _assert (tk1?3)
+        call lexer () ; call _assert (tk1?5)
+        call lexer () ; call _assert (tk1?4)
+        call lexer () ; call _assert (tk1?3)
+        call lexer () ; call _assert (tk1?2)
+        call lexer () ; call _assert (tk1?1)
 
         call _fclose finp
     }
@@ -320,10 +339,15 @@ var t_parser: ()->() = func ()->() {
 
     var t_parser_expr: ()->() = func ()->() {
         {
-            set finp = _{stropen("r", 0, "() x [(),()] <()>")}
+            set finp = _{stropen("r", 0, "() x [(),()] <> <.1 ()>")}
             call lexer
             var e1: Maybe(Expr) = call parser_expr
             call _assert e1!2?1
+            var e2: Maybe(Expr) = call parser_expr
+            call _assert e2!2?2
+            call _assert e2!2!2?4
+            var s2: String = string_c2ce _("x")
+            call _assert string_eq [borrow \\e2!2!2!4, borrow \\s2]
             call _fclose finp
         }
     }

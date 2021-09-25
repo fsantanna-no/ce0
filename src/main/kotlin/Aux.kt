@@ -146,6 +146,10 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
         is Expr.TCons -> this.arg.forEachIndexed { i,xe -> xe.aux(this, env, if (xp is Type.Tuple) xp.vec[i] else Type_Any(this.tk)) }
         is Expr.UCons -> {
             val sub = if (xp is Type.Union) {
+                val (MIN,MAX) = Pair(1, xp.vec.size)
+                All_assert_tk(this.tk, MIN<=this.tk_.num && this.tk_.num<=MAX) {
+                    "invalid constructor : out of bounds"
+                }
                 if (this.tk_.num > 0) xp.expand().vec[this.tk_.num - 1] else Type_Unit(this.tk)
             } else {
                 Type_Any(this.tk)
