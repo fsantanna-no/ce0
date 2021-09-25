@@ -14,15 +14,15 @@ native _{
 #define List(x) <?[x,^]>
 #define String List(_int)
 
-#define Token <(),_int,KEY,String,()>
-    -- EOF,sym,key,var,unit
+#define Token <(),_int,KEY,String,(),_int>
+    -- EOF,sym,key,var,unit,num
 
 #define Type <(),List(^^),List(^^)>
     -- Unit, Tuple, Union
 
 #define Stmt ()
 
-#define Expr <(), Token, List(^^), ^, [_int,^], [_int,^], [^,^], [Type,Stmt]>
+#define Expr <(), Token, List(^^), [_int,^], [^,_int], [^,_int], [^,^], [Type,Stmt]>
     -- Unit, Var, TCons, UCons, TDisc, UDisc, Call, Func
 
 var@ string_len: \\String->_int = func \\String->_int {
@@ -122,7 +122,7 @@ var@ lx_token: ()->Token = func ()->Token {
         if _(c == EOF) {
             return <.1>
         }
-        if _(c=='[' || c==']' || c=='<' || c=='>' || c=='{' || c=='}' || c==',') {
+        if _(c=='[' || c==']' || c=='<' || c=='>' || c=='{' || c=='}' || c==',' || c=='.') {
             return <.2 c>
         }
         if _{c=='('} {
@@ -147,6 +147,20 @@ var@ lx_token: ()->Token = func ()->Token {
                 return <.4 consume str>
             }
         }
+        if _(isdigit(c)) {
+            var str: String = <.0>
+            loop {
+                set str = new <.1 [c,consume str]>
+                set c = call _fgetc finp
+                if _(!isdigit(c)) {
+                    native _(ungetc(c, finp);)
+                    break
+                }
+            }
+            var cstr: _(char*) = string_ce2c borrow \\str
+            return <.6 _atoi cstr>
+        }
+
     }
 }
 
@@ -178,6 +192,9 @@ var@ tk_check: [_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
     }
     if _(enu == 5) {
         return tk1?5
+    }
+    if _(enu == 6) {
+        return tk1?6
     }
     call _assert _0
 }
@@ -244,7 +261,20 @@ var@ parser_expr: ()->Maybe(Expr) = func ()->Maybe(Expr) {
             }
         }
         call _assert tk_accept [_2, <.2 _(']')>]
-        return <.3 consume es>
+        return <.2 new <.3 consume es>>
+    }
+    if tk_accept [_2, <.2 _('<')>] {
+        call _assert tk_accept [_2, <.2 _('.')>]
+        call _assert tk_accept [_6, <.1>]
+        var n: _int = tk0!6
+        var e: Maybe(Expr) = call parser_expr ()
+        if e?2 {
+            -- ok
+        } else {
+            set e = <.2 new <.1>>
+        }
+        call _assert tk_accept [_2, <.2 _('>')>]
+        return <.2 new <.4 [n, consume e!2]>>
     }
     return <.1>
 }
@@ -339,15 +369,42 @@ var t_parser: ()->() = func ()->() {
 
     var t_parser_expr: ()->() = func ()->() {
         {
-            set finp = _{stropen("r", 0, "() x [(),()] <> <.1 ()>")}
+            set finp = _{stropen("r", 0, "() x [(),()] <.0> <.1 x>")}
             call lexer
-            var e1: Maybe(Expr) = call parser_expr
-            call _assert e1!2?1
-            var e2: Maybe(Expr) = call parser_expr
-            call _assert e2!2?2
-            call _assert e2!2!2?4
-            var s2: String = string_c2ce _("x")
-            call _assert string_eq [borrow \\e2!2!2!4, borrow \\s2]
+            {
+                var e: Maybe(Expr) = call parser_expr
+                call _assert e!2?1
+            }
+            {
+                var e: Maybe(Expr) = call parser_expr
+                call _assert e!2?2
+                call _assert e!2!2?4
+                var s: String = string_c2ce _("x")
+                call _assert string_eq [borrow \\e!2!2!4, borrow \\s]
+            }
+            {
+                var e: Maybe(Expr) = call parser_expr
+                call _assert e!2?3
+                call _assert e!2!3?1
+                call _assert e!2!3!1.2?1
+                call _assert e!2!3!1.2!1.2?0
+                call _assert e!2!3!1.2!1.1?1
+                -- e.some.tup.pair.2.pair.1
+            }
+            {
+                var e: Maybe(Expr) = call parser_expr
+                call _assert e!2?4
+                var n: _int = e!2!4.1
+                call _assert _(n == 0)
+                call _assert e!2!4.2?1
+            }
+            {
+                var e: Maybe(Expr) = call parser_expr
+                call _assert e!2?4
+                var n: _int = e!2!4.1
+                call _assert _(n == 1)
+                call _assert e!2!4.2?2
+            }
             call _fclose finp
         }
     }
