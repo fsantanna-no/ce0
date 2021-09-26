@@ -22,7 +22,7 @@ native _{
 
 #define Stmt ()
 
-#define Expr <(), Token, List(^^), [_int,^], [^,_int], [^,_int], [^,^], [Type,Stmt]>
+#define Expr <(), String, List(^^), [_int,^], [^,_int], [^,_int], [^,_int], [^,^], [Type,Stmt]>
     -- Unit, Var, TCons, UCons, TDisc, UDisc, Call, Func
 
 var@ string_len: \\String->_int = func \\String->_int {
@@ -122,7 +122,7 @@ var@ lx_token: ()->Token = func ()->Token {
         if _(c == EOF) {
             return <.1>
         }
-        if _(c=='[' || c==']' || c=='<' || c=='>' || c=='{' || c=='}' || c==',' || c=='.') {
+        if _(c=='[' || c==']' || c=='<' || c=='>' || c=='{' || c=='}' || c==',' || c=='.' || c=='!' || c=='?') {
             return <.2 c>
         }
         if _{c=='('} {
@@ -247,7 +247,7 @@ var@ parser_expr: ()->Maybe(Expr) = func ()->Maybe(Expr) {
         return <.2 new <.1>>
     }
     if tk_accept [_4,<.1>] {    -- Var
-        return <.2 new <.2 copy tk0>>
+        return <.2 new <.2 copy tk0!4>>
     }
     if tk_accept [_2, <.2 _('[')>] {
         var e: Maybe(Expr) = call parser_expr ()
@@ -277,6 +277,42 @@ var@ parser_expr: ()->Maybe(Expr) = func ()->Maybe(Expr) {
         return <.2 new <.4 [n, consume e!2]>>
     }
     return <.1>
+}
+
+var@ parser_exprs: ()->Maybe(Expr) = func ()->Maybe(Expr) {
+    var e1: Maybe(Expr) = call parser_expr
+    if e1?1 {
+        return <.1>
+    }
+
+    loop {
+        var ok: _int = call tk_accept [_2, <.2 _('.')>]
+        if _(!ok) {
+            set ok = call tk_accept [_2, <.2 _('!')>]
+            if _(!ok) {
+                set ok = call tk_accept [_2, <.2 _('?')>]
+            }
+        }
+        if _(!ok) {
+            break
+        }
+        var chr: _int = tk0!2
+
+        call _assert tk_accept [_6, <.1>]
+        var n: _int = tk0!6
+
+        if _(chr=='.') {
+            set e1 = <.2 new <.5 [consume e1!2, n]>>
+        }
+        if _(chr=='!') {
+            set e1 = <.2 new <.6 [consume e1!2, n]>>
+        }
+        if _(chr=='?') {
+            set e1 = <.2 new <.7 [consume e1!2, n]>>
+        }
+    }
+
+    return <.2 consume e1!2>
 }
 
 var t_pre: ()->() = func ()->() {
@@ -378,9 +414,8 @@ var t_parser: ()->() = func ()->() {
             {
                 var e: Maybe(Expr) = call parser_expr
                 call _assert e!2?2
-                call _assert e!2!2?4
                 var s: String = string_c2ce _("x")
-                call _assert string_eq [borrow \\e!2!2!4, borrow \\s]
+                call _assert string_eq [borrow \\e!2!2, borrow \\s]
             }
             {
                 var e: Maybe(Expr) = call parser_expr
@@ -404,6 +439,37 @@ var t_parser: ()->() = func ()->() {
                 var n: _int = e!2!4.1
                 call _assert _(n == 1)
                 call _assert e!2!4.2?2
+            }
+            call _fclose finp
+        }
+        {
+            set finp = _{stropen("r", 0, "x.1 ()!0 <.0>!10?20")}
+            call lexer
+            {
+                var e: Maybe(Expr) = call parser_exprs
+                call _assert e!2?5
+                var n: _int = e!2!5.2
+                call _assert _(n == 1)
+                var s1: String = string_c2ce _("x")
+                var s2: \\String = borrow \\e!2!5.1!2
+                call _assert string_eq [borrow \\s1, borrow s2]
+            }
+            {
+                var e: Maybe(Expr) = call parser_exprs
+                call _assert e!2?6
+                var n: _int = e!2!6.2
+                call _assert _(n == 0)
+                call _assert e!2!6.1?1
+            }
+            {
+                var e: Maybe(Expr) = call parser_exprs
+                call _assert e!2?7
+                var n1: _int = e!2!7.2
+                call _assert _(n1 == 20)
+                call _assert e!2!7.1?6
+                call _assert e!2!7.1!6.1?4
+                var n2: _int = e!2!7.1!6.2
+                call _assert _(n2 == 10)
             }
             call _fclose finp
         }
