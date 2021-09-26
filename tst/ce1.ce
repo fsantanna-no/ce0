@@ -23,7 +23,7 @@ native _{
 #define Stmt ()
 
 #define Expr <(), String, List(^^), [_int,^], [^,_int], [^,_int], [^,_int], [^,^], [Type,Stmt]>
-    -- Unit, Var, TCons, UCons, TDisc, UDisc, Call, Func
+    -- Unit, Var, TCons, UCons, TDisc, UDisc, UPred, Call, Func
 
 var@ string_len: \\String->_int = func \\String->_int {
     if (/arg)?0 {
@@ -312,7 +312,15 @@ var@ parser_exprs: ()->Maybe(Expr) = func ()->Maybe(Expr) {
         }
     }
 
-    return <.2 consume e1!2>
+    var n1: _int = call _ftell finp
+    var e2: Maybe(Expr) = call parser_expr
+    if e2?1 {
+        var n2: _int = call _ftell finp
+        call _assert _(n1 == n2)
+        return <.2 consume e1!2>
+    } else {
+        return <.2 new <.8 [consume e1!2, consume e2!2]>>
+    }
 }
 
 var t_pre: ()->() = func ()->() {
@@ -443,7 +451,7 @@ var t_parser: ()->() = func ()->() {
             call _fclose finp
         }
         {
-            set finp = _{stropen("r", 0, "x.1 ()!0 <.0>!10?20")}
+            set finp = _{stropen("r", 0, "x.1")}
             call lexer
             {
                 var e: Maybe(Expr) = call parser_exprs
@@ -454,6 +462,11 @@ var t_parser: ()->() = func ()->() {
                 var s2: \\String = borrow \\e!2!5.1!2
                 call _assert string_eq [borrow \\s1, borrow s2]
             }
+            call _fclose finp
+        }
+        {
+            set finp = _{stropen("r", 0, "()!0")}
+            call lexer
             {
                 var e: Maybe(Expr) = call parser_exprs
                 call _assert e!2?6
@@ -461,6 +474,11 @@ var t_parser: ()->() = func ()->() {
                 call _assert _(n == 0)
                 call _assert e!2!6.1?1
             }
+            call _fclose finp
+        }
+        {
+            set finp = _{stropen("r", 0, "<.0>!10?20")}
+            call lexer
             {
                 var e: Maybe(Expr) = call parser_exprs
                 call _assert e!2?7
@@ -470,6 +488,17 @@ var t_parser: ()->() = func ()->() {
                 call _assert e!2!7.1!6.1?4
                 var n2: _int = e!2!7.1!6.2
                 call _assert _(n2 == 10)
+            }
+            call _fclose finp
+        }
+        {
+            set finp = _{stropen("r", 0, "() ()")}
+            call lexer
+            {
+                var e: Maybe(Expr) = call parser_exprs
+                call _assert e!2?8
+                call _assert e!2!8.1?1
+                call _assert e!2!8.2?1
             }
             call _fclose finp
         }
