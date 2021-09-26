@@ -38,7 +38,7 @@ fun Type.Union.expand (): Type.Union {
             is Type.Union -> Type.Union(cur.tk_, cur.isnullable, cur.vec.map { aux(it,up+1) }.toTypedArray())
             is Type.Ptr   -> Type.Ptr(cur.tk_, aux(cur.pln,up))
             is Type.Func  -> Type.Func(cur.tk_, aux(cur.inp,up), aux(cur.out,up))
-            is Type.UCons  -> error("bug found")
+            is Type.UCons -> error("bug found")
             else -> cur
         }
     }

@@ -59,7 +59,7 @@ fun Stmt.visit_ (fs: ((Stmt)->Unit)?, fx: ((XExpr)->Unit)?, fe: ((Expr)->Unit)?,
         is Stmt.Var   -> { this.type.visit(ft) ; this.src.visit(fs,fx,fe,ft)  }
         is Stmt.Set   -> { this.dst.visit(fs,fx,fe,ft) ; this.src.visit(fs,fx,fe,ft) }
         is Stmt.Call  -> this.call.visit(fs,fx,fe,ft)
-        is Stmt.Seq   -> { val e1=this.s1.visit(fs,fx,fe,ft) ; val e2=this.s2.visit(fs,fx,fe,ft) }
+        is Stmt.Seq   -> { this.s1.visit(fs,fx,fe,ft) ; this.s2.visit(fs,fx,fe,ft) }
         is Stmt.If    -> { this.tst.visit(fs,fx,fe,ft) ; this.true_.visit(fs,fx,fe,ft) ; this.false_.visit(fs,fx,fe,ft) }
         //is Stmt.Ret   -> this.e.visit(old,fs,fx,fe,ft)
         is Stmt.Loop  -> { this.block.visit(fs,fx,fe,ft) }
