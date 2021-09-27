@@ -143,7 +143,14 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
     env_add(this, env)
     xps_add(this, xp)
     when (this) {
-        is Expr.TCons -> this.arg.forEachIndexed { i,xe -> xe.aux(this, env, if (xp is Type.Tuple) xp.vec[i] else Type_Any(this.tk)) }
+        is Expr.TCons -> {
+            All_assert_tk(this.tk, (xp !is Type.Tuple)|| this.arg.size==xp.vec.size) {
+                "invalid constructor : out of bounds"
+            }
+            this.arg.forEachIndexed { i,xe ->
+                xe.aux(this, env, if (xp is Type.Tuple) xp.vec[i] else Type_Any(this.tk))
+            }
+        }
         is Expr.UCons -> {
             val sub = if (xp is Type.Union) {
                 val (MIN,MAX) = Pair(if (xp.exactlyRec()) 0 else 1, xp.vec.size)

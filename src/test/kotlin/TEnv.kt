@@ -283,7 +283,6 @@ class TEnv {
         """.trimIndent())
         assert(out == "(ln 1, col 17): invalid discriminator : out of bounds")
     }
-
     @Test
     fun c17_uni_disc_err () {
         val out = inp2env("""
@@ -320,6 +319,13 @@ class TEnv {
             var x: <()> = <.2>
         """.trimIndent())
         assert(out == "(ln 1, col 17): invalid constructor : out of bounds") { out }
+    }
+    @Test
+    fun c22_tup_cons_err () {
+        val out = inp2env("""
+            var t: [(),()] = [(),(),()]
+        """.trimIndent())
+        assert(out == "(ln 1, col 18): invalid constructor : out of bounds") { out }
     }
 
     // DEPTH
