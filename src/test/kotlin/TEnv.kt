@@ -923,16 +923,23 @@ class TEnv {
         //assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
     }
     @Test
-    fun j08_rec_xepr_double_rec () {
+    fun j08_rec_xepr_double_rec_err () {
         val out = inp2env("""
             var x: <?<^^>> = new <.1 <.1 <.0>>>
         """.trimIndent())
-        assert(out == "OK")
+        assert(out == "(ln 1, col 28): invalid expression : expected `new` operation modifier") { out }
+    }
+    @Test
+    fun j08_rec_xepr_double_rec_ok () {
+        val out = inp2env("""
+            var x: <?<^^>> = new <.1 new <.1 <.0>>>
+        """.trimIndent())
+        assert(out == "OK") { out }
     }
     @Test
     fun j09_rec_xepr_double_rec () {
         val out = inp2env("""
-            var x: <?<^^>> = new <.1 <.1 new <.1 <.1 <.0>>>>>
+            var x: <?<^^>> = new <.1 new <.1 new <.1 new <.1 <.0>>>>>
         """.trimIndent())
         assert(out == "OK")
     }
@@ -1125,7 +1132,21 @@ class TEnv {
         val out = inp2env("""
             var l: <?()> = ?
         """.trimIndent())
-        assert(out == "(ln 1, col 8): invalid type declaration : unexpected `?´")
+        assert(out == "(ln 1, col 8): invalid type declaration : unexpected `?´") { out }
+    }
+    @Test
+    fun j29_rec_mutual () {
+        val out = inp2env("""
+            var e: <(),<(),^^>> = new <.2 new <.1>>
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun j30_rec_mutual_err () {
+        val out = inp2env("""
+            var e: <(),<(),^>> = new <.2 new <.1>>
+        """.trimIndent())
+        assert(out == "(ln 1, col 28): invalid `new` : expected variant constructor") { out }
     }
 
     // IF / FUNC

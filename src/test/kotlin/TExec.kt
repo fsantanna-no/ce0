@@ -670,7 +670,7 @@ class TExec {
             var l: <^> = <.0>
             output std \l
         """.trimIndent())
-        assert(out == "(ln 1, col 5): invalid assignment : type mismatch")
+        assert(out == "(ln 1, col 5): invalid assignment : type mismatch") { out }
     }
     @Test
     fun j01_list () {
@@ -678,7 +678,7 @@ class TExec {
             var l: <?^> = <.0>
             output std \l
         """.trimIndent())
-        assert(out == "<.0>\n")
+        assert(out == "<.0>\n") { out }
     }
     @Test
     fun j02_list () {
@@ -794,7 +794,7 @@ class TExec {
     @Test
     fun j11_rec_double () {
         val out = all("""
-            var n: <?<^^>> = new <.1 <.1 new <.1 <.1 <.0>>>>>
+            var n: <?<^^>> = new <.1 new <.1 new <.1 new <.1 <.0>>>>>
             output std \n
         """.trimIndent())
         assert(out == "<.1 <.1 <.1 <.1 <.0>>>>>\n")

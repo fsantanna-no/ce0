@@ -4,11 +4,22 @@ sealed class Type (val tk: Tk) {
     data class Unit  (val tk_: Tk.Sym): Type(tk_)
     data class Nat   (val tk_: Tk.Str): Type(tk_)
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_)
-    data class Union (val tk_: Tk.Chr, val isnullable: Boolean, val vec: Array<Type>): Type(tk_)
+    data class Union (val tk_: Tk.Chr, val isrec: Boolean, val isnullable: Boolean, val vec: Array<Type>): Type(tk_)
     data class UCons  (val tk_: Tk.Num, val arg: Type): Type(tk_)
     data class Func  (val tk_: Tk.Sym, val inp: Type, val out: Type): Type(tk_)
     data class Ptr   (val tk_: Tk.Chr, val pln: Type): Type(tk_)
     data class Rec   (val tk_: Tk.Up): Type(tk_)
+}
+
+fun Type.tostr (): String {
+    return when (this) {
+        is Type.Unit  -> "()"
+        is Type.Nat   -> "_"
+        is Type.Rec   -> "^".repeat(this.tk_.up)
+        is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
+        is Type.Union ->  "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
+        else -> error("$this")
+    }
 }
 
 fun Type_Unit (tk: Tk): Type.Unit {
@@ -33,16 +44,16 @@ fun Type.keepAnyNat (other: ()->Type): Type {
 fun Type.Union.expand (): Type.Union {
     fun aux (cur: Type, up: Int): Type {
         return when (cur) {
-            is Type.Rec   -> if (up == cur.tk_.up) this else cur
+            is Type.Rec   -> if (up == cur.tk_.up) this else { assert(up>cur.tk_.up) ; cur }
             is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray())
-            is Type.Union -> Type.Union(cur.tk_, cur.isnullable, cur.vec.map { aux(it,up+1) }.toTypedArray())
+            is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.isnullable, cur.vec.map { aux(it,up+1) }.toTypedArray())
             is Type.Ptr   -> Type.Ptr(cur.tk_, aux(cur.pln,up))
             is Type.Func  -> Type.Func(cur.tk_, aux(cur.inp,up), aux(cur.out,up))
             is Type.UCons -> error("bug found")
             else -> cur
         }
     }
-    return Type.Union(this.tk_, this.isnullable, this.vec.map { aux(it, 1) }.toTypedArray())
+    return Type.Union(this.tk_, this.isrec, this.isnullable, this.vec.map { aux(it, 1) }.toTypedArray())
 }
 
 //typealias XEpr = Pair<Tk,Expr>
@@ -138,7 +149,20 @@ fun parser_type (all: All): Type {
                     Type.Tuple(tk0, tps.toTypedArray())
                 } else {
                     all.accept_err(TK.CHAR, '>')
-                    Type.Union(tk0, isnullable, tps.toTypedArray())
+                    fun f (tp: Type, n: Int): Boolean {
+                        return when (tp) {
+                            is Type.Rec   -> return n <= tp.tk_.up
+                            is Type.Tuple -> tp.vec.any { f(it, n) }
+                            is Type.Union -> tp.vec.any { f(it, n+1) }
+                            else -> false
+                        }
+                    }
+                    val vec = tps.toTypedArray()
+                    val isrec = vec.any { f(it, 1) }
+                    All_assert_tk(tk0,!isnullable || isrec) {
+                        "invalid type declaration : unexpected `?´"
+                    }
+                    Type.Union(tk0, isrec, isnullable, vec)
                 }
             }
             else -> {

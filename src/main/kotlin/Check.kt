@@ -13,14 +13,6 @@ fun env_prelude (s: Stmt): Stmt {
 }
 
 fun check_dcls (s: Stmt) {
-    fun ft (tp: Type) {
-        when (tp) {
-            is Type.Union -> All_assert_tk(tp.tk, !tp.isnullable || tp.exactlyRec()) {
-                "invalid type declaration : unexpected `?´"
-            }
-            else -> {}
-        }
-    }
     fun fs (s: Stmt) {
         when (s) {
             is Stmt.Var -> {
@@ -37,7 +29,7 @@ fun check_dcls (s: Stmt) {
             }
         }
     }
-    s.visit(::fs, null, null, ::ft)
+    s.visit(::fs, null, null, null)
 }
 
 fun Type.containsRec (): Boolean {
@@ -51,12 +43,7 @@ fun Type.containsRec (): Boolean {
 }
 
 fun Type.exactlyRec (): Boolean {
-    return when (this) {
-        //is Type.Union -> this.isrec
-        is Type.Union -> (this.expand().toString() != this.toString())
-        is Type.UCons -> error("bug found")
-        else -> false
-    }
+    return (this is Type.Union) && this.isrec
 }
 
 fun Type.containsFunc (): Boolean {
@@ -78,8 +65,7 @@ fun Type.isSupOf (sub: Type): Boolean {
             if (sub.tk_.num == 0) {
                 this.exactlyRec() && this.isnullable && sub.arg is Type.Unit
             } else {
-                val this2 = this.expand()
-                this2.vec[sub.tk_.num-1].isSupOf(sub.arg)
+                this.expand().vec[sub.tk_.num-1].isSupOf(sub.arg)
             }
         }
         (this::class != sub::class) -> false
@@ -195,7 +181,6 @@ fun check_xexprs (S: Stmt) {
         val e_isvar  = xe.e is Expr.UCons
         val e_isnil  = e_isvar && ((xe.e as Expr.UCons).tk_.num==0)
 
-        val isglb = xe.e.leftMost()
         val is_ptr_to_udisc = (xp is Type.Ptr) && xe.e.containsUDisc() //xp.pln.containsUDisc() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
         val is_ptr_to_ctrec = (xp is Type.Ptr) && xp.pln.containsRec() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
         when (xe) {
