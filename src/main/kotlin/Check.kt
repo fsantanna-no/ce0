@@ -94,52 +94,6 @@ fun Type.ishasptr (): Boolean {
 }
 
 fun check_types (S: Stmt) {
-    fun fe (e: Expr) {
-        when (e) {
-            is Expr.Dnref -> {
-                All_assert_tk(e.tk, e.ptr.toType() is Type.Ptr) {
-                    "invalid `/´ : expected pointer type"
-                }
-            }
-            is Expr.TDisc -> e.tup.toType().let {
-                All_assert_tk(e.tk, it is Type.Tuple) {
-                    "invalid discriminator : type mismatch"
-                }
-                val (MIN,MAX) = Pair(1, (it as Type.Tuple).vec.size)
-                All_assert_tk(e.tk, MIN<=e.tk_.num && e.tk_.num<=MAX) {
-                    "invalid discriminator : out of bounds"
-                }
-            }
-            is Expr.UDisc, is Expr.UPred -> {
-                val (uni,tk) = when (e) {
-                    is Expr.UDisc -> Pair(e.uni, e.tk_)
-                    is Expr.UPred -> Pair(e.uni, e.tk_)
-                    else -> error("impossible case")
-                }
-                uni.toType().let {
-                    All_assert_tk(e.tk, it is Type.Union) {
-                        "invalid discriminator : type mismatch"
-                    }
-                    val (MIN,MAX) = Pair(if (it.exactlyRec()) 0 else 1, (it as Type.Union).vec.size)
-                    All_assert_tk(e.tk, MIN<=tk.num && tk.num<=MAX) {
-                        "invalid discriminator : out of bounds"
-                    }
-                }
-            }
-            is Expr.Call -> {
-                e.f.toType().let {
-                    All_assert_tk(e.f.tk, it is Type.Func || it is Type.Nat) {
-                        "invalid call : type mismatch"
-                    }
-                    (if (it is Type.Func) it.inp else (it as Type.Nat)).let {
-                        All_assert_tk(e.f.tk, it.isSupOf(e.arg.e.toType())) {
-                            "invalid call : type mismatch"
-                        }
-                    }
-                }
-            }
-        }
-    }
     fun fs (s: Stmt) {
         when (s) {
             is Stmt.Var -> {
@@ -169,7 +123,7 @@ fun check_types (S: Stmt) {
             }
         }
     }
-    S.visit(::fs, null, ::fe, ::ft)
+    S.visit(::fs, null, null, ::ft)
 }
 
 fun Expr.isconst (): Boolean {

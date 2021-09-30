@@ -270,7 +270,24 @@ class TEnv {
         val out = inp2env("""
             call ()
         """.trimIndent())
-        assert(out == "(ln 1, col 6): invalid call : type mismatch") { out }
+        assert(out == "(ln 1, col 6): invalid call : not a function") { out }
+    }
+    @Test
+    fun c17_type_func_err () {
+        val out = inp2env("""
+        var f: ()->() = func ()->() {
+            call arg.2
+        }
+        """.trimIndent())
+        assert(out == "(ln 2, col 14): invalid discriminator : type mismatch") { out }
+    }
+    @Test
+    fun c18_type_func_err () {
+        val out = inp2env("""
+        var f: [(),<(),()->()>]->() = func <(),()->()>->() {
+        }
+        """.trimIndent())
+        assert(out == "(ln 1, col 5): invalid assignment : type mismatch") { out }
     }
 
     // TUPLE / UNION DISCRIMINATOR
@@ -347,7 +364,7 @@ class TEnv {
 
     @Test
     fun d01_block () {
-        val s = pre("var x: () = () ; { call x }")
+        val s = pre("var x: ()->() = ? ; { call x }")
         fun fe (e: Expr) {
             if (e is Expr.Var && e.tk_.str=="x") {
                 assert(0 == e.getDepth(0,true).first)
@@ -362,7 +379,7 @@ class TEnv {
     }
     @Test
     fun d02_func () {
-        val s = pre("var@ x: () = () ; var f: ()->() = func ()->() { var y: () = x ; call y ; set x = () }")
+        val s = pre("var@ x: ()->() = ? ; var f: ()->() = func ()->() { var y: ()->() = x ; call y ; set x = () }")
         fun fe (e: Expr) {
             if (e is Expr.Var) {
                 if (e.tk_.str == "x") {

@@ -92,7 +92,15 @@ fun Expr.toType (): Type {
         is Expr.Dnref -> (this.ptr.toType() as Type.Ptr).pln
         is Expr.TCons -> Type.Tuple(this.tk_, this.arg.map{it.e.toType()}.toTypedArray())
         is Expr.UCons -> Type.UCons(this.tk_, this.arg.e.toType())
-        is Expr.Call  -> if (this.f is Expr.Nat) Type.Nat(this.f.tk_) else (this.f.toType() as Type.Func).out
+        is Expr.Call  -> {
+            this.f.toType().let {
+                when (it) {
+                    is Type.Func -> it.out
+                    is Type.Nat  -> Type.Nat(it.tk_)
+                    else -> error("impossible case")
+                }
+            }
+        }
         is Expr.Func  -> this.type
         is Expr.UPred -> Type.Nat(Tk.Str(TK.XNAT, this.tk.lin, this.tk.col, "int"))
         is Expr.TDisc -> (this.tup.toType() as Type.Tuple).vec[this.tk_.num-1]
@@ -104,13 +112,7 @@ fun Expr.toType (): Type {
                 it.expand().vec[this.tk_.num - 1]
             }
         }
-        is Expr.Var -> {
-            val dcl = this.env()
-            All_assert_tk(this.tk, dcl!=null) {
-                "undeclared variable \"${this.tk_.str}\""
-            }
-            dcl!!.type
-        }
+        is Expr.Var -> this.env()!!.type
     }
 }
 
@@ -143,6 +145,11 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
     env_add(this, env)
     xps_add(this, xp)
     when (this) {
+        is Expr.Var -> {
+            All_assert_tk(this.tk, this.env()!=null) {
+                "undeclared variable \"${this.tk_.str}\""
+            }
+        }
         is Expr.TCons -> {
             All_assert_tk(this.tk, (xp !is Type.Tuple)|| this.arg.size==xp.vec.size) {
                 "invalid constructor : out of bounds"
@@ -163,15 +170,65 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
             }
             this.arg.aux(this, env, sub)
         }
-        is Expr.Dnref -> this.ptr.aux(this, env, xp.keepAnyNat { Type.Ptr(Tk.Chr(TK.CHAR,this.tk.lin,this.tk.col,'\\'),xp) })
+        is Expr.Dnref -> {
+            this.ptr.aux(this, env, xp.keepAnyNat { Type.Ptr(Tk.Chr(TK.CHAR,this.tk.lin,this.tk.col,'\\'),xp) })
+            All_assert_tk(this.tk, this.ptr.toType() is Type.Ptr) {
+                "invalid `/´ : expected pointer type"
+            }
+        }
         is Expr.Upref -> this.pln.aux(this, env, if (xp is Type.Ptr) xp.keepAnyNat{xp.pln} else Type_Any(this.tk))
-        is Expr.TDisc -> this.tup.aux(this, env, Type_Any(this.tk))
-        is Expr.UDisc -> this.uni.aux(this, env, Type_Any(this.tk))
-        is Expr.UPred -> this.uni.aux(this, env, Type_Any(this.tk))
+        is Expr.TDisc -> {
+            this.tup.aux(this, env, Type_Any(this.tk))
+            this.tup.toType().let {
+                All_assert_tk(this.tk, it is Type.Tuple) {
+                    "invalid discriminator : type mismatch"
+                }
+                val (MIN,MAX) = Pair(1, (it as Type.Tuple).vec.size)
+                All_assert_tk(this.tk, MIN<=this.tk_.num && this.tk_.num<=MAX) {
+                    "invalid discriminator : out of bounds"
+                }
+            }
+        }
+        is Expr.UDisc -> {
+            this.uni.aux(this, env, Type_Any(this.tk))
+            this.uni.toType().let {
+                All_assert_tk(this.tk, it is Type.Union) {
+                    "invalid discriminator : type mismatch"
+                }
+                val (MIN,MAX) = Pair(if (it.exactlyRec()) 0 else 1, (it as Type.Union).vec.size)
+                All_assert_tk(this.tk, MIN<=this.tk_.num && this.tk_.num<=MAX) {
+                    "invalid discriminator : out of bounds"
+                }
+            }
+        }
+        is Expr.UPred -> {
+            this.uni.aux(this, env, Type_Any(this.tk))
+            this.uni.toType().let {
+                All_assert_tk(this.tk, it is Type.Union) {
+                    "invalid discriminator : type mismatch"
+                }
+                val (MIN,MAX) = Pair(if (it.exactlyRec()) 0 else 1, (it as Type.Union).vec.size)
+                All_assert_tk(this.tk, MIN<=this.tk_.num && this.tk_.num<=MAX) {
+                    "invalid discriminator : out of bounds"
+                }
+            }
+        }
         is Expr.Call  -> {
             this.f.aux(this, env, Type_Any(this.tk))
+            val tp = this.f.toType()
+            All_assert_tk(this.f.tk, tp is Type.Func || tp is Type.Nat) {
+                "invalid call : not a function"
+            }
             val xp2 = this.f.toType().let { it.keepAnyNat{it} }
             this.arg.aux(this, env, if (xp2 is Type.Func) xp2.keepAnyNat{ xp2.inp } else Type_Any(this.tk))
+            val inp = when (tp) {
+                is Type.Func -> tp.inp
+                is Type.Nat  -> tp
+                else -> error("impossible case")
+            }
+            All_assert_tk(this.f.tk, inp.isSupOf(this.arg.e.toType())) {
+                "invalid call : type mismatch"
+            }
         }
         is Expr.Func  -> this.block.aux(this, env) //{ this.type.ups(this) ; this.block.aux(this, env) }
     }
