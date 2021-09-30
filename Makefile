@@ -8,7 +8,7 @@ install:
 	#freechains --version
 
 ce1:
-	gpp tst/ce1.ce > /tmp/ce1.ce
+	gpp tst/ce1/ce1.ce > /tmp/ce1.ce
 	ce /tmp/ce1.ce
 
 tmp:
