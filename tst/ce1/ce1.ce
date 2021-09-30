@@ -270,7 +270,7 @@ var t_visit: ()->() = func ()->() {
             var s: Stmt = call parser_stmts
             call visit_stmt [borrow \\s, [<.2 fs>,<.2 fe>,<.2 ft>]]
         }
-        call _assert _(x == 3)
+        call _assert _(x == 4)
         call _fclose finp
     }
 }
