@@ -131,7 +131,7 @@ class TEnv {
             var l: <?^> = <.1 <.0>>
             output std \l!0
         """.trimIndent())
-        assert(out == "(ln 1, col 17): invalid expression : expected `new` operation modifier")
+        assert(out == "(ln 1, col 17): invalid expression : expected `new` operation modifier") { out }
     }
     @Test
     fun b13_user_empty_ok () {
@@ -1153,6 +1153,14 @@ class TEnv {
             var e: <(),<(),^>> = new <.2 new <.1>>
         """.trimIndent())
         assert(out == "(ln 1, col 28): invalid `new` : expected variant constructor") { out }
+    }
+    @Test
+    fun j31_rec_mutual () {
+        val out = inp2env("""
+            var e: <(),<(),^^>> = new <.2 new <.2 new <.1>>>
+            var s: <(),<(),<(),^^>>> = <.2 consume e>
+        """.trimIndent())
+        assert(out == "OK") { out }
     }
 
     // IF / FUNC

@@ -65,6 +65,8 @@ fun Type.isSupOf (sub: Type): Boolean {
             if (sub.tk_.num == 0) {
                 this.exactlyRec() && this.isnullable && sub.arg is Type.Unit
             } else {
+                //println(">>> ${this.expand().vec[sub.tk_.num-1].tostr()} = ${sub.arg.tostr()}")
+                //println(">>> ${this.expand().vec[sub.tk_.num-1].expand().tostr()} = ${sub.arg.expand().tostr()}")
                 this.expand().vec[sub.tk_.num-1].isSupOf(sub.arg)
             }
         }
@@ -136,12 +138,14 @@ fun check_types (S: Stmt) {
         when (s) {
             is Stmt.Var -> {
                 All_assert_tk(s.tk, s.type.isSupOf(s.src.e.toType())) {
+                    //println(s.type.tostr() + " = " + s.src.e.toType().tostr())
                     "invalid assignment : type mismatch"
                 }
             }
             is Stmt.Set -> {
                 val str = if (s.dst is Expr.Var && s.dst.tk_.str=="_ret_") "return" else "assignment"
                 All_assert_tk(s.tk, s.dst.toType().isSupOf(s.src.e.toType())) {
+                    //println(s.dst.toType().tostr() + " = " + s.src.e.toType().tostr())
                     "invalid $str : type mismatch"
                 }
             }

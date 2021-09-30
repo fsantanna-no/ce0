@@ -14,10 +14,12 @@ sealed class Type (val tk: Tk) {
 fun Type.tostr (): String {
     return when (this) {
         is Type.Unit  -> "()"
-        is Type.Nat   -> "_"
+        is Type.Nat   -> this.tk_.str
         is Type.Rec   -> "^".repeat(this.tk_.up)
+        is Type.Ptr   -> "\\" + this.pln.tostr()
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
-        is Type.Union ->  "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
+        is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
+        is Type.UCons -> "<." + this.tk_.num + " " + this.arg.tostr() + ">"
         else -> error("$this")
     }
 }
@@ -55,6 +57,24 @@ fun Type.Union.expand (): Type.Union {
     }
     return Type.Union(this.tk_, this.isrec, this.isnullable, this.vec.map { aux(it, 1) }.toTypedArray())
 }
+
+/*
+fun Type.expand (up: Int=1): Type {
+    return when (this) {
+        is Type.Rec   -> if (up == this.tk_.up) this else { assert(up>this.tk_.up) ; this }
+        is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.expand(up) }.toTypedArray())
+        is Type.Union -> Type.Union(this.tk_, this.isrec, this.isnullable, this.vec.map { it.expand(up+1) }.toTypedArray())
+        is Type.Ptr   -> Type.Ptr(this.tk_, this.pln.expand(up))
+        is Type.Func  -> Type.Func(this.tk_, this.inp.expand(up), this.out.expand(up))
+        is Type.UCons -> Type.UCons(this.tk_, this.arg.expand(up))
+        else -> this
+    }
+}
+
+fun Type.Union.expand (): Type.Union {
+    return Type.Union(this.tk_, this.isrec, this.isnullable, this.vec.map { it.expand(1) }.toTypedArray())
+}
+*/
 
 //typealias XEpr = Pair<Tk,Expr>
 //data class XExpr (val x: Tk?, val e: Expr)
