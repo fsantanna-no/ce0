@@ -190,29 +190,15 @@ class TParser {
     fun b10_parser_expr_call_err () {
         val all = All_new(PushbackReader(StringReader("call () ()"), 2))
         lexer(all)
-        try {
-            parser_expr(all, true)
-            error("impossible case")
-        } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 6): expected function")
-        }
+        val e = parser_expr(all, true)
+        assert(e is Expr.Call && e.f is Expr.Unit && e.arg.e is Expr.Unit)
     }
     @Test
     fun b11_parser_expr_call () {
         val all = All_new(PushbackReader(StringReader("f()\n()\n()"), 2))
         lexer(all)
-        try {
-            parser_expr(all, true)
-            error("impossible case")
-        } catch (e: Throwable) {
-            assert(e.message == "(ln 2, col 1): expected function")
-        }
-        /*
-        val e2 = parser_expr(all,true)
-        val e3 = parser_expr(all,true)
-        assert(e1 is Expr.Call && e2 is Expr.Unit && e3 is Expr.Unit)
-        assert(e1 is Expr.Call && e1.pre is Expr.Var && (e1.pre.tk.pay as TK_Str).v=="f" && e1.pos is Expr.Unit)
-         */
+        val e = parser_expr(all, true)
+        assert(e is Expr.Call && e.f is Expr.Var && e.arg.e is Expr.Call && (e.arg.e as Expr.Call).f is Expr.Unit)
     }
     @Test
     fun b12_parser_expr_call () {
@@ -403,23 +389,15 @@ class TParser {
     fun c03_parser_stmt_call () {
         val all = All_new(PushbackReader(StringReader("call ()"), 2))
         lexer(all)
-        try {
-            parser_stmt(all)
-            error("impossible case")
-        } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 6): expected function")
-        }
+        val s = parser_stmt(all)
+        assert(s is Stmt.Call && s.call is Expr.Call)
     }
     @Test
     fun c04_parser_stmt_call () {
         val all = All_new(PushbackReader(StringReader("call () ()"), 2))
         lexer(all)
-        try {
-            parser_stmt(all)
-            error("impossible case")
-        } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 6): expected function")
-        }
+        val s = parser_stmt(all)
+        assert(s is Stmt.Call && s.call is Expr.Call)
     }
     @Test
     fun c05_parser_stmt_call () {

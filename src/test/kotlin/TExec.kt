@@ -258,7 +258,7 @@ class TExec {
         val out = all("""
             output () ()
         """.trimIndent())
-        assert(out == "(ln 1, col 8): expected function")
+        assert(out == "(ln 1, col 8): invalid `output` : expected identifier") { out }
     }
     @Test
     fun e02_out () {

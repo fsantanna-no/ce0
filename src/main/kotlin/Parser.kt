@@ -372,12 +372,12 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
             XExpr.None(Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()")))
         }
 
-        all.assert_tk(e1.tk, e1 is Expr.Var || (e1 is Expr.Nat && (!ispre || tk_pre.enu==TK.CALL))) {
-            "expected function"
-        }
+        //all.assert_tk(e1.tk, e1 is Expr.Var || (e1 is Expr.Nat && (!ispre || tk_pre.enu==TK.CALL))) {
+        //    "expected function"
+        //}
         val tk_pre2 = if (ispre) tk_pre as Tk.Key else Tk.Key(TK.CALL,tk_pre.lin,tk_pre.col,"call")
         if (ispre && tk_pre2.enu==TK.OUT) {
-            assert(e1 is Expr.Var)
+            all.assert_tk(e1.tk, e1 is Expr.Var) { "invalid `output` : expected identifier" }
             e1 = Expr.Var (
                 Tk.Str(TK.XVAR,e1.tk.lin,e1.tk.col,"output_"+(e1.tk as Tk.Str).str)
             )

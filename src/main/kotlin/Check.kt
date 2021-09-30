@@ -98,7 +98,7 @@ fun check_types (S: Stmt) {
         when (e) {
             is Expr.Dnref -> {
                 All_assert_tk(e.tk, e.ptr.toType() is Type.Ptr) {
-                    "invalid `/` : expected pointer type"
+                    "invalid `/´ : expected pointer type"
                 }
             }
             is Expr.TDisc -> e.tup.toType().let {
@@ -127,9 +127,15 @@ fun check_types (S: Stmt) {
                 }
             }
             is Expr.Call -> {
-                val inp = e.f.toType().let { if (it is Type.Func) it.inp else (it as Type.Nat) }
-                All_assert_tk(e.f.tk, inp.isSupOf(e.arg.e.toType())) {
-                    "invalid call : type mismatch"
+                e.f.toType().let {
+                    All_assert_tk(e.f.tk, it is Type.Func || it is Type.Nat) {
+                        "invalid call : type mismatch"
+                    }
+                    (if (it is Type.Func) it.inp else (it as Type.Nat)).let {
+                        All_assert_tk(e.f.tk, it.isSupOf(e.arg.e.toType())) {
+                            "invalid call : type mismatch"
+                        }
+                    }
                 }
             }
         }

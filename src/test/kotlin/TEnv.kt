@@ -239,7 +239,7 @@ class TEnv {
             var x: () = ()
             output std /x
         """.trimIndent())
-        assert(out == "(ln 2, col 12): invalid `/` : expected pointer type")
+        assert(out == "(ln 2, col 12): invalid `/´ : expected pointer type") { out }
     }
     @Test
     fun c13_type_dnref () {
@@ -256,6 +256,21 @@ class TEnv {
             var x: ()->[(()->())] = ?
         """.trimIndent())
         assert(out == "(ln 1, col 12): invalid type : cannot return function type : currently not supported")
+    }
+    @Test
+    fun c15_type_func_tup () {
+        val out = inp2env("""
+            var f: [()->()] = ?
+            call f.1
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun c16_type_func_unit () {
+        val out = inp2env("""
+            call ()
+        """.trimIndent())
+        assert(out == "(ln 1, col 6): invalid call : type mismatch") { out }
     }
 
     // TUPLE / UNION DISCRIMINATOR
