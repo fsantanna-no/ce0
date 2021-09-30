@@ -1,0 +1,102 @@
+var@ lx_blanks: ()->() = func ()->() {
+    loop {
+        var c: _int = call _fgetc finp
+        if _(c=='\\n' || c==' ') {
+            -- space
+        } else {
+            native _(ungetc(c, finp);)
+            return ()
+        }
+    }
+}
+
+var@ lx_token: ()->Token = func ()->Token {
+    loop {
+        var c: _int = call _fgetc finp
+        if _(c == EOF) {
+            return <.1>
+        }
+        if _(c=='[' || c==']' || c=='<' || c=='>' || c=='{' || c=='}' || c==',' || c=='.' || c=='!' || c=='?' || c==':' || c=='=' || c==';') {
+            return <.2 c>
+        }
+        if _{c=='('} {
+            set c = call _fgetc finp
+            call _assert _{c == ')'}
+            return <.5>
+        }
+        if _(isalpha(c)) {
+            var str: String = <.0>
+            loop {
+                set str = new <.1 [c,consume str]>
+                set c = call _fgetc finp
+                if _(!isalpha(c)) {
+                    native _(ungetc(c, finp);)
+                    break
+                }
+            }
+            var key: Maybe(KEY) = call keys_find borrow \\str
+            if key?2 {
+                return <.3 key!2>
+            } else {
+                return <.4 consume str>
+            }
+        }
+        if _(isdigit(c)) {
+            var str: String = <.0>
+            loop {
+                set str = new <.1 [c,consume str]>
+                set c = call _fgetc finp
+                if _(!isdigit(c)) {
+                    native _(ungetc(c, finp);)
+                    break
+                }
+            }
+            var cstr: _(char*) = string_ce2c borrow \\str
+            return <.6 _atoi cstr>
+        }
+
+    }
+}
+
+var@ lexer: ()->() = func ()->() {
+    call lx_blanks
+    set tk0 = copy tk1
+    set tk1 = call lx_token
+    call lx_blanks
+}
+
+var@ tk_check: [_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
+    var enu: _int = arg.1
+    if _(enu == 1) {
+        return tk1?1
+    }
+    if _(enu == 2) {
+        if tk1?2 {
+            var c1: _int = tk1!2
+            var c2: _int = arg.2!2
+            return _(c1 == c2)
+        }
+        return _0
+    }
+    if _(enu == 3) {
+        return tk1?3
+    }
+    if _(enu == 4) {
+        return tk1?4
+    }
+    if _(enu == 5) {
+        return tk1?5
+    }
+    if _(enu == 6) {
+        return tk1?6
+    }
+    call _assert _0
+}
+
+var@ tk_accept: [_int,Maybe(_int)]->_int = func [_int,Maybe(_int)]->_int {
+    var ok: _int = tk_check arg
+    if ok {
+        call lexer
+    }
+    return ok
+}
