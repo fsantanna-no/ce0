@@ -242,16 +242,35 @@ var t_parser: ()->() = func ()->() {
 }
 
 var t_visit: ()->() = func ()->() {
-    var f: FS = func FS {
-        output std arg
+    var@ x: _int = _0
+    var fs: FS = func FS {
+        set x = _(x+1)
+    }
+    var fe: FE = func FE {
+        set x = _(x+1)
+    }
+    var ft: FT = func FT {
+        set x = _(x+1)
     }
     {
         set finp = _{stropen("r", 0, "pass ; pass")}
         call lexer
         {
             var s: Stmt = call parser_stmts
-            call visit [borrow \\s, [<.2 f>,<.1>,<.1>]]
+            call visit_stmt [borrow \\s, [<.2 fs>,<.1>,<.1>]]
         }
+        call _assert _(x == 3)
+        call _fclose finp
+    }
+    set x = _0
+    {
+        set finp = _{stropen("r", 0, "var x: () = ()")}
+        call lexer
+        {
+            var s: Stmt = call parser_stmts
+            call visit_stmt [borrow \\s, [<.2 fs>,<.2 fe>,<.2 ft>]]
+        }
+        call _assert _(x == 3)
         call _fclose finp
     }
 }

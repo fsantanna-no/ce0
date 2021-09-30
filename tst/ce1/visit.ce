@@ -3,12 +3,21 @@
 #define FT (\\Type -> ())
 #define FFF [Maybe(FS),Maybe(FE),Maybe(FT)]
 
-var@ visit: [\\Stmt,FFF]->() = func [\\Stmt,FFF]->() {
+var@ visit_expr: [\\Expr,Maybe(FE)]->() = func [\\Expr,Maybe(FE)]->() {
+    if arg.2?2 {
+        call arg.2!2 borrow arg.1
+    }
+}
+
+var@ visit_stmt: [\\Stmt,FFF]->() = func [\\Stmt,FFF]->() {
     var@ fff: FFF = arg.2
+    if (/arg.1)?2 {
+        call visit_expr [borrow \\(/arg.1)!2.3, fff.2]
+    }
     if (/arg.1)?3 {
         var@ aux: \\List(Stmt)->() = func \\List(Stmt)->() {
             if (/arg)?1 {
-                call visit [borrow \\(/arg)!1.1, fff]
+                call visit_stmt [borrow \\(/arg)!1.1, fff]
                 call aux borrow \\(/arg)!1.2
             }
         }
