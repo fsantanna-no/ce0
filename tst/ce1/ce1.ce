@@ -15,6 +15,7 @@ native _{
 #include "globals.ce"
 #include "lexer.ce"
 #include "parser.ce"
+#include "visit.ce"
 
 var t_pre: ()->() = func ()->() {
     var s1: String   = string_c2ce _("oi")
@@ -240,8 +241,24 @@ var t_parser: ()->() = func ()->() {
     call t_parser_stmt
 }
 
+var t_visit: ()->() = func ()->() {
+    var f: FS = func FS {
+        output std arg
+    }
+    {
+        set finp = _{stropen("r", 0, "pass ; pass")}
+        call lexer
+        {
+            var s: Stmt = call parser_stmts
+            call visit [borrow \\s, [<.2 f>,<.1>,<.1>]]
+        }
+        call _fclose finp
+    }
+}
+
 call t_pre
 call t_lexer
 call t_parser
+call t_visit
 
 output std ()
