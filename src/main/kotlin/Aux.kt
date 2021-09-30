@@ -243,11 +243,20 @@ fun Stmt.aux (up: Any?, env: Env?): Env? {
             //this.type.ups(this)
             val new = Env(this,env)
             this.src.aux(this, new, this.type)
+            All_assert_tk(this.tk, this.type.isSupOf(this.src.e.toType())) {
+                //println(s.type.tostr() + " = " + s.src.e.toType().tostr())
+                "invalid assignment : type mismatch"
+            }
             new
         }
         is Stmt.Set -> {
             this.dst.aux(this, env, Type_Any(this.tk))
             this.src.aux(this, env, this.dst.toType())
+            val str = if (this.dst is Expr.Var && this.dst.tk_.str=="_ret_") "return" else "assignment"
+            All_assert_tk(this.tk, this.dst.toType().isSupOf(this.src.e.toType())) {
+                //println(s.dst.toType().tostr() + " = " + s.src.e.toType().tostr())
+                "invalid $str : type mismatch"
+            }
             env
         }
         is Stmt.Call -> { this.call.aux(this, env, Type_Any(this.tk)) ; env }
@@ -258,6 +267,9 @@ fun Stmt.aux (up: Any?, env: Env?): Env? {
         }
         is Stmt.If -> {
             this.tst.aux(this,env,Type_Nat(this.tk,"int"))
+            All_assert_tk(this.tk, this.tst.toType() is Type.Nat) {
+                "invalid condition : type mismatch"
+            }
             this.true_.aux(this, env)
             this.false_.aux(this, env)
             env

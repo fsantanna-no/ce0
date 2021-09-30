@@ -93,39 +93,6 @@ fun Type.ishasptr (): Boolean {
     }
 }
 
-fun check_types (S: Stmt) {
-    fun fs (s: Stmt) {
-        when (s) {
-            is Stmt.Var -> {
-                All_assert_tk(s.tk, s.type.isSupOf(s.src.e.toType())) {
-                    //println(s.type.tostr() + " = " + s.src.e.toType().tostr())
-                    "invalid assignment : type mismatch"
-                }
-            }
-            is Stmt.Set -> {
-                val str = if (s.dst is Expr.Var && s.dst.tk_.str=="_ret_") "return" else "assignment"
-                All_assert_tk(s.tk, s.dst.toType().isSupOf(s.src.e.toType())) {
-                    //println(s.dst.toType().tostr() + " = " + s.src.e.toType().tostr())
-                    "invalid $str : type mismatch"
-                }
-            }
-            is Stmt.If -> {
-                All_assert_tk(s.tk, s.tst.toType() is Type.Nat) {
-                    "invalid condition : type mismatch"
-                }
-            }
-        }
-    }
-    fun ft (tp: Type) {
-        if (tp is Type.Func) {
-            All_assert_tk(tp.out.tk, !tp.out.containsFunc()) {
-                "invalid type : cannot return function type : currently not supported"
-            }
-        }
-    }
-    S.visit(::fs, null, null, ::ft)
-}
-
 fun Expr.isconst (): Boolean {
     return when (this) {
         is Expr.Unit, is Expr.Unk, is Expr.Call, is Expr.TCons, is Expr.UCons, is Expr.UPred, is Expr.Func -> true

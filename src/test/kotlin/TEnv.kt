@@ -15,7 +15,6 @@ class TEnv {
             s = env_prelude(s)
             aux(s)
             check_dcls(s)
-            check_types(s)
             check_xexprs(s)
             check_pointers(s)
             check_borrows_consumes(s)
@@ -255,7 +254,8 @@ class TEnv {
         val out = inp2env("""
             var x: ()->[(()->())] = ?
         """.trimIndent())
-        assert(out == "(ln 1, col 12): invalid type : cannot return function type : currently not supported")
+        //assert(out == "(ln 1, col 12): invalid type : cannot return function type : currently not supported")
+        assert(out == "OK")
     }
     @Test
     fun c15_type_func_tup () {
@@ -379,7 +379,7 @@ class TEnv {
     }
     @Test
     fun d02_func () {
-        val s = pre("var@ x: ()->() = ? ; var f: ()->() = func ()->() { var y: ()->() = x ; call y ; set x = () }")
+        val s = pre("var@ x: ()->() = ? ; var f: ()->() = func ()->() { var y: ()->() = x ; call y ; set x = ? }")
         fun fe (e: Expr) {
             if (e is Expr.Var) {
                 if (e.tk_.str == "x") {
