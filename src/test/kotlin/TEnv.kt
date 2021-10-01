@@ -1334,7 +1334,7 @@ class TEnv {
             set x.1 = borrow \x.2!1
             var y: <?^> = consume x.2
         """.trimIndent())
-        assert(out == "(ln 2, col 9): invalid assignment of \"x\" : borrowed in line 1")
+        assert(out == "(ln 2, col 9): invalid assignment of \"x\" : borrowed in line 2") { out }
     }
     @Test
     fun l08_borrow_rec_err () {
@@ -1430,6 +1430,17 @@ class TEnv {
                 --return consume ret
             }
             call string_c2ce _x
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+
+    // UNION SELF POINTER
+
+    @Test
+    fun l15_hold_ok () {
+        val out = inp2env("""
+            var x: <(),^> = new <.2 new <.1>>
+            output std \x
         """.trimIndent())
         assert(out == "OK") { out }
     }

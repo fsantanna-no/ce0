@@ -256,7 +256,7 @@ fun check_borrows_consumes (S: Stmt) {
         // z = borrow y
         // bws[x] = { y,z }
         // bws[y] = { z }
-        var bws: MutableMap<Stmt.Var,MutableSet<Stmt.Var>> = mutableMapOf()
+        var bws: MutableMap<Stmt.Var,MutableSet<Pair<Stmt.Var,Int>>> = mutableMapOf()
         var cns: MutableMap<Stmt.Var,Expr.Var> = mutableMapOf()
 
         // f = func A ...
@@ -267,9 +267,9 @@ fun check_borrows_consumes (S: Stmt) {
 
         fun chk_bw (env: Set<Stmt>, s: Stmt.Var, tk: Tk, err: String) {
             if (this.bws[s] != null) {
-                val ok = this.bws[s]!!.intersect(env).isEmpty()  // no borrow is on scope
+                val ok = this.bws[s]!!.map { it.first }.intersect(env).isEmpty()  // no borrow is on scope
                 //val ok = this.bws[s]!!.isEmpty()  // no borrow is on scope
-                val ln = this.bws[s]!!.first().tk.lin
+                val ln = this.bws[s]!!.first().second
                 All_assert_tk(tk, ok) { err + " : borrowed in line $ln" }
             }
         }
@@ -285,14 +285,14 @@ fun check_borrows_consumes (S: Stmt) {
                     if (this.bws[src] == null) {
                         this.bws[src] = mutableSetOf()
                     }
-                    this.bws[src]!!.add(dst)
+                    this.bws[src]!!.add(Pair(dst, xsrc.e.tk.lin))
                     this.bws[src]!!.addAll(if (this.bws[dst] == null) emptySet() else this.bws[dst]!!)
                 }
                 if (xe is XExpr.Consume) {
                     // x = consume y
                     val src = lf.env() as Stmt.Var
                     this.cns[src] = lf // <- y consumed, all bws containing y are also consumed
-                    this.bws.filterValues { it.contains(src) }.keys.forEach {
+                    this.bws.filterValues { it.map { it.first }.contains(src) }.keys.forEach {
                         this.cns[it] = lf
                     }
                 }
