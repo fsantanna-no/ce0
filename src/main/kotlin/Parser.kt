@@ -156,12 +156,24 @@ fun parser_type (all: All): Type {
                             else -> false
                         }
                     }
-                    val vec = tps.toTypedArray()
-                    val isrec = vec.any { f(it, 1) }
+                    fun g (tp: Type, n: Int): Boolean {
+                        return when (tp) {
+                            is Type.Ptr   -> return (tp.pln is Type.Rec) && (n <= tp.pln.tk_.up)
+                            is Type.Tuple -> tp.vec.any { f(it, n) }
+                            is Type.Union -> tp.vec.any { f(it, n+1) }
+                            else -> false
+                        }
+                    }
+                    val vec    = tps.toTypedArray()
+                    val isrec  = vec.any { f(it, 1) }
+                    val ishold = vec.any { g(it, 1) }
                     All_assert_tk(tk0,!isnullable || isrec) {
                         "invalid type declaration : unexpected `?´"
                     }
-                    Type.Union(tk0, isrec, false, isnullable, vec)
+                    All_assert_tk(tk0,!ishold || isrec) {
+                        "invalid type declaration : unexpected recursive pointer"
+                    }
+                    Type.Union(tk0, isrec, ishold, isnullable, vec)
                 }
             }
             else -> {

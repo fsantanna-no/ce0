@@ -1194,6 +1194,13 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK") { out }
     }
+    @Test
+    fun j32_nonrec_hold () {
+        val out = inp2env("""
+            var l: <(),\^> = ?
+        """.trimIndent())
+        assert(out == "(ln 1, col 8): invalid type declaration : unexpected recursive pointer") { out }
+    }
 
     // IF / FUNC
 
