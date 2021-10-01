@@ -63,7 +63,7 @@ fun Type.isSupOf (sub: Type): Boolean {
         (this is Type.Nat  || sub is Type.Nat) -> true
         (this is Type.Union && sub is Type.UCons) -> {
             if (sub.tk_.num == 0) {
-                this.exactlyRec() && this.isnullable && sub.arg is Type.Unit
+                this.exactlyRec() && this.isnull && sub.arg is Type.Unit
             } else {
                 //println(">>> ${this.expand().vec[sub.tk_.num-1].tostr()} = ${sub.arg.tostr()}")
                 //println(">>> ${this.expand().vec[sub.tk_.num-1].expand().tostr()} = ${sub.arg.expand().tostr()}")
@@ -78,7 +78,7 @@ fun Type.isSupOf (sub: Type): Boolean {
         (this is Type.Tuple && sub is Type.Tuple) ->
             (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
         (this is Type.Union && sub is Type.Union) ->
-            (this.isnullable == sub.isnullable) && (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
+            (this.isnull == sub.isnull) && (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y) }
         else -> false
     }
 }

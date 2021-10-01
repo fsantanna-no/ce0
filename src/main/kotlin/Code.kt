@@ -196,7 +196,7 @@ fun code_ft (tp: Type) {
                 ${if (tp.containsRec()) struct.second else "" }
                 void output_std_${_ptr}_ (${tp.pos(true)} v) {
                     ${
-                        if (!tp.isnullable) "" else """
+                        if (!tp.isnull) "" else """
                             if ($xv == NULL) {
                                 printf("<.0>");
                                 return;
@@ -251,7 +251,7 @@ fun code_ft (tp: Type) {
                 }
                 ${tp.pos()} copy_${ce} (${tp.pos(true)} v) {
                     ${ if (!exrec) "${tp.pos()} ret = { ${xxv}.tag };\n" else {
-                        val nul = if (!tp.isnullable) "" else "if (${xv} == NULL) return NULL;"
+                        val nul = if (!tp.isnull) "" else "if (${xv} == NULL) return NULL;"
                         """
                             $nul
                             ${tp.pos()} ret = malloc(sizeof(*ret));
@@ -324,7 +324,7 @@ fun code_fe (e: Expr) {
                 """.trimIndent()
             } else {
                 """
-                ${ if (e.uni.toType().let { it is Type.Union && it.isnullable }) "assert(${it.second} != NULL);\n" else "" }
+                ${ if (e.uni.toType().let { it is Type.Union && it.isnull }) "assert(${it.second} != NULL);\n" else "" }
                 assert($ee.tag == ${e.tk_.num});
 
                 """.trimIndent()
@@ -336,7 +336,7 @@ fun code_fe (e: Expr) {
             val pre = if (e.tk_.num == 0) {
                 "(${it.second} == NULL)"
             } else {
-                (if (e.uni.toType().let { it is Type.Union && it.isnullable }) "(${it.second} != NULL) && " else "") +
+                (if (e.uni.toType().let { it is Type.Union && it.isnull }) "(${it.second} != NULL) && " else "") +
                 "($ee.tag == ${e.tk_.num})"
             }
             Pair(it.first, pre)

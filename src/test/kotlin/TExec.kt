@@ -977,7 +977,10 @@ class TExec {
         val out = all("""
             var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
             var y: <? [<(),\^^>,^]> = new <.1 [<.1>,consume x]>
-            set y!1.2!1.1 = <.2 borrow \y>
+                -- can receive x
+                -- can be consumed by + (but not -)
+                -- can hold itself (or borrows)
+            set y!1.2!1.1 = <.2 hold \y>
             output std \y
         """.trimIndent())
         assert(out == "OK") { out }
