@@ -1201,6 +1201,13 @@ class TEnv {
         """.trimIndent())
         assert(out == "(ln 1, col 8): invalid type declaration : unexpected recursive pointer") { out }
     }
+    @Test
+    fun j32_rec_hold () {
+        val out = inp2env("""
+            var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
 
     // IF / FUNC
 
@@ -1444,11 +1451,60 @@ class TEnv {
     // UNION SELF POINTER
 
     @Test
-    fun l15_hold_ok () {
+    fun m01_hold_ok () {
         val out = inp2env("""
             var x: <(),^> = new <.2 new <.1>>
             output std \x
         """.trimIndent())
         assert(out == "OK") { out }
     }
+    @Test
+    fun m02_borrow_err () {
+        val out = inp2env("""
+            var x: <()> = <.1>
+            var y: \() = borrow \x!1
+            set x = <.1>
+        """.trimIndent())
+        assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2") { out }
+    }
+    @Test
+    fun m03_hold_ok () {
+        val out = inp2env("""
+            var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
+            var y: <? [<(),\^^>,^]> = new <.1 [<.1>,consume x]>
+            set y!1.2!1.1 = <.1>
+            -- <.1 [<.1>,<.1 [<.1>,<.0>]>]>
+            output std \y
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun m04_hold_err () {
+        val out = inp2env("""
+            var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
+            var y: <? [<(),\^^>,^]> = new <.1 [<.1>,consume x]>
+                -- can receive x
+                -- can be consumed by + (but not -)
+                -- can hold itself (or borrows)
+                -- cannot set its parts
+            set y!1.2!1.1 = <.2 \y>
+            output std \y
+        """.trimIndent())
+        assert(out == "(ln 7, col 21): invalid expression : expected `hold` operation modifier") { out }
+    }
+    @Test
+    fun m05_hold_ok () {
+        val out = inp2env("""
+            var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
+            var y: <? [<(),\^^>,^]> = new <.1 [<.1>,consume x]>
+                -- can receive x
+                -- can be consumed by + (but not -)
+                -- can hold itself (or borrows)
+                -- cannot set its parts
+            set y!1.2!1.1 = <.2 \y>
+            output std \y
+        """.trimIndent())
+        assert(out == "(ln 7, col 21): invalid expression : expected `hold` operation modifier") { out }
+    }
+
 }

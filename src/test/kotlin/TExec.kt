@@ -954,16 +954,7 @@ class TExec {
     // UNION SELF POINTER
 
     @Test
-    fun l01_borrow_err () {
-        val out = all("""
-            var x: <()> = <.1>
-            var y: \() = borrow \x!1
-            set x = <.1>
-        """.trimIndent())
-        assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2") { out }
-    }
-    @Test
-    fun l02_hold_ok () {
+    fun m03_hold_ok () {
         val out = all("""
             var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
             var y: <? [<(),\^^>,^]> = new <.1 [<.1>,consume x]>
@@ -971,19 +962,6 @@ class TExec {
             output std \y
         """.trimIndent())
         assert(out == "<.1 [<.1>,<.1 [<.1>,<.0>]>]>\n") { out }
-    }
-    @Test
-    fun l04_hold_ok () {
-        val out = all("""
-            var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
-            var y: <? [<(),\^^>,^]> = new <.1 [<.1>,consume x]>
-                -- can receive x
-                -- can be consumed by + (but not -)
-                -- can hold itself (or borrows)
-            set y!1.2!1.1 = <.2 hold \y>
-            output std \y
-        """.trimIndent())
-        assert(out == "OK") { out }
     }
 
     // ALL

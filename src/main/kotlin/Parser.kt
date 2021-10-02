@@ -158,7 +158,7 @@ fun parser_type (all: All): Type {
                     }
                     fun g (tp: Type, n: Int): Boolean {
                         return when (tp) {
-                            is Type.Ptr   -> return (tp.pln is Type.Rec) && (n <= tp.pln.tk_.up)
+                            is Type.Ptr   -> return (tp.pln is Type.Rec) && (n == tp.pln.tk_.up)
                             is Type.Tuple -> tp.vec.any { f(it, n) }
                             is Type.Union -> tp.vec.any { f(it, n+1) }
                             else -> false
