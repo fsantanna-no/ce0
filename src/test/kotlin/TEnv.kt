@@ -1483,17 +1483,23 @@ class TEnv {
         val out = inp2env("""
             var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
             var y: <? [<(),\^^>,^]> = new <.1 [<.1>,consume x]>
-                -- can receive x
-                -- can be consumed by + (but not -)
-                -- can hold itself (or borrows)
-                -- cannot set its parts
             set y!1.2!1.1 = <.2 \y>
             output std \y
         """.trimIndent())
-        assert(out == "(ln 7, col 21): invalid expression : expected `hold` operation modifier") { out }
+        assert(out == "(ln 3, col 21): invalid expression : expected `hold` operation modifier") { out }
     }
     @Test
-    fun m05_hold_ok () {
+    fun m05_hold_err () {
+        val out = inp2env("""
+            var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
+            var y: <? [<(),\^^>,^]> = new <.1 [<.1>,consume x]>
+            set y!1.2!1.1 = <.2 \y>
+            output std \y
+        """.trimIndent())
+        assert(out == "(ln 3, col 21): invalid expression : expected `hold` operation modifier") { out }
+    }
+    @Test
+    fun m06_hold_ok () {
         val out = inp2env("""
             var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
             var y: <? [<(),\^^>,^]> = new <.1 [<.1>,consume x]>
@@ -1501,10 +1507,29 @@ class TEnv {
                 -- can be consumed by + (but not -)
                 -- can hold itself (or borrows)
                 -- cannot set its parts
-            set y!1.2!1.1 = <.2 \y>
+            set y!1.2!1.1 = <.2 hold \y>
             output std \y
         """.trimIndent())
-        assert(out == "(ln 7, col 21): invalid expression : expected `hold` operation modifier") { out }
+        assert(out == "OK") { out }
     }
-
+    @Test
+    fun m07_hold_err () {
+        val out = inp2env("""
+            var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
+            var y: <? [<(),\^^>,^]> = new <.1 [<.1>,consume x]>
+            set y!1.2!1.1 = <.2 borrow \y>
+            output std \y
+        """.trimIndent())
+        assert(out == "(ln 3, col 28): invalid `borrow` : expected pointer to recursive variable") { out }
+    }
+    @Test
+    fun m08_borrow_ok () {
+        val out = inp2env("""
+            var x: <?[(),^]> = new <.1 [(),<.0>]>
+            var y: [(),<?[(),^]>] = [(), new <.1 [(),<.0>]>]
+            var z: [(),\<?[(),^]>] = [(), borrow \x]
+            output std (/z.2)!1.2!0
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
 }

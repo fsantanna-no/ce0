@@ -65,6 +65,7 @@ sealed class XExpr (val e: Expr) {
     data class Consume (val e_: Expr): XExpr(e_)
     data class Copy    (val e_: Expr): XExpr(e_)
     data class Borrow  (val e_: Expr): XExpr(e_)
+    data class Hold    (val e_: Expr): XExpr(e_)
 }
 
 sealed class Expr (val tk: Tk) {
@@ -159,8 +160,8 @@ fun parser_type (all: All): Type {
                     fun g (tp: Type, n: Int): Boolean {
                         return when (tp) {
                             is Type.Ptr   -> return (tp.pln is Type.Rec) && (n == tp.pln.tk_.up)
-                            is Type.Tuple -> tp.vec.any { f(it, n) }
-                            is Type.Union -> tp.vec.any { f(it, n+1) }
+                            is Type.Tuple -> tp.vec.any { g(it, n) }
+                            is Type.Union -> tp.vec.any { g(it, n+1) }
                             else -> false
                         }
                     }
@@ -224,6 +225,10 @@ fun parser_xexpr (all: All, canpre: Boolean): XExpr {
             all.accept(TK.BORROW) -> {
                 val e = parser_expr(all, canpre)
                 XExpr.Borrow(e)
+            }
+            all.accept(TK.HOLD) -> {
+                val e = parser_expr(all, canpre)
+                XExpr.Hold(e)
             }
             else -> throw xxx
         }

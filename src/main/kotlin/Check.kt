@@ -115,17 +115,22 @@ fun check_xexprs (S: Stmt) {
         val is_ptr_to_udisc = (xp is Type.Ptr) && xe.e.containsUDisc() //xp.pln.containsUDisc() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
         val is_ptr_to_ctrec = (xp is Type.Ptr) && xp.pln.containsRec() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
         val is_ptr_to_hold  = (xp is Type.Ptr) && xp.pln.exactlyRec() && (xp.pln as Type.Union).ishold
+
         when (xe) {
             is XExpr.None -> All_assert_tk(xe.e.tk, !is_ptr_to_udisc && !is_ptr_to_ctrec && (!xp_ctrec || (e_iscst && (!e_isvar||!xp_exrec||e_isnil)))) {
                 val op = when {
-                    (is_ptr_to_udisc || is_ptr_to_ctrec) -> if (is_ptr_to_hold) "`hold` " else "`borrow` "
+                    is_ptr_to_hold -> "`hold` "
+                    (is_ptr_to_udisc || is_ptr_to_ctrec) && !is_ptr_to_hold -> "`borrow` "
                     e_iscst -> "`new` "
                     else -> ""
                 }
                 "invalid expression : expected " + op + "operation modifier"
             }
-            is XExpr.Borrow -> All_assert_tk(xe.e.tk, is_ptr_to_udisc||is_ptr_to_ctrec) {
+            is XExpr.Borrow -> All_assert_tk(xe.e.tk, (is_ptr_to_udisc||is_ptr_to_ctrec) && !is_ptr_to_hold) {
                 "invalid `borrow` : expected pointer to recursive variable"
+            }
+            is XExpr.Hold -> All_assert_tk(xe.e.tk, is_ptr_to_hold) {
+                "invalid `hold` : expected pointer to recursive variable"
             }
             is XExpr.Copy -> All_assert_tk(xe.e.tk, xp_ctrec && !e_iscst) {
                 "invalid `copy` : expected recursive variable"

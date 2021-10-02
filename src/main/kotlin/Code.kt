@@ -396,7 +396,7 @@ fun code_fx (xe: XExpr) {
     val ID  = "__tmp_" + xe.hashCode().absoluteValue
 
     EXPRS.addFirst(when (xe) {
-        is XExpr.None, is XExpr.Borrow -> top
+        is XExpr.None, is XExpr.Borrow, is XExpr.Hold -> top
         is XExpr.New  -> {
             assert(xe.e is Expr.UCons)
             val xee = xe.e as Expr.UCons

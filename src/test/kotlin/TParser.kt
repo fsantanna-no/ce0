@@ -95,6 +95,14 @@ class TParser {
         val tp = parser_type(all)
         assert(tp is Type.Ptr && tp.pln is Type.Unit)
     }
+    @Test
+    fun a10_parser_type_ptr () {
+        val all = All_new(PushbackReader(StringReader("\\<?[^]>"), 2))
+        lexer(all)
+        val tp = parser_type(all)
+        println(tp)
+        assert(tp is Type.Ptr && !(tp.pln as Type.Union).ishold)
+    }
 
     // EXPR
 
