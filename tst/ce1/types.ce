@@ -8,11 +8,11 @@
 #define Type <(),List(^^),List(^^)>
     -- Unit, Tuple, Union
 
-#define Expr_(s) <(), String, List(^^), [_int,^], [^,_int], [^,_int], [^,_int], [^,^], [Type,()]>
+#define Expr_(s) <(), String, List(^^), [_int,^], [^,_int], [^,_int], [^,_int], [^,^], [Type,s]>
     -- Unit, Var, TCons, UCons, TDisc, UDisc, UPred, Call, Func
 
 #define Stmt_(e) <(), [String,Type,e], List(^^)>
-    -- Seq, Var
+    -- Pass, Var, Seq
 
 #define Expr Expr_(Stmt_(^^))
 #define Stmt Stmt_(Expr_(^^))

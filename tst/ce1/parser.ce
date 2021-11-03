@@ -31,6 +31,8 @@ var@ parser_type: ()->Maybe(Type) = func ()->Maybe(Type) {
     return <.1>
 }
 
+var@ parser_stmts: ()->Stmt = ?
+
 -- EOF,sym,key,var,unit
 -- Unit, Var, TCons, UCons, TDisc, UDisc, Call, Func
 var@ parser_expr: ()->Maybe(Expr) = func ()->Maybe(Expr) {
@@ -66,6 +68,17 @@ var@ parser_expr: ()->Maybe(Expr) = func ()->Maybe(Expr) {
         }
         call _assert tk_accept [_2, <.2 _('>')>]
         return <.2 new <.4 [n, consume e!2]>>
+    }
+    var ok: _int = call tk_accept [_3, <.1>]
+    if _(ok) {
+        if tk0!3?4 {  -- func
+            var tp: Maybe(Type) = call parser_type ()
+            call _assert tp?2
+            call _assert tk_accept [_2, <.2 _('{')>]
+            var s: Stmt = call parser_stmts ()
+            call _assert tk_accept [_2, <.2 _('}')>]
+            return <.2 new <.9 [consume tp!2, consume s]>>
+        }
     }
     return <.1>
 }
@@ -134,7 +147,7 @@ var@ parser_stmt: ()->Maybe(Stmt) = func ()->Maybe(Stmt) {
     call _assert _0
 }
 
-var@ parser_stmts: ()->Stmt = func ()->Stmt {
+set parser_stmts = func ()->Stmt {
     var ret: List(Stmt) = <.0>
     loop {
         call tk_accept [_2, <.2 _(';')>]
