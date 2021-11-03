@@ -13,6 +13,7 @@ sealed class Type (val tk: Tk) {
 
 fun Type.tostr (): String {
     return when (this) {
+        is Type.Any   -> "?"
         is Type.Unit  -> "()"
         is Type.Nat   -> this.tk_.str
         is Type.Rec   -> "^".repeat(this.tk_.up)
@@ -20,6 +21,7 @@ fun Type.tostr (): String {
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
         is Type.UCons -> "<." + this.tk_.num + " " + this.arg.tostr() + ">"
+        is Type.Func  -> this.inp.tostr() + " -> " + this.out.tostr()
         else -> error("$this")
     }
 }

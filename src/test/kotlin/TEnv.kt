@@ -886,11 +886,27 @@ class TEnv {
         assert(out == "(ln 1, col 39): invalid expression : expected `new` operation modifier")
     }
     @Test
-    fun i03_list_err () {
+    fun i07_list_err () {
         val out = inp2env("""
             var ret: <[_int,<^>]> = <.0>
         """.trimIndent())
         assert(out == "(ln 1, col 27): invalid constructor : out of bounds") { out }
+    }
+    @Test
+    fun i08_mutual () {
+        val out = inp2env("""
+            var e: <(), <(),^^>> = new <.2 new <.1>>
+            var s: <(), <(),^^>> = consume e!2
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun i09_mutual () {
+        val out = inp2env("""
+            var e: <<^^,()>, ()> = new <.1 new <.2>>
+            var s: <<^^,()>, ()> = consume e!1
+        """.trimIndent())
+        assert(out == "OK") { out }
     }
 
     // XEXPR
