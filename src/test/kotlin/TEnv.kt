@@ -998,32 +998,53 @@ class TEnv {
         assert(out == "OK")
     }
     @Test
+    fun j10_rec_tup () {
+        val out = inp2env("""
+            var x: <(),[^^]> = new <.2 [new <.1>]>
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
     fun j10_rec_xepr_double_rec () {
         val out = inp2env("""
-            var x: <?<?[^^,^]>> = new <.1 new <.1 [<.0>,<.0>]>>
+            var x: <?<?[^^^,^^]>> = new <.1 new <.1 [<.0>,<.0>]>>
         """.trimIndent())
         assert(out == "OK")
     }
     @Test
     fun j11_rec_xepr_double_rec () {
         val out = inp2env("""
-            var x: <?<?[^^,^]>> = new <.1 new <.1 [<.0>,<.0>]>>
+            var x: <?<?[^^^,^^]>> = new <.1 new <.1 [<.0>,<.0>]>>
         """.trimIndent())
         assert(out == "OK") { out }
     }
     @Test
     fun j11_rec_xepr_double_rec2 () {
         val out = inp2env("""
-            var x: <?<?[^^,^]>> = new <.1 new <.1 [<.0>,new <.1 [<.0>,<.0>]>]>>
+            var x: <?[^^]> = new <.1 [<.0>]>
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun j11_rec_xepr_double_rec3 () {
+        val out = inp2env("""
+            var x: <?[^^,^^]> = new <.1 [<.0>,<.0>]>
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun j11_rec_xepr_double_rec4 () {
+        val out = inp2env("""
+            var x: <?<?[^^^,^^]>> = new <.1 new <.1 [<.0>,new <.1 [<.0>,<.0>]>]>>
         """.trimIndent())
         assert(out == "OK") { out }
     }
     @Test
     fun j12_rec_xepr_double_rec_err () {
         val out = inp2env("""
-            var x: <?<?[^^,^]>> = new <.1 <.1 [<.0>,<.0>]>>
+            var x: <?<?[^^^,^^]>> = new <.1 <.1 [<.0>,<.0>]>>
         """.trimIndent())
-        assert(out == "(ln 1, col 33): invalid expression : expected `new` operation modifier")
+        assert(out == "(ln 1, col 35): invalid expression : expected `new` operation modifier") { out }
     }
     @Test
     fun j13_tup_move_no () {
@@ -1220,7 +1241,7 @@ class TEnv {
     @Test
     fun j32_rec_hold () {
         val out = inp2env("""
-            var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
+            var x: <? [<(),\^^^>,^^]> = new <.1 [<.1>,<.0>]>
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1451,7 +1472,7 @@ class TEnv {
     @Test
     fun l14_consume_ok () {
         val out = inp2env("""
-            var string_c2ce: _(char*)-><?[_int,^]> = func _(char*)-><?[_int,^]> {
+            var string_c2ce: _(char*)-><?[_int,^^]> = func _(char*)-><?[_int,^^]> {
                 var ret: <?^> = <.0>
                 loop {
                     set ret = consume ret
@@ -1486,8 +1507,8 @@ class TEnv {
     @Test
     fun m03_hold_ok () {
         val out = inp2env("""
-            var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
-            var y: <? [<(),\^^>,^]> = new <.1 [<.1>,consume x]>
+            var x: <? [<(),\^^^>,^^]> = new <.1 [<.1>,<.0>]>
+            var y: <? [<(),\^^^>,^^]> = new <.1 [<.1>,consume x]>
             set y!1.2!1.1 = <.1>
             -- <.1 [<.1>,<.1 [<.1>,<.0>]>]>
             output std \y
@@ -1497,8 +1518,8 @@ class TEnv {
     @Test
     fun m04_hold_err () {
         val out = inp2env("""
-            var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
-            var y: <? [<(),\^^>,^]> = new <.1 [<.1>,consume x]>
+            var x: <? [<(),\^^^>,^^]> = new <.1 [<.1>,<.0>]>
+            var y: <? [<(),\^^^>,^^]> = new <.1 [<.1>,consume x]>
             set y!1.2!1.1 = <.2 \y>
             output std \y
         """.trimIndent())
@@ -1507,8 +1528,8 @@ class TEnv {
     @Test
     fun m05_hold_err () {
         val out = inp2env("""
-            var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
-            var y: <? [<(),\^^>,^]> = new <.1 [<.1>,consume x]>
+            var x: <? [<(),\^^^>,^^]> = new <.1 [<.1>,<.0>]>
+            var y: <? [<(),\^^^>,^^]> = new <.1 [<.1>,consume x]>
             set y!1.2!1.1 = <.2 \y>
             output std \y
         """.trimIndent())
@@ -1517,8 +1538,8 @@ class TEnv {
     @Test
     fun m06_hold_ok () {
         val out = inp2env("""
-            var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
-            var y: <? [<(),\^^>,^]> = new <.1 [<.1>,consume x]>
+            var x: <? [<(),\^^^>,^^]> = new <.1 [<.1>,<.0>]>
+            var y: <? [<(),\^^^>,^^]> = new <.1 [<.1>,consume x]>
                 -- can receive x
                 -- can be consumed by + (but not -)
                 -- can hold itself (or borrows)
@@ -1531,8 +1552,8 @@ class TEnv {
     @Test
     fun m07_hold_err () {
         val out = inp2env("""
-            var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
-            var y: <? [<(),\^^>,^]> = new <.1 [<.1>,consume x]>
+            var x: <? [<(),\^^^>,^^]> = new <.1 [<.1>,<.0>]>
+            var y: <? [<(),\^^^>,^^]> = new <.1 [<.1>,consume x]>
             set y!1.2!1.1 = <.2 borrow \y>
             output std \y
         """.trimIndent())
@@ -1541,9 +1562,9 @@ class TEnv {
     @Test
     fun m08_borrow_ok () {
         val out = inp2env("""
-            var x: <?[(),^]> = new <.1 [(),<.0>]>
-            var y: [(),<?[(),^]>] = [(), new <.1 [(),<.0>]>]
-            var z: [(),\<?[(),^]>] = [(), borrow \x]
+            var x: <?[(),^^]> = new <.1 [(),<.0>]>
+            var y: [(),<?[(),^^]>] = [(), new <.1 [(),<.0>]>]
+            var z: [(),\<?[(),^^]>] = [(), borrow \x]
             output std (/z.2)!1.2!0
         """.trimIndent())
         assert(out == "OK") { out }
@@ -1551,7 +1572,7 @@ class TEnv {
     @Test
     fun m09_hold_err () {
         val out = inp2env("""
-            var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
+            var x: <? [<(),\^^^>,^^]> = new <.1 [<.1>,<.0>]>
             set x!1.1 = <.2 ?>  -- ok
             set x!1.2 = <.0>    -- no if set previously
         """.trimIndent())

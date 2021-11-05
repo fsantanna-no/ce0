@@ -45,11 +45,11 @@ fun Type.keepAnyNat (other: ()->Type): Type {
     }
 }
 
-fun Type.Union.expand (): Type.Union {
+fun Type.expand (): Array<Type> {
     fun aux (cur: Type, up: Int): Type {
         return when (cur) {
             is Type.Rec   -> if (up == cur.tk_.up) this else { assert(up>cur.tk_.up) ; cur }
-            is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray())
+            is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up+1) }.toTypedArray())
             is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.ishold, cur.isnull, cur.vec.map { aux(it,up+1) }.toTypedArray())
             is Type.Ptr   -> Type.Ptr(cur.tk_, aux(cur.pln,up))
             is Type.Func  -> Type.Func(cur.tk_, aux(cur.inp,up), aux(cur.out,up))
@@ -57,7 +57,11 @@ fun Type.Union.expand (): Type.Union {
             else -> cur
         }
     }
-    return Type.Union(this.tk_, this.isrec, this.ishold, this.isnull, this.vec.map { aux(it, 1) }.toTypedArray())
+    return when (this) {
+        is Type.Union -> this.vec.map { aux(it, 1) }.toTypedArray()
+        is Type.Tuple -> this.vec.map { aux(it, 1) }.toTypedArray()
+        else -> error("bug found")
+    }
 }
 
 sealed class XExpr (val e: Expr) {
@@ -154,7 +158,7 @@ fun parser_type (all: All): Type {
                     fun f (tp: Type, n: Int): Boolean {
                         return when (tp) {
                             is Type.Rec   -> return n <= tp.tk_.up
-                            is Type.Tuple -> tp.vec.any { f(it, n) }
+                            is Type.Tuple -> tp.vec.any { f(it, n+1) }
                             is Type.Union -> tp.vec.any { f(it, n+1) }
                             else -> false
                         }
@@ -162,7 +166,7 @@ fun parser_type (all: All): Type {
                     fun g (tp: Type, n: Int): Boolean {
                         return when (tp) {
                             is Type.Ptr   -> return (tp.pln is Type.Rec) && (n == tp.pln.tk_.up)
-                            is Type.Tuple -> tp.vec.any { g(it, n) }
+                            is Type.Tuple -> tp.vec.any { g(it, n+1) }
                             is Type.Union -> tp.vec.any { g(it, n+1) }
                             else -> false
                         }

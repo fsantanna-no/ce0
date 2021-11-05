@@ -109,7 +109,7 @@ fun Expr.toType (): Type {
                 assert(it.exactlyRec()) { "bug found" }
                 Type_Unit(this.tk)
             } else {
-                it.expand().vec[this.tk_.num - 1]
+                it.expand()[this.tk_.num - 1]
             }
         }
         is Expr.Var -> this.env()!!.type
@@ -164,7 +164,7 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
                 All_assert_tk(this.tk, MIN<=this.tk_.num && this.tk_.num<=MAX) {
                     "invalid constructor : out of bounds"
                 }
-                if (this.tk_.num > 0) xp.expand().vec[this.tk_.num - 1] else Type_Unit(this.tk)
+                if (this.tk_.num > 0) xp.expand()[this.tk_.num - 1] else Type_Unit(this.tk)
             } else {
                 Type_Any(this.tk)
             }

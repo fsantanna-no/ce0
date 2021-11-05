@@ -162,7 +162,7 @@ fun code_ft (tp: Type) {
                 struct $ce {
                     int tag;
                     union {
-                        ${tpexp.vec  // do not filter to keep correct i
+                        ${tpexp  // do not filter to keep correct i
                         .mapIndexed { i,sub ->
                             when {
                                 sub is Type.Unit -> ""
@@ -179,7 +179,7 @@ fun code_ft (tp: Type) {
 
             TYPES.add(Triple(
                 //Pair(ce, deps(tpexp.vec.toSet()).let { println(ce);println(it);it }),
-                Pair(ce, deps(tpexp.vec.toSet())),
+                Pair(ce, deps(tpexp.toSet())),
             """
                 ${if (tp.containsRec()) struct.first else struct.second }
                 void output_std_${_ptr}_ (${tp.pos(true)} v);
@@ -206,7 +206,7 @@ fun code_ft (tp: Type) {
                     }
                     printf("<.%d", $xxv.tag);
                     switch ($xxv.tag) {
-                        ${tpexp.vec
+                        ${tpexp
                             .mapIndexed { i,sub -> """
                                 case ${i+1}:
                                 ${
@@ -235,7 +235,7 @@ fun code_ft (tp: Type) {
                     ${ "" /*if (!tp.isnullable) "" else "if (${xv} == NULL) return;\n"*/ }
                     if (${xv} == NULL) return;
                     switch ((${xxv}).tag) {
-                        ${ tpexp.vec
+                        ${ tpexp
                             .mapIndexed { i,tp2 ->
                                 if (!tp2.containsRec()) "" else """
                                     case ${i+1}:
@@ -261,7 +261,7 @@ fun code_ft (tp: Type) {
                         """.trimIndent()
                     } }
                     switch ((${xxv}).tag) {
-                        ${ tpexp.vec
+                        ${ tpexp
                             .mapIndexed { i,sub -> if (sub is Type.Unit) "" else
                                 "case ${i+1}:\n" + (
                                     if (sub.containsRec()) {

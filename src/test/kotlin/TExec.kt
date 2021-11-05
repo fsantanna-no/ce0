@@ -889,8 +889,8 @@ class TExec {
     @Test
     fun j17_uni_rec () {
         val out = all("""
-            var v1: <(),<?[^^,^]>> = new <.2 <.0>>
-            var v2: <(),<?[^^,^]>> = new <.2 new <.1 [new <.1>,<.0>]>>
+            var v1: <(),<?[^^^,^^]>> = new <.2 <.0>>
+            var v2: <(),<?[^^^,^^]>> = new <.2 new <.1 [new <.1>,<.0>]>>
             output std \v1
             output std \v2
         """.trimIndent())
@@ -956,8 +956,8 @@ class TExec {
     @Test
     fun m03_hold_ok () {
         val out = all("""
-            var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
-            var y: <? [<(),\^^>,^]> = new <.1 [<.1>,consume x]>
+            var x: <? [<(),\^^^>,^^]> = new <.1 [<.1>,<.0>]>
+            var y: <? [<(),\^^^>,^^]> = new <.1 [<.1>,consume x]>
             set y!1.2!1.1 = <.1>
             output std \y
         """.trimIndent())
@@ -1040,9 +1040,9 @@ class TExec {
     @Test
     fun z06_type_complex () {
         val out = all("""
-            var x: <?[(),^]> = new <.1 [(),<.0>]>
-            var y: [(),<?[(),^]>] = [(), new <.1 [(),<.0>]>]
-            var z: [(),\<?[(),^]>] = [(), borrow \x]
+            var x: <?[(),^^]> = new <.1 [(),<.0>]>
+            var y: [(),<?[(),^^]>] = [(), new <.1 [(),<.0>]>]
+            var z: [(),\<?[(),^^]>] = [(), borrow \x]
             output std (/z.2)!1.2!0
         """.trimIndent())
         assert(out == "()\n")
@@ -1050,8 +1050,8 @@ class TExec {
     @Test
     fun z07_type_complex () {
         val out = all("""
-            var x: <?[(),^]> = <.0>
-            var z: [(),\<?[(),^]>] = [(), borrow \x]
+            var x: <?[(),^^]> = <.0>
+            var z: [(),\<?[(),^^]>] = [(), borrow \x]
             output std (/z.2)!0
         """.trimIndent())
         assert(out == "()\n")
@@ -1059,7 +1059,7 @@ class TExec {
     @Test
     fun z08_type_complex () {
         val out = all("""
-            var y: [(),<?[(),^]>] = [(), new <.1 [(),<.0>]>]
+            var y: [(),<?[(),^^]>] = [(), new <.1 [(),<.0>]>]
             output std \y
         """.trimIndent())
         assert(out == "[(),<.1 [(),<.0>]>]\n")
@@ -1086,7 +1086,7 @@ class TExec {
     fun z09_output_string () {
         val out = all("""
             var f: ()->() = func ()->() {
-                var s1: <?[_int,^]> = new <.1 [_1,<.0>]>
+                var s1: <?[_int,^^]> = new <.1 [_1,<.0>]>
                 output std \s1
             }
             call f
@@ -1097,7 +1097,7 @@ class TExec {
     fun z10_output_string () {
         val out = all("""
             var f: ()->() = func ()->() {
-                var s1: <?[_int,^]> = new <.1 [_1,<.0>]>
+                var s1: <?[_int,^^]> = new <.1 [_1,<.0>]>
                 output std \s1
             }
             call f
@@ -1107,11 +1107,11 @@ class TExec {
     @Test
     fun z10_return_move () {
         val out = all("""
-            var f: ()-><(),_int,<?[_int,^]>> = func ()-><(),_int,<?[_int,^]>> {
-                var str: <?[_int,^]> = <.0>
+            var f: ()-><(),_int,<?[_int,^^]>> = func ()-><(),_int,<?[_int,^^]>> {
+                var str: <?[_int,^^]> = <.0>
                 return <.3 replace str=<.0>>
             }
-            var x: <(),_int,<?[_int,^]>> = call f ()
+            var x: <(),_int,<?[_int,^^]>> = call f ()
             output std \x!3
         """.trimIndent())
         assert(out == "<.0>\n")
@@ -1127,8 +1127,8 @@ class TExec {
     @Test
     fun z12_union_tuple () {
         val out = all("""
-            var tk2: <(),_int,<?[_int,^]>> = <.3 <.0>>
-            var s21: \<?[_int,^]> = borrow \tk2!3
+            var tk2: <(),_int,<?[_int,^^]>> = <.3 <.0>>
+            var s21: \<?[_int,^^]> = borrow \tk2!3
             output std s21
         """.trimIndent())
         assert(out == "<.0>\n")
@@ -1166,8 +1166,8 @@ class TExec {
     @Test
     fun z16_acc_move_sub () {
         val out = all("""
-            var x: <(),[(),^]> = new <.2 [(),new <.1>]>
-            var y: [(),<(),[(),^]>] = [(), replace x!2.2=new <.1>]
+            var x: <(),[(),^^]> = new <.2 [(),new <.1>]>
+            var y: [(),<(),[(),^^]>] = [(), replace x!2.2=new <.1>]
             output std \x
             output std \y
         """.trimIndent())
