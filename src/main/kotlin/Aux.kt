@@ -240,11 +240,9 @@ fun Stmt.aux (up: Any?, env: Env?): Env? {
     env_add(this, env)
     return when (this) {
         is Stmt.Var -> {
-            //this.type.ups(this)
             val new = Env(this,env)
             this.src.aux(this, new, this.type)
             All_assert_tk(this.tk, this.type.isSupOf(this.src.e.toType())) {
-                //println(s.type.tostr() + " = " + s.src.e.toType().tostr())
                 "invalid assignment : type mismatch"
             }
             new
@@ -254,7 +252,6 @@ fun Stmt.aux (up: Any?, env: Env?): Env? {
             this.src.aux(this, env, this.dst.toType())
             val str = if (this.dst is Expr.Var && this.dst.tk_.str=="_ret_") "return" else "assignment"
             All_assert_tk(this.tk, this.dst.toType().isSupOf(this.src.e.toType())) {
-                //println(s.dst.toType().tostr() + " = " + s.src.e.toType().tostr())
                 "invalid $str : type mismatch"
             }
             env

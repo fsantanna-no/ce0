@@ -17,7 +17,7 @@ class TEnv {
             check_dcls(s)
             check_xexprs(s)
             check_pointers(s)
-            check_borrows_consumes(s)
+            check_borrows_consumes_holds(s)
             return "OK"
         } catch (e: Throwable) {
             //throw e
@@ -1548,4 +1548,15 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK") { out }
     }
+    @Test
+    fun m09_hold_err () {
+        val out = inp2env("""
+            var x: <? [<(),\^^>,^]> = new <.1 [<.1>,<.0>]>
+            set x!1.1 = <.2 ?>  -- ok
+            set x!1.2 = <.0>    -- no if set previously
+        """.trimIndent())
+        assert(out == "err") { out }
+    }
 }
+
+// dblinklist, prevent reset/grow, prevent set de ptr de fora, nao pode copy/move

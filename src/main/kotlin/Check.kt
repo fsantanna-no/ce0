@@ -88,7 +88,7 @@ fun Type.isSupOf (sub: Type): Boolean {
 }
 
 fun Type.isSupOf_ (sub: Type, ups1: List<Type.Union>, ups2: List<Type.Union>): Boolean {
-    println(this.tostr() + " = " + sub.tostr())
+    //println(this.tostr() + " = " + sub.tostr())
     return when {
         (this is Type.None || sub is Type.None) -> false
         (this is Type.Any  || sub is Type.Any) -> true
@@ -306,7 +306,7 @@ fun Type.containsUnion (): Boolean {
     }
 }
 
-fun check_borrows_consumes (S: Stmt) {
+fun check_borrows_consumes_holds (S: Stmt) {
     class State: IState {
         // y = borrow \x
         // z = borrow y
@@ -406,9 +406,9 @@ fun check_borrows_consumes (S: Stmt) {
                     fs_add(dcl, s.src.e)
                 } else {
                     //if (s.src.x!=null && s.src.x.enu==TK.BORROW) {
-                    val isuniptr = tp.containsUnion() || (tp is Type.Ptr && tp.pln.containsUnion())
-                    val isrecptr = tp.containsRec() || (tp is Type.Ptr && tp.pln.containsRec())
-                    if (isuniptr || isrecptr) {
+                    val isptruni = tp.containsUnion() || (tp is Type.Ptr && tp.pln.containsUnion())
+                    val isptrrec = tp.containsRec()   || (tp is Type.Ptr && tp.pln.containsRec())
+                    if (isptruni || isptrrec) {
                         st.bws_cns_add(dcl, s.src)
                         st.chk_bw(lf.env_toset(), dcl, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
                     }
@@ -418,6 +418,9 @@ fun check_borrows_consumes (S: Stmt) {
                     st.cns.remove(dcl)
                 } else {
                     st.chk_cn(dcl, null, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
+                    if (tp is Type.Union && tp.ishold) {
+                        All_assert_tk(s.tk, tp.containsUnion()) { "TODO" }
+                    }
                 }
             }
         }
