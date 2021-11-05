@@ -103,7 +103,7 @@ fun Expr.toType (): Type {
         }
         is Expr.Func  -> this.type
         is Expr.UPred -> Type.Nat(Tk.Str(TK.XNAT, this.tk.lin, this.tk.col, "int"))
-        is Expr.TDisc -> (this.tup.toType() as Type.Tuple).vec[this.tk_.num-1]
+        is Expr.TDisc -> (this.tup.toType() as Type.Tuple).expand()[this.tk_.num-1]
         is Expr.UDisc -> (this.uni.toType() as Type.Union).let {
             if (this.tk_.num == 0) {
                 assert(it.exactlyRec()) { "bug found" }
@@ -155,7 +155,7 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
                 "invalid constructor : out of bounds"
             }
             this.arg.forEachIndexed { i,xe ->
-                xe.aux(this, env, if (xp is Type.Tuple) xp.vec[i] else Type_Any(this.tk))
+                xe.aux(this, env, if (xp is Type.Tuple) xp.expand()[i] else Type_Any(this.tk))
             }
         }
         is Expr.UCons -> {
