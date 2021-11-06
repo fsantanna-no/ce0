@@ -1040,6 +1040,20 @@ class TEnv {
         assert(out == "OK") { out }
     }
     @Test
+    fun j11_rec_xepr_double_rec5 () {
+        val out = inp2env("""
+            var x: <?<?[^^^,^^]>> = new <.1 new <.1 [<.0>,<.0>]>>
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun j11_rec_xepr_double_rec6 () {
+        val out = inp2env("""
+            var x: <?<?[^^^,^^]>> = new <.1 new <.1 [<.0>,new <.1 [?,<.0>]>]>>
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
     fun j12_rec_xepr_double_rec_err () {
         val out = inp2env("""
             var x: <?<?[^^^,^^]>> = new <.1 <.1 [<.0>,<.0>]>>

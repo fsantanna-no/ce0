@@ -23,7 +23,7 @@ fun Type.visit (ft: ((Type)->Unit)?) {
 fun Expr.visit (fs: ((Stmt)->Unit)?, fx: ((XExpr)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
     when (this) {
         is Expr.TCons -> this.arg.forEach { it.visit(fs,fx,fe,ft) }
-        is Expr.UCons  -> this.arg.visit(fs,fx,fe,ft)
+        is Expr.UCons -> this.arg.visit(fs,fx,fe,ft)
         is Expr.Dnref -> this.ptr.visit(fs,fx,fe,ft)
         is Expr.Upref -> this.pln.visit(fs,fx,fe,ft)
         is Expr.TDisc -> this.tup.visit(fs,fx,fe,ft)
