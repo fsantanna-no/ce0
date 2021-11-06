@@ -17,7 +17,7 @@ fun main (args: Array<String>) {
         println(out1)
     }
     File("out.c").writeText(out1)
-    val (ok2,out2) = exec("gcc -Werror out.c -o out.exe")
+    val (ok2,out2) = exec("gcc out.c -o out.exe")
     if (!ok2) {
         println(out2)
     }
