@@ -99,8 +99,6 @@ fun Type.isSupOf_ (sub: Type, ups1: List<Type>, ups2: List<Type>): Boolean {
             if (sub.tk_.num == 0) {
                 this.exactlyRec() && this.isnull && sub.arg is Type.Unit
             } else {
-                //println(">>> ${this.expand().vec[sub.tk_.num-1].tostr()} = ${sub.arg.tostr()}")
-                //println(">>> ${this.expand().vec[sub.tk_.num-1].expand().tostr()} = ${sub.arg.expand().tostr()}")
                 this.vec[sub.tk_.num-1].isSupOf_(sub.arg, listOf(this)+ups1, ups2)
             }
         }

@@ -667,10 +667,11 @@ class TExec {
     @Test
     fun j00_list () {
         val out = all("""
-            var l: <^> = <.0>
+            var l: <?^> = <.0>
             output std \l
         """.trimIndent())
-        assert(out == "(ln 1, col 5): invalid assignment : type mismatch") { out }
+        //assert(out == "(ln 1, col 5): invalid assignment : type mismatch") { out }
+        assert(out == "<.0>\n") { out }
     }
     @Test
     fun j01_list () {
@@ -739,11 +740,11 @@ class TExec {
     fun j07_list_move_err () {
         val out = all("""
             var l1: <?^> = new <.1 <.0>>
-            var l2: <^> = replace l1=<.0>
+            var l2: <^> = replace l1=?
             output std \l1
             output std \l2
         """.trimIndent())
-        assert(out == "(ln 2, col 5): invalid assignment : type mismatch")
+        assert(out == "(ln 2, col 5): invalid assignment : type mismatch") { out }
     }
     @Test
     fun j08_list_move () {

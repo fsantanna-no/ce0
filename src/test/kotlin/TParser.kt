@@ -111,9 +111,25 @@ class TParser {
         // <(),<(),^^>> = <(),<(),<(),^^>>>
         val ok1 = tp1.isSupOf(tp2)
         val ok2 = tp2.isSupOf(tp1)
-        println(ok1)
-        println(ok2)
         assert(ok1 && ok2)
+    }
+    @Test
+    fun a12_parser_type_ptr_null () {
+        val all = All_new(PushbackReader(StringReader("<? \\()>"), 2))
+        lexer(all)
+        val tp = parser_type(all)
+        assert(tp is Type.Union && tp.isnull)
+    }
+    @Test
+    fun a13_parser_type_ptr_null () {
+        val all = All_new(PushbackReader(StringReader("<? \\(), ()>"), 2))
+        lexer(all)
+        try {
+            parser_type(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 1): invalid type declaration : unexpected `?´")
+        }
     }
 
     // EXPR

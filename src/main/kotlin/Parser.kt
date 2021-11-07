@@ -174,7 +174,7 @@ fun parser_type (all: All): Type {
                     val vec    = tps.toTypedArray()
                     val isrec  = vec.any { f(it, 1) }
                     val ishold = vec.any { g(it, 1) }
-                    All_assert_tk(tk0,!isnullable || isrec) {
+                    All_assert_tk(tk0,!isnullable || isrec || (vec.size==1 && vec[0] is Type.Ptr)) {
                         "invalid type declaration : unexpected `?´"
                     }
                     All_assert_tk(tk0,!ishold || isrec) {
