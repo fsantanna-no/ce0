@@ -26,12 +26,20 @@ fun Type.pos (ctrec: Boolean = false): String {
         is Type.Ptr   -> this.pln.pos() + "*"
         is Type.Nat   -> this.tk_.str
         is Type.Tuple -> "struct " + this.toce() + x
-        is Type.Union -> if (!this.isnullptr()) {
-            "struct " + this.toce() + x
-        } else {
+        is Type.Union -> if (this.isnullptr()) {
             (this.vec[0] as Type.Ptr).pln.pos() + "*"
+        } else {
+            "struct " + this.toce() + x
         }
         is Type.Func  -> this.toce() + "*"
+    }
+}
+
+fun Type.output_ (arg: String): String {
+    val ce = this.toce(true)
+    return when {
+        this is Type.Ptr || this is Type.Func || this.isnullptr() -> "putchar('_');\n"
+        else -> "output_std_${ce}_($arg);\n"
     }
 }
 
@@ -39,7 +47,7 @@ fun Type.output (arg: String): String {
     val ce = this.toce(true)
     return when {
         this is Type.Ptr || this is Type.Func || this.isnullptr() -> "putchar('_');\n"
-        else -> "output_std_${ce}_($arg);\n"
+        else -> "output_std_${ce}($arg);\n"
     }
 }
 
@@ -107,7 +115,7 @@ fun code_ft (tp: Type) {
                     ${tpexp
                         .mapIndexed { i,sub ->
                             val amp = if (sub.containsRec()) "&" else ""
-                            sub.output(if (sub is Type.Unit) "" else "$amp$xv._${i+1}")
+                            sub.output_(if (sub is Type.Unit) "" else "$amp$xv._${i+1}")
                         }
                         .joinToString("putchar(',');\n")
                     }
@@ -223,7 +231,7 @@ fun code_ft (tp: Type) {
                                         ""
                                     } else {
                                         val amp = if (sub.containsRec()) "&" else ""
-                                        "putchar(' ');\n" + sub.output("$amp$xxv._${i+1}")
+                                        "putchar(' ');\n" + sub.output_("$amp$xxv._${i+1}")
                                     }
                                 }
                                 break;
@@ -383,6 +391,13 @@ fun code_fe (e: Expr) {
                         ""
                     }
                 ) + "(" + arg.second + ")"
+                /*
+                if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
+                    e.arg.e.toType().output(arg.second)
+                } else {
+                    f.second + "(" + arg.second + ")"
+                }
+                 */
             )
         }
         is Expr.Func  -> {
