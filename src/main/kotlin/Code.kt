@@ -19,22 +19,26 @@ val TYPEX = mutableSetOf<String>()
 val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 
 fun Type.pos (ctrec: Boolean = false): String {
-    val x = (if (this.exactlyRec() || this.isnullptr())  "*" else "") + (if (ctrec && this.containsRec()) "*" else "")
+    val x = (if (this.exactlyRec())  "*" else "") + (if (ctrec && this.containsRec()) "*" else "")
     return when (this) {
         is Type.None, is Type.Rec, is Type.UCons -> TODO(this.toString())
         is Type.Any, is Type.Unit  -> "void"
         is Type.Ptr   -> this.pln.pos() + "*"
         is Type.Nat   -> this.tk_.str
         is Type.Tuple -> "struct " + this.toce() + x
-        is Type.Union -> (if (this.isnullptr()) "" else "struct ") + this.toce() + x
+        is Type.Union -> if (!this.isnullptr()) {
+            "struct " + this.toce() + x
+        } else {
+            (this.vec[0] as Type.Ptr).pln.pos() + "*"
+        }
         is Type.Func  -> this.toce() + "*"
     }
 }
 
 fun Type.output (arg: String): String {
     val ce = this.toce(true)
-    return when (this) {
-        is Type.Ptr, is Type.Func -> "putchar('_');\n"
+    return when {
+        this is Type.Ptr || this is Type.Func || this.isnullptr() -> "putchar('_');\n"
         else -> "output_std_${ce}_($arg);\n"
     }
 }
@@ -146,6 +150,10 @@ fun code_ft (tp: Type) {
             """.trimIndent())))
         }
         is Type.Union -> {
+            if (tp.isnullptr()) {
+                return
+            }
+
             val ce    = tp.toce()
             val _ptr  = tp.toce(true)
             val ctrec = tp.containsRec()
@@ -154,15 +162,6 @@ fun code_ft (tp: Type) {
             val xv    = (if (exrec) "(*v)" else "v")
             val ret   = (if (exrec) "(*ret)" else "ret")
             val tpexp = tp.expand()
-
-            if (tp.isnullptr()) {
-                TYPES.add(Triple(
-                    Pair(tp.toce(), emptySet()),
-                    "typedef ${(tp.vec[0] as Type.Ptr).pln.toce()} ${tp.toce()};\n",
-                    ""
-                ))
-                return
-            }
 
             val struct = Pair ("""
                 struct $ce;
@@ -367,8 +366,8 @@ fun code_fe (e: Expr) {
             val sup = "struct " + xp.toce()
             val pre = "$sup $ID = (($sup) { ${e.tk_.num} $arg });\n"
             when {
-                xp.isnullptr() -> Pair("", top.second)
                 (e.tk_.num == 0) -> Pair("","NULL")
+                xp.isnullptr() -> Pair("", top.second)
                 else -> Pair(top.first + pre, ID)
             }
         }

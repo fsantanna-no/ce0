@@ -971,9 +971,17 @@ class TExec {
             set x!1.3!1.1 = <.1 hold \x>
             set x!1.1 = <.1 hold \x!1.3>
             output std x!1.3!1.2
-            --output std x!1.1!3!1.2
+            output std x!1.1
         """.trimIndent())
-        assert(out == "err") { out }
+        assert(out == "2\n") { out }
+    }
+    @Test
+    fun l02_hold_ok2 () {
+        val out = all("""
+            var x: <? [<?\^^^>,_int,^^]> = new <.1 [<.0>,_2,<.0>]>
+            output std \x
+        """.trimIndent())
+        assert(out == "<.1 [_,2,<.0>]>\n") { out }
     }
     @Test
     fun l03_hold_err () {
