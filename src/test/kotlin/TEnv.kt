@@ -1519,7 +1519,7 @@ class TEnv {
         assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2") { out }
     }
 
-    // HOLD
+    // UNION SELF POINTER / HOLD
 
     @Test
     fun n01_hold_ok () {
@@ -1599,15 +1599,6 @@ class TEnv {
             set x!1.1 = <.1 hold \x>  -- ok
         """.trimIndent())
         assert(out == "OK") { out }
-    }
-    @Test
-    fun n09_hold_err () {
-        val out = inp2env("""
-            var x: <? [<(),\^^^>,^^]> = new <.1 [<.1>,<.0>]>
-            set x!1.1 = <.2 hold \x>  -- ok
-            set x!1.2 = <.0>    -- no if set previously
-        """.trimIndent())
-        assert(out == "err") { out }
     }
 }
 

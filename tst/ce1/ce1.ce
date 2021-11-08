@@ -16,6 +16,7 @@ native _{
 #include "lexer.ce"
 #include "parser.ce"
 #include "visit.ce"
+#include "aux.ce"
 
 var t_pre: ()->() = func ()->() {
     var s1: String   = string_c2ce _("oi")

@@ -97,7 +97,7 @@ fun Type.isSupOf_ (sub: Type, ups1: List<Type>, ups2: List<Type>): Boolean {
         (sub  is Type.Rec) -> ups2[sub.tk_.up-1].let { this.isSupOf_(it,ups1, listOf(it)+ups2) }
         (this is Type.Union && sub is Type.UCons) -> {
             if (sub.tk_.num == 0) {
-                this.exactlyRec() && this.isnull && sub.arg is Type.Unit
+                this.isnull && sub.arg is Type.Unit
             } else {
                 this.vec[sub.tk_.num-1].isSupOf_(sub.arg, listOf(this)+ups1, ups2)
             }

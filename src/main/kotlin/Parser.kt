@@ -19,7 +19,7 @@ fun Type.tostr (): String {
         is Type.Rec   -> "^".repeat(this.tk_.up)
         is Type.Ptr   -> "\\" + this.pln.tostr()
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
-        is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
+        is Type.Union -> "<" + (if (this.isnull) "? " else "") + this.vec.map { it.tostr() }.joinToString(",") + ">"
         is Type.UCons -> "<." + this.tk_.num + " " + this.arg.tostr() + ">"
         is Type.Func  -> this.inp.tostr() + " -> " + this.out.tostr()
         else -> error("$this")
@@ -43,6 +43,10 @@ fun Type.keepAnyNat (other: ()->Type): Type {
         is Type.Any, is Type.Nat -> this
         else -> other()
     }
+}
+
+fun Type.isnullptr (): Boolean {
+    return this is Type.Union && this.isnull && this.vec.size==1 && this.vec[0] is Type.Ptr
 }
 
 fun Type.expand (): Array<Type> {

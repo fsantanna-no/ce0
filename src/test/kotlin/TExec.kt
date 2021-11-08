@@ -952,10 +952,10 @@ class TExec {
         assert(out == "(ln 1, col 17): undeclared variable \"arg\"")
     }
 
-    // UNION SELF POINTER
+    // UNION SELF POINTER / HOLD
 
     @Test
-    fun m03_hold_ok () {
+    fun l01_hold_ok () {
         val out = all("""
             var x: <? [<(),\^^^>,^^]> = new <.1 [<.1>,<.0>]>
             var y: <? [<(),\^^^>,^^]> = new <.1 [<.1>,consume x]>
@@ -964,6 +964,36 @@ class TExec {
         """.trimIndent())
         assert(out == "<.1 [<.1>,<.1 [<.1>,<.0>]>]>\n") { out }
     }
+    @Test
+    fun l02_hold_ok () {
+        val out = all("""
+            var x: <? [<?\^^^>,_int,^^]> = new <.1 [<.0>,_1,new <.1 [<.0>,_2,<.0>]>]>
+            set x!1.3!1.1 = <.1 hold \x>
+            set x!1.1 = <.1 hold \x!1.3>
+            output std x!1.3!1.2
+            --output std x!1.1!3!1.2
+        """.trimIndent())
+        assert(out == "err") { out }
+    }
+    @Test
+    fun l03_hold_err () {
+        val out = all("""
+            var x: <? [<?\^^^>,^^]> = new <.1 [<.0>,new <.1 [<.0>,<.0>]>]>
+            set x!1.2 = <.0>    -- no, set previously
+            output std \y
+        """.trimIndent())
+        assert(out == "err") { out }
+    }
+    @Test
+    fun l04_ptr_null () {
+        val out = all("""
+            var n: _int = _10
+            var x: <?\_int> = <.1 \n>
+            output std /(x!1)
+        """.trimIndent())
+        assert(out == "10\n") { out }
+    }
+
 
     // ALL
 

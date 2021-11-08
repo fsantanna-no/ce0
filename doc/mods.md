@@ -8,6 +8,7 @@ Assignments of recursive values requires explicit operation modifiers:
 - `move`:   transfers ownership
 - `copy`:   makes deep copies
 - `borrow`: borrows ownership
+- `hold`:   holds self reference
 - *none*:   assignments of non-recursive values
 
 ### New

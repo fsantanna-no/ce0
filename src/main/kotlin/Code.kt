@@ -19,14 +19,14 @@ val TYPEX = mutableSetOf<String>()
 val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 
 fun Type.pos (ctrec: Boolean = false): String {
-    val x = (if (this.exactlyRec())  "*" else "") + (if (ctrec && this.containsRec()) "*" else "")
+    val x = (if (this.exactlyRec() || this.isnullptr())  "*" else "") + (if (ctrec && this.containsRec()) "*" else "")
     return when (this) {
         is Type.None, is Type.Rec, is Type.UCons -> TODO(this.toString())
         is Type.Any, is Type.Unit  -> "void"
         is Type.Ptr   -> this.pln.pos() + "*"
         is Type.Nat   -> this.tk_.str
         is Type.Tuple -> "struct " + this.toce() + x
-        is Type.Union -> "struct " + this.toce() + x
+        is Type.Union -> (if (this.isnullptr()) "" else "struct ") + this.toce() + x
         is Type.Func  -> this.toce() + "*"
     }
 }
@@ -154,6 +154,15 @@ fun code_ft (tp: Type) {
             val xv    = (if (exrec) "(*v)" else "v")
             val ret   = (if (exrec) "(*ret)" else "ret")
             val tpexp = tp.expand()
+
+            if (tp.isnullptr()) {
+                TYPES.add(Triple(
+                    Pair(tp.toce(), emptySet()),
+                    "typedef ${(tp.vec[0] as Type.Ptr).pln.toce()} ${tp.toce()};\n",
+                    ""
+                ))
+                return
+            }
 
             val struct = Pair ("""
                 struct $ce;
@@ -318,6 +327,7 @@ fun code_fe (e: Expr) {
         is Expr.TDisc -> EXPRS.removeFirst().let { Pair(it.first, it.second + "._" + e.tk_.num) }
         is Expr.UDisc -> EXPRS.removeFirst().let {
             val ee = e.deref(it.second)
+            val uni = e.uni.toType()
             val pre = if (e.tk_.num == 0) {
                 """
                 assert(${it.second} == NULL);
@@ -325,12 +335,13 @@ fun code_fe (e: Expr) {
                 """.trimIndent()
             } else {
                 """
-                ${ if (e.uni.toType().let { it is Type.Union && it.isnull }) "assert(${it.second} != NULL);\n" else "" }
-                assert($ee.tag == ${e.tk_.num});
+                ${ if (uni.let { it is Type.Union && it.isnull }) "assert(${it.second} != NULL);\n" else "" }
+                ${ if (uni.isnullptr()) "" else "assert($ee.tag == ${e.tk_.num});" }
 
                 """.trimIndent()
             }
-            Pair(it.first + pre, ee + "._" + e.tk_.num)
+            val pos = if (uni.isnullptr()) ee else ee+"._"+e.tk_.num
+            Pair(it.first + pre, pos)
         }
         is Expr.UPred -> EXPRS.removeFirst().let {
             val ee = e.deref(it.second)
@@ -355,7 +366,11 @@ fun code_fe (e: Expr) {
             val arg = if (e.arg.e.toType() is Type.Unit) "" else (", ._${e.tk_.num} = " + top.second)
             val sup = "struct " + xp.toce()
             val pre = "$sup $ID = (($sup) { ${e.tk_.num} $arg });\n"
-            if (e.tk_.num == 0) Pair("","NULL") else Pair(top.first + pre, ID)
+            when {
+                xp.isnullptr() -> Pair("", top.second)
+                (e.tk_.num == 0) -> Pair("","NULL")
+                else -> Pair(top.first + pre, ID)
+            }
         }
         is Expr.Call  -> {
             val arg = EXPRS.removeFirst()
