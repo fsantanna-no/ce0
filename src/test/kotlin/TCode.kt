@@ -18,7 +18,7 @@ class TCode {
     @Test
     fun a02_type_tuple () {
         val tp = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), arrayOf(tp_unit,tp_unit))
-        assert(tp.toce() == "TUPLE_p_Unit__Unit_d_")
+        assert(tp.toce() == "T_Unit_Unit_T")
     }
 
     // EXPR
@@ -75,7 +75,7 @@ class TCode {
         e.visit(null, ::code_fx, ::code_fe, null)
         EXPRS.removeFirst().second.let {
             //println(it)
-            assert(it == "((struct TUPLE_p_Unit__Unit_d_) {  })")
+            assert(it == "((struct T_Unit_Unit_T) {  })")
         }
     }
     @Test

@@ -9,9 +9,9 @@ fun Type.toce (ctrec: Boolean = false): String {
         is Type.Unit  -> "Unit"
         is Type.Ptr   -> if (this.pln is Type.Tuple || this.pln is Type.Union) this.pln.toce(false) + "_ptr" else "Ptr"
         is Type.Nat   -> this.tk_.str.replace('*','_')
-        is Type.Tuple -> "TUPLE_p_" + this.vec.map { it.toce(false) }.joinToString("__") + "_d_" + _ref_ptr
-        is Type.Union -> "UNION_p_" + this.vec.map { it.toce(false) }.joinToString("__") + "_d_" + _ref_ptr
-        is Type.Func  -> "FUNC_p_" + this.inp.toce() + "__" + this.out.toce() + "_d_"
+        is Type.Tuple -> "T_" + this.vec.map { it.toce(false) }.joinToString("_") + "_T" + _ref_ptr
+        is Type.Union -> "U_" + this.vec.map { it.toce(false) }.joinToString("_") + "_U" + _ref_ptr
+        is Type.Func  -> "F_" + this.inp.toce() + "_" + this.out.toce() + "_F"
     }
 }
 
