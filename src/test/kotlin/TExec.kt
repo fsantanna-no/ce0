@@ -17,7 +17,7 @@ class TExec {
             return out2
         }
         val (_,out3) = exec("./out.exe")
-        //val (_,out3) = exec("valgrind ./out.exe")
+        //val (_,out3) = exec("valgrind ./out.exe") // search in tests output for "definitely lost"
         //println(out3)
         return out3
     }
@@ -658,7 +658,6 @@ class TExec {
             set uni = <.2 _65>
             call _puts /ptr
         """.trimIndent())
-        println(out)
         assert(out == "(ln 4, col 9): invalid assignment of \"uni\" : borrowed in line 3")
     }
 
@@ -687,7 +686,6 @@ class TExec {
             var l: <?^> = new <.1 <.0>>
             output std l
         """.trimIndent())
-        println(out)
         assert(out == "<.1 <.0>>\n")
     }
     @Test
@@ -1130,7 +1128,6 @@ class TExec {
             var ret: _int = _(y1 + y2 + y3)
             output std ret
         """.trimIndent())
-        println(out)
         assert(out == "2\n")
     }
     @Test
@@ -1200,7 +1197,6 @@ class TExec {
             output std x
             output std y
         """.trimIndent())
-        println(out)
         assert(out == "<.1>\n<.2 <.1>>\n")
     }
     @Test
@@ -1211,7 +1207,6 @@ class TExec {
             output std x
             output std y
         """.trimIndent())
-        println(out)
         assert(out == "<.2 <.1>>\n<.1>\n")
     }
     @Test
@@ -1222,7 +1217,6 @@ class TExec {
             output std x
             output std y
         """.trimIndent())
-        println(out)
         assert(out == "<.2 [(),<.1>]>\n[(),<.1>]\n")
     }
 }

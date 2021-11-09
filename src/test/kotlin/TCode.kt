@@ -97,7 +97,6 @@ class TCode {
         XPS[e.tup] = tp_unit
         e.visit(null, ::code_fx, ::code_fe, null)
         EXPRS.removeFirst().second.let {
-            println(it)
             assert(it == "x._1")
         }
     }

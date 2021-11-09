@@ -138,7 +138,6 @@ class TEnv {
             var l: <?^> = new <.1 <.0>>
             output std \l!0
         """.trimIndent())
-        println(out)
         assert(out == "OK")
     }
 
@@ -941,7 +940,6 @@ class TEnv {
             var x: <^> = ?
             var y: <^> = borrow x
         """.trimIndent())
-        println(out)
         assert(out == "(ln 2, col 21): invalid `borrow` : expected pointer to recursive variable")
     }
     @Test
@@ -1066,7 +1064,6 @@ class TEnv {
             var t1: [<?^>] = [<.0>]
             var t2: [<?^>] = replace t1=[<.0>]
         """.trimIndent())
-        println(out)
         assert(out == "(ln 2, col 26): invalid `replace` : expected recursive variable")
     }
     @Test
@@ -1084,7 +1081,6 @@ class TEnv {
         val out = inp2env("""
             var l: <?^> = new <.0>
         """.trimIndent())
-        println(out)
         assert(out == "(ln 1, col 21): invalid `new` : expected variant constructor")
     }
     @Test
@@ -1298,7 +1294,6 @@ class TEnv {
             var y: \<^> = borrow \x!1
             var z: <^> = consume x
         """.trimIndent())
-        println(out)
         assert(out == "(ln 3, col 22): invalid operation on \"x\" : borrowed in line 2")
     }
     @Test
@@ -1310,7 +1305,6 @@ class TEnv {
                 var z: <^> = consume x
             }
         """.trimIndent())
-        println(out)
         assert(out == "(ln 4, col 26): invalid operation on \"x\" : borrowed in line 3")
     }
     @Test
@@ -1443,7 +1437,6 @@ class TEnv {
             var z: <?^> = consume /y
             output std \x
         """.trimIndent())
-        println(out)
         assert(out == "(ln 4, col 13): invalid access to \"x\" : consumed in line 3")
     }
     @Test
