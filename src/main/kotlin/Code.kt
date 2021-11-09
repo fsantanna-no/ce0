@@ -1,16 +1,16 @@
 import kotlin.math.absoluteValue
 
-fun Type.toce (ctrec: Boolean = false): String {
-    val _ref_ptr = (if (this.exactlyRec()) "_ref" else "") + (if (ctrec && this.containsRec()) "_ptr" else "")
+fun Type.toce (): String {
+    fun ref (str: String): String { return if (this.exactlyRec()) "R_"+str+"_R" else str }
     return when (this) {
         is Type.None, is Type.UCons -> error("bug found")
         is Type.Rec   -> "Rec"
         is Type.Any   -> "Any"
         is Type.Unit  -> "Unit"
-        is Type.Ptr   -> if (this.pln is Type.Tuple || this.pln is Type.Union) this.pln.toce(false) + "_ptr" else "Ptr"
+        is Type.Ptr   -> "P_" + this.pln.toce() + "_P"
         is Type.Nat   -> this.tk_.str.replace('*','_')
-        is Type.Tuple -> "T_" + this.vec.map { it.toce(false) }.joinToString("_") + "_T" + _ref_ptr
-        is Type.Union -> "U_" + this.vec.map { it.toce(false) }.joinToString("_") + "_U" + _ref_ptr
+        is Type.Tuple -> ref("T_" + this.vec.map { it.toce() }.joinToString("_") + "_T")
+        is Type.Union -> ref("U_" + this.vec.map { it.toce() }.joinToString("_") + "_U")
         is Type.Func  -> "F_" + this.inp.toce() + "_" + this.out.toce() + "_F"
     }
 }
@@ -18,36 +18,28 @@ fun Type.toce (ctrec: Boolean = false): String {
 val TYPEX = mutableSetOf<String>()
 val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 
-fun Type.pos (ctrec: Boolean = false): String {
-    val x = (if (this.exactlyRec())  "*" else "") + (if (ctrec && this.containsRec()) "*" else "")
+fun Type.pos (): String {
     return when (this) {
         is Type.None, is Type.Rec, is Type.UCons -> TODO(this.toString())
         is Type.Any, is Type.Unit  -> "void"
         is Type.Ptr   -> this.pln.pos() + "*"
         is Type.Nat   -> this.tk_.str
-        is Type.Tuple -> "struct " + this.toce() + x
+        is Type.Tuple -> "struct " + this.toce()
         is Type.Union -> if (this.isnullptr()) {
             (this.vec[0] as Type.Ptr).pln.pos() + "*"
         } else {
-            "struct " + this.toce() + x
+            "struct " + this.toce() + (if (this.exactlyRec())  "*" else "")
         }
         is Type.Func  -> this.toce() + "*"
     }
 }
 
-fun Type.output_ (arg: String): String {
-    val ce = this.toce(true)
+fun Type.output (c: String, arg: String): String {
     return when {
-        this is Type.Ptr || this is Type.Func || this.isnullptr() -> "putchar('_');\n"
-        else -> "output_std_${ce}_($arg);\n"
-    }
-}
-
-fun Type.output (arg: String): String {
-    val ce = this.toce(true)
-    return when {
-        this is Type.Ptr || this is Type.Func || this.isnullptr() -> "putchar('_');\n"
-        else -> "output_std_${ce}($arg);\n"
+        this is Type.Ptr || this is Type.Func || this.isnullptr() -> {
+            if (c == "_") "putchar('_');\n" else "puts(\"_\");\n"
+        }
+        else -> "output_std_${this.toce()}$c($arg);\n"
     }
 }
 
@@ -77,9 +69,7 @@ fun code_ft (tp: Type) {
         ))
         is Type.Tuple -> {
             val ce    = tp.toce()
-            val _ptr  = tp.toce(true)
             val ctrec = tp.containsRec()
-            val xv    = if (ctrec) "(*v)" else "v"
             val tpexp = tp.expand()
 
             val struct = Pair("""
@@ -100,34 +90,33 @@ fun code_ft (tp: Type) {
                 Pair(ce, deps(tpexp.toSet())),
     """
                 ${if (tp.containsRec()) struct.first else struct.second }
-                void output_std_${_ptr}_ (${tp.pos(true)} v);
-                void output_std_${_ptr} (${tp.pos(true)} v);
+                void output_std_${ce}_ (${tp.pos()} v);
+                void output_std_${ce} (${tp.pos()} v);
                 ${if (!tp.containsRec()) "" else """
-                    void free_${ce} (${tp.pos(true)} v);
-                    ${tp.pos()} copy_${ce} (${tp.pos(true)} v);
+                    void free_${ce} (${tp.pos()}* v);
+                    ${tp.pos()} copy_${ce} (${tp.pos()} v);
 
                 """
                 }
             ""","""
                 ${if (tp.containsRec()) struct.second else "" }
-                void output_std_${_ptr}_ (${tp.pos(true)} v) {
+                void output_std_${ce}_ (${tp.pos()} v) {
                     printf("[");
                     ${tpexp
                         .mapIndexed { i,sub ->
-                            val amp = if (sub.containsRec()) "&" else ""
-                            sub.output_(if (sub is Type.Unit) "" else "$amp$xv._${i+1}")
+                            sub.output("_", if (sub is Type.Unit) "" else "v._${i+1}")
                         }
                         .joinToString("putchar(',');\n")
                     }
                     printf("]");
                 }
-                void output_std_${_ptr} (${tp.pos(true)} v) {
-                    output_std_${_ptr}_(v);
+                void output_std_${ce} (${tp.pos()} v) {
+                    output_std_${ce}_(v);
                     puts("");
                 }
 
             """.trimIndent() + (if (!tp.containsRec()) "" else """
-                void free_${ce} (${tp.pos(true)} v) {
+                void free_${ce} (${tp.pos()}* v) {
                     ${tpexp
                         .mapIndexed { i, sub ->
                             if (!sub.containsRec()) "" else """
@@ -138,15 +127,15 @@ fun code_ft (tp: Type) {
                         .joinToString("")
                     }
                 }
-                ${tp.pos()} copy_${ce} (${tp.pos(true)} v) {
+                ${tp.pos()} copy_${ce} (${tp.pos()} v) {
                     ${tp.pos()} ret;
                     ${tpexp
                         .mapIndexed { i, sub -> if (sub is Type.Unit) "" else
                             "ret._${i + 1} = " +
                                 (if (!sub.containsRec()) {
-                                    "v->_${i + 1}"
+                                    "v._${i + 1}"
                                 } else {
-                                    "copy_${sub.toce()}(&v->_${i + 1})"
+                                    "copy_${sub.toce()}(v._${i + 1})"
                                 }) +
                             ";\n"
                        }
@@ -163,10 +152,7 @@ fun code_ft (tp: Type) {
             }
 
             val ce    = tp.toce()
-            val _ptr  = tp.toce(true)
-            val ctrec = tp.containsRec()
             val exrec = tp.exactlyRec()
-            val xxv   = (if (ctrec) "(*v)" else "v").let { if (exrec) "(*$it)" else it }
             val xv    = (if (exrec) "(*v)" else "v")
             val ret   = (if (exrec) "(*ret)" else "ret")
             val tpexp = tp.expand()
@@ -199,11 +185,11 @@ fun code_ft (tp: Type) {
                 Pair(ce, deps(tpexp.toSet())),
             """
                 ${if (tp.containsRec()) struct.first else struct.second }
-                void output_std_${_ptr}_ (${tp.pos(true)} v);
-                void output_std_${_ptr} (${tp.pos(true)} v);
+                void output_std_${ce}_ (${tp.pos()} v);
+                void output_std_${ce} (${tp.pos()} v);
                 ${if (!tp.containsRec()) "" else """
-                    void free_${ce} (${tp.pos(true)} v);
-                    ${tp.pos()} copy_${ce} (${tp.pos(true)} v);
+                    void free_${ce} (${tp.pos()}* v);
+                    ${tp.pos()} copy_${ce} (${tp.pos()} v);
 
                 """
             }
@@ -211,18 +197,18 @@ fun code_ft (tp: Type) {
             """.trimIndent(),
             """
                 ${if (tp.containsRec()) struct.second else "" }
-                void output_std_${_ptr}_ (${tp.pos(true)} v) {
+                void output_std_${ce}_ (${tp.pos()} v) {
                     ${
                         if (!tp.isnull) "" else """
-                            if ($xv == NULL) {
+                            if (v == NULL) {
                                 printf("<.0>");
                                 return;
                             }
 
                         """.trimIndent()
                     }
-                    printf("<.%d", $xxv.tag);
-                    switch ($xxv.tag) {
+                    printf("<.%d", $xv.tag);
+                    switch ($xv.tag) {
                         ${tpexp
                             .mapIndexed { i,sub -> """
                                 case ${i+1}:
@@ -230,8 +216,7 @@ fun code_ft (tp: Type) {
                                     if (sub is Type.Unit) {
                                         ""
                                     } else {
-                                        val amp = if (sub.containsRec()) "&" else ""
-                                        "putchar(' ');\n" + sub.output_("$amp$xxv._${i+1}")
+                                        "putchar(' ');\n" + sub.output("_", "$xv._${i+1}")
                                     }
                                 }
                                 break;
@@ -242,21 +227,21 @@ fun code_ft (tp: Type) {
                     }
                     putchar('>');
                 }
-                void output_std_${_ptr} (${tp.pos(true)} v) {
-                    output_std_${_ptr}_(v);
+                void output_std_${ce} (${tp.pos()} v) {
+                    output_std_${ce}_(v);
                     puts("");
                 }
 
             """.trimIndent() + (if (!tp.containsRec()) "" else """
-                void free_${ce} (${tp.pos(true)} v) {
+                void free_${ce} (${tp.pos()}* v) {
                     ${ "" /*if (!tp.isnullable) "" else "if (${xv} == NULL) return;\n"*/ }
-                    if (${xv} == NULL) return;
-                    switch ((${xxv}).tag) {
+                    if ($xv == NULL) return;
+                    switch ($xv->tag) {
                         ${ tpexp
                             .mapIndexed { i,tp2 ->
                                 if (!tp2.containsRec()) "" else """
                                     case ${i+1}:
-                                        free_${tp2.toce()}(&(${xxv})._${i+1});
+                                        free_${tp2.toce()}(&($xv)->_${i+1});
                                         break;
 
                                 """.trimIndent()
@@ -264,27 +249,27 @@ fun code_ft (tp: Type) {
                             .joinToString("")
                         }
                     }
-                    ${ if (!exrec) "" else "free(${xv});\n" }
+                    ${ if (!exrec) "" else "free($xv);\n" }
                 }
-                ${tp.pos()} copy_${ce} (${tp.pos(true)} v) {
-                    ${ if (!exrec) "${tp.pos()} ret = { ${xxv}.tag };\n" else {
-                        val nul = if (!tp.isnull) "" else "if (${xv} == NULL) return NULL;"
+                ${tp.pos()} copy_${ce} (${tp.pos()} v) {
+                    ${ if (!exrec) "${tp.pos()} ret = { $xv.tag };\n" else {
+                        val nul = if (!tp.isnull) "" else "if (v == NULL) return NULL;"
                         """
                             $nul
                             ${tp.pos()} ret = malloc(sizeof(*ret));
                             assert(ret != NULL && "not enough memory");
-                            ($ret).tag = ($xxv).tag;
+                            ($ret).tag = $xv.tag;
 
                         """.trimIndent()
                     } }
-                    switch ((${xxv}).tag) {
+                    switch ($xv.tag) {
                         ${ tpexp
                             .mapIndexed { i,sub -> if (sub is Type.Unit) "" else
                                 "case ${i+1}:\n" + (
                                     if (sub.containsRec()) {
-                                        "($ret)._${i+1} = copy_${sub.toce()}(&($xxv)._${i+1});\nbreak;\n"
+                                        "($ret)._${i+1} = copy_${sub.toce()}($xv._${i+1});\nbreak;\n"
                                     } else {
-                                        "($ret)._${i+1} = ($xxv)._${i + 1};\nbreak;\n"
+                                        "($ret)._${i+1} = $xv._${i + 1};\nbreak;\n"
                                     }
                                 )
                             }
@@ -384,20 +369,11 @@ fun code_fe (e: Expr) {
             val f   = EXPRS.removeFirst()
             Pair (
                 f.first + arg.first,
-                f.second + (
-                    if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
-                        "_" + e.arg.e.toType().toce()
-                    } else {
-                        ""
-                    }
-                ) + "(" + arg.second + ")"
-                /*
                 if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
-                    e.arg.e.toType().output(arg.second)
+                    e.arg.e.toType().output("", arg.second)
                 } else {
                     f.second + "(" + arg.second + ")"
                 }
-                 */
             )
         }
         is Expr.Func  -> {
@@ -439,7 +415,7 @@ fun code_fx (xe: XExpr) {
             """.trimIndent()
             Pair(top.first+pre, if (xee.tk_.num == 0) "NULL" else ID)
         }
-        is XExpr.Copy -> Pair(top.first, "copy_${xp.toce()}(&${top.second})")
+        is XExpr.Copy -> Pair(top.first, "copy_${xp.toce()}(${top.second})")
         is XExpr.Replace -> {
             val new = EXPRS.removeFirst()
             val pre = """

@@ -668,7 +668,7 @@ class TExec {
     fun j00_list () {
         val out = all("""
             var l: <?^> = <.0>
-            output std \l
+            output std l
         """.trimIndent())
         //assert(out == "(ln 1, col 5): invalid assignment : type mismatch") { out }
         assert(out == "<.0>\n") { out }
@@ -677,7 +677,7 @@ class TExec {
     fun j01_list () {
         val out = all("""
             var l: <?^> = <.0>
-            output std \l
+            output std l
         """.trimIndent())
         assert(out == "<.0>\n") { out }
     }
@@ -685,7 +685,7 @@ class TExec {
     fun j02_list () {
         val out = all("""
             var l: <?^> = new <.1 <.0>>
-            output std \l
+            output std l
         """.trimIndent())
         println(out)
         assert(out == "<.1 <.0>>\n")
@@ -694,7 +694,7 @@ class TExec {
     fun j03_list () {
         val out = all("""
             var l: <?^> = new <.1 new <.1 <.0>>>
-            output std \l!1
+            output std l!1
         """.trimIndent())
         assert(out == "<.1 <.0>>\n")
     }
@@ -722,9 +722,21 @@ class TExec {
             {
                 set p = borrow \l!1
             }
-            output std p
+            output std /p
         """.trimIndent())
         assert(out == "<.1 <.0>>\n")
+    }
+    @Test
+    fun j06_list_ptr () {
+        val out = all("""
+            var l: <?^> = new <.1 new <.1 <.0>>>
+            var p: \<?^> = ?
+            {
+                set p = borrow \l!1
+            }
+            output std p
+        """.trimIndent())
+        assert(out == "_\n")
     }
     @Test
     fun j07_list_move () {
@@ -752,7 +764,7 @@ class TExec {
             var l1: <?^> = new <.1 <.0>>
             var l2: <?^> = <.0>
             set l2 = new <.1 consume l1>
-            output std \l2
+            output std l2
         """.trimIndent())
         assert(out == "<.1 <.1 <.0>>>\n")
     }
@@ -761,8 +773,8 @@ class TExec {
         val out = all("""
             var l1: <?^> = new <.1 <.0>>
             var l2: [_int,<?^>] = [_10, replace l1=<.0>]
-            output std \l1
-            output std \l2.2
+            output std l1
+            output std l2.2
         """.trimIndent())
         assert(out == "<.0>\n<.1 <.0>>\n")
     }
@@ -770,7 +782,7 @@ class TExec {
     fun j10_rec () {
         val out = all("""
             var n: <<?^>> = <.1 new <.1 <.0>>>
-            output std \n
+            output std n
         """.trimIndent())
         assert(out == "<.1 <.1 <.0>>>\n")
     }
@@ -779,7 +791,7 @@ class TExec {
         val out = all("""
             var x: <?^> = new <.1 new <.1 <.0>>>
             var y: \<?^> = borrow \x
-            output std y
+            output std /y
         """.trimIndent())
         assert(out == "<.1 <.1 <.0>>>\n")
     }
@@ -788,7 +800,7 @@ class TExec {
         val out = all("""
             var x: <?^> = new <.1 new <.1 <.0>>>
             var y: \<?^> = borrow \x!1
-            output std y
+            output std /y
         """.trimIndent())
         assert(out == "<.1 <.0>>\n")
     }
@@ -796,7 +808,7 @@ class TExec {
     fun j11_rec_double () {
         val out = all("""
             var n: <?<^^>> = new <.1 new <.1 new <.1 new <.1 <.0>>>>>
-            output std \n
+            output std n
         """.trimIndent())
         assert(out == "<.1 <.1 <.1 <.1 <.0>>>>>\n")
     }
@@ -804,7 +816,7 @@ class TExec {
     fun j09_tup_list_err () {
         val out = all("""
             var t: [_int,<?^>] = [_10, new <.1 <.0>>]
-            output std \t
+            output std t
         """.trimIndent())
         assert(out == "[10,<.1 <.0>>]\n")
     }
@@ -814,7 +826,7 @@ class TExec {
             var l: <?^> = <.0>
             var t1: [<?^>] = [consume l]
             var t2: [<?^>] = [copy t1.1]
-            output std \t2
+            output std t2
         """.trimIndent())
         assert(out == "[<.0>]\n")
     }
@@ -824,7 +836,7 @@ class TExec {
             var l: <?^> = <.0>
             var t1: [<?^>] = [replace l=<.0>]
             var t2: [<?^>] = [consume t1.1]
-            output std \t2
+            output std t2
         """.trimIndent())
         assert(out == "[<.0>]\n")
     }
@@ -834,7 +846,7 @@ class TExec {
             var l: <?^> = new <.1 <.0>>
             var t1: [<?^>] = [replace l=<.0>]
             var t2: [<?^>] = [copy t1.1]
-            output std \t2
+            output std t2
         """.trimIndent())
         assert(out == "[<.1 <.0>>]\n")
     }
@@ -844,7 +856,7 @@ class TExec {
             var l: <?(),^> = new <.2 new <.1>>
             var t1: [<?(),^>] = [consume l]
             var t2: [<?(),^>] = [copy t1.1]
-            output std \t2
+            output std t2
         """.trimIndent())
         assert(out == "[<.2 <.1>>]\n")
     }
@@ -854,7 +866,7 @@ class TExec {
             var l: <?(),^> = new <.2 new <.1>>
             var t1: [(),<?(),^>] = [(), replace l=<.0>]
             var t2: [(),<?(),^>] = [(), copy t1.2]
-            output std \t2
+            output std t2
         """.trimIndent())
         assert(out == "[(),<.2 <.1>>]\n")
     }
@@ -863,7 +875,7 @@ class TExec {
         val out = all("""
             var l1: <?^> = <.0>
             var l2: <?^> = copy l1
-            output std \l2
+            output std l2
         """.trimIndent())
         assert(out == "<.0>\n")
     }
@@ -872,7 +884,7 @@ class TExec {
         val out = all("""
             var l1: <?^> = new <.1 <.0>>
             var l2: <?^> = copy l1
-            output std \l2
+            output std l2
         """.trimIndent())
         assert(out == "<.1 <.0>>\n")
     }
@@ -882,8 +894,8 @@ class TExec {
             var l1: <?^> = new <.1 <.0>>
             var l2: <?^> = new <.1 copy l1>
             var t3: [(),<?^>] = [(), new <.1 consume l2!1>]
-            output std \l1
-            output std \t3
+            output std l1
+            output std t3
         """.trimIndent())
         assert(out == "<.1 <.0>>\n[(),<.1 <.1 <.0>>>]\n")
     }
@@ -892,8 +904,8 @@ class TExec {
         val out = all("""
             var v1: <(),<?[^^^,^^]>> = new <.2 <.0>>
             var v2: <(),<?[^^^,^^]>> = new <.2 new <.1 [new <.1>,<.0>]>>
-            output std \v1
-            output std \v2
+            output std v1
+            output std v2
         """.trimIndent())
         assert(out == "<.2 <.0>>\n<.2 <.1 [<.1>,<.0>]>>\n")
     }
@@ -902,7 +914,7 @@ class TExec {
         val out = all("""
             var l1: [<?^>] = [new <.1 <.0>>]
             var l2: [<?^>] = copy l1
-            output std \l2
+            output std l2
         """.trimIndent())
         assert(out == "[<.1 <.0>>]\n")
     }
@@ -911,7 +923,7 @@ class TExec {
         val out = all("""
             var x: <?^> = new <.1 <.0>>
             set x = consume x
-            output std \x
+            output std x
         """.trimIndent())
         assert(out == "<.1 <.0>>\n") { out }
     }
@@ -925,7 +937,7 @@ class TExec {
             } else {
                 set y = consume x
             }
-            output std \y
+            output std y
         """.trimIndent())
         assert(out == "<.1 <.0>>\n") { out }
     }
@@ -960,7 +972,7 @@ class TExec {
             var x: <? [<(),\^^^>,^^]> = new <.1 [<.1>,<.0>]>
             var y: <? [<(),\^^^>,^^]> = new <.1 [<.1>,consume x]>
             set y!1.2!1.1 = <.1>
-            output std \y
+            output std y
         """.trimIndent())
         assert(out == "<.1 [<.1>,<.1 [<.1>,<.0>]>]>\n") { out }
     }
@@ -973,13 +985,13 @@ class TExec {
             output std x!1.3!1.2
             output std x!1.1
         """.trimIndent())
-        assert(out == "2\n") { out }
+        assert(out == "2\n_\n") { out }
     }
     @Test
     fun l02_hold_ok2 () {
         val out = all("""
             var x: <? [<?\^^^>,_int,^^]> = new <.1 [<.0>,_2,<.0>]>
-            output std \x
+            output std x
         """.trimIndent())
         assert(out == "<.1 [_,2,<.0>]>\n") { out }
     }
@@ -988,7 +1000,7 @@ class TExec {
         val out = all("""
             var x: <? [<?\^^^>,^^]> = new <.1 [<.0>,new <.1 [<.0>,<.0>]>]>
             set x!1.2 = <.0>    -- no, set previously
-            output std \y
+            output std y
         """.trimIndent())
         assert(out == "err") { out }
     }
@@ -1099,7 +1111,7 @@ class TExec {
     fun z08_type_complex () {
         val out = all("""
             var y: [(),<?[(),^^]>] = [(), new <.1 [(),<.0>]>]
-            output std \y
+            output std y
         """.trimIndent())
         assert(out == "[(),<.1 [(),<.0>]>]\n")
     }
@@ -1126,7 +1138,7 @@ class TExec {
         val out = all("""
             var f: ()->() = func ()->() {
                 var s1: <?[_int,^^]> = new <.1 [_1,<.0>]>
-                output std \s1
+                output std s1
             }
             call f
         """.trimIndent())
@@ -1137,7 +1149,7 @@ class TExec {
         val out = all("""
             var f: ()->() = func ()->() {
                 var s1: <?[_int,^^]> = new <.1 [_1,<.0>]>
-                output std \s1
+                output std s1
             }
             call f
         """.trimIndent())
@@ -1151,7 +1163,7 @@ class TExec {
                 return <.3 replace str=<.0>>
             }
             var x: <(),_int,<?[_int,^^]>> = call f ()
-            output std \x!3
+            output std x!3
         """.trimIndent())
         assert(out == "<.0>\n")
     }
@@ -1168,7 +1180,7 @@ class TExec {
         val out = all("""
             var tk2: <(),_int,<?[_int,^^]>> = <.3 <.0>>
             var s21: \<?[_int,^^]> = borrow \tk2!3
-            output std s21
+            output std /s21
         """.trimIndent())
         assert(out == "<.0>\n")
     }
@@ -1176,7 +1188,7 @@ class TExec {
     fun z13_union_rec () {
         val out = all("""
             var x: <(),^> = new <.2 new <.1>>
-            output std \x
+            output std x
         """.trimIndent())
         assert(out == "<.2 <.1>>\n")
     }
@@ -1185,8 +1197,8 @@ class TExec {
         val out = all("""
             var x: <(),^> = new <.2 new <.1>>
             var y: <(),^> = replace x=new <.1>
-            output std \x
-            output std \y
+            output std x
+            output std y
         """.trimIndent())
         println(out)
         assert(out == "<.1>\n<.2 <.1>>\n")
@@ -1196,8 +1208,8 @@ class TExec {
         val out = all("""
             var x: <(),^> = new <.2 new <.1>>
             var y: <(),^> = replace x!2=new <.1>
-            output std \x
-            output std \y
+            output std x
+            output std y
         """.trimIndent())
         println(out)
         assert(out == "<.2 <.1>>\n<.1>\n")
@@ -1207,8 +1219,8 @@ class TExec {
         val out = all("""
             var x: <(),[(),^^]> = new <.2 [(),new <.1>]>
             var y: [(),<(),[(),^^]>] = [(), replace x!2.2=new <.1>]
-            output std \x
-            output std \y
+            output std x
+            output std y
         """.trimIndent())
         println(out)
         assert(out == "<.2 [(),<.1>]>\n[(),<.1>]\n")

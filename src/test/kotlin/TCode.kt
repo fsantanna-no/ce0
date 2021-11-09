@@ -18,7 +18,7 @@ class TCode {
     @Test
     fun a02_type_tuple () {
         val tp = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), arrayOf(tp_unit,tp_unit))
-        assert(tp.toce() == "T_Unit_Unit_T")
+        assert(tp.toce() == "T_Unit_Unit_T") { tp.toce() }
     }
 
     // EXPR
