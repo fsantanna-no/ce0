@@ -981,9 +981,9 @@ class TExec {
             set x!1.3!1.1 = <.1 hold \x>
             set x!1.1 = <.1 hold \x!1.3>
             output std x!1.3!1.2
-            output std x!1.1
+            output std (/(/x!1.1!1)!1.1!1)!1.2
         """.trimIndent())
-        assert(out == "2\n_\n") { out }
+        assert(out == "2\n1\n") { out }
     }
     @Test
     fun l02_hold_ok2 () {
