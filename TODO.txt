@@ -1,0 +1,2 @@
+- hold_err: precisa dar erro de setar campo já setado
+- ^.1 ...: acesso hold a algum irmao
