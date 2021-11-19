@@ -446,8 +446,12 @@ fun code_fs (s: Stmt) {
         is Stmt.Set  -> {
             val src = EXPRS.removeFirst()
             val dst = EXPRS.removeFirst()
-            dst.first + src.first +
-                (if (s.dst.toType() is Type.Unit) "" else (dst.second+" = ")) + src.second + ";\n"
+            val tp = s.dst.toType()
+            val asr = if (tp !is Type.Union || !tp.ishold) "" else {
+                "assert(${dst.second} == NULL);\n"
+            }
+            dst.first + src.first + asr +
+                (if (tp is Type.Unit) "" else (dst.second+" = ")) + src.second + ";\n"
         }
         is Stmt.If -> {
             val tst = EXPRS.removeFirst()

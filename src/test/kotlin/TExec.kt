@@ -998,9 +998,9 @@ class TExec {
         val out = all("""
             var x: <? [<?\^^^>,^^]> = new <.1 [<.0>,new <.1 [<.0>,<.0>]>]>
             set x!1.2 = <.0>    -- no, set previously
-            output std y
+            output std x
         """.trimIndent())
-        assert(out == "err") { out }
+        assert(out == "out.exe: out.c:133: main: Assertion `(*(x))._1._2 == NULL' failed.\n") { out }
     }
     @Test
     fun l04_ptr_null () {
