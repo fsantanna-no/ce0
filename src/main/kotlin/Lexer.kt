@@ -1,28 +1,23 @@
 enum class TK {
     ERR, EOF, CHAR,
-    XVAR, XNAT, XNUM, XUP,
+    XVAR, XNAT, XNUM, XUP, XSCOPE,
     UNIT, ARROW,
-    BORROW, BREAK, CALL, CONSUME, COPY, ELSE, FUNC, HOLD,
-    IF, INP, LOOP, NAT, NEW, OUT, REPLACE, RET, SET, VAR,
+    BREAK, CALL, ELSE, FUNC,
+    IF, INPUT, LOOP, NATIVE, NEW, OUTPUT, RETURN, SET, VAR,
 }
 
 val key2tk: HashMap<String, TK> = hashMapOf (
-    "borrow" to TK.BORROW,
     "break"  to TK.BREAK,
     "call"   to TK.CALL,
-    "consume" to TK.CONSUME,
-    "copy"   to TK.COPY,
     "else"   to TK.ELSE,
     "func"   to TK.FUNC,
-    "hold"   to TK.HOLD,
     "if"     to TK.IF,
-    "input"  to TK.INP,
+    "input"  to TK.INPUT,
     "loop"   to TK.LOOP,
-    "native" to TK.NAT,
+    "native" to TK.NATIVE,
     "new"    to TK.NEW,
-    "output" to TK.OUT,
-    "replace" to TK.REPLACE,
-    "return" to TK.RET,
+    "output" to TK.OUTPUT,
+    "return" to TK.RETURN,
     "set"    to TK.SET,
     "var"    to TK.VAR,
 )
@@ -39,15 +34,17 @@ sealed class Tk (
     data class Str (val enu_: TK, val lin_: Int, val col_: Int, val str: String): Tk(enu_,lin_,col_)
     data class Num (val enu_: TK, val lin_: Int, val col_: Int, val num: Int):    Tk(enu_,lin_,col_)
     data class Up  (val enu_: TK, val lin_: Int, val col_: Int, val up:  Int):    Tk(enu_,lin_,col_)
+    data class Scope (val enu_: TK, val lin_: Int, val col_: Int, val scope: Int):Tk(enu_,lin_,col_)
 }
 
 fun TK.toErr (chr: Char?): String {
     return when (this) {
-        TK.EOF  -> "end of file"
-        TK.CHAR -> "`" + chr!! + "´"
-        TK.XNAT -> "`_´"
-        TK.XVAR -> "variable identifier"
-        TK.XNUM -> "number"
+        TK.EOF    -> "end of file"
+        TK.CHAR   -> "`" + chr!! + "´"
+        TK.XNAT   -> "`_´"
+        TK.XVAR   -> "variable identifier"
+        TK.XNUM   -> "number"
+        //TK.XSCOPE -> "scope"
         else -> TODO(this.toString())
     }
 }
@@ -91,7 +88,7 @@ fun token (all: All) {
     var (c1,x1) = all.read()
     when {
         (c1 == -1) -> all.tk1 = Tk.Sym(TK.EOF, LIN, COL, "")
-        (x1 in arrayOf(')', '{', '}', '[', ']', '<' , '>' , ';' , ':' , '=' , ',' , '\\', '/' , '.', '!' , '?', '@')) -> {
+        (x1 in arrayOf(')', '{', '}', '[', ']', '<' , '>' , ';' , ':' , '=' , ',' , '\\', '/' , '.', '!' , '?')) -> {
             all.tk1 = Tk.Chr(TK.CHAR, LIN, COL, x1)
         }
         (x1 == '^') -> {
@@ -102,6 +99,14 @@ fun token (all: All) {
             }
             all.unread(c1)
             all.tk1 = Tk.Up(TK.XUP, LIN, COL, n)
+        }
+        (x1 == '@') -> {
+            all.read().let { c1=it.first ; x1=it.second }
+            if (x1.isDigit()) {
+                all.tk1 = Tk.Scope(TK.XSCOPE, LIN, COL, x1.toString().toInt())
+            } else {
+                all.tk1 = Tk.Err(TK.ERR, LIN, COL, "@"+x1)
+            }
         }
         (x1 == '(') -> {
             val (c2,x2) = all.read()

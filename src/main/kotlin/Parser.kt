@@ -7,7 +7,7 @@ sealed class Type (val tk: Tk) {
     data class Union (val tk_: Tk.Chr, val isrec: Boolean, val ishold: Boolean, val isnull: Boolean, val vec: Array<Type>): Type(tk_)
     data class UCons (val tk_: Tk.Num, val arg: Type): Type(tk_)
     data class Func  (val tk_: Tk.Sym, val inp: Type, val out: Type): Type(tk_)
-    data class Ptr   (val tk_: Tk.Chr, val pln: Type): Type(tk_)
+    data class Ptr   (val tk_: Tk.Chr, val scope: Int?, val pln: Type): Type(tk_)
     data class Rec   (val tk_: Tk.Up): Type(tk_)
 }
 
@@ -61,7 +61,7 @@ fun Type.expand (): Array<Type> {
             is Type.Rec   -> if (up == cur.tk_.up) this else { assert(up>cur.tk_.up) ; cur }
             is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up+1) }.toTypedArray())
             is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.ishold, cur.isnull, cur.vec.map { aux(it,up+1) }.toTypedArray())
-            is Type.Ptr   -> Type.Ptr(cur.tk_, aux(cur.pln,up))
+            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scope, aux(cur.pln,up))
             is Type.Func  -> Type.Func(cur.tk_, aux(cur.inp,up), aux(cur.out,up))
             is Type.UCons -> error("bug found")
             else -> cur
@@ -121,7 +121,7 @@ fun Attr.toExpr (): Expr {
 
 sealed class Stmt (val tk: Tk) {
     data class Pass  (val tk_: Tk) : Stmt(tk_)
-    data class Var   (val tk_: Tk.Str, val isout: Boolean, val isglb: Boolean, val type: Type, val src: XExpr) : Stmt(tk_)
+    data class Var   (val tk_: Tk.Str, val isglb: Boolean, val type: Type, val src: XExpr) : Stmt(tk_)
     data class Set   (val tk_: Tk.Chr, val dst: Expr, val src: XExpr) : Stmt(tk_)
     data class Nat   (val tk_: Tk.Str) : Stmt(tk_)
     data class Call  (val tk_: Tk.Key, val call: Expr.Call) : Stmt(tk_)
@@ -141,7 +141,11 @@ fun parser_type (all: All): Type {
             all.accept(TK.XUP)  -> Type.Rec(all.tk0 as Tk.Up)
             all.accept(TK.CHAR,'\\') -> {
                 val tk0 = all.tk0 as Tk.Chr
-                Type.Ptr(tk0, one())
+                val pln = one()
+                val scope = if (!all.accept(TK.XSCOPE)) null else {
+                    (all.tk0 as Tk.Scope).scope
+                }
+                Type.Ptr(tk0, scope, pln)
             }
             all.accept(TK.CHAR,'(') -> {
                 val tp = parser_type(all)
@@ -223,28 +227,6 @@ fun parser_xexpr (all: All, canpre: Boolean): XExpr {
                 val e = parser_expr(all, canpre)
                 assert(e is Expr.UCons)
                 XExpr.New(e as Expr.UCons)
-            }
-            all.accept(TK.REPLACE) -> {
-                val a = parser_attr(all)
-                all.accept_err(TK.CHAR,'=')
-                val b = parser_xexpr(all,false)
-                XExpr.Replace(a.toExpr(),b)
-            }
-            all.accept(TK.CONSUME) -> {
-                val e = parser_expr(all, canpre)
-                XExpr.Consume(e)
-            }
-            all.accept(TK.COPY) -> {
-                val a = parser_attr(all)
-                XExpr.Copy(a.toExpr())
-            }
-            all.accept(TK.BORROW) -> {
-                val e = parser_expr(all, canpre)
-                XExpr.Borrow(e)
-            }
-            all.accept(TK.HOLD) -> {
-                val e = parser_expr(all, canpre)
-                XExpr.Hold(e)
             }
             else -> throw xxx
         }
@@ -328,15 +310,13 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                     Stmt.Seq(block.tk,
                         Stmt.Var (
                             Tk.Str(TK.XVAR,lin,col,"arg"),
-                            false, false,
-                            (tp as Type.Func).inp,
+                            false, (tp as Type.Func).inp,
                             XExpr.None(Expr.Nat(Tk.Str(TK.XNAT,lin,col,"_arg_")))
                         ),
                         Stmt.Seq(block.tk,
                             Stmt.Var (
                                 Tk.Str(TK.XVAR,lin,col,"_ret_"),
-                                false, false,
-                                tp.out,
+                                false, tp.out,
                                 XExpr.None(Expr.Unk(Tk.Chr(TK.CHAR,lin,col,'?')))
                             ),
                             block,
@@ -388,7 +368,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
         //    "expected function"
         //}
         val tk_pre2 = if (ispre) tk_pre as Tk.Key else Tk.Key(TK.CALL,tk_pre.lin,tk_pre.col,"call")
-        if (ispre && tk_pre2.enu==TK.OUT) {
+        if (ispre && tk_pre2.enu==TK.OUTPUT) {
             all.assert_tk(e1.tk, e1 is Expr.Var) { "invalid `output` : expected identifier" }
             e1 = Expr.Var (
                 Tk.Str(TK.XVAR,e1.tk.lin,e1.tk.col,"output_"+(e1.tk as Tk.Str).str)
@@ -397,7 +377,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
         return Expr.Call(tk_pre2, e1, e2)
     }
 
-    val ispre = (canpre && (all.accept(TK.CALL) || all.accept(TK.OUT)))
+    val ispre = (canpre && (all.accept(TK.CALL) || all.accept(TK.OUTPUT)))
     return call(ispre)
 }
 
@@ -451,15 +431,10 @@ fun parser_stmt (all: All): Stmt {
             all.accept_err(TK.XVAR)
             val tk_id = all.tk0 as Tk.Str
             all.accept_err(TK.CHAR,':')
-            val isout = all.accept(TK.XUP)
-            if (isout && (all.tk0 as Tk.Up).up > 1) { TODO("multiple ^") }
             val tp = parser_type(all)
-            all.assert_tk(tp.tk, !isout || tp is Type.Ptr) {
-                "expected pointer type"
-            }
             all.accept_err(TK.CHAR,'=')
             val e = parser_xexpr(all, true)
-            Stmt.Var(tk_id, isout, isglb, tp, e)
+            Stmt.Var(tk_id, isglb, tp, e)
         }
         all.accept(TK.SET) -> {
             val dst = parser_attr(all)
@@ -468,11 +443,11 @@ fun parser_stmt (all: All): Stmt {
             val src = parser_xexpr(all, true)
             Stmt.Set(tk0, dst.toExpr(), src)
         }
-        all.accept(TK.NAT) -> {
+        all.accept(TK.NATIVE) -> {
             all.accept_err(TK.XNAT)
             Stmt.Nat(all.tk0 as Tk.Str)
         }
-        all.check(TK.CALL) || all.check(TK.OUT) -> {
+        all.check(TK.CALL) || all.check(TK.OUTPUT) -> {
             val tk0 = all.tk1 as Tk.Key
             val e = parser_expr(all, true)
             Stmt.Call(tk0, e as Expr.Call)
@@ -487,7 +462,7 @@ fun parser_stmt (all: All): Stmt {
             val false_ = parser_block(all)
             Stmt.If(tk0, tst, true_, false_)
         }
-        all.accept(TK.RET) -> {
+        all.accept(TK.RETURN) -> {
             val tk0 = all.tk0 as Tk.Key
             val e = try {
                 parser_xexpr(all, false)

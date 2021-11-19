@@ -88,7 +88,7 @@ fun Expr.toType (): Type {
         is Expr.Unk   -> Type.Any(this.tk_)
         is Expr.Unit  -> Type.Unit(this.tk_)
         is Expr.Nat   -> Type.Nat(this.tk_)
-        is Expr.Upref -> Type.Ptr(this.tk_, this.pln.toType())
+        is Expr.Upref -> Type.Ptr(this.tk_, null, this.pln.toType())
         is Expr.Dnref -> (this.ptr.toType() as Type.Ptr).pln
         is Expr.TCons -> Type.Tuple(this.tk_, this.arg.map{it.e.toType()}.toTypedArray())
         is Expr.UCons -> Type.UCons(this.tk_, this.arg.e.toType())
@@ -171,7 +171,7 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
             this.arg.aux(this, env, sub)
         }
         is Expr.Dnref -> {
-            this.ptr.aux(this, env, xp.keepAnyNat { Type.Ptr(Tk.Chr(TK.CHAR,this.tk.lin,this.tk.col,'\\'),xp) })
+            this.ptr.aux(this, env, xp.keepAnyNat { Type.Ptr(Tk.Chr(TK.CHAR,this.tk.lin,this.tk.col,'\\'),null,xp) })
             All_assert_tk(this.tk, this.ptr.toType() is Type.Ptr) {
                 "invalid `/´ : expected pointer type"
             }

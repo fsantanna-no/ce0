@@ -90,14 +90,14 @@ class TEnv {
     @Test
     fun b07_user_out_err1 () {
         val out = inp2env("""
-            var x: ^
+            var x: _int @1
         """.trimIndent())
-        assert(out == "(ln 1, col 9): expected type : have end of file")
+        assert(out == "(ln 1, col 13): expected `=´ : have `@1´") { out }
     }
     @Test
     fun b07_user_rec_up () {
         val out = inp2env("""
-            var x: (^) = ?
+            var x: \_int @1 = ?
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -378,7 +378,7 @@ class TEnv {
     }
     @Test
     fun d02_func () {
-        val s = pre("var@ x: ()->() = ? ; var f: ()->() = func ()->() { var y: ()->() = x ; call y ; set x = ? }")
+        val s = pre("var x: ()->() = ? ; var f: ()->() = func ()->() { var y: ()->() = x ; call y ; set x = ? }")
         fun fe (e: Expr) {
             if (e is Expr.Var) {
                 if (e.tk_.str == "x") {
@@ -539,7 +539,7 @@ class TEnv {
     @Test
     fun g02_ptr_func_ok () {
         val out = inp2env("""
-            var@ v: _int = _10
+            var v: _int = _10
             var f : () -> \_int = func () -> \_int {
                 return \v
             }
@@ -624,9 +624,9 @@ class TEnv {
     @Test
     fun g09_ptr_arg_err () {
         val out = inp2env("""
-            var f: _int -> \_int = func _int -> \_int
+            var f: _int -> 1@ \_int = func _int -> 1@ \_int
             {
-                var ptr: ^\_int = \arg
+                var ptr: 1@ \_int = \arg
                 return ptr
             }
         """.trimIndent())

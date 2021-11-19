@@ -1,8 +1,7 @@
 fun env_prelude (s: Stmt): Stmt {
     val stdo = Stmt.Var (
         Tk.Str(TK.XVAR,1,1,"output_std"),
-        false, true,
-        Type.Func (
+        true, Type.Func (
             Tk.Sym(TK.ARROW, 1, 1, "->"),
             Type.Any(Tk.Chr(TK.CHAR,1,1,'?')),
             Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
@@ -193,11 +192,7 @@ fun check_xexprs (S: Stmt) {
 }
 
 fun Stmt.getDepth (): Int {
-    return if (this is Stmt.Var && this.isout) {
-        this.env("arg")!!.getDepth()
-    } else {
-        this.ups_tolist().count { it is Stmt.Block }
-    }
+    return this.ups_tolist().count { it is Stmt.Block }
 }
 
 fun Expr.getDepth (caller: Int, hold: Boolean): Pair<Int,Stmt.Var?> {
@@ -207,15 +202,7 @@ fun Expr.getDepth (caller: Int, hold: Boolean): Pair<Int,Stmt.Var?> {
             val dcl = this.env()!!
             return if (hold) Pair(dcl.getDepth(), dcl) else Pair(0, null)
         }
-        is Expr.Upref ->  {
-            val (depth,dcl) = this.pln.getDepth(caller, hold)
-            if (dcl is Stmt.Var) {
-                val inc = if (dcl.tk_.str == "arg" || dcl.isout) 1 else 0
-                Pair(depth + inc, dcl)
-            } else {
-                Pair(depth, dcl)
-            }
-        }
+        is Expr.Upref -> this.pln.getDepth(caller, hold)
         is Expr.Dnref -> this.ptr.getDepth(caller, hold)
         is Expr.TDisc -> this.tup.getDepth(caller, hold)
         is Expr.UDisc -> this.uni.getDepth(caller, hold)
