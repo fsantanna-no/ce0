@@ -42,6 +42,16 @@ fun Type.containsRec (): Boolean {
     }
 }
 
+fun Type.containsPtr (): Boolean {
+    return when (this) {
+        is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Func, is Type.Rec -> false
+        is Type.Ptr   -> true
+        is Type.Tuple -> this.vec.any { it.containsPtr() }
+        is Type.Union -> this.vec.any { it.containsPtr() }
+        is Type.UCons  -> this.arg.containsPtr()
+    }
+}
+
 fun Type.exactlyRec (): Boolean {
     return (this is Type.Union) && this.isrec
 }
@@ -125,16 +135,6 @@ fun Type.isSupOf_ (sub: Type, ups1: List<Type>, ups2: List<Type>): Boolean {
     }
 }
 
-fun Type.ishasptr (): Boolean {
-    return when (this) {
-        is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Func, is Type.Rec -> false
-        is Type.Ptr   -> true
-        is Type.Tuple -> this.vec.any { it.ishasptr() }
-        is Type.Union -> this.vec.any { it.ishasptr() }
-        is Type.UCons  -> this.arg.ishasptr()
-    }
-}
-
 fun Expr.isconst (): Boolean {
     return when (this) {
         is Expr.Unit, is Expr.Unk, is Expr.Call, is Expr.TCons, is Expr.UCons, is Expr.UPred, is Expr.Func -> true
@@ -157,6 +157,7 @@ fun check_xexprs (S: Stmt) {
         val is_ptr_to_udisc = (xp is Type.Ptr) && xe.e.containsUDisc() //xp.pln.containsUDisc() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
         val is_ptr_to_ctrec = (xp is Type.Ptr) && xp.pln.containsRec() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
         val is_ptr_to_hold  = (xp is Type.Ptr) && xp.pln.exactlyRec() && (xp.pln as Type.Union).ishold
+        val has_ptr = xp.containsPtr()
 
         when (xe) {
             is XExpr.None -> All_assert_tk(xe.e.tk, !is_ptr_to_udisc && !is_ptr_to_ctrec && (!xp_ctrec || (e_iscst && (!e_isvar||!xp_exrec||e_isnil)))) {
@@ -174,13 +175,13 @@ fun check_xexprs (S: Stmt) {
             is XExpr.Hold -> All_assert_tk(xe.e.tk, is_ptr_to_hold) {
                 "invalid `hold` : expected pointer to recursive variable"
             }
-            is XExpr.Copy -> All_assert_tk(xe.e.tk, xp_ctrec && !e_iscst) {
+            is XExpr.Copy -> All_assert_tk(xe.e.tk, xp_ctrec && !e_iscst && !has_ptr) {
                 "invalid `copy` : expected recursive variable"
             }
-            is XExpr.Replace -> All_assert_tk(xe.e.tk, xp_exrec && !e_iscst) {
+            is XExpr.Replace -> All_assert_tk(xe.e.tk, xp_exrec && !e_iscst && !has_ptr) {
                 "invalid `replace` : expected recursive variable"
             }
-            is XExpr.Consume -> All_assert_tk(xe.e.tk, xp_exrec && !e_iscst) {
+            is XExpr.Consume -> All_assert_tk(xe.e.tk, xp_exrec && !e_iscst && !has_ptr) {
                 "invalid `consume` : expected recursive variable"
             }
             is XExpr.New -> All_assert_tk(xe.e.tk, xp_exrec && e_isvar && !e_isnil) {
@@ -221,14 +222,14 @@ fun Expr.getDepth (caller: Int, hold: Boolean): Pair<Int,Stmt.Var?> {
         is Expr.Call -> this.f.toType().let {
             when (it) {
                 is Type.Nat -> Pair(0, null)
-                is Type.Func -> if (!it.out.ishasptr()) Pair(0,null) else {
+                is Type.Func -> if (!it.out.containsPtr()) Pair(0,null) else {
                     // substitute args depth/id by caller depth/id
                     Pair(caller, (this.f as Expr.Var).env())
                 }
                 else -> error("bug found")
             }
         }
-        is Expr.TCons -> this.arg.map { it.e.getDepth(caller,it.e.toType().ishasptr()) }.maxByOrNull { it.first }!!
+        is Expr.TCons -> this.arg.map { it.e.getDepth(caller,it.e.toType().containsPtr()) }.maxByOrNull { it.first }!!
         is Expr.UCons -> this.arg.e.getDepth(caller, hold)
     }
 }
@@ -238,15 +239,15 @@ fun check_pointers (S: Stmt) {
         when (s) {
             is Stmt.Var -> {
                 val dst_depth = s.getDepth()
-                val (src_depth, src_dcl) = s.src.e.getDepth(dst_depth, s.type.ishasptr())
+                val (src_depth, src_dcl) = s.src.e.getDepth(dst_depth, s.type.containsPtr())
                 All_assert_tk(s.tk, dst_depth >= src_depth) {
                     "invalid assignment : cannot hold local pointer \"${src_dcl!!.tk_.str}\" (ln ${src_dcl!!.tk.lin})"
                 }
             }
             is Stmt.Set -> {
                 val set_depth = s.getDepth()
-                val (src_depth, src_dcl) = s.src.e.getDepth(set_depth, s.dst.toType().ishasptr())
-                All_assert_tk(s.tk, s.dst.getDepth(set_depth, s.dst.toType().ishasptr()).first >= src_depth) {
+                val (src_depth, src_dcl) = s.src.e.getDepth(set_depth, s.dst.toType().containsPtr())
+                All_assert_tk(s.tk, s.dst.getDepth(set_depth, s.dst.toType().containsPtr()).first >= src_depth) {
                     "invalid assignment : cannot hold local pointer \"${src_dcl!!.tk_.str}\" (ln ${src_dcl!!.tk.lin})"
                 }
             }

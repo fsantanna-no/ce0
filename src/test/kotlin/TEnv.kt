@@ -1593,6 +1593,13 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK") { out }
     }
+    @Test
+    fun n09_hold_err () {
+        val out = inp2env("""
+            var x: <? [<?\^^^>,^^]> = new <.1 [<.0>,<.0>]>
+            var y: <? [<?\^^^>,^^]> = consume x
+            output std y
+        """.trimIndent())
+        assert(out == "(ln 2, col 35): invalid `consume` : expected recursive variable") { out }
+    }
 }
-
-// dblinklist, prevent reset/grow, prevent set de ptr de fora, nao pode copy/move
