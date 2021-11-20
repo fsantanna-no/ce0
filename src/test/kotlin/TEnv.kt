@@ -534,7 +534,8 @@ class TEnv {
             var p: \_int = f ()
             output std /p
         """.trimIndent())
-        assert(out == "(ln 3, col 13): undeclared variable \"v\"") { out }
+        //assert(out == "(ln 3, col 13): undeclared variable \"v\"") { out }
+        assert(out == "OK") { out }
     }
     @Test
     fun g02_ptr_func_ok () {
@@ -578,14 +579,14 @@ class TEnv {
     fun g05_ptr_caret_ok () {
         val out = inp2env("""
             var f : \_int -> \_int = func \_int -> \_int {
-                var ptr: ^\_int = arg
+                var ptr: \_int@-1 = arg
                 return ptr
             }
             var v: _int = _10
             var p: \_int = f \v
             output std /p
         """.trimIndent())
-        assert(out == "OK")
+        assert(out == "OK") { out }
     }
     @Test
     fun g06_ptr_caret_err () {

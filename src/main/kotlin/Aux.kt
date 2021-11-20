@@ -42,12 +42,11 @@ fun Any.ups_tolist (): List<Any> {
 
 //////////////////////////////////////////////////////////////////////////////
 
-fun Any.env_first (cross: Boolean=true, f: (Stmt)->Boolean): Stmt? {
+fun Any.env_first (f: (Stmt)->Boolean): Stmt? {
     fun aux (env: Env?): Stmt? {
         return when {
             (env == null) -> null
             f(env.s) -> env.s
-            (!cross && env.s.tk_.str=="arg") -> null
             else -> aux(env.prv)
         }
     }
@@ -76,7 +75,7 @@ fun Any.env (id: String): Stmt.Var? {
 fun Expr.Var.env (): Stmt.Var? {
     val ret = this.env_first { it is Stmt.Var && it.tk_.str==this.tk_.str } as Stmt.Var?
     if (ret!=null && ret.type.let { !ret.isglb }) {
-        return this.env_first(false) { it is Stmt.Var && it.tk_.str==this.tk_.str } as Stmt.Var?
+        return this.env_first { it is Stmt.Var && it.tk_.str==this.tk_.str } as Stmt.Var?
     }
     return ret
 }
