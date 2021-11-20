@@ -7,7 +7,7 @@ sealed class Type (val tk: Tk) {
     data class Union (val tk_: Tk.Chr, val isrec: Boolean, val ishold: Boolean, val isnull: Boolean, val vec: Array<Type>): Type(tk_)
     data class UCons (val tk_: Tk.Num, val arg: Type): Type(tk_)
     data class Func  (val tk_: Tk.Sym, val inp: Type, val out: Type): Type(tk_)
-    data class Ptr   (val tk_: Tk.Chr, val scope: Pair<Boolean,Int>?, val pln: Type): Type(tk_)
+    data class Ptr   (val tk_: Tk.Chr, val scope: Char?, val pln: Type): Type(tk_)
     data class Rec   (val tk_: Tk.Up): Type(tk_)
 }
 
@@ -143,7 +143,7 @@ fun parser_type (all: All): Type {
                 val tk0 = all.tk0 as Tk.Chr
                 val pln = one()
                 val scope = if (!all.accept(TK.XSCOPE)) null else {
-                    (all.tk0 as Tk.Scope).let { Pair(it.isabs,it.scope) }
+                    (all.tk0 as Tk.Scope).scope
                 }
                 Type.Ptr(tk0, scope, pln)
             }

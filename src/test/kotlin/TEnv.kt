@@ -449,6 +449,17 @@ class TEnv {
         assert(out == "(ln 4, col 14): invalid assignment : cannot hold local pointer \"pin\" (ln 3)")
     }
     @Test
+    fun e03_ptr_ok () {
+        val out = inp2env("""
+            var pout: \_int = ?
+            {
+                var pin: \_int @@ = ?
+                set pout = pin
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
     fun e04_ptr_ok () {
         val out = inp2env("""
             var pout: \_int = ?
@@ -619,7 +630,7 @@ class TEnv {
                 return \arg
             }
         """.trimIndent())
-        assert(out == "(ln 3, col 5): invalid assignment : cannot hold local pointer \"arg\" (ln 2)")
+        assert(out == "(ln 3, col 5): invalid assignment : cannot hold local pointer \"arg\" (ln 2)") { out }
     }
     @Test
     fun g09_ptr_arg_err () {

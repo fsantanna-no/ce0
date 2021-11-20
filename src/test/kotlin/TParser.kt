@@ -601,30 +601,10 @@ class TParser {
         assert(s is Stmt.Var && s.src.e is Expr.TDisc)
     }
     @Test
-    fun c18_parser_xepr () {
+    fun c18_parser_var () {
         val all = All_new(PushbackReader(StringReader("(/arg.1)!1.1"), 2))
         lexer(all)
         val e = parser_xexpr(all,true)
         //assert(s is Stmt.Var && s.src.e is Expr.TDisc)
     }
-
-    // XEXPR
-
-    @Test
-    fun c17_stmt_xexpr () {
-        val all = All_new(PushbackReader(StringReader("set s = (replace ())"), 2))
-        lexer(all)
-        try {
-            parser_stmt(all)
-            error("impossible case")
-        } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 18): expected expression : have `()´")
-        }
-    }
-    @Test
-    fun c18_stmt_xexpr () {
-        val all = All_new(PushbackReader(StringReader("set s = (replace a = ())"), 2))
-        lexer(all)
-        val s = parser_stmt(all)
-        assert(s is Stmt.Set && s.src is XExpr.Replace)
-    }}
+}
