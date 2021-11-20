@@ -1,7 +1,7 @@
 fun env_prelude (s: Stmt): Stmt {
     val stdo = Stmt.Var (
         Tk.Str(TK.XVAR,1,1,"output_std"),
-        true, Type.Func (
+            Type.Func (
             Tk.Sym(TK.ARROW, 1, 1, "->"),
             Type.Any(Tk.Chr(TK.CHAR,1,1,'?')),
             Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))

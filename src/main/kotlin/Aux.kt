@@ -73,11 +73,7 @@ fun Any.env (id: String): Stmt.Var? {
 }
 
 fun Expr.Var.env (): Stmt.Var? {
-    val ret = this.env_first { it is Stmt.Var && it.tk_.str==this.tk_.str } as Stmt.Var?
-    if (ret!=null && ret.type.let { !ret.isglb }) {
-        return this.env_first { it is Stmt.Var && it.tk_.str==this.tk_.str } as Stmt.Var?
-    }
-    return ret
+    return this.env_first { it is Stmt.Var && it.tk_.str==this.tk_.str } as Stmt.Var?
 }
 
 //////////////////////////////////////////////////////////////////////////////

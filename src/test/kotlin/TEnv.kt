@@ -579,7 +579,7 @@ class TEnv {
     fun g05_ptr_caret_ok () {
         val out = inp2env("""
             var f : \_int -> \_int = func \_int -> \_int {
-                var ptr: \_int@-1 = arg
+                var ptr: \_int@0 = arg
                 return ptr
             }
             var v: _int = _10
@@ -593,7 +593,7 @@ class TEnv {
         val out = inp2env("""
             var f : \_int -> \_int = func \_int -> \_int {
                 var x: _int = _10
-                var ptr: ^\_int = \x
+                var ptr: \_int @0 = \x
                 return ptr
             }
             var v: _int = _10
@@ -603,11 +603,10 @@ class TEnv {
         assert(out == "(ln 3, col 9): invalid assignment : cannot hold local pointer \"x\" (ln 2)")
     }
 
-    // TODO: caret outside function in global scope
     @Test
     fun g07_ptr_caret_err () {
         val out = inp2env("""
-            var ptr: ^\_int = ?
+            var ptr: \_int @0 = ?
         """.trimIndent())
         assert(out == "OK")
     }

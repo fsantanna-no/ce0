@@ -7,7 +7,7 @@ sealed class Type (val tk: Tk) {
     data class Union (val tk_: Tk.Chr, val isrec: Boolean, val ishold: Boolean, val isnull: Boolean, val vec: Array<Type>): Type(tk_)
     data class UCons (val tk_: Tk.Num, val arg: Type): Type(tk_)
     data class Func  (val tk_: Tk.Sym, val inp: Type, val out: Type): Type(tk_)
-    data class Ptr   (val tk_: Tk.Chr, val scope: Int?, val pln: Type): Type(tk_)
+    data class Ptr   (val tk_: Tk.Chr, val scope: Pair<Boolean,Int>?, val pln: Type): Type(tk_)
     data class Rec   (val tk_: Tk.Up): Type(tk_)
 }
 
@@ -121,7 +121,7 @@ fun Attr.toExpr (): Expr {
 
 sealed class Stmt (val tk: Tk) {
     data class Pass  (val tk_: Tk) : Stmt(tk_)
-    data class Var   (val tk_: Tk.Str, val isglb: Boolean, val type: Type, val src: XExpr) : Stmt(tk_)
+    data class Var   (val tk_: Tk.Str, val type: Type, val src: XExpr) : Stmt(tk_)
     data class Set   (val tk_: Tk.Chr, val dst: Expr, val src: XExpr) : Stmt(tk_)
     data class Nat   (val tk_: Tk.Str) : Stmt(tk_)
     data class Call  (val tk_: Tk.Key, val call: Expr.Call) : Stmt(tk_)
@@ -143,7 +143,7 @@ fun parser_type (all: All): Type {
                 val tk0 = all.tk0 as Tk.Chr
                 val pln = one()
                 val scope = if (!all.accept(TK.XSCOPE)) null else {
-                    (all.tk0 as Tk.Scope).scope
+                    (all.tk0 as Tk.Scope).let { Pair(it.isabs,it.scope) }
                 }
                 Type.Ptr(tk0, scope, pln)
             }
@@ -310,13 +310,13 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                     Stmt.Seq(block.tk,
                         Stmt.Var (
                             Tk.Str(TK.XVAR,lin,col,"arg"),
-                            false, (tp as Type.Func).inp,
+                            (tp as Type.Func).inp,
                             XExpr.None(Expr.Nat(Tk.Str(TK.XNAT,lin,col,"_arg_")))
                         ),
                         Stmt.Seq(block.tk,
                             Stmt.Var (
                                 Tk.Str(TK.XVAR,lin,col,"_ret_"),
-                                false, tp.out,
+                                tp.out,
                                 XExpr.None(Expr.Unk(Tk.Chr(TK.CHAR,lin,col,'?')))
                             ),
                             block,
@@ -427,14 +427,13 @@ fun parser_block (all: All): Stmt.Block {
 fun parser_stmt (all: All): Stmt {
     return when {
         all.accept(TK.VAR) -> {
-            val isglb = all.accept(TK.CHAR,'@')
             all.accept_err(TK.XVAR)
             val tk_id = all.tk0 as Tk.Str
             all.accept_err(TK.CHAR,':')
             val tp = parser_type(all)
             all.accept_err(TK.CHAR,'=')
             val e = parser_xexpr(all, true)
-            Stmt.Var(tk_id, isglb, tp, e)
+            Stmt.Var(tk_id, tp, e)
         }
         all.accept(TK.SET) -> {
             val dst = parser_attr(all)

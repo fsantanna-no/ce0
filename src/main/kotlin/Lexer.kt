@@ -34,7 +34,7 @@ sealed class Tk (
     data class Str (val enu_: TK, val lin_: Int, val col_: Int, val str: String): Tk(enu_,lin_,col_)
     data class Num (val enu_: TK, val lin_: Int, val col_: Int, val num: Int):    Tk(enu_,lin_,col_)
     data class Up  (val enu_: TK, val lin_: Int, val col_: Int, val up:  Int):    Tk(enu_,lin_,col_)
-    data class Scope (val enu_: TK, val lin_: Int, val col_: Int, val scope: Int):Tk(enu_,lin_,col_)
+    data class Scope (val enu_: TK, val lin_: Int, val col_: Int, val isabs: Boolean, val scope: Int):Tk(enu_,lin_,col_)
 }
 
 fun TK.toErr (chr: Char?): String {
@@ -102,10 +102,14 @@ fun token (all: All) {
         }
         (x1 == '@') -> {
             all.read().let { c1=it.first ; x1=it.second }
+            val at = if (x1 != '@') "" else {
+                all.read().let { c1=it.first ; x1=it.second }
+                "@"
+            }
             if (x1.isDigit()) {
-                all.tk1 = Tk.Scope(TK.XSCOPE, LIN, COL, x1.toString().toInt())
+                all.tk1 = Tk.Scope(TK.XSCOPE, LIN, COL, at=="@", x1.toString().toInt())
             } else {
-                all.tk1 = Tk.Err(TK.ERR, LIN, COL, "@"+x1)
+                all.tk1 = Tk.Err(TK.ERR, LIN, COL, "@"+at+x1)
             }
         }
         (x1 == '(') -> {

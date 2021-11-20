@@ -402,21 +402,21 @@ class TParser {
     }
     @Test
     fun c04_parser_stmt_var_caret () {
-        val all = All_new(PushbackReader(StringReader("var x: ^() = ())"), 2))
+        val all = All_new(PushbackReader(StringReader("var x: ()@0 = ())"), 2))
         lexer(all)
         try {
             parser_stmt(all)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 9): expected pointer type")
+            assert(e.message == "(ln 1, col 10): expected `=´ : have `@0´") { e.message!! }
         }
     }
     @Test
     fun c05_parser_stmt_var_global () {
-        val all = All_new(PushbackReader(StringReader("var @x: () = ()"), 2))
+        val all = All_new(PushbackReader(StringReader("var x: \\()@0 = ?"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Var && s.isglb && s.type is Type.Unit && s.src.e is Expr.Unit)
+        assert(s is Stmt.Var && s.type is Type.Ptr && s.src.e is Expr.Unk)
     }
 
     // STMT_CALL
