@@ -130,7 +130,7 @@ sealed class Stmt (val tk: Tk) {
     data class Ret   (val tk_: Tk.Key) : Stmt(tk_)
     data class Loop  (val tk_: Tk.Key, val block: Block) : Stmt(tk_)
     data class Break (val tk_: Tk.Key) : Stmt(tk_)
-    data class Block (val tk_: Tk.Chr, val body: Stmt) : Stmt(tk_)
+    data class Block (val tk_: Tk.Chr, val scope: Char?, val body: Stmt) : Stmt(tk_)
 }
 
 fun parser_type (all: All): Type {
@@ -306,7 +306,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
 
                 val lin = block.tk.lin
                 val col = block.tk.col
-                val xblock = Stmt.Block(block.tk_,
+                val xblock = Stmt.Block(block.tk_, null,
                     Stmt.Seq(block.tk,
                         Stmt.Var (
                             Tk.Str(TK.XVAR,lin,col,"arg"),
@@ -419,9 +419,10 @@ fun parser_attr (all: All): Attr {
 fun parser_block (all: All): Stmt.Block {
     all.accept_err(TK.CHAR,'{')
     val tk0 = all.tk0 as Tk.Chr
+    val scope = if (all.accept(TK.XSCOPE)) (all.tk0 as Tk.Scope).scope else null
     val ret = parser_stmts(all, Pair(TK.CHAR,'}'))
     all.accept_err(TK.CHAR,'}')
-    return Stmt.Block(tk0, ret)
+    return Stmt.Block(tk0, scope, ret)
 }
 
 fun parser_stmt (all: All): Stmt {
@@ -456,7 +457,7 @@ fun parser_stmt (all: All): Stmt {
             val tst = parser_expr(all, false)
             val true_ = parser_block(all)
             if (!all.accept(TK.ELSE)) {
-                return Stmt.If(tk0, tst, true_, Stmt.Block(Tk.Chr(TK.CHAR,all.tk1.lin,all.tk1.col,'{'),Stmt.Pass(all.tk0)))
+                return Stmt.If(tk0, tst, true_, Stmt.Block(Tk.Chr(TK.CHAR,all.tk1.lin,all.tk1.col,'{'),null,Stmt.Pass(all.tk0)))
             }
             val false_ = parser_block(all)
             Stmt.If(tk0, tst, true_, false_)

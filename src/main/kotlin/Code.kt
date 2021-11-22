@@ -69,7 +69,6 @@ fun code_ft (tp: Type) {
         ))
         is Type.Tuple -> {
             val ce    = tp.toce()
-            val ctrec = tp.containsRec()
             val tpexp = tp.expand()
 
             val struct = Pair("""
