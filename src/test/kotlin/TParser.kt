@@ -131,6 +131,13 @@ class TParser {
             assert(e.message == "(ln 1, col 1): invalid type declaration : unexpected `?´")
         }
     }
+    @Test
+    fun a13_parser_type_pointer_scope () {
+        val all = All_new(PushbackReader(StringReader("\\\\() @a @b"), 2))
+        lexer(all)
+        val tp = parser_type(all)
+        assert(tp is Type.Ptr && tp.scope=='b' && tp.pln is Type.Ptr && (tp.pln as Type.Ptr).scope=='a')
+    }
 
     // EXPR
 
@@ -402,18 +409,18 @@ class TParser {
     }
     @Test
     fun c04_parser_stmt_var_caret () {
-        val all = All_new(PushbackReader(StringReader("var x: ()@0 = ())"), 2))
+        val all = All_new(PushbackReader(StringReader("var x: ()@a = ())"), 2))
         lexer(all)
         try {
             parser_stmt(all)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 10): expected `=´ : have `@0´") { e.message!! }
+            assert(e.message == "(ln 1, col 10): expected `=´ : have `@a´") { e.message!! }
         }
     }
     @Test
     fun c05_parser_stmt_var_global () {
-        val all = All_new(PushbackReader(StringReader("var x: \\()@0 = ?"), 2))
+        val all = All_new(PushbackReader(StringReader("var x: \\()@@ = ?"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert(s is Stmt.Var && s.type is Type.Ptr && s.src.e is Expr.Unk)
