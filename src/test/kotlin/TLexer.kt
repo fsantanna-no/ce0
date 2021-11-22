@@ -133,4 +133,17 @@ class TLexer {
         lexer(all) ; lexer(all)
         assert(all.tk1.enu==TK.XNUM && (all.tk1 as Tk.Num).num==10)
     }
+
+    // XSCOPE
+
+    @Test
+    fun c01_scope () {
+        val all = All_new(PushbackReader(StringReader("@@"), 2))
+        lexer(all) ; assert(all.tk1.enu==TK.XSCOPE && (all.tk1 as Tk.Scope).scope=='@')
+    }
+    @Test
+    fun c02_scope () {
+        val all = All_new(PushbackReader(StringReader("@1"), 2))
+        lexer(all) ; assert(all.tk1.enu==TK.ERR && (all.tk1 as Tk.Err).err=="@1")
+    }
 }

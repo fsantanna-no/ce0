@@ -102,7 +102,11 @@ fun token (all: All) {
         }
         (x1 == '@') -> {
             all.read().let { c1=it.first ; x1=it.second }
-            all.tk1 = Tk.Scope(TK.XSCOPE, LIN, COL, x1)
+            if (x1=='@' || x1.isLetter()) {
+                all.tk1 = Tk.Scope(TK.XSCOPE, LIN, COL, x1)
+            } else {
+                all.tk1 = Tk.Err(TK.ERR, LIN, COL, "@"+x1)
+            }
         }
         (x1 == '(') -> {
             val (c2,x2) = all.read()
