@@ -58,7 +58,7 @@ fun Type.keepAnyNat (other: ()->Type): Type {
 }
 
 fun Type.isnullptr (): Boolean {
-    return this is Type.Union && this.isnull && this.vec.size==1 && this.vec[0] is Type.Ptr
+    return this is Type.Union && this.isnull && this.vec.size==1 && this.vec[0].let { it is Type.Ptr && it.pln !is Type.Rec }
 }
 
 // TODO: use it to detect recursive unions that do not require tags b/c of single subtype+null pointer
@@ -173,7 +173,7 @@ fun parser_type (all: All): Type {
                     all.accept_err(TK.CHAR, '>')
                     fun f (tp: Type, n: Int): Boolean {
                         return when (tp) {
-                            is Type.Rec   -> return n <= tp.tk_.up
+                            is Type.Ptr   -> return (tp.pln is Type.Rec) && (n <= tp.pln.tk_.up)
                             is Type.Tuple -> tp.vec.any { f(it, n+1) }
                             is Type.Union -> tp.vec.any { f(it, n+1) }
                             else -> false

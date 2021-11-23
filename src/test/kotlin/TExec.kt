@@ -708,12 +708,12 @@ class TExec {
             output std l
         """.trimIndent())
         //assert(out == "(ln 1, col 5): invalid assignment : type mismatch") { out }
-        assert(out == "<.0>\n") { out }
+        assert(out == "erro .0 is a pointer") { out }
     }
     @Test
     fun j01_list () {
         val out = all("""
-            var l: <?^>; set l = <.0>
+            var l: <?\^>; set l = <.0>
             output std l
         """.trimIndent())
         assert(out == "<.0>\n") { out }
@@ -721,7 +721,7 @@ class TExec {
     @Test
     fun j02_list_new () {
         val out = all("""
-            var l: \<?^>; set l = new <.1 <.0>>
+            var l: \<?\^>; set l = new <.1 <.0>>
             output std l
         """.trimIndent())
         assert(out == "<.1 <.0>>\n") { out }
