@@ -1,5 +1,6 @@
 val UPS = mutableMapOf<Any,Any>()
 val ENV = mutableMapOf<Any,Env>()
+val TPS = mutableMapOf<Expr,Type>()
 val XPS = mutableMapOf<Expr,Type>()
 
 data class Env (val s: Stmt.Var, val prv: Env?)
@@ -7,6 +8,7 @@ data class Env (val s: Stmt.Var, val prv: Env?)
 fun aux (s: Stmt) {
     UPS.clear()
     ENV.clear()
+    TPS.clear()
     XPS.clear()
     s.aux(null, null)
 }
@@ -14,7 +16,7 @@ fun aux (s: Stmt) {
 private
 fun ups_add (v: Any, up: Any?) {
     if (up == null) return
-    assert(UPS[v] == null)
+    //assert(UPS[v] == null)    // fails b/c of expands
     UPS[v] = up
 }
 
@@ -26,8 +28,14 @@ fun env_add (v: Any, env: Env?) {
 }
 
 private
+fun tps_add (e: Expr, tp: Type) {
+    assert(TPS[e] == null)
+    TPS[e] = tp
+}
+
+private
 fun xps_add (e: Expr, tp: Type) {
-    assert(XPS[e] == null)
+    //assert(XPS[e] == null)    // fails b/c of expands
     XPS[e] = tp
 }
 
@@ -76,34 +84,51 @@ fun Expr.Var.env (): Stmt.Var? {
     return this.env_first { it is Stmt.Var && it.tk_.str==this.tk_.str } as Stmt.Var?
 }
 
+fun env_prelude (s: Stmt): Stmt {
+    val stdo = Stmt.Var (
+        Tk.Str(TK.XVAR,1,1,"output_std"),
+        Type.Func (
+            Tk.Sym(TK.ARROW, 1, 1, "->"),
+            Type.Any(Tk.Chr(TK.CHAR,1,1,'?')),
+            Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
+        )
+    )
+    return Stmt.Seq(stdo.tk, stdo, s)
+}
+
 //////////////////////////////////////////////////////////////////////////////
+
+fun Type.up (up: Any): Type {
+    ups_add(this, up)
+    return this
+}
 
 fun Expr.toType (): Type {
     return when (this) {
-        is Expr.Unit  -> Type.Unit(this.tk_)
-        is Expr.Nat   -> Type.Nat(this.tk_)
-        is Expr.Upref -> Type.Ptr(this.tk_, null, this.pln.toType())
-        is Expr.Dnref -> (this.ptr.toType() as Type.Ptr).pln
-        is Expr.TCons -> Type.Tuple(this.tk_, this.arg.map{it.e.toType()}.toTypedArray())
-        is Expr.UCons -> Type.UCons(this.tk_, this.arg.e.toType())
+        is Expr.Unit  -> Type.Unit(this.tk_).up(this)
+        is Expr.Nat   -> Type.Nat(this.tk_).up(this)
+        is Expr.Upref -> TPS[this.pln]!!.let { Type.Ptr(this.tk_,null,it).up(it) }
+        is Expr.Dnref -> (TPS[this.ptr] as Type.Ptr).pln
+        is Expr.TCons -> Type.Tuple(this.tk_, this.arg.map{TPS[it.e]!!}.toTypedArray()).up(this)
+        is Expr.UCons -> Type.UCons(this.tk_, TPS[this.arg.e]!!).up(this)
         is Expr.Call  -> {
-            this.f.toType().let {
+            TPS[this.f].let {
                 when (it) {
                     is Type.Func -> it.out
-                    is Type.Nat  -> Type.Nat(it.tk_)
+                    is Type.Nat  -> it //Type.Nat(it.tk_).ups(this)
                     else -> error("impossible case")
                 }
             }
         }
         is Expr.Func  -> this.type
-        is Expr.UPred -> Type.Nat(Tk.Str(TK.XNAT, this.tk.lin, this.tk.col, "int"))
-        is Expr.TDisc -> (this.tup.toType() as Type.Tuple).expand()[this.tk_.num-1]
-        is Expr.UDisc -> (this.uni.toType() as Type.Union).let {
+        is Expr.UPred -> Type.Nat(Tk.Str(TK.XNAT, this.tk.lin, this.tk.col, "int")).up(this)
+        is Expr.TDisc -> (TPS[this.tup] as Type.Tuple).expand()[this.tk_.num-1].up(this)
+        is Expr.UDisc -> (TPS[this.uni] as Type.Union).let {
             if (this.tk_.num == 0) {
                 assert(it.exactlyRec()) { "bug found" }
-                Type_Unit(this.tk)
+                Type_Unit(this.tk).up(this)
             } else {
-                it.expand()[this.tk_.num - 1]
+                it.expand()[this.tk_.num - 1].up(this)
             }
         }
         is Expr.Var -> this.env()!!.type
@@ -166,14 +191,14 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
         }
         is Expr.Dnref -> {
             this.ptr.aux(this, env, xp.keepAnyNat { Type.Ptr(Tk.Chr(TK.CHAR,this.tk.lin,this.tk.col,'\\'),null,xp) })
-            All_assert_tk(this.tk, this.ptr.toType() is Type.Ptr) {
+            All_assert_tk(this.tk, TPS[this.ptr] is Type.Ptr) {
                 "invalid `/´ : expected pointer type"
             }
         }
         is Expr.Upref -> this.pln.aux(this, env, if (xp is Type.Ptr) xp.keepAnyNat{xp.pln} else Type_Any(this.tk))
         is Expr.TDisc -> {
             this.tup.aux(this, env, Type_Any(this.tk))
-            this.tup.toType().let {
+            TPS[this.tup].let {
                 All_assert_tk(this.tk, it is Type.Tuple) {
                     "invalid discriminator : type mismatch"
                 }
@@ -185,7 +210,7 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
         }
         is Expr.UDisc -> {
             this.uni.aux(this, env, Type_Any(this.tk))
-            this.uni.toType().let {
+            TPS[this.uni]!!.let {
                 All_assert_tk(this.tk, it is Type.Union) {
                     "invalid discriminator : type mismatch"
                 }
@@ -197,7 +222,7 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
         }
         is Expr.UPred -> {
             this.uni.aux(this, env, Type_Any(this.tk))
-            this.uni.toType().let {
+            TPS[this.uni]!!.let {
                 All_assert_tk(this.tk, it is Type.Union) {
                     "invalid discriminator : type mismatch"
                 }
@@ -209,23 +234,24 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
         }
         is Expr.Call  -> {
             this.f.aux(this, env, Type_Any(this.tk))
-            val tp = this.f.toType()
+            val tp = TPS[this.f]
             All_assert_tk(this.f.tk, tp is Type.Func || tp is Type.Nat) {
                 "invalid call : not a function"
             }
-            val xp2 = this.f.toType().let { it.keepAnyNat{it} }
+            val xp2 = TPS[this.f]!!.let { it.keepAnyNat{it} }
             this.arg.aux(this, env, if (xp2 is Type.Func) xp2.keepAnyNat{ xp2.inp } else Type_Any(this.tk))
             val inp = when (tp) {
                 is Type.Func -> tp.inp
                 is Type.Nat  -> tp
                 else -> error("impossible case")
             }
-            All_assert_tk(this.f.tk, inp.isSupOf(this.arg.e.toType())) {
+            All_assert_tk(this.f.tk, inp.isSupOf(TPS[this.arg.e]!!)) {
                 "invalid call : type mismatch"
             }
         }
-        is Expr.Func  -> this.block.aux(this, env) //{ this.type.ups(this) ; this.block.aux(this, env) }
+        is Expr.Func  -> { this.type.aux(this) ; this.block.aux(this, env) }
     }
+    tps_add(this, this.toType())
 }
 
 private
@@ -233,12 +259,15 @@ fun Stmt.aux (up: Any?, env: Env?): Env? {
     ups_add(this, up)
     env_add(this, env)
     return when (this) {
-        is Stmt.Var -> Env(this,env)
+        is Stmt.Var -> {
+            this.type.aux(this)
+            Env(this,env)
+        }
         is Stmt.Set -> {
             this.dst.aux(this, env, Type_Any(this.tk))
-            this.src.aux(this, env, this.dst.toType())
+            this.src.aux(this, env, TPS[this.dst]!!)
             val str = if (this.dst is Expr.Var && this.dst.tk_.str=="_ret_") "return" else "assignment"
-            All_assert_tk(this.tk, this.dst.toType().isSupOf(this.src.e.toType())) {
+            All_assert_tk(this.tk, TPS[this.dst]!!.isSupOf(TPS[this.src.e]!!)) {
                 "invalid $str : type mismatch"
             }
             env
@@ -251,7 +280,7 @@ fun Stmt.aux (up: Any?, env: Env?): Env? {
         }
         is Stmt.If -> {
             this.tst.aux(this,env,Type_Nat(this.tk,"int"))
-            All_assert_tk(this.tk, this.tst.toType() is Type.Nat) {
+            All_assert_tk(this.tk, TPS[this.tst] is Type.Nat) {
                 "invalid condition : type mismatch"
             }
             this.true_.aux(this, env)

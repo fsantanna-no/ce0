@@ -25,7 +25,7 @@ class TExec {
     @Test
     fun a01_output () {
         val out = all("output std ()")
-        assert(out == "()\n")
+        assert(out == "()\n") { out }
     }
     @Test
     fun a02_var () {
@@ -399,15 +399,15 @@ class TExec {
     @Test
     fun g01_if () {
         val out = all("""
-            var x: <(),()> = <.2>
+            var x: <(),()>; set x = <.2>
             if x?1 { } else { output std }
         """.trimIndent())
-        assert(out == "()\n")
+        assert(out == "()\n") { out }
     }
     @Test
     fun g02_if_pred () {
         val out = all("""
-            var x: <(),()> = <.2>
+            var x: <(),()>; set x = <.2>
             if x?2 { output std } else { }
         """.trimIndent())
         assert(out == "()\n")

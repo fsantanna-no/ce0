@@ -19,7 +19,6 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
         aux(s)
         check_dcls(s)
         check_xexprs(s)
-        check_pointers(s)
         check_borrows_consumes_holds(s)
         return Pair(true, s.code())
     } catch (e: Throwable) {
