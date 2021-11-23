@@ -3,7 +3,7 @@ import kotlin.math.absoluteValue
 fun Type.toce (): String {
     fun ref (str: String): String { return if (this.exactlyRec()) "R_"+str+"_R" else str }
     return when (this) {
-        is Type.None, is Type.UCons -> error("bug found")
+        is Type.UCons -> error("bug found")
         is Type.Rec   -> "Rec"
         is Type.Any   -> "Any"
         is Type.Unit  -> "Unit"
@@ -20,7 +20,7 @@ val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 
 fun Type.pos (): String {
     return when (this) {
-        is Type.None, is Type.Rec, is Type.UCons -> TODO(this.toString())
+        is Type.Rec, is Type.UCons -> TODO(this.toString())
         is Type.Any, is Type.Unit  -> "void"
         is Type.Ptr   -> this.pln.pos() + "*"
         is Type.Nat   -> this.tk_.str
@@ -304,7 +304,7 @@ fun code_fe (e: Expr) {
     val xp = XPS[e]!!
     val tp = e.toType()
     EXPRS.addFirst(when (e) {
-        is Expr.Unk, is Expr.Unit -> Pair("", "")
+        is Expr.Unit -> Pair("", "")
         is Expr.Nat -> Pair("", e.tk_.str)
         is Expr.Var -> Pair("", if (tp is Type.Unit) "" else e.tk_.str)
         is Expr.Upref -> {

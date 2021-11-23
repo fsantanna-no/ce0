@@ -5,8 +5,7 @@ fun env_prelude (s: Stmt): Stmt {
             Tk.Sym(TK.ARROW, 1, 1, "->"),
             Type.Any(Tk.Chr(TK.CHAR,1,1,'?')),
             Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
-        ),
-        XExpr.None(Expr.Unk(Tk.Chr(TK.CHAR,s.tk.lin,s.tk.col,'?')))
+        )
     )
     return Stmt.Seq(stdo.tk, stdo, s)
 }
@@ -33,7 +32,7 @@ fun check_dcls (s: Stmt) {
 
 fun Type.containsRec (): Boolean {
     return when (this) {
-        is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
+        is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
         is Type.Rec   -> true
         is Type.Tuple -> this.vec.any { it.containsRec() }
         is Type.Union -> this.vec.any { it.containsRec() }
@@ -43,7 +42,7 @@ fun Type.containsRec (): Boolean {
 
 fun Type.containsPtr (): Boolean {
     return when (this) {
-        is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Func, is Type.Rec -> false
+        is Type.Any, is Type.Unit, is Type.Nat, is Type.Func, is Type.Rec -> false
         is Type.Ptr   -> true
         is Type.Tuple -> this.vec.any { it.containsPtr() }
         is Type.Union -> this.vec.any { it.containsPtr() }
@@ -57,7 +56,7 @@ fun Type.exactlyRec (): Boolean {
 
 fun Type.containsFunc (): Boolean {
     return when (this) {
-        is Type.None, is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Rec -> false
+        is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Rec -> false
         is Type.Func  -> true
         is Type.Tuple -> this.vec.any { it.containsFunc() }
         is Type.Union -> this.vec.any { it.containsFunc() }
@@ -98,7 +97,6 @@ fun Type.isSupOf (sub: Type): Boolean {
 
 fun Type.isSupOf_ (sub: Type, ups1: List<Type>, ups2: List<Type>): Boolean {
     return when {
-        (this is Type.None || sub is Type.None) -> false
         (this is Type.Any  || sub is Type.Any) -> true
         (this is Type.Nat  || sub is Type.Nat) -> true
         (this is Type.Rec  && sub is Type.Rec)  -> (this.tk_.up == sub.tk_.up)
@@ -136,7 +134,7 @@ fun Type.isSupOf_ (sub: Type, ups1: List<Type>, ups2: List<Type>): Boolean {
 
 fun Expr.isconst (): Boolean {
     return when (this) {
-        is Expr.Unit, is Expr.Unk, is Expr.Call, is Expr.TCons, is Expr.UCons, is Expr.UPred, is Expr.Func -> true
+        is Expr.Unit, is Expr.Call, is Expr.TCons, is Expr.UCons, is Expr.UPred, is Expr.Func -> true
         is Expr.Var, is Expr.Nat, is Expr.Dnref -> false
         is Expr.TDisc -> this.tup.isconst()
         is Expr.UDisc -> this.uni.isconst()
@@ -154,7 +152,7 @@ fun check_xexprs (S: Stmt) {
         val e_isnil  = e_isvar && ((xe.e as Expr.UCons).tk_.num==0)
 
         val is_ptr_to_udisc = (xp is Type.Ptr) && xe.e.containsUDisc() //xp.pln.containsUDisc() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
-        val is_ptr_to_ctrec = (xp is Type.Ptr) && xp.pln.containsRec() && (xe.e !is Expr.Unk) && (xe.e !is Expr.Nat)
+        val is_ptr_to_ctrec = (xp is Type.Ptr) && xp.pln.containsRec() && (xe.e !is Expr.Nat)
         val is_ptr_to_hold  = (xp is Type.Ptr) && xp.pln.exactlyRec() && (xp.pln as Type.Union).ishold
         val has_ptr = xp.containsPtr()
 
@@ -312,7 +310,7 @@ fun check_borrows_consumes_holds (S: Stmt) {
                 st.fcs[dst] = mutableSetOf()
             }
             when (src) {
-                is Expr.Unk, is Expr.Nat -> {} // ok
+                is Expr.Nat -> {} // ok
                 is Expr.Func -> st.fcs[dst]!!.add(src)
                 else -> src.leftMosts(null)
                     .map { it.second.env()!! }

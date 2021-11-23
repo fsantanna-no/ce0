@@ -80,7 +80,6 @@ fun Expr.Var.env (): Stmt.Var? {
 
 fun Expr.toType (): Type {
     return when (this) {
-        is Expr.Unk   -> Type.Any(this.tk_)
         is Expr.Unit  -> Type.Unit(this.tk_)
         is Expr.Nat   -> Type.Nat(this.tk_)
         is Expr.Upref -> Type.Ptr(this.tk_, null, this.pln.toType())

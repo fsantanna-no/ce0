@@ -1,5 +1,4 @@
 sealed class Type (val tk: Tk) {
-    data class None  (val tk_: Tk):     Type(tk_)
     data class Any   (val tk_: Tk.Chr): Type(tk_)
     data class Unit  (val tk_: Tk.Sym): Type(tk_)
     data class Nat   (val tk_: Tk.Str): Type(tk_)
@@ -13,7 +12,6 @@ sealed class Type (val tk: Tk) {
 
 fun Type.tostr (): String {
     return when (this) {
-        is Type.Any   -> "?"
         is Type.Unit  -> "()"
         is Type.Nat   -> this.tk_.str
         is Type.Rec   -> "^".repeat(this.tk_.up)
@@ -85,7 +83,6 @@ sealed class XExpr (val e: Expr) {
 }
 
 sealed class Expr (val tk: Tk) {
-    data class Unk   (val tk_: Tk.Chr): Expr(tk_)
     data class Unit  (val tk_: Tk.Sym): Expr(tk_)
     data class Var   (val tk_: Tk.Str): Expr(tk_)
     data class Nat   (val tk_: Tk.Str): Expr(tk_)
@@ -243,7 +240,6 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
             all.accept(TK.UNIT) -> Expr.Unit(all.tk0 as Tk.Sym)
             all.accept(TK.XVAR) -> Expr.Var(all.tk0 as Tk.Str)
             all.accept(TK.XNAT) -> Expr.Nat(all.tk0 as Tk.Str)
-            all.accept(TK.CHAR,'?') -> Expr.Unk(all.tk0 as Tk.Chr)
             all.accept(TK.CHAR,'\\') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val e = parser_expr(all,false)
