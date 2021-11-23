@@ -395,35 +395,42 @@ class TParser {
 
     @Test
     fun c01_parser_stmt_var () {
-        val all = All_new(PushbackReader(StringReader("var x: () = ()"), 2))
+        val all = All_new(PushbackReader(StringReader("var x: ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Var && s.type is Type.Unit && s.src.e is Expr.Unit)
+        assert(s is Stmt.Var && s.type is Type.Unit)
     }
     @Test
     fun c03_parser_stmt_var_tuple () {
-        val all = All_new(PushbackReader(StringReader("var x: [(),()] = [(),()]"), 2))
+        val all = All_new(PushbackReader(StringReader("var x: [(),()]"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Var && s.type is Type.Tuple && s.src.e is Expr.TCons)
+        assert(s is Stmt.Var && s.type is Type.Tuple)
     }
     @Test
     fun c04_parser_stmt_var_caret () {
-        val all = All_new(PushbackReader(StringReader("var x: ()@a = ())"), 2))
+        val all = All_new(PushbackReader(StringReader("var x: () @a"), 2))
         lexer(all)
         try {
-            parser_stmt(all)
+            parser_stmts(all, Pair(TK.EOF,null))
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 10): expected `=´ : have `@a´") { e.message!! }
+            assert(e.message == "(ln 1, col 11): expected statement : have `@a´") { e.message!! }
         }
     }
     @Test
     fun c05_parser_stmt_var_global () {
-        val all = All_new(PushbackReader(StringReader("var x: \\()@@ = ?"), 2))
+        val all = All_new(PushbackReader(StringReader("var x: \\()@@"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Var && s.type is Type.Ptr && s.src.e is Expr.Unk)
+        assert(s is Stmt.Var && s.type is Type.Ptr)
+    }
+    @Test
+    fun c06_parser_stmt_block_scope () {
+        val all = All_new(PushbackReader(StringReader("{ @a }"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.Block && s.scope=='a')
     }
 
     // STMT_CALL
@@ -525,22 +532,22 @@ class TParser {
 
     @Test
     fun c12_parser_func () {
-        val all = All_new(PushbackReader(StringReader("var f : () = func () { }"), 2))
+        val all = All_new(PushbackReader(StringReader("set f = func () { }"), 2))
         lexer(all)
         try {
             parser_stmt(all)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 19): expected function type")
+            assert(e.message == "(ln 1, col 14): expected function type") { e.message!! }
         }
     }
     @Test
     fun c13_parser_func () {
-        val all = All_new(PushbackReader(StringReader("var f : () -> () = func () -> () { return }"), 2))
+        val all = All_new(PushbackReader(StringReader("set f = func () -> () { return }"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert (
-            (s is Stmt.Var) && (s.tk_.str=="f") &&
+            (s is Stmt.Set) && ((s.dst as Expr.Var).tk_.str=="f") &&
             s.src.e.let {
                 (it is Expr.Func) && (it.type.inp is Type.Unit) && it.block.body.let {
                     it is Stmt.Seq && it.s1 is Stmt.Var && it.s2 is Stmt.Seq
@@ -602,10 +609,10 @@ class TParser {
     }
     @Test
     fun c17_parser_var () {
-        val all = All_new(PushbackReader(StringReader("var c: _int = (/arg.1)!1.1"), 2))
+        val all = All_new(PushbackReader(StringReader("set c = (/arg.1)!1.1"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Var && s.src.e is Expr.TDisc)
+        assert(s is Stmt.Set && s.src.e is Expr.TDisc)
     }
     @Test
     fun c18_parser_var () {

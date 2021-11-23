@@ -29,9 +29,8 @@ class TSimul {
             l.add(e)
         }
         s.simul(State(), null, null, ::fe, mutableListOf())
-        assert(l[0] is Expr.Unk)
-        assert(l[1] is Expr.Call)
-        assert(l[2] is Expr.Unit)
+        assert(l[0] is Expr.Call)
+        assert(l[1] is Expr.Unit)
     }
     @Test
     fun a02 () {

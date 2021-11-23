@@ -56,7 +56,7 @@ fun Stmt.visit (fs: ((Stmt)->Unit)?, fx: ((XExpr)->Unit)?, fe: ((Expr)->Unit)?, 
 private
 fun Stmt.visit_ (fs: ((Stmt)->Unit)?, fx: ((XExpr)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
     when (this) {
-        is Stmt.Var   -> { this.type.visit(ft) ; this.src.visit(fs,fx,fe,ft)  }
+        is Stmt.Var   -> this.type.visit(ft)
         is Stmt.Set   -> { this.dst.visit(fs,fx,fe,ft) ; this.src.visit(fs,fx,fe,ft) }
         is Stmt.Call  -> this.call.visit(fs,fx,fe,ft)
         is Stmt.Seq   -> { this.s1.visit(fs,fx,fe,ft) ; this.s2.visit(fs,fx,fe,ft) }

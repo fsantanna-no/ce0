@@ -366,21 +366,25 @@ fun code_fe (e: Expr) {
         is Expr.Call  -> {
             val arg = EXPRS.removeFirst()
             val f   = EXPRS.removeFirst()
-            Pair (
-                f.first + arg.first,
+            val snd =
                 if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
                     e.arg.e.toType().output("", arg.second)
                 } else {
                     f.second + "(" + arg.second + ")"
                 }
-            )
+            if (e.toType() is Type.Unit) {
+                Pair(f.first + arg.first + snd+";\n", "")
+            } else {
+                Pair(f.first + arg.first, snd)
+            }
         }
         is Expr.Func  -> {
             val ID  = "_func_" + e.hashCode().absoluteValue
             val out = e.type.out.let { if (it is Type.Unit) "void" else it.pos() }
-            val inp = e.type.inp.let { if (it is Type.Unit) "void" else (it.pos()+" _arg_") }
+            val (inp,dcl) = e.type.inp.let { if (it is Type.Unit) Pair("void","int _arg_;") else Pair(it.pos()+" _arg_","") }
             val pre = """
                 auto $out $ID ($inp) {
+                    $dcl
                     ${CODE.removeFirst()}
                 }
 
@@ -450,7 +454,7 @@ fun code_fs (s: Stmt) {
                 "assert(${dst.second} == NULL);\n"
             }
             dst.first + src.first + asr +
-                (if (tp is Type.Unit) "" else (dst.second+" = ")) + src.second + ";\n"
+                    (if (tp is Type.Unit) "" else (dst.second + " = ")) + src.second + ";\n"
         }
         is Stmt.If -> {
             val tst = EXPRS.removeFirst()
@@ -484,22 +488,10 @@ fun code_fs (s: Stmt) {
             //"return" + if (s.e.e.toType() is Type.Unit) ";\n" else " _ret_;\n"
         }
         is Stmt.Var   -> {
-            val src = EXPRS.removeFirst()
-            if (s.type is Type.Unit) {
-                src.first
-            } else {
-                val fst = "${s.type.pos()} ${s.tk_.str}" +
-                    (when {
-                        (s.tk_.str == "_ret_") -> ""
-                        !s.type.containsRec() -> ""
-                        else -> {
-                            " __attribute__ ((__cleanup__(free_${s.type.toce()})))"
-                        }
-                    }) + ";\n"
-                val snd = if (s.src.e is Expr.Unk) "" else {
-                    "${s.tk_.str} = ${src.second};\n"
-                }
-                fst + src.first + snd
+            when {
+                s.tk_.str == "_arg_" -> "int ${s.tk_.str};\n"
+                (s.type is Type.Unit) -> ""
+                else -> "${s.type.pos()} ${s.tk_.str};\n"
             }
         }
     })

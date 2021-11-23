@@ -36,8 +36,7 @@ class TCode {
         ENV[e] = Env (
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"xxx"),
-                Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
-                XExpr.None(Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
+                Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))
             ),
             null
         )
@@ -51,8 +50,7 @@ class TCode {
         ENV[e] = Env (
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"xxx"),
-                Type.Nat(Tk.Str(TK.XNAT,1,1,"int")),
-                XExpr.None(Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
+                Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))
             ),
             null
         )
@@ -85,8 +83,7 @@ class TCode {
         ENV[e.tup] = Env (
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"x"),
-                Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int")))),
-                XExpr.None(Expr.Nat(Tk.Str(TK.XNAT,1,1,"0")))
+                Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))))
             ),
             null
         )

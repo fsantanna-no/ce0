@@ -233,14 +233,7 @@ fun Stmt.aux (up: Any?, env: Env?): Env? {
     ups_add(this, up)
     env_add(this, env)
     return when (this) {
-        is Stmt.Var -> {
-            val new = Env(this,env)
-            this.src.aux(this, new, this.type)
-            All_assert_tk(this.tk, this.type.isSupOf(this.src.e.toType())) {
-                "invalid assignment : type mismatch"
-            }
-            new
-        }
+        is Stmt.Var -> Env(this,env)
         is Stmt.Set -> {
             this.dst.aux(this, env, Type_Any(this.tk))
             this.src.aux(this, env, this.dst.toType())

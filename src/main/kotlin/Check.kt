@@ -304,6 +304,8 @@ fun check_borrows_consumes_holds (S: Stmt) {
     }
 
     fun fs (s: Stmt, st_: IState) {
+        if (s !is Stmt.Set) return
+
         val st = st_ as State
         fun fs_add (dst: Stmt.Var, src: Expr) {
             if (st.fcs[dst] == null) {
@@ -320,39 +322,29 @@ fun check_borrows_consumes_holds (S: Stmt) {
                     }
             }
         }
-        when (s) {
-            is Stmt.Var -> {
-                if (s.type is Type.Func) {
-                    fs_add(s, s.src.e)
-                } else {
-                    st.bws_cns_add(s, s.src)
-                }
+
+        val lf = s.dst.leftMost()!!
+        val dcl = lf.env(lf.tk_.str)!!
+
+        val tp = s.dst.toType()
+        if (tp is Type.Func) {
+            fs_add(dcl, s.src.e)
+        } else {
+            //if (s.src.x!=null && s.src.x.enu==TK.BORROW) {
+            val isptruni = tp.containsUnion() || (tp is Type.Ptr && tp.pln.containsUnion())
+            val isptrrec = tp.containsRec()   || (tp is Type.Ptr && tp.pln.containsRec())
+            if (isptruni || isptrrec) {
+                st.bws_cns_add(dcl, s.src)
+                st.chk_bw(lf.env_toset(), dcl, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
             }
-            is Stmt.Set -> {
-                val lf = s.dst.leftMost()!!
-                val dcl = lf.env(lf.tk_.str)!!
+        }
 
-                val tp = s.dst.toType()
-                if (tp is Type.Func) {
-                    fs_add(dcl, s.src.e)
-                } else {
-                    //if (s.src.x!=null && s.src.x.enu==TK.BORROW) {
-                    val isptruni = tp.containsUnion() || (tp is Type.Ptr && tp.pln.containsUnion())
-                    val isptrrec = tp.containsRec()   || (tp is Type.Ptr && tp.pln.containsRec())
-                    if (isptruni || isptrrec) {
-                        st.bws_cns_add(dcl, s.src)
-                        st.chk_bw(lf.env_toset(), dcl, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
-                    }
-                }
-
-                if (s.dst is Expr.Var) {
-                    st.cns.remove(dcl)
-                } else {
-                    st.chk_cn(dcl, null, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
-                    if (tp is Type.Union && tp.ishold) {
-                        All_assert_tk(s.tk, tp.containsUnion()) { "TODO" }
-                    }
-                }
+        if (s.dst is Expr.Var) {
+            st.cns.remove(dcl)
+        } else {
+            st.chk_cn(dcl, null, s.tk, "invalid assignment of \"${dcl.tk_.str}\"")
+            if (tp is Type.Union && tp.ishold) {
+                All_assert_tk(s.tk, tp.containsUnion()) { "TODO" }
             }
         }
     }

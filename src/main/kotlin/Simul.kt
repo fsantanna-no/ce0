@@ -96,7 +96,6 @@ fun Stmt.simul (
     }
 
     when (this) {
-        is Stmt.Var   -> this.src.simul(st, fs, fx, fe, nxts)
         is Stmt.Set   -> this.src.simul(st, fs, fx, fe, listOf(this.dst)+nxts)
         is Stmt.Call  -> this.call.simul(st, fs, fx, fe, nxts)
         is Stmt.Break -> nxt(st, fs, fx, fe, stack_rem { it is Stmt.Loop })
