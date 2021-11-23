@@ -1,7 +1,6 @@
 import kotlin.math.absoluteValue
 
 fun Type.toce (): String {
-    fun ref (str: String): String { return if (this.exactlyRec()) "R_"+str+"_R" else str }
     return when (this) {
         is Type.UCons -> error("bug found")
         is Type.Rec   -> "Rec"
@@ -9,8 +8,8 @@ fun Type.toce (): String {
         is Type.Unit  -> "Unit"
         is Type.Ptr   -> "P_" + this.pln.toce() + "_P"
         is Type.Nat   -> this.tk_.str.replace('*','_')
-        is Type.Tuple -> ref("T_" + this.vec.map { it.toce() }.joinToString("_") + "_T")
-        is Type.Union -> ref("U_" + this.vec.map { it.toce() }.joinToString("_") + "_U")
+        is Type.Tuple -> "T_" + this.vec.map { it.toce() }.joinToString("_") + "_T"
+        is Type.Union -> "U_" + this.vec.map { it.toce() }.joinToString("_") + "_U"
         is Type.Func  -> "F_" + this.inp.toce() + "_" + this.out.toce() + "_F"
     }
 }
@@ -28,7 +27,7 @@ fun Type.pos (): String {
         is Type.Union -> if (this.isnullptr()) {
             (this.vec[0] as Type.Ptr).pln.pos() + "*"
         } else {
-            "struct " + this.toce() + (if (this.exactlyRec())  "*" else "")
+            "struct " + this.toce() //+ (if (this.exactlyRec())  "*" else "")
         }
         is Type.Func  -> this.toce() + "*"
     }
@@ -347,7 +346,6 @@ fun code_fe (e: Expr) {
         is Expr.New  -> {
             val top = EXPRS.removeFirst()
             val ID  = "__tmp_" + e.hashCode().absoluteValue
-            val xee = e as Expr.UCons
             val sup = XPS[e]!!.pos()
             val pre = """
                 $sup $ID = malloc(sizeof(*$ID));
@@ -355,7 +353,7 @@ fun code_fe (e: Expr) {
                 *$ID = ${top.second};
 
             """.trimIndent()
-            Pair(top.first+pre, if (xee.tk_.num == 0) "NULL" else ID)
+            Pair(top.first+pre, ID)
         }
         is Expr.TCons -> {
             val (pre,pos) = (1..e.arg.size).map { EXPRS.removeFirst() }.reversed().unzip()
@@ -423,11 +421,8 @@ fun code_fs (s: Stmt) {
             val src = EXPRS.removeFirst()
             val dst = EXPRS.removeFirst()
             val tp = TPS[s.dst]
-            val asr = if (tp !is Type.Union || !tp.ishold) "" else {
-                "assert(${dst.second} == NULL);\n"
-            }
-            dst.first + src.first + asr +
-                    (if (tp is Type.Unit) "" else (dst.second + " = ")) + src.second + ";\n"
+            dst.first + src.first +
+                (if (tp is Type.Unit) "" else (dst.second + " = ")) + src.second + ";\n"
         }
         is Stmt.If -> {
             val tst = EXPRS.removeFirst()
@@ -481,7 +476,8 @@ fun Stmt.code (): String {
     fun gt (a: String, b: String): Boolean {
         return (ord[a]!=null && (ord[a]!!.contains(b) || ord[a]!!.any { gt(it,b) }))
     }
-    val TPS =
+    val TPS = TYPES
+    /*
         TYPES.sortedWith(Comparator { x: Triple<Pair<String, Set<String>>, String, String>, y: Triple<Pair<String, Set<String>>, String, String> ->
             when {
                 gt(x.first.first, y.first.first) ->  1
@@ -496,6 +492,7 @@ fun Stmt.code (): String {
             }
              */
         })
+     */
     //TPS.forEach { println(it.first.first) }
     assert(EXPRS.size == 0)
     assert(CODE.size == 1)

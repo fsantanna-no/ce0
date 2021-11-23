@@ -3,7 +3,7 @@ sealed class Type (val tk: Tk) {
     data class Unit  (val tk_: Tk.Sym): Type(tk_)
     data class Nat   (val tk_: Tk.Str): Type(tk_)
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_)
-    data class Union (val tk_: Tk.Chr, val isrec: Boolean, val ishold: Boolean, val isnull: Boolean, val vec: Array<Type>): Type(tk_)
+    data class Union (val tk_: Tk.Chr, val isrec: Boolean, val isnull: Boolean, val vec: Array<Type>): Type(tk_)
     data class UCons (val tk_: Tk.Num, val arg: Type): Type(tk_)
     data class Func  (val tk_: Tk.Sym, val inp: Type, val out: Type): Type(tk_)
     data class Ptr   (val tk_: Tk.Chr, val scope: Char?, val pln: Type): Type(tk_)
@@ -16,7 +16,7 @@ fun Type.deep (lin: Int, col: Int): Type {
         is Type.Unit  -> Type.Unit(this.tk_.copy(lin_=lin,col_=col))
         is Type.Nat   -> Type.Nat(this.tk_.copy(lin_=lin,col_=col))
         is Type.Tuple -> Type.Tuple(this.tk_.copy(lin_=lin,col_=col), this.vec.map { it.deep(lin,col) }.toTypedArray())
-        is Type.Union -> Type.Union(this.tk_.copy(lin_=lin,col_=col), this.isrec, this.ishold, this.isnull, this.vec.map { it.deep(lin,col) }.toTypedArray())
+        is Type.Union -> Type.Union(this.tk_.copy(lin_=lin,col_=col), this.isrec, this.isnull, this.vec.map { it.deep(lin,col) }.toTypedArray())
         is Type.UCons -> Type.UCons(this.tk_.copy(lin_=lin,col_=col), this.arg.deep(lin,col))
         is Type.Func  -> Type.Func(this.tk_.copy(lin_=lin,col_=col), this.inp.deep(lin,col), this.out.deep(lin,col))
         is Type.Ptr   -> Type.Ptr(this.tk_.copy(lin_=lin,col_=col), this.scope, this.pln.deep(lin,col))
@@ -35,7 +35,6 @@ fun Type.tostr (): String {
         is Type.Union -> "<" + (if (this.isnull) "? " else "") + this.vec.map { it.tostr() }.joinToString(",") + ">"
         is Type.UCons -> "<." + this.tk_.num + " " + this.arg.tostr() + ">"
         is Type.Func  -> this.inp.tostr() + " -> " + this.out.tostr()
-        else -> error("$this")
     }
 }
 
@@ -73,7 +72,7 @@ fun Type.expand (): Array<Type> {
         return when (cur) {
             is Type.Rec   -> if (up == cur.tk_.up) this else { assert(up>cur.tk_.up) ; cur }
             is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up+1) }.toTypedArray())
-            is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.ishold, cur.isnull, cur.vec.map { aux(it,up+1) }.toTypedArray())
+            is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.isnull, cur.vec.map { aux(it,up+1) }.toTypedArray())
             is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scope, aux(cur.pln,up))
             is Type.Func  -> Type.Func(cur.tk_, aux(cur.inp,up), aux(cur.out,up))
             is Type.UCons -> error("bug found")
@@ -180,24 +179,12 @@ fun parser_type (all: All): Type {
                             else -> false
                         }
                     }
-                    fun g (tp: Type, n: Int): Boolean {
-                        return when (tp) {
-                            is Type.Ptr   -> return (tp.pln is Type.Rec) && (n == tp.pln.tk_.up)
-                            is Type.Tuple -> tp.vec.any { g(it, n+1) }
-                            is Type.Union -> tp.vec.any { g(it, n+1) }
-                            else -> false
-                        }
-                    }
                     val vec    = tps.toTypedArray()
                     val isrec  = vec.any { f(it, 1) }
-                    val ishold = vec.any { g(it, 1) }
                     All_assert_tk(tk0,!isnullable || isrec || (vec.size==1 && vec[0] is Type.Ptr)) {
                         "invalid type declaration : unexpected `?´"
                     }
-                    All_assert_tk(tk0,!ishold || isrec) {
-                        "invalid type declaration : unexpected recursive pointer"
-                    }
-                    Type.Union(tk0, isrec, ishold, isnullable, vec)
+                    Type.Union(tk0, isrec, isnullable, vec)
                 }
             }
             else -> {

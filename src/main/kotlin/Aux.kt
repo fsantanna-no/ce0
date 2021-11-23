@@ -175,6 +175,11 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
             }
         }
         is Expr.UCons -> {
+            val sub = if (this.tk_.num == 0) {
+                Type_Unit(this.tk)
+            } else {
+                xp.expand()[this.tk_.num - 1]
+            }
             if (xp !is Type.Union) {
                 this.arg.aux(this, env, Type_Any(this.tk))
             } else {
@@ -182,8 +187,10 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
                 All_assert_tk(this.tk, MIN <= this.tk_.num && this.tk_.num <= MAX) {
                     "invalid constructor : out of bounds"
                 }
-                val sub = if (this.tk_.num > 0) xp.expand()[this.tk_.num - 1] else Type_Unit(this.tk)
                 this.arg.aux(this, env, sub)
+            }
+            All_assert_tk(this.tk, this.tk_.num!=0 || TPS[this.arg]!!.isSupOf(sub)) {
+                "invalid constructor : type mismatch"
             }
         }
         is Expr.New -> {

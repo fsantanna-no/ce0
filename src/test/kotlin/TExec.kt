@@ -308,7 +308,7 @@ class TExec {
             var b : <(),()>; set b = <.1>
             output std b
         """.trimIndent())
-        assert(out == "<.1>\n")
+        assert(out == "<.1>\n") { out }
     }
     @Test
     fun f02_xyz () {
@@ -320,7 +320,7 @@ class TExec {
             var zz: <()>; set zz = yy!1
             output std zz
         """.trimIndent())
-        assert(out == "<.1>\n")
+        assert(out == "<.1>\n") { out }
     }
     @Test
     fun f05_user_big () {
@@ -328,7 +328,7 @@ class TExec {
             var s: <[_int,_int,_int,_int],_int,_int>; set s = <.1 [_1,_2,_3,_4]>
             output std s
         """.trimIndent())
-        assert(out == "<.1 [1,2,3,4]>\n")
+        assert(out == "<.1 [1,2,3,4]>\n") { out }
     }
     @Test
     fun f06_user_big () {
@@ -336,7 +336,7 @@ class TExec {
             var x: <[<()>,<()>]>; set x = <.1 [<.1>,<.1>]>
             output std x
         """.trimIndent())
-        assert(out == "<.1 [<.1>,<.1>]>\n")
+        assert(out == "<.1 [<.1>,<.1>]>\n") { out }
     }
     @Test
     fun f07_user_pred () {
@@ -344,7 +344,7 @@ class TExec {
             var z: <()>; set z = <.1>
             output std z?1
         """.trimIndent())
-        assert(out == "1\n")
+        assert(out == "1\n") { out }
     }
     @Test
     fun f10_user_disc () {
@@ -352,7 +352,7 @@ class TExec {
             var z: <(),()>; set z = <.2 ()>
             output std z!2
         """.trimIndent())
-        assert(out == "()\n")
+        assert(out == "()\n") { out }
     }
     @Test
     fun f11_user_disc_err () {
@@ -360,7 +360,7 @@ class TExec {
             var z: <(),()>; set z = <.2>
             output std z!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:50: main: Assertion `z.tag == 1' failed.\n")
+        assert(out == "out.exe: out.c:50: main: Assertion `z.tag == 1' failed.\n") { out }
     }
     @Test
     fun f12_user_disc_pred_idx () {
@@ -368,7 +368,7 @@ class TExec {
             var v: <[<()>,()]>; set v = <.1 [<.1>,()]>
             output std v!1.1?1
         """.trimIndent())
-        assert(out == "1\n")
+        assert(out == "1\n") { out }
     }
     @Test
     fun f13_user_disc_pred_err () {
@@ -391,7 +391,7 @@ class TExec {
             var x: <<<()>>>; set x = <.1 <.1 <.1>>>
             output std x!1!1!1
         """.trimIndent())
-        assert(out == "()\n")
+        assert(out == "()\n") { out }
     }
 
     // IF
@@ -410,7 +410,7 @@ class TExec {
             var x: <(),()>; set x = <.2>
             if x?2 { output std } else { }
         """.trimIndent())
-        assert(out == "()\n")
+        assert(out == "()\n") { out }
     }
 
     // LOOP
@@ -719,12 +719,28 @@ class TExec {
         assert(out == "<.0>\n") { out }
     }
     @Test
-    fun j02_list () {
+    fun j02_list_new () {
         val out = all("""
-            var l: <?^>; set l = new <.1 <.0>>
+            var l: \<?^>; set l = new <.1 <.0>>
             output std l
         """.trimIndent())
-        assert(out == "<.1 <.0>>\n")
+        assert(out == "<.1 <.0>>\n") { out }
+    }
+    @Test
+    fun j02_list_pln () {
+        val out = all("""
+            var l: <?\^>; set l = <.1 <.0>>
+            output std l
+        """.trimIndent())
+        assert(out == "<.1 <.0>>\n") { out }
+    }
+    @Test
+    fun j02_list_zero_err () {
+        val out = all("""
+            var x: _int
+            set x = <.0 [()]>
+        """.trimIndent())
+        assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
     }
     @Test
     fun j03_list () {

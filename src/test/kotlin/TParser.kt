@@ -100,7 +100,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("\\<?[^^]>"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Ptr && !(tp.pln as Type.Union).ishold)
+        assert(tp is Type.Ptr)
     }
     @Test
     fun a11_parser_type_issupof () {

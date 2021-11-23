@@ -75,7 +75,7 @@ class TEnv {
             var x: <(),()>
             output std(x.0)
         """.trimIndent())
-        assert(out == "(ln 2, col 14): invalid discriminator : type mismatch")
+        assert(out == "(ln 2, col 14): invalid discriminator : type mismatch") { out }
     }
     @Test
     fun b04_user_disc_cons_err () {
