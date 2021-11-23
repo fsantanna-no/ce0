@@ -623,9 +623,9 @@ class TEnv {
     @Test
     fun g06_ptr_caret_err () {
         val out = inp2env("""
-            var f : \_int -> \_int = func \_int -> \_int {
+            var f : \_int -> \_int; set f = func \_int -> \_int {
                 var x: _int; set x = _10
-                var ptr: \_int @0; set ptr = \x
+                var ptr: \_int @a; set ptr = \x
                 return ptr
             }
             var v: _int; set v = _10
@@ -656,9 +656,9 @@ class TEnv {
     @Test
     fun g09_ptr_arg_err () {
         val out = inp2env("""
-            var f: _int -> 1@ \_int; set f = func _int -> 1@ \_int
+            var f: _int -> \_int @a; set f = func _int -> \_int @a
             {
-                var ptr: 1@ \_int; set ptr = \arg
+                var ptr: \_int @a; set ptr = \arg
                 return ptr
             }
         """.trimIndent())
@@ -678,8 +678,8 @@ class TEnv {
     @Test
     fun g11_ptr_func () {
         val out = inp2env("""
-            var@ v: _int; set v = _10
-            var@ f : () -> \_int; set f = func () -> \_int {
+            var v: _int; set v = _10
+            var f : () -> \_int; set f = func () -> \_int {
                 return \v
             }
             var p: \_int
@@ -692,8 +692,8 @@ class TEnv {
     @Test
     fun g12_ptr_func () {
         val out = inp2env("""
-            var@ v: _int; set v = _10
-            var @ f : \_int -> \_int; set f = func \_int -> \_int {
+            var v: _int; set v = _10
+            var f : \_int -> \_int; set f = func \_int -> \_int {
                 return \v
             }
             var p: \_int
@@ -706,7 +706,7 @@ class TEnv {
     @Test
     fun g13_ptr_func () {
         val out = inp2env("""
-            var @ v: \_int
+            var v: \_int
             var f : \_int -> (); set f = func \_int -> () {
                 set v = arg
             }
@@ -725,7 +725,7 @@ class TEnv {
                 set p = \y
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"y\" (ln 3)") { out }
+        assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
     }
     @Test
     fun h02_ptr_user_err1 () {
@@ -736,7 +736,7 @@ class TEnv {
                 set p = \y!1
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 13): invalid expression : expected `borrow` operation modifier") { out }
+        assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
     }
     @Test
     fun h02_ptr_user_err2 () {
@@ -744,7 +744,7 @@ class TEnv {
             var p: \()
             {
                 var y: <()>; set y = <.1>
-                set p = borrow \y!1
+                set p = \y!1
             }
         """.trimIndent())
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"y\" (ln 3)") { out }
@@ -776,7 +776,7 @@ class TEnv {
             var p: \()
             {
                 var v: <()> = <.1 ()>
-                set p = borrow \v!1
+                set p = \v!1
             }
         """.trimIndent())
         assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"v\" (ln 3)") { out }
@@ -858,7 +858,7 @@ class TEnv {
             var p: \<?^>
             {
                 var l: <?^> = new <.1 (new <.1 <.0>>)>
-                set p = borrow \l
+                set p = \l
             }
             output std p
         """.trimIndent())
@@ -882,7 +882,7 @@ class TEnv {
             var p: \<?^>
             {
                 var l: <?^> = new <.1 (new <.1 <.0>>)>
-                set p = borrow \l!1
+                set p = \l!1
             }
             output std p
         """.trimIndent())
@@ -927,7 +927,7 @@ class TEnv {
     fun i08_mutual () {
         val out = inp2env("""
             var e: <(), <(),^^>> = new <.2 new <.1>>
-            var s: <(), <(),^^>> = consume e!2
+            var s: <(), <(),^^>> = e!2
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -935,7 +935,7 @@ class TEnv {
     fun i09_mutual () {
         val out = inp2env("""
             var e: <<^^,()>, ()> = new <.1 new <.2>>
-            var s: <<^^,()>, ()> = consume e!1
+            var s: <<^^,()>, ()> = e!1
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -954,7 +954,7 @@ class TEnv {
     fun j02_rec_xepr_move_ok () {
         val out = inp2env("""
             var x: <^>
-            var y: <^> = consume x
+            var y: <^> = x
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -962,7 +962,7 @@ class TEnv {
     fun j02_rec_xepr_move_err () {
         val out = inp2env("""
             var x: <^>
-            var y: \<^> = replace \x
+            var y: \<^> = \x
         """.trimIndent())
         assert(out == "(ln 2, col 23): expected expression : have `\\´")
     }
@@ -970,14 +970,14 @@ class TEnv {
     fun j03_rec_xepr_borrow_err () {
         val out = inp2env("""
             var x: <^>
-            var y: <^> = borrow x
+            var y: <^> = x
         """.trimIndent())
         assert(out == "(ln 2, col 21): invalid `borrow` : expected pointer to recursive variable")
     }
     @Test
     fun j04_rec_xepr_copy_err () {
         val out = inp2env("""
-            var x: _int = copy _10
+            var x: _int = _10
         """.trimIndent())
         assert(out == "(ln 1, col 20): invalid `copy` : expected recursive variable")
     }
@@ -985,7 +985,7 @@ class TEnv {
     fun j05_rec_xepr_borrow_ok () {
         val out = inp2env("""
             var x: <^>
-            var y: \<^> = borrow \x
+            var y: \<^> = \x
         """.trimIndent())
         assert(out == "OK")
     }
@@ -993,14 +993,14 @@ class TEnv {
     fun j06_rec_xepr_borrow_err () {
         val out = inp2env("""
             var x: _int
-            var y: \_int = borrow \x
+            var y: \_int = \x
         """.trimIndent())
         assert(out == "(ln 2, col 23): invalid `borrow` : expected pointer to recursive variable")
     }
     @Test
     fun j07_rec_xepr_copy_err () {
         val out = inp2env("""
-            var x: <?^> = copy <.1 <.0>>
+            var x: <?^> = <.1 <.0>>
         """.trimIndent())
         assert(out == "(ln 1, col 20): expected expression : have `<´")
         //assert(out == "(ln 1, col 20): invalid `copy` : expected recursive variable")
@@ -1094,7 +1094,7 @@ class TEnv {
     fun j13_tup_move_no () {
         val out = inp2env("""
             var t1: [<?^>] = [<.0>]
-            var t2: [<?^>] = replace t1=[<.0>]
+            var t2: [<?^>] = t1
         """.trimIndent())
         assert(out == "(ln 2, col 26): invalid `replace` : expected recursive variable")
     }
@@ -1102,8 +1102,8 @@ class TEnv {
     fun j13_tup_move_ok () {
         val out = inp2env("""
             var l: <?^> = <.0>
-            var t1: [<?^>] = [consume l]
-            var t2: [<?^>] = [replace t1.1=<.0>]
+            var t1: [<?^>] = [l]
+            var t2: [<?^>] = [t1.1]
         """.trimIndent())
         //assert(out == "(ln 3, col 17): invalid `replace` : expected recursive variable")
         assert(out == "OK") { out }
@@ -1119,7 +1119,7 @@ class TEnv {
     fun j15_rec_xepr_borrow_err () {
         val out = inp2env("""
             var x: [()]
-            var y: \_int = borrow \x
+            var y: \_int = \x
         """.trimIndent())
         assert(out == "(ln 2, col 23): invalid `borrow` : expected pointer to recursive variable")
     }
@@ -1180,8 +1180,8 @@ class TEnv {
     fun j23_rec_xexpr_move_err () {
         val out = inp2env("""
             var x: <^>
-            var y: \<^> = borrow \x!1
-            var z: <^> = consume /y
+            var y: \<^> = \x!1
+            var z: <^> = /y
         """.trimIndent())
         assert(out == "OK")
         //assert(out == "(ln 3, col 22): invalid `consume` : expected recursive variable")
@@ -1190,8 +1190,8 @@ class TEnv {
     fun j23_rec_xexpr_move_err2 () {
         val out = inp2env("""
             var x: <^>
-            var y: \<^> = borrow \x!1
-            var z: <^> = replace /y=
+            var y: \<^> = \x!1
+            var z: <^> = /y
         """.trimIndent())
         assert(out == "(ln 3, col 25): expected expression : have end of file")
     }
@@ -1199,8 +1199,8 @@ class TEnv {
     fun j23_rec_xexpr_move_err3 () {
         val out = inp2env("""
             var x: <^>
-            var y: \<^> = borrow \x!1
-            var z: <^> = replace /y
+            var y: \<^> = \x!1
+            var z: <^> = /y
         """.trimIndent())
         assert(out == "(ln 3, col 24): expected `=´ : have end of file")
     }
@@ -1212,7 +1212,7 @@ class TEnv {
             {
                 output std arg
             }
-            call f borrow \x.1!1
+            call f \x.1!1
         """.trimIndent())
         assert(out == "OK")
     }
@@ -1229,7 +1229,7 @@ class TEnv {
             var f: ()-><?^> = func ()-><?^> {
                 return new <.1 <.0>>
             }
-            var v: <?^> = replace f ()
+            var v: <?^> = f ()
         """.trimIndent())
         //assert(out == "(ln 4, col 20): invalid `replace` : expected recursive variable")
         assert(out == "(ln 4, col 25): expected `=´ : have `()´")
@@ -1269,7 +1269,7 @@ class TEnv {
     fun j31_rec_mutual () {
         val out = inp2env("""
             var e: <(),<(),^^>> = new <.2 new <.2 new <.1>>>
-            var s: <(),<(),<(),^^>>> = <.2 consume e>
+            var s: <(),<(),<(),^^>>> = <.2 e>
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1314,7 +1314,7 @@ class TEnv {
     fun l01_borrow_err () {
         val out = inp2env("""
             var x: <?^>
-            var y: \<?^> = borrow \x!1
+            var y: \<?^> = \x!1
             set x = <.0>
         """.trimIndent())
         assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2") { out }
@@ -1323,8 +1323,8 @@ class TEnv {
     fun l02_borrow_err () {
         val out = inp2env("""
             var x: <^>
-            var y: \<^> = borrow \x!1
-            var z: <^> = consume x
+            var y: \<^> = \x!1
+            var z: <^> = x
         """.trimIndent())
         assert(out == "(ln 3, col 22): invalid operation on \"x\" : borrowed in line 2")
     }
@@ -1333,8 +1333,8 @@ class TEnv {
         val out = inp2env("""
             var f: ()->() = func ()->() {
                 var x: <^>
-                var y: \<^> = borrow \x!1
-                var z: <^> = consume x
+                var y: \<^> = \x!1
+                var z: <^> = x
             }
         """.trimIndent())
         assert(out == "(ln 4, col 26): invalid operation on \"x\" : borrowed in line 3")
@@ -1344,9 +1344,9 @@ class TEnv {
         val out = inp2env("""
             var x: <?^>
             {
-                var y: \<?^> = borrow \x!1
+                var y: \<?^> = \x!1
             }
-            var z: <?^> = replace x=<.0>
+            var z: <?^> = x
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1358,7 +1358,7 @@ class TEnv {
             {
                 set x = <.0>
             }
-            call f borrow \x!1
+            call f \x!1
         """.trimIndent())
         assert(out == "(ln 4, col 9): undeclared variable \"x\"") { out }
         //assert(out == "(ln 4, col 11): invalid assignment of \"x\" : borrowed in line 3") { out }
@@ -1371,8 +1371,8 @@ class TEnv {
             {
                 set x = <.0>
             }
-            var y: \<?^> = borrow \x!1
-            call f borrow y
+            var y: \<?^> = \x!1
+            call f y
         """.trimIndent())
         assert(out == "(ln 4, col 9): undeclared variable \"x\"") { out }
         //assert(out == "(ln 4, col 11): invalid assignment of \"x\" : borrowed in line 6") { out }
@@ -1384,7 +1384,7 @@ class TEnv {
             var f: () -> () = func () -> () {
                 set x = <.0>
             }
-            var y: \<?^> = borrow \x!1
+            var y: \<?^> = \x!1
             var g: () -> () = f
             call g ()
         """.trimIndent())
@@ -1395,7 +1395,7 @@ class TEnv {
     fun l05_borrow_err () {
         val out = inp2env("""
             var x: <?^>
-            var y: \<?^> = borrow \x!1
+            var y: \<?^> = \x!1
             set x = <.0>
         """.trimIndent())
         assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2")
@@ -1404,7 +1404,7 @@ class TEnv {
     fun l06_borrow_err () {
         val out = inp2env("""
             var x: <?^>
-            var y: [(),\<?^>] = [(), borrow \x!1]
+            var y: [(),\<?^>] = [(), \x!1]
             set x = <.0>
         """.trimIndent())
         assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2") { out }
@@ -1413,7 +1413,7 @@ class TEnv {
     fun l07_borrow_err () {
         val out = inp2env("""
             var x: <?^>
-            var y: <\<?^>> = <.1 borrow \x!1>
+            var y: <\<?^>> = <.1 \x!1>
             set x = <.0>
         """.trimIndent())
         assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2")
@@ -1422,8 +1422,8 @@ class TEnv {
     fun l08_borrow_err () {
         val out = inp2env("""
             var x: [\<?^>,<?^>] = [?,<.0>]
-            set x.1 = borrow \x.2!1
-            var y: <?^> = consume x.2
+            set x.1 = \x.2!1
+            var y: <?^> = x.2
         """.trimIndent())
         assert(out == "(ln 2, col 9): invalid assignment of \"x\" : borrowed in line 2") { out }
     }
@@ -1433,7 +1433,7 @@ class TEnv {
         var x: <?^>
         var f: ()->() = func ()->() {
             set x = <.0>
-            var y: \<?^> = borrow \x
+            var y: \<?^> = \x
             return f ()
         }
         call f ()
@@ -1445,7 +1445,7 @@ class TEnv {
     fun l09_consume_err () {
         val out = inp2env("""
             var x: <?^> = <.0>
-            var y: <?^> = consume x
+            var y: <?^> = x
             set x = <.0>
         """.trimIndent())
         assert(out == "OK") { out }
@@ -1456,7 +1456,7 @@ class TEnv {
     fun l10_consume_err () {
         val out = inp2env("""
             var x: <?^> = <.0>
-            var y: <?^> = consume x
+            var y: <?^> = x
             output std \x
         """.trimIndent())
         assert(out == "(ln 3, col 13): invalid access to \"x\" : consumed in line 2") { out }
@@ -1465,8 +1465,8 @@ class TEnv {
     fun l11_consume_err () {
         val out = inp2env("""
             var x: <?^> = <.0>
-            var y: \<?^> = borrow \x
-            var z: <?^> = consume /y
+            var y: \<?^> = \x
+            var z: <?^> = /y
             output std \x
         """.trimIndent())
         assert(out == "(ln 4, col 13): invalid access to \"x\" : consumed in line 3")
@@ -1475,8 +1475,8 @@ class TEnv {
     fun l12_replace_ok () {
         val out = inp2env("""
             var x: <?^> = <.0>
-            var y: \<?^> = borrow \x
-            var z: <?^> = replace /y=<.0>
+            var y: \<?^> = \x
+            var z: <?^> = /y
             output std \x
         """.trimIndent())
         assert(out == "OK")
@@ -1485,7 +1485,7 @@ class TEnv {
     fun l13_consume_okr () {
         val out = inp2env("""
             var x: <?^> = <.0>
-            set x = consume x
+            set x = x
             output std \x
         """.trimIndent())
         assert(out == "OK") { out }
@@ -1495,7 +1495,7 @@ class TEnv {
         val out = inp2env("""
             var f: ()-><?^> = func ()-><?^> {
                 var x: <?^> = <.0>
-                return consume x
+                return x
             }
         """.trimIndent())
         assert(out == "OK") { out }
@@ -1504,7 +1504,7 @@ class TEnv {
     fun l13_consume_err () {
         val out = inp2env("""
             var x: <?^> = <.0>
-            set x!1 = consume x
+            set x!1 = x
         """.trimIndent())
         assert(out == "(ln 2, col 9): invalid assignment of \"x\" : consumed in line 2") { out }
     }
@@ -1514,10 +1514,10 @@ class TEnv {
             var string_c2ce: _(char*)-><?[_int,^^]> = func _(char*)-><?[_int,^^]> {
                 var ret: <?^> = <.0>
                 loop {
-                    set ret = consume ret
+                    set ret = ret
                 }
-                var zzz: <?^> = consume ret
-                --return consume ret
+                var zzz: <?^> = ret
+                --return ret
             }
             call string_c2ce _x
         """.trimIndent())
@@ -1538,7 +1538,7 @@ class TEnv {
     fun m02_borrow_err () {
         val out = inp2env("""
             var x: <()> = <.1>
-            var y: \() = borrow \x!1
+            var y: \() = \x!1
             set x = <.1>
         """.trimIndent())
         assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2") { out }
@@ -1550,7 +1550,7 @@ class TEnv {
     fun n01_hold_ok () {
         val out = inp2env("""
             var x: <? [<(),\^^^>,^^]> = new <.1 [<.1>,<.0>]>
-            var y: <? [<(),\^^^>,^^]> = new <.1 [<.1>,consume x]>
+            var y: <? [<(),\^^^>,^^]> = new <.1 [<.1>,x]>
             set y!1.2!1.1 = <.1>
             -- <.1 [<.1>,<.1 [<.1>,<.0>]>]>
             output std \y
@@ -1561,7 +1561,7 @@ class TEnv {
     fun n02_hold_err () {
         val out = inp2env("""
             var x: <? [<(),\^^^>,^^]> = new <.1 [<.1>,<.0>]>
-            var y: <? [<(),\^^^>,^^]> = new <.1 [<.1>,consume x]>
+            var y: <? [<(),\^^^>,^^]> = new <.1 [<.1>, x]>
             set y!1.2!1.1 = <.2 \y>
             output std \y
         """.trimIndent())
@@ -1571,12 +1571,12 @@ class TEnv {
     fun n03_hold_ok () {
         val out = inp2env("""
             var x: <? [<(),\^^^>,^^]> = new <.1 [<.1>,<.0>]>
-            var y: <? [<(),\^^^>,^^]> = new <.1 [<.1>,consume x]>
+            var y: <? [<(),\^^^>,^^]> = new <.1 [<.1>, x]>
                 -- can receive x
                 -- can be consumed by + (but not -)
                 -- can hold itself (or borrows)
                 -- cannot set its parts
-            set y!1.2!1.1 = <.2 hold \y>
+            set y!1.2!1.1 = <.2 \y>
             output std \y
         """.trimIndent())
         assert(out == "OK") { out }
@@ -1585,8 +1585,8 @@ class TEnv {
     fun n04_hold_err () {
         val out = inp2env("""
             var x: <? [<(),\^^^>,^^]> = new <.1 [<.1>,<.0>]>
-            var y: <? [<(),\^^^>,^^]> = new <.1 [<.1>,consume x]>
-            set y!1.2!1.1 = <.2 borrow \y>
+            var y: <? [<(),\^^^>,^^]> = new <.1 [<.1>, x]>
+            set y!1.2!1.1 = <.2 \y>
             output std \y
         """.trimIndent())
         assert(out == "(ln 3, col 28): invalid `borrow` : expected pointer to recursive variable") { out }
@@ -1596,7 +1596,7 @@ class TEnv {
         val out = inp2env("""
             var x: <?[(),^^]> = new <.1 [(),<.0>]>
             var y: [(),<?[(),^^]>] = [(), new <.1 [(),<.0>]>]
-            var z: [(),\<?[(),^^]>] = [(), borrow \x]
+            var z: [(),\<?[(),^^]>] = [(), \x]
             output std (/z.2)!1.2!0
         """.trimIndent())
         assert(out == "OK") { out }
@@ -1605,7 +1605,7 @@ class TEnv {
     fun n06_hold_ok () {
         val out = inp2env("""
             var x: <? [\^^,^^]> = new <.1 [?,<.0>]>
-            set x!1.1 = hold \x
+            set x!1.1 = \x
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1613,7 +1613,7 @@ class TEnv {
     fun n07_hold_ok () {
         val out = inp2env("""
             var x: <? [<(),\^^^>,^^]> = new <.1 [<.1>,<.0>]>
-            set x!1.1 = <.2 hold \x>  -- ok
+            set x!1.1 = <.2 \x>  -- ok
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1621,7 +1621,7 @@ class TEnv {
     fun n08_hold_ok () {
         val out = inp2env("""
             var x: <? [<?\^^^>,^^]> = new <.1 [<.0>,<.0>]>
-            set x!1.1 = <.1 hold \x>  -- ok
+            set x!1.1 = <.1 \x>  -- ok
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1629,7 +1629,7 @@ class TEnv {
     fun n09_hold_err () {
         val out = inp2env("""
             var x: <? [<?\^^^>,^^]> = new <.1 [<.0>,<.0>]>
-            var y: <? [<?\^^^>,^^]> = consume x
+            var y: <? [<?\^^^>,^^]> = x
             output std y
         """.trimIndent())
         assert(out == "(ln 2, col 35): invalid `consume` : expected recursive variable") { out }
