@@ -12,6 +12,7 @@ sealed class Type (val tk: Tk) {
 
 fun Type.tostr (): String {
     return when (this) {
+        is Type.Any   -> "?"
         is Type.Unit  -> "()"
         is Type.Nat   -> this.tk_.str
         is Type.Rec   -> "^".repeat(this.tk_.up)
@@ -72,28 +73,19 @@ fun Type.expand (): Array<Type> {
     }
 }
 
-sealed class XExpr (val e: Expr) {
-    data class None    (val e_: Expr): XExpr(e_)
-    data class New     (val e_: Expr.UCons): XExpr(e_)
-    data class Replace (val e_: Expr, val new: XExpr): XExpr(e_)
-    data class Consume (val e_: Expr): XExpr(e_)
-    data class Copy    (val e_: Expr): XExpr(e_)
-    data class Borrow  (val e_: Expr): XExpr(e_)
-    data class Hold    (val e_: Expr): XExpr(e_)
-}
-
 sealed class Expr (val tk: Tk) {
     data class Unit  (val tk_: Tk.Sym): Expr(tk_)
     data class Var   (val tk_: Tk.Str): Expr(tk_)
     data class Nat   (val tk_: Tk.Str): Expr(tk_)
-    data class TCons (val tk_: Tk.Chr, val arg: Array<XExpr>): Expr(tk_)
-    data class UCons (val tk_: Tk.Num, val arg: XExpr): Expr(tk_)
+    data class TCons (val tk_: Tk.Chr, val arg: Array<Expr>): Expr(tk_)
+    data class UCons (val tk_: Tk.Num, val arg: Expr): Expr(tk_)
     data class TDisc (val tk_: Tk.Num, val tup: Expr): Expr(tk_)
     data class UDisc (val tk_: Tk.Num, val uni: Expr): Expr(tk_)
     data class UPred (val tk_: Tk.Num, val uni: Expr): Expr(tk_)
+    data class New   (val tk_: Tk.Key, val arg: Expr): Expr(tk_)
     data class Dnref (val tk_: Tk,     val ptr: Expr): Expr(tk_)
     data class Upref (val tk_: Tk.Chr, val pln: Expr): Expr(tk_)
-    data class Call  (val tk_: Tk.Key, val f: Expr, val arg: XExpr): Expr(tk_)
+    data class Call  (val tk_: Tk.Key, val f: Expr, val arg: Expr): Expr(tk_)
     data class Func  (val tk_: Tk.Key, val type: Type.Func, val block: Stmt.Block) : Expr(tk_)
 }
 
@@ -119,7 +111,7 @@ fun Attr.toExpr (): Expr {
 sealed class Stmt (val tk: Tk) {
     data class Pass  (val tk_: Tk) : Stmt(tk_)
     data class Var   (val tk_: Tk.Str, val type: Type) : Stmt(tk_)
-    data class Set   (val tk_: Tk.Chr, val dst: Expr, val src: XExpr) : Stmt(tk_)
+    data class Set   (val tk_: Tk.Chr, val dst: Expr, val src: Expr) : Stmt(tk_)
     data class Nat   (val tk_: Tk.Str) : Stmt(tk_)
     data class Call  (val tk_: Tk.Key, val call: Expr.Call) : Stmt(tk_)
     data class Seq   (val tk_: Tk, val s1: Stmt, val s2: Stmt) : Stmt(tk_)
@@ -213,27 +205,6 @@ fun parser_type (all: All): Type {
     }
 }
 
-fun parser_xexpr (all: All, canpre: Boolean): XExpr {
-    val parens = all.check(TK.CHAR,'(')
-    try {
-        val e = parser_expr(all, canpre)
-        return XExpr.None(e)
-    } catch (xxx: Throwable) {
-        val ret = when {
-            all.accept(TK.NEW) -> {
-                val e = parser_expr(all, canpre)
-                assert(e is Expr.UCons)
-                XExpr.New(e as Expr.UCons)
-            }
-            else -> throw xxx
-        }
-        if (parens) {
-            all.accept_err(TK.CHAR,')')
-        }
-        return ret
-    }
-}
-
 fun parser_expr (all: All, canpre: Boolean): Expr {
     fun one (): Expr {
         return when {
@@ -263,13 +234,13 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
             }
             all.accept(TK.CHAR,'[') -> {
                 val tk0 = all.tk0 as Tk.Chr
-                val e = parser_xexpr(all, false)
+                val e = parser_expr(all, false)
                 val es = arrayListOf(e)
                 while (true) {
                     if (!all.accept(TK.CHAR,',')) {
                         break
                     }
-                    val e2 = parser_xexpr(all, false)
+                    val e2 = parser_expr(all, false)
                     es.add(e2)
                 }
                 all.accept_err(TK.CHAR, ']')
@@ -280,15 +251,18 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 all.accept_err(TK.XNUM)
                 val tk0 = all.tk0 as Tk.Num
                 val cons = try {
-                    parser_xexpr(all, false)
+                    parser_expr(all, false)
                 } catch (e: Throwable) {
                     assert(!all.consumed(tk0)) {
                         e.message!!
                     }
-                    XExpr.None(Expr.Unit(Tk.Sym(TK.UNIT, all.tk1.lin, all.tk1.col, "()")))
+                    Expr.Unit(Tk.Sym(TK.UNIT, all.tk1.lin, all.tk1.col, "()"))
                 }
                 all.accept_err(TK.CHAR, '>')
                 Expr.UCons(tk0, cons)
+            }
+            all.accept(TK.NEW) -> {
+                Expr.New(all.tk0 as Tk.Key, parser_expr(all,false))
             }
             all.accept(TK.FUNC) -> {
                 val tk0 = all.tk0 as Tk.Key
@@ -312,7 +286,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                             Stmt.Set (
                                 Tk.Chr(TK.XVAR,lin,col,'='),
                                 Expr.Var(Tk.Str(TK.XVAR,lin,col,"arg")),
-                                XExpr.None(Expr.Nat(Tk.Str(TK.XNAT,lin,col,"_arg_")))
+                                Expr.Nat(Tk.Str(TK.XNAT,lin,col,"_arg_"))
                             ),
                             Stmt.Seq(block.tk,
                                 Stmt.Var (
@@ -352,7 +326,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
 
         val tk_bef = all.tk0
         val e2 = try {
-            parser_xexpr(all, false)
+            parser_expr(all, false)
         } catch (e: Throwable) {
             //throw e
             assert(!all.consumed(tk_bef)) {
@@ -362,7 +336,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 return e1
             }
             // call f -> call f ()
-            XExpr.None(Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()")))
+            Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()"))
         }
 
         //all.assert_tk(e1.tk, e1 is Expr.Var || (e1 is Expr.Nat && (!ispre || tk_pre.enu==TK.CALL))) {
@@ -439,7 +413,7 @@ fun parser_stmt (all: All): Stmt {
             val dst = parser_attr(all)
             all.accept_err(TK.CHAR,'=')
             val tk0 = all.tk0 as Tk.Chr
-            val src = parser_xexpr(all, true)
+            val src = parser_expr(all, true)
             Stmt.Set(tk0, dst.toExpr(), src)
         }
         all.accept(TK.NATIVE) -> {
@@ -464,12 +438,12 @@ fun parser_stmt (all: All): Stmt {
         all.accept(TK.RETURN) -> {
             val tk0 = all.tk0 as Tk.Key
             val e = try {
-                parser_xexpr(all, false)
+                parser_expr(all, false)
             } catch (e: Throwable) {
                 assert(!all.consumed(tk0)) {
                     e.message!!
                 }
-                XExpr.None(Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()")))
+                Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()"))
             }
             Stmt.Seq (tk0,
                 Stmt.Set (

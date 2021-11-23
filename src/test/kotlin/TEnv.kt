@@ -15,8 +15,6 @@ class TEnv {
             s = env_prelude(s)
             aux(s)
             check_dcls(s)
-            check_xexprs(s)
-            check_borrows_consumes_holds(s)
             return "OK"
         } catch (e: Throwable) {
             //throw e
@@ -122,18 +120,19 @@ class TEnv {
         val out = inp2env("""
             var l: <()>
             set l = <.1>
-            output std \l!2
+            output std l!2
         """.trimIndent())
-        assert(out == "(ln 3, col 15): invalid discriminator : out of bounds") { out }
+        assert(out == "(ln 3, col 14): invalid discriminator : out of bounds") { out }
     }
     @Test
     fun b12_user_empty_err () {
         val out = inp2env("""
             var l: <?^>
             set l = <.1 <.0>>
-            output std \l!0
+            output std l!0
         """.trimIndent())
-        assert(out == "(ln 2, col 11): invalid expression : expected `new` operation modifier") { out }
+        //assert(out == "(ln 2, col 11): invalid expression : expected `new` operation modifier") { out }
+        assert(out == "OK") { out }
     }
     @Test
     fun b13_user_empty_ok () {
@@ -141,6 +140,15 @@ class TEnv {
             var l: <?^>
             set l = new <.1 <.0>>
             output std \l!0
+        """.trimIndent())
+        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+    }
+    @Test
+    fun b14_user_empty_ok () {
+        val out = inp2env("""
+            var l: \<?^>
+            set l = new <.1 <.0>>
+            output std (/l)!0
         """.trimIndent())
         assert(out == "OK")
     }
@@ -246,7 +254,7 @@ class TEnv {
             var x: ()
             output std /x
         """.trimIndent())
-        assert(out == "(ln 2, col 12): invalid `/´ : expected pointer type") { out }
+        assert(out == "(ln 2, col 12): unexpected `/´ : argument is not a pointer") { out }
     }
     @Test
     fun c13_type_dnref () {

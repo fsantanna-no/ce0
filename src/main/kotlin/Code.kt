@@ -344,6 +344,19 @@ fun code_fe (e: Expr) {
             }
             Pair(it.first, pre)
         }
+        is Expr.New  -> {
+            val top = EXPRS.removeFirst()
+            val ID  = "__tmp_" + e.hashCode().absoluteValue
+            val xee = e as Expr.UCons
+            val sup = XPS[e]!!.pos()
+            val pre = """
+                $sup $ID = malloc(sizeof(*$ID));
+                assert($ID!=NULL && "not enough memory");
+                *$ID = ${top.second};
+
+            """.trimIndent()
+            Pair(top.first+pre, if (xee.tk_.num == 0) "NULL" else ID)
+        }
         is Expr.TCons -> {
             val (pre,pos) = (1..e.arg.size).map { EXPRS.removeFirst() }.reversed().unzip()
             Pair (
@@ -354,7 +367,7 @@ fun code_fe (e: Expr) {
         is Expr.UCons -> {
             val top = EXPRS.removeFirst()
             val ID  = "_tmp_" + e.hashCode().absoluteValue
-            val arg = if (TPS[e.arg.e] is Type.Unit) "" else (", ._${e.tk_.num} = " + top.second)
+            val arg = if (TPS[e.arg] is Type.Unit) "" else (", ._${e.tk_.num} = " + top.second)
             val sup = "struct " + xp.toce()
             val pre = "$sup $ID = (($sup) { ${e.tk_.num} $arg });\n"
             when {
@@ -368,7 +381,7 @@ fun code_fe (e: Expr) {
             val f   = EXPRS.removeFirst()
             val snd =
                 if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
-                    TPS[e.arg.e]!!.output("", arg.second)
+                    TPS[e.arg]!!.output("", arg.second)
                 } else {
                     f.second + "(" + arg.second + ")"
                 }
@@ -396,46 +409,6 @@ fun code_fe (e: Expr) {
             it.first,
             if ((tp is Type.Unit) && (e !is Expr.Call)) "" else it.second
         )
-    })
-}
-
-fun code_fx (xe: XExpr) {
-    val xp = XPS[xe.e]!!
-    val top = EXPRS.removeFirst()
-    val ID  = "__tmp_" + xe.hashCode().absoluteValue
-
-    EXPRS.addFirst(when (xe) {
-        is XExpr.None, is XExpr.Borrow, is XExpr.Hold -> top
-        is XExpr.New  -> {
-            assert(xe.e is Expr.UCons)
-            val xee = xe.e as Expr.UCons
-            val sup = xp.pos()
-            val pre = """
-                $sup $ID = malloc(sizeof(*$ID));
-                assert($ID!=NULL && "not enough memory");
-                *$ID = ${top.second};
-
-            """.trimIndent()
-            Pair(top.first+pre, if (xee.tk_.num == 0) "NULL" else ID)
-        }
-        is XExpr.Copy -> Pair(top.first, "copy_${xp.toce()}(${top.second})")
-        is XExpr.Replace -> {
-            val new = EXPRS.removeFirst()
-            val pre = """
-                ${xp.pos()} $ID = ${top.second};
-                ${top.second} = ${new.second};
-
-            """.trimIndent()
-            Pair(new.first+top.first+pre, ID)
-        }
-        is XExpr.Consume -> {
-            val pre = """
-                ${xp.pos()} $ID = ${top.second};
-                ${top.second} = NULL;
-
-            """.trimIndent()
-            Pair(top.first+pre, ID)
-        }
     })
 }
 
@@ -500,8 +473,8 @@ fun code_fs (s: Stmt) {
 fun Stmt.code (): String {
     TYPEX.clear()
     TYPES.clear()
-    this.visit( null, null, null, ::code_ft)
-    this.visit(::code_fs, ::code_fx, ::code_fe, null)
+    this.visit( null, null, ::code_ft)
+    this.visit(::code_fs, ::code_fe, null)
     //val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 
     val ord = TYPES.map { it.first }.toMap() // [ce={ce}]

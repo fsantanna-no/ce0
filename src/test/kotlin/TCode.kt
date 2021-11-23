@@ -63,12 +63,12 @@ class TCode {
         val e = Expr.TCons (
             Tk.Chr(TK.CHAR,0, 0, '('),
             arrayOf (
-                XExpr.None(Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))),
-                XExpr.None(Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))),
+                Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()")),
+                Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()")),
             )
         )
         XPS[e] = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray())
-        e.visit(null, ::code_fx, ::code_fe, null)
+        e.visit(null, ::code_fe, null)
         EXPRS.removeFirst().second.let {
             //println(it)
             assert(it == "((struct T_Unit_Unit_T) {  })")
@@ -89,7 +89,7 @@ class TCode {
         )
         XPS[e] = tp_unit
         XPS[e.tup] = tp_unit
-        e.visit(null, ::code_fx, ::code_fe, null)
+        e.visit(null, ::code_fe, null)
         EXPRS.removeFirst().second.let {
             assert(it == "x._1")
         }
@@ -100,7 +100,7 @@ class TCode {
     @Test
     fun c01_stmt_pass () {
         val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
-        s.visit(::code_fs, null, null, null)
+        s.visit(::code_fs, null, null)
         assert(CODE.removeFirst() == "")
         assert(CODE.size == 0)
     }
@@ -139,7 +139,7 @@ class TCode {
         lexer(all)
         var s = parser_stmts(all, Pair(TK.EOF,null))
         s = env_prelude(s)
-        s.visit(::code_fs, null, null, null)
+        s.visit(::code_fs, null, null)
         return CODE.removeFirst()
     }
 }

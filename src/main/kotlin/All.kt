@@ -18,8 +18,6 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
         s = env_prelude(s)
         aux(s)
         check_dcls(s)
-        check_xexprs(s)
-        check_borrows_consumes_holds(s)
         return Pair(true, s.code())
     } catch (e: Throwable) {
         EXPRS.clear()

@@ -28,7 +28,7 @@ class TSimul {
         fun fe (e: Expr, st: IState) {
             l.add(e)
         }
-        s.simul(State(), null, null, ::fe, mutableListOf())
+        s.simul(State(), null, ::fe, mutableListOf())
         assert(l[0] is Expr.Call)
         assert(l[1] is Expr.Unit)
     }
@@ -61,7 +61,7 @@ class TSimul {
                 }
             }
         }
-        S.simul(State(), ::fs, null, ::fe, mutableListOf())
+        S.simul(State(), ::fs, ::fe, mutableListOf())
     }
     @Test
     fun a03 () {
@@ -92,7 +92,7 @@ class TSimul {
                 println(lcur)
             }
         }
-        S.simul(State(), ::fs, null, ::fe, mutableListOf())
+        S.simul(State(), ::fs, ::fe, mutableListOf())
         assert(n == 1)
     }
     @Test
@@ -140,7 +140,7 @@ class TSimul {
                 lcur.add(s.tk_.str)
             }
         }
-        S.simul(State(), ::fs, null, null, mutableListOf())
+        S.simul(State(), ::fs, null, mutableListOf())
         assert(n == 2)
     }
     /* SIMUL CALLS REMOVED
