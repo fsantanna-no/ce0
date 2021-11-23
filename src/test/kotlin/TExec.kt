@@ -467,7 +467,7 @@ class TExec {
             var p2: \_int
             {
                 var v: _int; set v = _10
-                set p1 = \v
+                set p1 = \v  -- no
             }
             {
                 var v: _int; set v = _20
@@ -475,7 +475,7 @@ class TExec {
             }
             output std /p1
         """.trimIndent())
-        assert(out == "(ln 5, col 12): invalid assignment : cannot hold local pointer \"v\" (ln 4)")
+        assert(out == "(ln 5, col 12): invalid assignment : type mismatch") { out }
     }
     @Test
     fun i06_ptr_block_err () {
@@ -485,10 +485,10 @@ class TExec {
             {
                 var y: _int; set y = _10
                 set p = \x
-                set p = \y
+                set p = \y  -- no
             }
         """.trimIndent())
-        assert(out == "(ln 6, col 11): invalid assignment : cannot hold local pointer \"y\" (ln 4)")
+        assert(out == "(ln 6, col 11): invalid assignment : type mismatch") { out }
     }
     @Test
     fun i07_ptr_func_ok () {
@@ -519,26 +519,26 @@ class TExec {
         val out = all("""
             var f : () -> \_int; set f = func () -> \_int {
                 var v: _int; set v = _10
-                return \v
+                return \v   -- err
             }
             var v: _int; set v = _10
             var p: \_int; set p = f ()
             output std /p
         """.trimIndent())
-        assert(out == "(ln 3, col 5): invalid assignment : cannot hold local pointer \"v\" (ln 2)")
+        assert(out == "(ln 3, col 5): invalid return : type mismatch") { out }
     }
     @Test
     fun i10_ptr_func_err () {
         val out = all("""
             var f : \_int -> \_int; set f = func \_int -> \_int {
                 var ptr: \_int; set ptr = arg
-                return ptr
+                return ptr  -- err
             }
             var v: _int; set v = _10
             var p: \_int; set p = f \v
             output std /p
         """.trimIndent())
-        assert(out == "(ln 3, col 5): invalid assignment : cannot hold local pointer \"ptr\" (ln 2)")
+        assert(out == "(ln 3, col 5): invalid return : type mismatch") { out }
     }
     @Test
     fun i11_ptr_func_ok () {
@@ -551,7 +551,7 @@ class TExec {
             var p: \_int; set p = f \v
             output std /p
         """.trimIndent())
-        assert(out == "10\n")
+        assert(out == "10\n") { out }
     }
     @Test
     fun i12_ptr_ptr_ok () {
@@ -579,8 +579,10 @@ class TExec {
         val out = all("""
             var v: <_int>; set v = <.1 _10>
             var p: \_int; set p = \v!1
+            output std ()
         """.trimIndent())
-        assert(out == "(ln 2, col 16): invalid expression : expected `borrow` operation modifier")
+        //assert(out == "(ln 2, col 16): invalid expression : expected `borrow` operation modifier")
+        assert(out == "()\n") { out }
     }
     @Test
     fun i14_ptr_type () {
@@ -673,15 +675,28 @@ class TExec {
         assert(out == "10\n")
     }
     @Test
-    fun i20_ptr_uni_err () {
+    fun i20_ptr_uni_ok () {
         val out = all("""
-            var uni: <_(char*),_int>; set uni = <.1 _("oi")>
-            var str: _(char*); set str = uni!1
-            var ptr: \_(char*); set ptr = \uni!1
+            var uni: <_(char*),_int>
+                set uni = <.1 _("oi")>
+            var ptr: \_(char*)
+                set ptr = \uni!1
+            call _puts /ptr
+        """.trimIndent())
+        assert(out == "oi\n") { out }
+    }
+    @Test
+    fun i21_ptr_uni_err () {
+        val out = all("""
+            var uni: <_(char*),_int>
+                set uni = <.1 _("oi")>
+            var ptr: \_(char*)
+                set ptr = \uni!1
             set uni = <.2 _65>
             call _puts /ptr
         """.trimIndent())
-        assert(out == "(ln 4, col 9): invalid assignment of \"uni\" : borrowed in line 3")
+        //assert(out == "(ln 5, col 9): invalid assignment of \"uni\" : borrowed in line 4")
+        assert(out == "xxx") { out }    // TODO: dangling pointer to union
     }
 
     // REC
