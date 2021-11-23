@@ -518,7 +518,7 @@ class TEnv {
                 set p = \y
             }
         """.trimIndent())
-        assert(out == "(ln 5, col 11): invalid assignment : cannot hold local pointer \"y\" (ln 4)") { out }
+        assert(out == "(ln 5, col 11): invalid assignment : type mismatch") { out }
     }
     @Test
     fun f04_ptr_ptr_err () {
@@ -531,7 +531,7 @@ class TEnv {
                 set p = /z
             }
         """.trimIndent())
-        assert(out == "(ln 6, col 11): invalid assignment : cannot hold local pointer \"z\" (ln 5)") { out }
+        assert(out == "(ln 6, col 11): invalid assignment : type mismatch") { out }
     }
 
     // POINTERS - FUNC - CALL
@@ -539,7 +539,7 @@ class TEnv {
     @Test
     fun g01_ptr_func_ok () {
         val out = inp2env("""
-            var f : \_int -> \_int; set f = func (\_int -> \_int) {
+            var f : (\_int -> \_int); set f = func (\_int -> \_int) {
                 return arg
             }
             var v: _int; set v = _10
