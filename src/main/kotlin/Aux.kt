@@ -281,6 +281,8 @@ fun Stmt.aux (up: Any?, env: Env?): Env? {
             this.dst.aux(this, env, Type_Any(this.tk))
             this.src.aux(this, env, TPS[this.dst]!!)
             val str = if (this.dst is Expr.Var && this.dst.tk_.str=="_ret_") "return" else "assignment"
+            //println(TPS[this.dst])
+            //println(TPS[this.src])
             All_assert_tk(this.tk, TPS[this.dst]!!.isSupOf(TPS[this.src]!!)) {
                 "invalid $str : type mismatch"
             }

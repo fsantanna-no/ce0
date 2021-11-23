@@ -592,7 +592,7 @@ class TEnv {
             var p: \_int; set p = f ()
             output std /p
         """.trimIndent())
-        assert(out == "(ln 3, col 5): invalid assignment : cannot hold local pointer \"v\" (ln 2)")
+        assert(out == "(ln 3, col 5): invalid return : type mismatch") { out }
     }
     @Test
     fun g04_ptr_func_err () {
@@ -605,13 +605,13 @@ class TEnv {
             var p: \_int; set p = f \v
             output std /p
         """.trimIndent())
-        assert(out == "(ln 3, col 5): invalid assignment : cannot hold local pointer \"ptr\" (ln 2)")
+        assert(out == "(ln 3, col 5): invalid return : type mismatch") { out }
     }
     @Test
     fun g05_ptr_caret_ok () {
         val out = inp2env("""
             var f : \_int -> \_int; set f = func \_int -> \_int {
-                var ptr: \_int@0; set ptr = arg
+                var ptr: \_int@a; set ptr = arg
                 return ptr
             }
             var v: _int; set v = _10
@@ -632,15 +632,15 @@ class TEnv {
             var p: \_int; set p = f \v
             output std /p
         """.trimIndent())
-        assert(out == "(ln 3, col 9): invalid assignment : cannot hold local pointer \"x\" (ln 2)")
+        assert(out == "(ln 3, col 9): invalid assignment : cannot hold local pointer \"x\" (ln 2)") { out }
     }
 
     @Test
     fun g07_ptr_caret_err () {
         val out = inp2env("""
-            var ptr: \_int @0
+            var ptr: \_int @a
         """.trimIndent())
-        assert(out == "OK")
+        assert(out == "OK") { out }
     }
 
     @Test
@@ -662,7 +662,7 @@ class TEnv {
                 return ptr
             }
         """.trimIndent())
-        assert(out == "(ln 3, col 9): invalid assignment : cannot hold local pointer \"arg\" (ln 2)")
+        assert(out == "(ln 3, col 9): invalid assignment : cannot hold local pointer \"arg\" (ln 2)") { out }
     }
     @Test
     fun g10_ptr_out_err () {
@@ -673,7 +673,7 @@ class TEnv {
                 return \ptr
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 5): invalid assignment : cannot hold local pointer \"ptr\" (ln 3)")
+        assert(out == "(ln 4, col 5): invalid assignment : cannot hold local pointer \"ptr\" (ln 3)") { out }
     }
     @Test
     fun g11_ptr_func () {
@@ -687,7 +687,7 @@ class TEnv {
                 set p = f ()
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 11): invalid assignment : cannot hold local pointer \"f\" (ln 2)")
+        assert(out == "(ln 7, col 11): invalid assignment : cannot hold local pointer \"f\" (ln 2)") { out }
     }
     @Test
     fun g12_ptr_func () {
@@ -701,7 +701,7 @@ class TEnv {
                 set p = f (\v)
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 11): invalid assignment : cannot hold local pointer \"f\" (ln 2)")
+        assert(out == "(ln 7, col 11): invalid assignment : cannot hold local pointer \"f\" (ln 2)") { out }
     }
     @Test
     fun g13_ptr_func () {
@@ -711,7 +711,7 @@ class TEnv {
                 set v = arg
             }
         """.trimIndent())
-        assert(out == "(ln 3, col 11): invalid assignment : cannot hold local pointer \"arg\" (ln 2)")
+        assert(out == "(ln 3, col 11): invalid assignment : cannot hold local pointer \"arg\" (ln 2)") { out }
     }
 
     // POINTERS - TUPLE - TYPE
@@ -725,7 +725,7 @@ class TEnv {
                 set p = \y
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"y\" (ln 3)")
+        assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"y\" (ln 3)") { out }
     }
     @Test
     fun h02_ptr_user_err1 () {
@@ -736,7 +736,7 @@ class TEnv {
                 set p = \y!1
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 13): invalid expression : expected `borrow` operation modifier")
+        assert(out == "(ln 4, col 13): invalid expression : expected `borrow` operation modifier") { out }
     }
     @Test
     fun h02_ptr_user_err2 () {
@@ -747,7 +747,7 @@ class TEnv {
                 set p = borrow \y!1
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"y\" (ln 3)")
+        assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"y\" (ln 3)") { out }
     }
     @Test
     fun h03_ptr_tup () {
@@ -768,7 +768,7 @@ class TEnv {
                 set p = \v.1
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"v\" (ln 3)")
+        assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"v\" (ln 3)") { out }
     }
     @Test
     fun h05_ptr_type_err () {
@@ -779,7 +779,7 @@ class TEnv {
                 set p = borrow \v!1
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"v\" (ln 3)")
+        assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"v\" (ln 3)") { out }
     }
     @Test
     fun h06_ptr_tup_err () {
@@ -790,7 +790,7 @@ class TEnv {
                 set p.2 = \v
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 13): invalid assignment : cannot hold local pointer \"v\" (ln 3)")
+        assert(out == "(ln 4, col 13): invalid assignment : cannot hold local pointer \"v\" (ln 3)") { out }
     }
     @Test
     fun h07_ptr_tup_err () {

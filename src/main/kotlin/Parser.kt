@@ -10,6 +10,20 @@ sealed class Type (val tk: Tk) {
     data class Rec   (val tk_: Tk.Up): Type(tk_)
 }
 
+fun Type.deep (lin: Int, col: Int): Type {
+    return when (this) {
+        is Type.Any   -> Type.Any(this.tk_.copy(lin_=lin,col_=col))
+        is Type.Unit  -> Type.Unit(this.tk_.copy(lin_=lin,col_=col))
+        is Type.Nat   -> Type.Nat(this.tk_.copy(lin_=lin,col_=col))
+        is Type.Tuple -> Type.Tuple(this.tk_.copy(lin_=lin,col_=col), this.vec.map { it.deep(lin,col) }.toTypedArray())
+        is Type.Union -> Type.Union(this.tk_.copy(lin_=lin,col_=col), this.isrec, this.ishold, this.isnull, this.vec.map { it.deep(lin,col) }.toTypedArray())
+        is Type.UCons -> Type.UCons(this.tk_.copy(lin_=lin,col_=col), this.arg.deep(lin,col))
+        is Type.Func  -> Type.Func(this.tk_.copy(lin_=lin,col_=col), this.inp.deep(lin,col), this.out.deep(lin,col))
+        is Type.Ptr   -> Type.Ptr(this.tk_.copy(lin_=lin,col_=col), this.scope, this.pln.deep(lin,col))
+        is Type.Rec   -> Type.Rec(this.tk_.copy(lin_=lin,col_=col))
+    }
+}
+
 fun Type.tostr (): String {
     return when (this) {
         is Type.Any   -> "?"
@@ -278,10 +292,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 val col = block.tk.col
                 val xblock = Stmt.Block(block.tk_, null,
                     Stmt.Seq(block.tk,
-                        Stmt.Var (
-                            Tk.Str(TK.XVAR,lin,col,"arg"),
-                            (tp as Type.Func).inp
-                        ),
+                        Stmt.Var(Tk.Str(TK.XVAR,lin,col,"arg"), (tp as Type.Func).inp.deep(lin,col)),
                         Stmt.Seq(block.tk,
                             Stmt.Set (
                                 Tk.Chr(TK.XVAR,lin,col,'='),
@@ -289,10 +300,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                                 Expr.Nat(Tk.Str(TK.XNAT,lin,col,"_arg_"))
                             ),
                             Stmt.Seq(block.tk,
-                                Stmt.Var (
-                                    Tk.Str(TK.XVAR,lin,col,"_ret_"),
-                                    tp.out,
-                                ),
+                                Stmt.Var(Tk.Str(TK.XVAR,lin,col,"_ret_"), (tp as Type.Func).out.deep(lin,col)),
                                 block,
                             )
                         )
