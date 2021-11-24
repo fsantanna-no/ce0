@@ -76,13 +76,13 @@ fun check_02 (s: Stmt) {
                 }
                 if (xp.isrec()) {
                     All_assert_tk(e.tk, (e.tk_.num==0) || UPS[e] is Expr.New) {
-                        "invalid constructor : expected `new´"
+                        "invalid constructor : expected `new`"
                     }
                 }
             }
             is Expr.New -> {
                 All_assert_tk(e.tk, TPS[e.arg] is Type.UCons) {
-                    "invalid `new´ : expected constructor"
+                    "invalid `new` : expected constructor"
                 }
             }
             is Expr.Call -> {

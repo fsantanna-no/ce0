@@ -133,7 +133,7 @@ class TEnv {
             output std l!0
         """.trimIndent())
         //assert(out == "(ln 2, col 11): invalid expression : expected `new` operation modifier") { out }
-        assert(out == "OK") { out }
+        assert(out == "(ln 2, col 11): invalid constructor : expected `new`") { out }
     }
     @Test
     fun b13_user_empty_ok () {
@@ -660,7 +660,7 @@ class TEnv {
                 return \arg
             }
         """.trimIndent())
-        assert(out == "(ln 3, col 5): invalid assignment : cannot hold local pointer \"arg\" (ln 2)") { out }
+        assert(out == "(ln 3, col 5): invalid return : type mismatch") { out }
     }
     @Test
     fun g09_ptr_arg_err () {

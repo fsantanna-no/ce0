@@ -732,7 +732,7 @@ class TExec {
             var l: \<?^>; set l = new _1
             output std l
         """.trimIndent())
-        assert(out == "(ln 1, col 23): invalid `new´ : expected constructor") { out }
+        assert(out == "(ln 1, col 23): invalid `new` : expected constructor") { out }
     }
     @Test
     fun j02_list_new_ok () {
@@ -748,7 +748,7 @@ class TExec {
             var l: <?^>; set l = <.1 <.0>>
             output std l
         """.trimIndent())
-        assert(out == "(ln 1, col 24): invalid constructor : expected `new´") { out }
+        assert(out == "(ln 1, col 24): invalid constructor : expected `new`") { out }
     }
     @Test
     fun j02_list_zero_err () {

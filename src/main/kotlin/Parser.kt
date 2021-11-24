@@ -274,28 +274,31 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
             }
             all.accept(TK.FUNC) -> {
                 val tk0 = all.tk0 as Tk.Key
-                //all.accept_err(TK.CHAR,'(')
+
                 val tp = parser_type(all)
                 all.assert_tk(all.tk0, tp is Type.Func) {
                     "expected function type"
                 }
-                //all.accept_err(TK.CHAR,')')
-                val block = parser_block(all)
+                val tpf = tp as Type.Func
 
+                val block = parser_block(all)
                 val lin = block.tk.lin
                 val col = block.tk.col
+
                 val xblock = Stmt.Block(block.tk_, null,
                     Stmt.Seq(block.tk,
-                        Stmt.Var(Tk.Str(TK.XVAR,lin,col,"arg"), (tp as Type.Func).inp.deep(lin,col)),
-                        Stmt.Seq(block.tk,
-                            Stmt.Set (
-                                Tk.Chr(TK.XVAR,lin,col,'='),
-                                Expr.Var(Tk.Str(TK.XVAR,lin,col,"arg")),
-                                Expr.Nat(Tk.Str(TK.XNAT,lin,col,"_arg_"))
-                            ),
+                        Stmt.Var(Tk.Str(TK.XVAR,lin,col,"_ret_"), tpf.out.deep(lin,col)),
+                        Stmt.Block(block.tk_, null,
                             Stmt.Seq(block.tk,
-                                Stmt.Var(Tk.Str(TK.XVAR,lin,col,"_ret_"), (tp as Type.Func).out.deep(lin,col)),
-                                block,
+                                Stmt.Var(Tk.Str(TK.XVAR,lin,col,"arg"), tpf.inp.deep(lin,col)),
+                                Stmt.Seq(block.tk,
+                                    Stmt.Set(
+                                        Tk.Chr(TK.XVAR,lin,col,'='),
+                                        Expr.Var(Tk.Str(TK.XVAR,lin,col,"arg")),
+                                        Expr.Nat(Tk.Str(TK.XNAT,lin,col,"_arg_"))
+                                    ),
+                                    block
+                                )
                             )
                         )
                     )

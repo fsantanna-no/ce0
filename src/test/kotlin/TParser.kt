@@ -550,7 +550,7 @@ class TParser {
             (s is Stmt.Set) && ((s.dst as Expr.Var).tk_.str=="f") &&
             s.src.let {
                 (it is Expr.Func) && (it.type.inp is Type.Unit) && it.block.body.let {
-                    it is Stmt.Seq && it.s1 is Stmt.Var && it.s2 is Stmt.Seq
+                    it is Stmt.Seq && it.s1 is Stmt.Var && it.s2 is Stmt.Block
                 }
             }
         )
