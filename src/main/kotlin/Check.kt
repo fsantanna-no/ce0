@@ -24,7 +24,7 @@ fun check_02 (s: Stmt) {
             }
             is Expr.Dnref -> {
                 All_assert_tk(e.tk, TPS[e.ptr] is Type.Ptr) {
-                    "unexpected `/´ : argument is not a pointer"
+                    "unexpected operand to `/´ : not a pointer"
                 }
             }
             is Expr.UDisc -> {

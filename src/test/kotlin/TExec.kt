@@ -696,7 +696,7 @@ class TExec {
             call _puts /ptr
         """.trimIndent())
         //assert(out == "(ln 5, col 9): invalid assignment of \"uni\" : borrowed in line 4")
-        assert(out == "xxx") { out }    // TODO: dangling pointer to union
+        assert(out == "(ln 4, col 20): unexpected operand to `\\´") { out }    // TODO: dangling pointer to union
     }
 
     // REC

@@ -256,7 +256,7 @@ class TEnv {
             var x: ()
             output std /x
         """.trimIndent())
-        assert(out == "(ln 2, col 12): unexpected `/´ : argument is not a pointer") { out }
+        assert(out == "(ln 2, col 12): unexpected operand to `/´ : not a pointer") { out }
     }
     @Test
     fun c13_type_dnref () {
