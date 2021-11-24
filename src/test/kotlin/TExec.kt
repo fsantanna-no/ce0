@@ -719,12 +719,20 @@ class TExec {
         assert(out == "(ln 1, col 10): invalid type declaration : unexpected `^´") { out }
     }
     @Test
-    fun j02_list_new_err () {
+    fun j02_list_new_err_dst () {
         val out = all("""
             var l: \<?^>; set l = new <.1 <.0>>
             output std l
         """.trimIndent())
-        assert(out == "erro de tipo ptr no inicio") { out }
+        assert(out == "(ln 1, col 21): invalid assignment : type mismatch") { out }
+    }
+    @Test
+    fun j02_list_new_err_src () {
+        val out = all("""
+            var l: \<?^>; set l = new _1
+            output std l
+        """.trimIndent())
+        assert(out == "(ln 1, col 23): invalid `new´ : expected constructor") { out }
     }
     @Test
     fun j02_list_new_ok () {

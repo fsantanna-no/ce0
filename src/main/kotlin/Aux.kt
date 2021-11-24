@@ -103,7 +103,7 @@ fun Expr.tps_add () {
             is Expr.Dnref -> (TPS[this.ptr] as Type.Ptr).pln
             is Expr.TCons -> Type.Tuple(this.tk_, this.arg.map{TPS[it]!!}.toTypedArray()).up(this)
             is Expr.UCons -> Type.UCons(this.tk_, TPS[this.arg]!!).up(this)
-            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,this.tk.lin,this.tk.col,'\\'), null, TPS[this.arg]!!).up(this)
+            is Expr.New   -> TPS[this.arg]!!
             is Expr.Call  -> {
                 TPS[this.f].let {
                     when (it) {
@@ -170,13 +170,7 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
             }
             this.arg.aux(this, env, sub)
         }
-        is Expr.New -> {
-            if (xp !is Type.Ptr) {
-                this.arg.aux(this, env, Type_Any(this.tk))
-            } else {
-                this.arg.aux(this, env, xp.pln)
-            }
-        }
+        is Expr.New -> this.arg.aux(this, env, xp)
         is Expr.Dnref -> {
             if (xp is Type.Ptr) {
                 this.ptr.aux(this, env, Type_Any(this.tk))

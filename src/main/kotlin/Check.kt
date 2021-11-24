@@ -1,3 +1,19 @@
+fun check_01 (s: Stmt) {
+    fun fs (s: Stmt) {
+        when (s) {
+            is Stmt.Set -> {
+                val str = if (s.dst is Expr.Var && s.dst.tk_.str=="_ret_") "return" else "assignment"
+                println(TPS[s.dst])
+                println(TPS[s.src])
+                All_assert_tk(s.tk, TPS[s.dst]!!.isSupOf(TPS[s.src]!!)) {
+                    "invalid $str : type mismatch"
+                }
+            }
+        }
+    }
+    s.visit(::fs, null, null)
+}
+
 fun check_02 (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
@@ -59,6 +75,11 @@ fun check_02 (s: Stmt) {
                     "invalid constructor : type mismatch"
                 }
             }
+            is Expr.New -> {
+                All_assert_tk(e.tk, TPS[e.arg] is Type.UCons) {
+                    "invalid `new´ : expected constructor"
+                }
+            }
             is Expr.Call -> {
                 val tp = TPS[e.f]
                 All_assert_tk(e.f.tk, tp is Type.Func || tp is Type.Nat) {
@@ -83,14 +104,6 @@ fun check_02 (s: Stmt) {
                     "invalid declaration : \"${s.tk_.str}\" is already declared (ln ${dcl!!.tk.lin})"
                 }
             }
-            is Stmt.Set -> {
-                val str = if (s.dst is Expr.Var && s.dst.tk_.str=="_ret_") "return" else "assignment"
-                //println(TPS[this.dst])
-                //println(TPS[this.src])
-                All_assert_tk(s.tk, TPS[s.dst]!!.isSupOf(TPS[s.src]!!)) {
-                    "invalid $str : type mismatch"
-                }
-            }
             is Stmt.If -> {
                 All_assert_tk(s.tk, TPS[s.tst] is Type.Nat) {
                     "invalid condition : type mismatch"
@@ -100,26 +113,6 @@ fun check_02 (s: Stmt) {
                 val ok = s.ups_tolist().firstOrNull { it is Expr.Func } != null
                 All_assert_tk(s.tk, ok) {
                     "invalid return : no enclosing function"
-                }
-            }
-        }
-    }
-    s.visit(::fs, ::fe, null)
-}
-
-fun check_01 (s: Stmt) {
-    fun fe (e: Expr) {
-        when (e) {
-        }
-    }
-    fun fs (s: Stmt) {
-        when (s) {
-            is Stmt.Set -> {
-                val str = if (s.dst is Expr.Var && s.dst.tk_.str=="_ret_") "return" else "assignment"
-                //println(TPS[this.dst])
-                //println(TPS[this.src])
-                All_assert_tk(s.tk, TPS[s.dst]!!.isSupOf(TPS[s.src]!!)) {
-                    "invalid $str : type mismatch"
                 }
             }
         }
