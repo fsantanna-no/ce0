@@ -157,21 +157,18 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
             } else {
                 val xxp = xp.expand()
                 this.arg.forEachIndexed { i, e ->
-                    e.aux(this, env, xxp[i])
+                    e.aux(this, env, if (xxp.size>i) xxp[i] else Type_Any(this.tk))
                 }
             }
         }
         is Expr.UCons -> {
-            if (xp !is Type.Union) {
-                this.arg.aux(this, env, Type_Any(this.tk))
-            } else {
-                val sub = if (this.tk_.num == 0) {
-                    Type_Unit(this.tk)
-                } else {
-                    xp.expand()[this.tk_.num - 1]
-                }
-                this.arg.aux(this, env, sub)
+            val sub = when {
+                (xp !is Type.Union) -> Type_Any(this.tk)
+                (this.tk_.num == 0) -> Type_Unit(this.tk)
+                (xp.vec.size < this.tk_.num) -> Type_Any(this.tk)
+                else -> xp.expand()[this.tk_.num - 1]
             }
+            this.arg.aux(this, env, sub)
         }
         is Expr.New -> {
             if (xp !is Type.Ptr) {

@@ -29,7 +29,7 @@ fun check_02 (s: Stmt) {
                     }
                     val (MIN,MAX) = Pair(if (it.exactlyRec()) 0 else 1, (it as Type.Union).vec.size)
                     All_assert_tk(e.tk, MIN<=e.tk_.num && e.tk_.num<=MAX) {
-                        "invalid discriminator : out of bounds"
+                        "invalid discriminator : out of bounds XXX" // TODO: remove check
                     }
                 }
             }
@@ -45,15 +45,15 @@ fun check_02 (s: Stmt) {
                 }
             }
             is Expr.TCons -> {
-                All_assert_tk(e.tk, e.arg.size == (XPS[e] as Type.Tuple).vec.size) {
-                    "invalid constructor : out of bounds"
+                All_assert_tk(e.tk, e.arg.size == (TPS[e] as Type.Tuple).vec.size) {
+                    "invalid constructor : out of bounds XXX" // TODO: remove check
                 }
             }
             is Expr.UCons -> {
                 val xp = XPS[e] as Type.Union
                 val (MIN, MAX) = Pair(if (xp.isnull) 0 else 1, xp.vec.size)
                 All_assert_tk(e.tk, MIN <= e.tk_.num && e.tk_.num <= MAX) {
-                    "invalid constructor : out of bounds"
+                    "invalid constructor : out of bounds XXX" // TODO: remove check
                 }
                 All_assert_tk(e.tk, e.tk_.num!=0 || TPS[e.arg]!!.isSupOf(Type_Unit(e.tk))) {
                     "invalid constructor : type mismatch"

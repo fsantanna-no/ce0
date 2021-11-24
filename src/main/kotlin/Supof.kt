@@ -45,10 +45,10 @@ fun Type.isSupOf_ (sub: Type, ups1: List<Type>, ups2: List<Type>): Boolean {
         (this is Type.Rec) -> ups1[this.tk_.up-1].let { it.isSupOf_(sub, listOf(it)+ups1,ups2) }
         (sub  is Type.Rec) -> ups2[sub.tk_.up-1].let { this.isSupOf_(it,ups1, listOf(it)+ups2) }
         (this is Type.Union && sub is Type.UCons) -> {
-            if (sub.tk_.num == 0) {
-                this.isnull && sub.arg is Type.Unit
-            } else {
-                this.vec[sub.tk_.num-1].isSupOf_(sub.arg, listOf(this)+ups1, ups2)
+            when {
+                (sub.tk_.num == 0) -> this.isnull && sub.arg is Type.Unit
+                (this.vec.size < sub.tk_.num) -> false
+                else -> this.vec[sub.tk_.num-1].isSupOf_(sub.arg, listOf(this)+ups1, ups2)
             }
         }
         (this::class != sub::class) -> false

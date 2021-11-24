@@ -124,7 +124,7 @@ class TExec {
         val out = all("""
             output std ([(),()].1)
         """.trimIndent())
-        assert(out == "()\n") { out }
+        assert(out == "(ln 1, col 21): invalid discriminator : unexpected constructor") { out }
     }
     @Test
     fun b03_tuple_tuples () {

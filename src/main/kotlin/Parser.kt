@@ -314,8 +314,11 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
             val chr = all.tk0 as Tk.Chr
             all.accept_err(TK.XNUM)
             val num = all.tk0 as Tk.Num
-                e1 = when {
-            (chr.chr == '?') -> Expr.UPred(num, e1)
+            all.assert_tk(all.tk0, e1 !is Expr.TCons && e1 !is Expr.UCons) {
+                "invalid discriminator : unexpected constructor"
+            }
+            e1 = when {
+                (chr.chr == '?') -> Expr.UPred(num, e1)
                 (chr.chr == '!') -> Expr.UDisc(num, e1)
                 (chr.chr == '.') -> Expr.TDisc(num, e1)
                 else -> error("impossible case")
