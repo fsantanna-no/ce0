@@ -2,10 +2,10 @@ fun check_01 (s: Stmt) {
     fun fs (s: Stmt) {
         when (s) {
             is Stmt.Set -> {
-                val str = if (s.dst is Expr.Var && s.dst.tk_.str=="_ret_") "return" else "assignment"
-                println(TPS[s.dst])
-                println(TPS[s.src])
-                All_assert_tk(s.tk, TPS[s.dst]!!.isSupOf(TPS[s.src]!!)) {
+                val dst = TPS[s.dst]!!
+                val src = TPS[s.src]!!
+                All_assert_tk(s.tk, dst.isSupOf(src)) {
+                    val str = if (s.dst is Expr.Var && s.dst.tk_.str=="_ret_") "return" else "assignment"
                     "invalid $str : type mismatch"
                 }
             }
@@ -73,6 +73,11 @@ fun check_02 (s: Stmt) {
                 }
                 All_assert_tk(e.tk, e.tk_.num!=0 || TPS[e.arg]!!.isSupOf(Type_Unit(e.tk))) {
                     "invalid constructor : type mismatch"
+                }
+                if (xp.isrec()) {
+                    All_assert_tk(e.tk, (e.tk_.num==0) || UPS[e] is Expr.New) {
+                        "invalid constructor : expected `new´"
+                    }
                 }
             }
             is Expr.New -> {

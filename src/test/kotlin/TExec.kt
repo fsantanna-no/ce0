@@ -745,10 +745,10 @@ class TExec {
     @Test
     fun j02_list_pln () {
         val out = all("""
-            var l: <?\^>; set l = <.1 <.0>>
+            var l: <?^>; set l = <.1 <.0>>
             output std l
         """.trimIndent())
-        assert(out == "<.1 <.0>>\n") { out }
+        assert(out == "(ln 1, col 24): invalid constructor : expected `new´") { out }
     }
     @Test
     fun j02_list_zero_err () {
