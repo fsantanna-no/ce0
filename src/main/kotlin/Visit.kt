@@ -24,6 +24,7 @@ fun Expr.visit (fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
     when (this) {
         is Expr.TCons -> this.arg.forEach { it.visit(fs,fe,ft) }
         is Expr.UCons -> this.arg.visit(fs,fe,ft)
+        is Expr.New   -> this.arg.visit(fs,fe,ft)
         is Expr.Dnref -> this.ptr.visit(fs,fe,ft)
         is Expr.Upref -> this.pln.visit(fs,fe,ft)
         is Expr.TDisc -> this.tup.visit(fs,fe,ft)

@@ -142,7 +142,7 @@ class TEnv {
             set l = new <.1 <.0>>
             output std \l!0
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out == "OK") { out }
     }
     @Test
     fun b14_user_empty_ok () {
@@ -151,7 +151,7 @@ class TEnv {
             set l = new <.1 <.0>>
             output std (/l)!0
         """.trimIndent())
-        assert(out == "OK")
+        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
 
     // TYPE

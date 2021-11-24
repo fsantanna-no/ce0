@@ -118,7 +118,7 @@ fun Expr.tps_add () {
             is Expr.TDisc -> (TPS[this.tup] as Type.Tuple).expand()[this.tk_.num-1].up(this)
             is Expr.UDisc -> (TPS[this.uni] as Type.Union).let {
                 if (this.tk_.num == 0) {
-                    assert(it.exactlyRec()) { "bug found" }
+                    assert(it.isrec()) { "bug found" }
                     Type_Unit(this.tk).up(this)
                 } else {
                     it.expand()[this.tk_.num - 1].up(this)

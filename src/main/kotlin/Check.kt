@@ -32,7 +32,7 @@ fun check_02 (s: Stmt) {
                     All_assert_tk(e.tk, it is Type.Union) {
                         "invalid discriminator : type mismatch"
                     }
-                    val (MIN,MAX) = Pair(if (it.exactlyRec()) 0 else 1, (it as Type.Union).vec.size)
+                    val (MIN,MAX) = Pair(if (it.isrec()) 0 else 1, (it as Type.Union).vec.size)
                     All_assert_tk(e.tk, MIN<=e.tk_.num && e.tk_.num<=MAX) {
                         "invalid discriminator : out of bounds"
                     }
@@ -43,7 +43,7 @@ fun check_02 (s: Stmt) {
                     All_assert_tk(e.tk, it is Type.Union) {
                         "invalid discriminator : type mismatch"
                     }
-                    val (MIN,MAX) = Pair(if (it.exactlyRec()) 0 else 1, (it as Type.Union).vec.size)
+                    val (MIN,MAX) = Pair(if (it.isrec()) 0 else 1, (it as Type.Union).vec.size)
                     All_assert_tk(e.tk, MIN<=e.tk_.num && e.tk_.num<=MAX) {
                         "invalid discriminator : out of bounds XXX" // TODO: remove check
                     }
@@ -128,10 +128,6 @@ fun Type.containsRec (): Boolean {
         is Type.Union -> this.vec.any { it.containsRec() }
         is Type.UCons -> this.arg.containsRec()
     }
-}
-
-fun Type.exactlyRec (): Boolean {
-    return (this is Type.Union) && this.isrec
 }
 
 fun<T> Set<Set<T>>.unionAll (): Set<T> {
