@@ -17,7 +17,8 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
         var s = parser_stmts(all, Pair(TK.EOF,null))
         s = env_prelude(s)
         aux(s)
-        check_dcls(s)
+        check_01(s)
+        check_02(s)
         return Pair(true, s.code())
     } catch (e: Throwable) {
         EXPRS.clear()

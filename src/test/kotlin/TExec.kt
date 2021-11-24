@@ -708,7 +708,7 @@ class TExec {
             output std l
         """.trimIndent())
         //assert(out == "(ln 1, col 5): invalid assignment : type mismatch") { out }
-        assert(out == "erro .0 is a pointer") { out }
+        assert(out == "<.0>\n") { out }
     }
     @Test
     fun j01_list () {
@@ -716,12 +716,20 @@ class TExec {
             var l: <?\^>; set l = <.0>
             output std l
         """.trimIndent())
-        assert(out == "<.0>\n") { out }
+        assert(out == "(ln 1, col 10): invalid type declaration : unexpected `^´") { out }
     }
     @Test
-    fun j02_list_new () {
+    fun j02_list_new_err () {
         val out = all("""
-            var l: \<?\^>; set l = new <.1 <.0>>
+            var l: \<?^>; set l = new <.1 <.0>>
+            output std l
+        """.trimIndent())
+        assert(out == "erro de tipo ptr no inicio") { out }
+    }
+    @Test
+    fun j02_list_new_ok () {
+        val out = all("""
+            var l: <?^>; set l = new <.1 <.0>>
             output std l
         """.trimIndent())
         assert(out == "<.1 <.0>>\n") { out }

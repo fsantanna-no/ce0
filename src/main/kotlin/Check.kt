@@ -1,10 +1,99 @@
-fun check_dcls (s: Stmt) {
+fun check_02 (s: Stmt) {
+    fun fe (e: Expr) {
+        when (e) {
+            is Expr.Var -> {
+                All_assert_tk(e.tk, e.env()!=null) {
+                    "undeclared variable \"${e.tk_.str}\""
+                }
+            }
+            is Expr.Dnref -> {
+                All_assert_tk(e.tk, TPS[e.ptr] is Type.Ptr) {
+                    "unexpected `/´ : argument is not a pointer"
+                }
+            }
+            is Expr.UDisc -> {
+                TPS[e.uni]!!.let {
+                    All_assert_tk(e.tk, it is Type.Union) {
+                        "invalid discriminator : type mismatch"
+                    }
+                    val (MIN,MAX) = Pair(if (it.exactlyRec()) 0 else 1, (it as Type.Union).vec.size)
+                    All_assert_tk(e.tk, MIN<=e.tk_.num && e.tk_.num<=MAX) {
+                        "invalid discriminator : out of bounds"
+                    }
+                }
+            }
+            is Expr.UPred -> {
+                TPS[e.uni]!!.let {
+                    All_assert_tk(e.tk, it is Type.Union) {
+                        "invalid discriminator : type mismatch"
+                    }
+                    val (MIN,MAX) = Pair(if (it.exactlyRec()) 0 else 1, (it as Type.Union).vec.size)
+                    All_assert_tk(e.tk, MIN<=e.tk_.num && e.tk_.num<=MAX) {
+                        "invalid discriminator : out of bounds"
+                    }
+                }
+            }
+            is Expr.TDisc -> {
+                TPS[e.tup].let {
+                    All_assert_tk(e.tk, it is Type.Tuple) {
+                        "invalid discriminator : type mismatch"
+                    }
+                    val (MIN,MAX) = Pair(1, (it as Type.Tuple).vec.size)
+                    All_assert_tk(e.tk, MIN<=e.tk_.num && e.tk_.num<=MAX) {
+                        "invalid discriminator : out of bounds"
+                    }
+                }
+            }
+            is Expr.TCons -> {
+                All_assert_tk(e.tk, e.arg.size == (XPS[e] as Type.Tuple).vec.size) {
+                    "invalid constructor : out of bounds"
+                }
+            }
+            is Expr.UCons -> {
+                val xp = XPS[e] as Type.Union
+                val (MIN, MAX) = Pair(if (xp.isnull) 0 else 1, xp.vec.size)
+                All_assert_tk(e.tk, MIN <= e.tk_.num && e.tk_.num <= MAX) {
+                    "invalid constructor : out of bounds"
+                }
+                All_assert_tk(e.tk, e.tk_.num!=0 || TPS[e.arg]!!.isSupOf(Type_Unit(e.tk))) {
+                    "invalid constructor : type mismatch"
+                }
+            }
+            is Expr.Call -> {
+                val tp = TPS[e.f]
+                All_assert_tk(e.f.tk, tp is Type.Func || tp is Type.Nat) {
+                    "invalid call : not a function"
+                }
+                val inp = when (tp) {
+                    is Type.Func -> tp.inp
+                    is Type.Nat  -> tp
+                    else -> error("impossible case")
+                }
+                All_assert_tk(e.f.tk, inp.isSupOf(TPS[e.arg]!!)) {
+                    "invalid call : type mismatch"
+                }
+            }
+        }
+    }
     fun fs (s: Stmt) {
         when (s) {
             is Stmt.Var -> {
                 val dcl = s.env(s.tk_.str)
                 All_assert_tk(s.tk, dcl == null || dcl.tk_.str in arrayOf("arg", "_ret_")) {
                     "invalid declaration : \"${s.tk_.str}\" is already declared (ln ${dcl!!.tk.lin})"
+                }
+            }
+            is Stmt.Set -> {
+                val str = if (s.dst is Expr.Var && s.dst.tk_.str=="_ret_") "return" else "assignment"
+                //println(TPS[this.dst])
+                //println(TPS[this.src])
+                All_assert_tk(s.tk, TPS[s.dst]!!.isSupOf(TPS[s.src]!!)) {
+                    "invalid $str : type mismatch"
+                }
+            }
+            is Stmt.If -> {
+                All_assert_tk(s.tk, TPS[s.tst] is Type.Nat) {
+                    "invalid condition : type mismatch"
                 }
             }
             is Stmt.Ret -> {
@@ -15,7 +104,27 @@ fun check_dcls (s: Stmt) {
             }
         }
     }
-    s.visit(::fs, null, null)
+    s.visit(::fs, ::fe, null)
+}
+
+fun check_01 (s: Stmt) {
+    fun fe (e: Expr) {
+        when (e) {
+        }
+    }
+    fun fs (s: Stmt) {
+        when (s) {
+            is Stmt.Set -> {
+                val str = if (s.dst is Expr.Var && s.dst.tk_.str=="_ret_") "return" else "assignment"
+                //println(TPS[this.dst])
+                //println(TPS[this.src])
+                All_assert_tk(s.tk, TPS[s.dst]!!.isSupOf(TPS[s.src]!!)) {
+                    "invalid $str : type mismatch"
+                }
+            }
+        }
+    }
+    s.visit(::fs, ::fe, null)
 }
 
 fun Type.containsRec (): Boolean {

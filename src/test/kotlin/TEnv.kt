@@ -14,7 +14,8 @@ class TEnv {
             var s = parser_stmts(all, Pair(TK.EOF,null))
             s = env_prelude(s)
             aux(s)
-            check_dcls(s)
+            check_01(s)
+            check_02(s)
             return "OK"
         } catch (e: Throwable) {
             //throw e
@@ -40,7 +41,7 @@ class TEnv {
     @Test
     fun a02_undeclared_func () {
         val out = inp2env("call f ()")
-        assert(out == "(ln 1, col 6): undeclared variable \"f\"")
+        assert(out == "(ln 1, col 6): undeclared variable \"f\"") { out }
     }
     @Test
     fun a03_redeclared_var () {
