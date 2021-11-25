@@ -145,7 +145,7 @@ fun parser_type (all: All): Type {
             all.accept(TK.UNIT) -> Type.Unit(all.tk0 as Tk.Sym)
             all.accept(TK.XNAT) -> Type.Nat(all.tk0 as Tk.Str)
             all.accept(TK.XUP)  -> Type.Rec(all.tk0 as Tk.Up)
-            all.accept(TK.CHAR,'\\') -> {
+            all.accept(TK.CHAR,'/') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val pln = one()
                 All_assert_tk(tk0,pln !is Type.Rec) {
@@ -219,11 +219,11 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
             all.accept(TK.UNIT) -> Expr.Unit(all.tk0 as Tk.Sym)
             all.accept(TK.XVAR) -> Expr.Var(all.tk0 as Tk.Str)
             all.accept(TK.XNAT) -> Expr.Nat(all.tk0 as Tk.Str)
-            all.accept(TK.CHAR,'\\') -> {
+            all.accept(TK.CHAR,'/') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val e = parser_expr(all,false)
                 all.assert_tk(all.tk0, e is Expr.Nat || e is Expr.Var || e is Expr.TDisc || e is Expr.Dnref || e is Expr.Upref) {
-                    "unexpected operand to `\\´"
+                    "unexpected operand to `/´"
                 }
                 Expr.Upref(tk0,e)
             }
@@ -307,11 +307,11 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
     fun call (ispre: Boolean): Expr {
         val tk_pre = all.tk0
 
-        // one!1/.2?1
+        // one!1\.2?1
         var e1 = one()
-        while (all.accept(TK.CHAR,'/') || all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!') || all.accept(TK.CHAR, '?')) {
+        while (all.accept(TK.CHAR,'\\') || all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!') || all.accept(TK.CHAR, '?')) {
             val chr = all.tk0 as Tk.Chr
-            if (chr.chr == '/') {
+            if (chr.chr == '\\') {
                 all.assert_tk(all.tk0, e1 is Expr.Nat || e1 is Expr.Var || e1 is Expr.TDisc || e1 is Expr.UDisc || e1 is Expr.Dnref || e1 is Expr.Upref || e1 is Expr.Call) {
                     "unexpected operand to `/´"
                 }
@@ -368,7 +368,7 @@ fun parser_attr (all: All): Attr {
         return when {
             all.accept(TK.XVAR) -> Attr.Var(all.tk0 as Tk.Str)
             all.accept(TK.XNAT) -> Attr.Nat(all.tk0 as Tk.Str)
-            all.accept(TK.CHAR,'/') -> {
+            all.accept(TK.CHAR,'\\') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val e = parser_attr(all)
                 all.assert_tk(all.tk0, e is Attr.Nat || e is Attr.Var || e is Attr.TDisc || e is Attr.UDisc || e is Attr.Dnref) {
@@ -383,11 +383,11 @@ fun parser_attr (all: All): Attr {
         }
     }
 
-    // one.1!/.2.1?
+    // one.1!\.2.1?
     var e1 = one()
-    while (all.accept(TK.CHAR, '/') || all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!')) {
+    while (all.accept(TK.CHAR, '\\') || all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!')) {
         val chr = all.tk0 as Tk.Chr
-        if (chr.chr == '/') {
+        if (chr.chr == '\\') {
             all.assert_tk(
                 all.tk0,
                 e1 is Attr.Nat || e1 is Attr.Var || e1 is Attr.TDisc || e1 is Attr.UDisc || e1 is Attr.Dnref

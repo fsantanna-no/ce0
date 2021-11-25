@@ -12,7 +12,7 @@ class TPointers {
     @Test
     fun a02_ptr () {
         val all = All_new(PushbackReader(StringReader("""
-            \()
+            /()
         """), 2))
         lexer(all)
         val tp = parser_type(all)
@@ -21,7 +21,7 @@ class TPointers {
     @Test
     fun a03_glb () {
         val all = All_new(PushbackReader(StringReader("""
-            \() @@
+            /() @@
         """), 2))
         lexer(all)
         val tp = parser_type(all)
@@ -32,7 +32,7 @@ class TPointers {
     fun b03_var_glb () {
         val all = All_new(PushbackReader(StringReader("""
             {
-                var x: \_int @@
+                var x: /_int @@
             }
         """), 2))
         lexer(all)

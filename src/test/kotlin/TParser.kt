@@ -90,14 +90,14 @@ class TParser {
     }
     @Test
     fun a09_parser_type_ptr () {
-        val all = All_new(PushbackReader(StringReader("\\()"), 2))
+        val all = All_new(PushbackReader(StringReader("/()"), 2))
         lexer(all)
         val tp = parser_type(all)
         assert(tp is Type.Ptr && tp.pln is Type.Unit)
     }
     @Test
     fun a10_parser_type_ptr () {
-        val all = All_new(PushbackReader(StringReader("\\<?[^^]>"), 2))
+        val all = All_new(PushbackReader(StringReader("/<?[^^]>"), 2))
         lexer(all)
         val tp = parser_type(all)
         assert(tp is Type.Ptr)
@@ -115,14 +115,14 @@ class TParser {
     }
     @Test
     fun a12_parser_type_ptr_null () {
-        val all = All_new(PushbackReader(StringReader("<? \\()>"), 2))
+        val all = All_new(PushbackReader(StringReader("<? /()>"), 2))
         lexer(all)
         val tp = parser_type(all)
         assert(tp is Type.Union && tp.isnull)
     }
     @Test
     fun a13_parser_type_ptr_null () {
-        val all = All_new(PushbackReader(StringReader("<? \\(), ()>"), 2))
+        val all = All_new(PushbackReader(StringReader("<? /(), ()>"), 2))
         lexer(all)
         try {
             parser_type(all)
@@ -133,7 +133,7 @@ class TParser {
     }
     @Test
     fun a13_parser_type_pointer_scope () {
-        val all = All_new(PushbackReader(StringReader("\\\\() @a @b"), 2))
+        val all = All_new(PushbackReader(StringReader("//() @a @b"), 2))
         lexer(all)
         val tp = parser_type(all)
         assert(tp is Type.Ptr && tp.scope=='b' && tp.pln is Type.Ptr && (tp.pln as Type.Ptr).scope=='a')
@@ -318,32 +318,32 @@ class TParser {
 
     @Test
     fun b21_parser_expr_upref () {
-        val all = All_new(PushbackReader(StringReader("\\x.1"), 2))
+        val all = All_new(PushbackReader(StringReader("/x.1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
         assert(e is Expr.Upref && e.pln is Expr.TDisc)
     }
     @Test
     fun b22_parser_expr_upref () {
-        val all = All_new(PushbackReader(StringReader("\\()"), 2))
+        val all = All_new(PushbackReader(StringReader("/()"), 2))
         lexer(all)
         try {
             parser_expr(all, false)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 2): unexpected operand to `\\´")
+            assert(e.message == "(ln 1, col 2): unexpected operand to `/´") { e.message!! }
         }
     }
     @Test
     fun b23_parser_expr_dnref () {
-        val all = All_new(PushbackReader(StringReader("x/.1"), 2))
+        val all = All_new(PushbackReader(StringReader("x\\.1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
         assert(e is Expr.TDisc && e.tup is Expr.Dnref && (e.tup as Expr.Dnref).ptr is Expr.Var)
     }
     @Test
     fun b24_parser_expr_dnref () {
-        val all = All_new(PushbackReader(StringReader("()/"), 2))
+        val all = All_new(PushbackReader(StringReader("()\\"), 2))
         lexer(all)
         try {
             parser_expr(all, false)
@@ -354,7 +354,7 @@ class TParser {
     }
     @Test
     fun b25_parser_expr_dnref () {
-        val all = All_new(PushbackReader(StringReader("x//"), 2))
+        val all = All_new(PushbackReader(StringReader("x\\\\"), 2))
         lexer(all)
         val e = parser_expr(all,false)
         assert(e is Expr.Dnref && e.ptr is Expr.Dnref)
@@ -385,7 +385,7 @@ class TParser {
     }
     @Test
     fun b28_parser_expr_disc () {
-        val all = All_new(PushbackReader(StringReader("arg.1/!1.1"), 2))
+        val all = All_new(PushbackReader(StringReader("arg.1\\!1.1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
         assert(e is Expr.TDisc && e.tk_.num==1 && e.tup is Expr.UDisc)
@@ -420,7 +420,7 @@ class TParser {
     }
     @Test
     fun c05_parser_stmt_var_global () {
-        val all = All_new(PushbackReader(StringReader("var x: \\()@@"), 2))
+        val all = All_new(PushbackReader(StringReader("var x: /()@@"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert(s is Stmt.Var && s.type is Type.Ptr)
@@ -609,14 +609,14 @@ class TParser {
     }
     @Test
     fun c17_parser_var () {
-        val all = All_new(PushbackReader(StringReader("set c = arg.1/!1.1"), 2))
+        val all = All_new(PushbackReader(StringReader("set c = arg.1\\!1.1"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert(s is Stmt.Set && s.src is Expr.TDisc)
     }
     @Test
     fun c18_parser_var () {
-        val all = All_new(PushbackReader(StringReader("arg.1/!1.1"), 2))
+        val all = All_new(PushbackReader(StringReader("arg.1\\!1.1"), 2))
         lexer(all)
         val e = parser_expr(all,true)
         //assert(s is Stmt.Var && s.src.e is Expr.TDisc)
