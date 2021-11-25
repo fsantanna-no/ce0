@@ -1726,4 +1726,39 @@ class TEnv {
         //assert(out == "(ln 2, col 35): invalid `consume` : expected recursive variable") { out }
         assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
     }
+
+    // POINTER CROSSING UNION
+
+    @Test
+    fun o01_pointer_union_err () {
+        val out = inp2env("""
+            var x: <[()]>
+            var y: /()
+            set y = /x!1.1  -- can't point to .1 inside union (union might change)
+            output std y
+        """.trimIndent())
+        assert(out == "ERR") { out }
+    }
+    @Test
+    fun o02_pointer_union_ok () {
+        val out = inp2env("""
+            var x: <?^>
+            set x = new <.1 new <.1 <.0>>>
+            var y: /<?^>
+            set y = /x!1
+            output std y
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun o03_pointer_union_ok () {
+        val out = inp2env("""
+            var x: <?[^^]>
+            set x = new <.1 [new <.1 [<.0>]>]>
+            var y: /<?[^^]>
+            set y = /x!1.1
+            output std y
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
 }
