@@ -349,7 +349,7 @@ class TParser {
             parser_expr(all, false)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 3): unexpected operand to `/´") { e.message!! }
+            assert(e.message == "(ln 1, col 3): unexpected operand to `\\´") { e.message!! }
         }
     }
     @Test

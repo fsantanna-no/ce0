@@ -313,7 +313,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
             val chr = all.tk0 as Tk.Chr
             if (chr.chr == '\\') {
                 all.assert_tk(all.tk0, e1 is Expr.Nat || e1 is Expr.Var || e1 is Expr.TDisc || e1 is Expr.UDisc || e1 is Expr.Dnref || e1 is Expr.Upref || e1 is Expr.Call) {
-                    "unexpected operand to `/´"
+                    "unexpected operand to `\\´"
                 }
                 e1 = Expr.Dnref(chr, e1)
             } else {
@@ -372,7 +372,7 @@ fun parser_attr (all: All): Attr {
                 val tk0 = all.tk0 as Tk.Chr
                 val e = parser_attr(all)
                 all.assert_tk(all.tk0, e is Attr.Nat || e is Attr.Var || e is Attr.TDisc || e is Attr.UDisc || e is Attr.Dnref) {
-                    "unexpected operand to `/´"
+                    "unexpected operand to `\\´"
                 }
                 Attr.Dnref(tk0,e)
             }
@@ -392,7 +392,7 @@ fun parser_attr (all: All): Attr {
                 all.tk0,
                 e1 is Attr.Nat || e1 is Attr.Var || e1 is Attr.TDisc || e1 is Attr.UDisc || e1 is Attr.Dnref
             ) {
-                "unexpected operand to `/´"
+                "unexpected operand to `\\´"
             }
             e1 = Attr.Dnref(chr, e1)
         } else {
