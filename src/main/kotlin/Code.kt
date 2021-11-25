@@ -472,8 +472,7 @@ fun Stmt.code (): String {
     fun gt (a: String, b: String): Boolean {
         return (ord[a]!=null && (ord[a]!!.contains(b) || ord[a]!!.any { gt(it,b) }))
     }
-    val TPS = TYPES
-    /*
+    val TPS =
         TYPES.sortedWith(Comparator { x: Triple<Pair<String, Set<String>>, String, String>, y: Triple<Pair<String, Set<String>>, String, String> ->
             when {
                 gt(x.first.first, y.first.first) ->  1
@@ -488,7 +487,6 @@ fun Stmt.code (): String {
             }
              */
         })
-     */
     //TPS.forEach { println(it.first.first) }
     assert(EXPRS.size == 0)
     assert(CODE.size == 1)

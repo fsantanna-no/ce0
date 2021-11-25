@@ -40,7 +40,7 @@ fun Type.Ptr.scopeDepth (): Int {
 fun Type.isSupOf_ (sub: Type, ups1: List<Type>, ups2: List<Type>): Boolean {
     return when {
         (this is Type.Any  || sub is Type.Any) -> true
-        (this is Type.Nat  || sub is Type.Nat) -> true
+        (this is Type.Nat  || sub is Type.Nat) -> (sub !is Type.UCons)
         (this is Type.Rec  && sub is Type.Rec)  -> (this.tk_.up == sub.tk_.up)
         (this is Type.Rec) -> ups1[this.tk_.up-1].let { it.isSupOf_(sub, listOf(it)+ups1,ups2) }
         (sub  is Type.Rec) -> ups2[sub.tk_.up-1].let { this.isSupOf_(it,ups1, listOf(it)+ups2) }

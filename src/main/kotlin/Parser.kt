@@ -227,14 +227,6 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 }
                 Expr.Upref(tk0,e)
             }
-            all.accept(TK.CHAR,'/') -> {
-                val tk0 = all.tk0 as Tk.Chr
-                val e = parser_expr(all,false)
-                all.assert_tk(all.tk0, e is Expr.Nat || e is Expr.Var || e is Expr.TDisc || e is Expr.UDisc || e is Expr.Dnref || e is Expr.Upref || e is Expr.Call) {
-                    "unexpected operand to `/´"
-                }
-                Expr.Dnref(tk0,e)
-            }
             all.accept(TK.CHAR,'(') -> {
                 val e = parser_expr(all, false)
                 all.accept_err(TK.CHAR,')')
@@ -315,20 +307,27 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
     fun call (ispre: Boolean): Expr {
         val tk_pre = all.tk0
 
-        // one!1.2?1
+        // one!1/.2?1
         var e1 = one()
-        while (all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!') || all.accept(TK.CHAR, '?')) {
+        while (all.accept(TK.CHAR,'/') || all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!') || all.accept(TK.CHAR, '?')) {
             val chr = all.tk0 as Tk.Chr
-            all.accept_err(TK.XNUM)
-            val num = all.tk0 as Tk.Num
-            all.assert_tk(all.tk0, e1 !is Expr.TCons && e1 !is Expr.UCons) {
-                "invalid discriminator : unexpected constructor"
-            }
-            e1 = when {
-                (chr.chr == '?') -> Expr.UPred(num, e1)
-                (chr.chr == '!') -> Expr.UDisc(num, e1)
-                (chr.chr == '.') -> Expr.TDisc(num, e1)
-                else -> error("impossible case")
+            if (chr.chr == '/') {
+                all.assert_tk(all.tk0, e1 is Expr.Nat || e1 is Expr.Var || e1 is Expr.TDisc || e1 is Expr.UDisc || e1 is Expr.Dnref || e1 is Expr.Upref || e1 is Expr.Call) {
+                    "unexpected operand to `/´"
+                }
+                e1 = Expr.Dnref(chr, e1)
+            } else {
+                all.accept_err(TK.XNUM)
+                val num = all.tk0 as Tk.Num
+                all.assert_tk(all.tk0, e1 !is Expr.TCons && e1 !is Expr.UCons) {
+                    "invalid discriminator : unexpected constructor"
+                }
+                e1 = when {
+                    (chr.chr == '?') -> Expr.UPred(num, e1)
+                    (chr.chr == '!') -> Expr.UDisc(num, e1)
+                    (chr.chr == '.') -> Expr.TDisc(num, e1)
+                    else -> error("impossible case")
+                }
             }
         }
 
@@ -384,16 +383,26 @@ fun parser_attr (all: All): Attr {
         }
     }
 
-    // one.1!.2.1?
+    // one.1!/.2.1?
     var e1 = one()
-    while (all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!')) {
+    while (all.accept(TK.CHAR, '/') || all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!')) {
         val chr = all.tk0 as Tk.Chr
-        all.accept_err(TK.XNUM)
-        val num = all.tk0 as Tk.Num
-        e1 = when {
-            (chr.chr == '!') -> Attr.UDisc(num, e1)
-            (chr.chr == '.') -> Attr.TDisc(num, e1)
-            else -> error("impossible case")
+        if (chr.chr == '/') {
+            all.assert_tk(
+                all.tk0,
+                e1 is Attr.Nat || e1 is Attr.Var || e1 is Attr.TDisc || e1 is Attr.UDisc || e1 is Attr.Dnref
+            ) {
+                "unexpected operand to `/´"
+            }
+            e1 = Attr.Dnref(chr, e1)
+        } else {
+            all.accept_err(TK.XNUM)
+            val num = all.tk0 as Tk.Num
+            e1 = when {
+                (chr.chr == '!') -> Attr.UDisc(num, e1)
+                (chr.chr == '.') -> Attr.TDisc(num, e1)
+                else -> error("impossible case")
+            }
         }
     }
     return e1

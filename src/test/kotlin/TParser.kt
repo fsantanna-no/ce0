@@ -336,25 +336,25 @@ class TParser {
     }
     @Test
     fun b23_parser_expr_dnref () {
-        val all = All_new(PushbackReader(StringReader("(/x).1"), 2))
+        val all = All_new(PushbackReader(StringReader("x/.1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
         assert(e is Expr.TDisc && e.tup is Expr.Dnref && (e.tup as Expr.Dnref).ptr is Expr.Var)
     }
     @Test
     fun b24_parser_expr_dnref () {
-        val all = All_new(PushbackReader(StringReader("/()"), 2))
+        val all = All_new(PushbackReader(StringReader("()/"), 2))
         lexer(all)
         try {
             parser_expr(all, false)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 2): unexpected operand to `/´")
+            assert(e.message == "(ln 1, col 3): unexpected operand to `/´") { e.message!! }
         }
     }
     @Test
     fun b25_parser_expr_dnref () {
-        val all = All_new(PushbackReader(StringReader("//x"), 2))
+        val all = All_new(PushbackReader(StringReader("x//"), 2))
         lexer(all)
         val e = parser_expr(all,false)
         assert(e is Expr.Dnref && e.ptr is Expr.Dnref)
@@ -385,7 +385,7 @@ class TParser {
     }
     @Test
     fun b28_parser_expr_disc () {
-        val all = All_new(PushbackReader(StringReader("(/arg.1)!1.1"), 2))
+        val all = All_new(PushbackReader(StringReader("arg.1/!1.1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
         assert(e is Expr.TDisc && e.tk_.num==1 && e.tup is Expr.UDisc)
@@ -609,14 +609,14 @@ class TParser {
     }
     @Test
     fun c17_parser_var () {
-        val all = All_new(PushbackReader(StringReader("set c = (/arg.1)!1.1"), 2))
+        val all = All_new(PushbackReader(StringReader("set c = arg.1/!1.1"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert(s is Stmt.Set && s.src is Expr.TDisc)
     }
     @Test
     fun c18_parser_var () {
-        val all = All_new(PushbackReader(StringReader("(/arg.1)!1.1"), 2))
+        val all = All_new(PushbackReader(StringReader("arg.1/!1.1"), 2))
         lexer(all)
         val e = parser_expr(all,true)
         //assert(s is Stmt.Var && s.src.e is Expr.TDisc)

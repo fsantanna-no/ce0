@@ -81,8 +81,11 @@ fun check_02 (s: Stmt) {
                 }
             }
             is Expr.New -> {
-                All_assert_tk(e.tk, TPS[e.arg] is Type.UCons) {
+                All_assert_tk(e.tk, TPS[e.arg].let { it is Type.UCons && it.tk_.num>0 }) {
                     "invalid `new` : expected constructor"
+                }
+                All_assert_tk(e.tk, XPS[e]!!.isrec()) {
+                    "unexpected `new` : expected recursive type"
                 }
             }
             is Expr.Call -> {
