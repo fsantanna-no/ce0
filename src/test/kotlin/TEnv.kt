@@ -1072,65 +1072,65 @@ class TEnv {
     @Test
     fun j10_rec_tup () {
         val out = inp2env("""
-            var x: <(),[^^]>; set x = new <.2 [new <.1>]>
+            var x: <(),[^]>; set x = new <.2 [new <.1>]>
         """.trimIndent())
         assert(out == "OK") { out }
     }
     @Test
     fun j10_rec_xepr_double_rec () {
         val out = inp2env("""
-            var x: <?<?[^^^,^^]>>; set x = new <.1 new <.1 [<.0>,<.0>]>>
+            var x: <?<?[^^,^]>>; set x = new <.1 new <.1 [<.0>,<.0>]>>
         """.trimIndent())
         assert(out == "OK") { out }
     }
     @Test
     fun j11_rec_xepr_double_rec () {
         val out = inp2env("""
-            var x: <?<?[^^^,^^]>>; set x = new <.1 new <.1 [<.0>,<.0>]>>
+            var x: <?<?[^^,^]>>; set x = new <.1 new <.1 [<.0>,<.0>]>>
         """.trimIndent())
         assert(out == "OK") { out }
     }
     @Test
     fun j11_rec_xepr_double_rec2 () {
         val out = inp2env("""
-            var x: <?[^^]>; set x = new <.1 [<.0>]>
+            var x: <?[^]>; set x = new <.1 [<.0>]>
         """.trimIndent())
         assert(out == "OK") { out }
     }
     @Test
     fun j11_rec_xepr_double_rec3 () {
         val out = inp2env("""
-            var x: <?[^^,^^]>; set x = new <.1 [<.0>,<.0>]>
+            var x: <?[^,^]>; set x = new <.1 [<.0>,<.0>]>
         """.trimIndent())
         assert(out == "OK") { out }
     }
     @Test
     fun j11_rec_xepr_double_rec4 () {
         val out = inp2env("""
-            var x: <?<?[^^^,^^]>>; set x = new <.1 new <.1 [<.0>,new <.1 [<.0>,<.0>]>]>>
+            var x: <?<?[^^,^]>>; set x = new <.1 new <.1 [<.0>,new <.1 [<.0>,<.0>]>]>>
         """.trimIndent())
         assert(out == "OK") { out }
     }
     @Test
     fun j11_rec_xepr_double_rec5 () {
         val out = inp2env("""
-            var x: <?<?[^^^,^^]>>; set x = new <.1 new <.1 [<.0>,<.0>]>>
+            var x: <?<?[^^,^]>>; set x = new <.1 new <.1 [<.0>,<.0>]>>
         """.trimIndent())
         assert(out == "OK") { out }
     }
     @Test
     fun j11_rec_xepr_double_rec6 () {
         val out = inp2env("""
-            var x: <?<?[^^^,^^]>>; set x = new <.1 new <.1 [<.0>,new <.1 [_,<.0>]>]>>
+            var x: <?<?[^^,^]>>; set x = new <.1 new <.1 [<.0>,new <.1 [_,<.0>]>]>>
         """.trimIndent())
         assert(out == "OK") { out }
     }
     @Test
     fun j12_rec_xepr_double_rec_err () {
         val out = inp2env("""
-            var x: <?<?[^^^,^^]>>; set x = new <.1 <.1 [<.0>,<.0>]>>
+            var x: <?<?[^^,^]>>; set x = new <.1 <.1 [<.0>,<.0>]>>
         """.trimIndent())
-        assert(out == "(ln 1, col 42): invalid constructor : expected `new`") { out }
+        assert(out == "(ln 1, col 40): invalid constructor : expected `new`") { out }
     }
     @Test
     fun j13_tup_move_no () {
@@ -1331,7 +1331,7 @@ class TEnv {
     @Test
     fun j32_rec_hold () {  // TODO: should allow "hold" pointer if type isrec? (or type should be copied?)
         val out = inp2env("""
-            var x: <? [<(),/^^^>,^^]>; set x = new <.1 [<.1>,<.0>]>
+            var x: <? [<(),/^^>,^]>; set x = new <.1 [<.1>,<.0>]>
         """.trimIndent())
         //assert(out == "OK") { out }
         assert(out == "(ln 1, col 16): invalid type declaration : unexpected `^´") { out }
@@ -1594,7 +1594,7 @@ class TEnv {
     @Test
     fun l14_consume_ok () {
         val out = inp2env("""
-            var string_c2ce: _(char*)-><?[_int,^^]>; set string_c2ce = func _(char*)-><?[_int,^^]> {
+            var string_c2ce: _(char*)-><?[_int,^]>; set string_c2ce = func _(char*)-><?[_int,^]> {
                 var ret: <?^>; set ret = <.0>
                 loop {
                     set ret = ret
@@ -1633,8 +1633,8 @@ class TEnv {
     @Test
     fun n01_hold_ok () {
         val out = inp2env("""
-            var x: <? [<(),/^^^>,^^]>; set x = new <.1 [<.1>,<.0>]>
-            var y: <? [<(),/^^^>,^^]>; set y = new <.1 [<.1>,x]>
+            var x: <? [<(),/^^>,^]>; set x = new <.1 [<.1>,<.0>]>
+            var y: <? [<(),/^^>,^]>; set y = new <.1 [<.1>,x]>
             set y!1.2!1.1 = <.1>
             -- <.1 [<.1>,<.1 [<.1>,<.0>]>]>
             output std /y
@@ -1645,8 +1645,8 @@ class TEnv {
     @Test
     fun n02_hold_err () {
         val out = inp2env("""
-            var x: <? [<(),/^^^>,^^]>; set x = new <.1 [<.1>,<.0>]>
-            var y: <? [<(),/^^^>,^^]>; set y = new <.1 [<.1>, x]>
+            var x: <? [<(),/^^>,^]>; set x = new <.1 [<.1>,<.0>]>
+            var y: <? [<(),/^^>,^]>; set y = new <.1 [<.1>, x]>
             set y!1.2!1.1 = <.2 /y>
             output std \y
         """.trimIndent())
@@ -1656,8 +1656,8 @@ class TEnv {
     @Test
     fun n03_hold_ok () {
         val out = inp2env("""
-            var x: <? [<(),/^^^>,^^]>; set x = new <.1 [<.1>,<.0>]>
-            var y: <? [<(),/^^^>,^^]>; set y = new <.1 [<.1>, x]>
+            var x: <? [<(),/^^>,^]>; set x = new <.1 [<.1>,<.0>]>
+            var y: <? [<(),/^^>,^]>; set y = new <.1 [<.1>, x]>
                 -- can receive x
                 -- can be consumed by + (but not -)
                 -- can hold itself (or borrows)
@@ -1671,8 +1671,8 @@ class TEnv {
     @Test
     fun n04_hold_err () {
         val out = inp2env("""
-            var x: <? [<(),/^^^>,^^]>; set x = new <.1 [<.1>,<.0>]>
-            var y: <? [<(),/^^^>,^^]>; set y = new <.1 [<.1>, x]>
+            var x: <? [<(),/^^>,^]>; set x = new <.1 [<.1>,<.0>]>
+            var y: <? [<(),/^^>,^]>; set y = new <.1 [<.1>, x]>
             set y!1.2!1.1 = <.2 /y>
             output std \y
         """.trimIndent())
@@ -1682,9 +1682,9 @@ class TEnv {
     @Test
     fun n05_borrow_ok () {
         val out = inp2env("""
-            var x: <?[(),^^]>; set x = new <.1 [(),<.0>]>
-            var y: [(),<?[(),^^]>]; set y = [(), new <.1 [(),<.0>]>]
-            var z: [(),/<?[(),^^]>]; set z = [(), /x]
+            var x: <?[(),^]>; set x = new <.1 [(),<.0>]>
+            var y: [(),<?[(),^]>]; set y = [(), new <.1 [(),<.0>]>]
+            var z: [(),/<?[(),^]>]; set z = [(), /x]
             output std z.2\!1.2!0
         """.trimIndent())
         assert(out == "OK") { out }
@@ -1692,7 +1692,7 @@ class TEnv {
     @Test
     fun n06_hold_ok () {
         val out = inp2env("""
-            var x: <? [/^^,^^]>; set x = new <.1 [_,<.0>]>
+            var x: <? [/^,^]>; set x = new <.1 [_,<.0>]>
             set x!1.1 = /x
         """.trimIndent())
         //assert(out == "OK") { out }
@@ -1701,7 +1701,7 @@ class TEnv {
     @Test
     fun n07_hold_ok () {
         val out = inp2env("""
-            var x: <? [<(),/^^^>,^^]>; set x = new <.1 [<.1>,<.0>]>
+            var x: <? [<(),/^^>,^]>; set x = new <.1 [<.1>,<.0>]>
             set x!1.1 = <.2 /x>  -- ok
         """.trimIndent())
         //assert(out == "OK") { out }
@@ -1710,7 +1710,7 @@ class TEnv {
     @Test
     fun n08_hold_ok () {
         val out = inp2env("""
-            var x: <? [<?/^^^>,^^]>; set x = new <.1 [<.0>,<.0>]>
+            var x: <? [<?/^^>,^]>; set x = new <.1 [<.0>,<.0>]>
             set x!1.1 = <.1 \x>  -- ok
         """.trimIndent())
         //assert(out == "OK") { out }
@@ -1719,8 +1719,8 @@ class TEnv {
     @Test
     fun n09_hold_err () {
         val out = inp2env("""
-            var x: <? [<?/^^^>,^^]>; set x = new <.1 [<.0>,<.0>]>
-            var y: <? [<?/^^^>,^^]>; set y = x
+            var x: <? [<?/^^>,^]>; set x = new <.1 [<.0>,<.0>]>
+            var y: <? [<?/^^>,^]>; set y = x
             output std y
         """.trimIndent())
         //assert(out == "(ln 2, col 35): invalid `consume` : expected recursive variable") { out }
@@ -1753,12 +1753,23 @@ class TEnv {
     @Test
     fun o03_pointer_union_ok () {
         val out = inp2env("""
-            var x: <?[^^]>
+            var x: <?[^]>
             set x = new <.1 [new <.1 [<.0>]>]>
-            var y: /<?[^^]>
+            var y: /<?[^]>
             set y = /x!1.1
             output std y
         """.trimIndent())
         assert(out == "OK") { out }
+    }
+    @Test
+    fun o04_pointer_union_err () {
+        val out = inp2env("""
+            var x: <(),[()]>
+            set x = <.2 [()]>
+            var y: /()
+            set y = /x!2.1
+            output std y
+        """.trimIndent())
+        assert(out == "ERR") { out }
     }
 }

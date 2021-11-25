@@ -115,7 +115,7 @@ fun Expr.tps_add () {
             }
             is Expr.Func  -> this.type
             is Expr.UPred -> Type.Nat(Tk.Str(TK.XNAT, this.tk.lin, this.tk.col, "int")).up(this)
-            is Expr.TDisc -> (TPS[this.tup] as Type.Tuple).expand()[this.tk_.num-1].up(this)
+            is Expr.TDisc -> (TPS[this.tup] as Type.Tuple).vec[this.tk_.num-1].up(this)
             is Expr.UDisc -> (TPS[this.uni] as Type.Union).let {
                 if (this.tk_.num == 0) {
                     assert(it.isrec()) { "bug found" }
@@ -155,9 +155,8 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
                     e.aux(this, env, Type_Any(this.tk))
                 }
             } else {
-                val xxp = xp.expand()
                 this.arg.forEachIndexed { i, e ->
-                    e.aux(this, env, if (xxp.size>i) xxp[i] else Type_Any(this.tk))
+                    e.aux(this, env, if (xp.vec.size>i) xp.vec[i] else Type_Any(this.tk))
                 }
             }
         }

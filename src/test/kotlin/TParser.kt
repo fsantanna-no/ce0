@@ -97,7 +97,7 @@ class TParser {
     }
     @Test
     fun a10_parser_type_ptr () {
-        val all = All_new(PushbackReader(StringReader("/<?[^^]>"), 2))
+        val all = All_new(PushbackReader(StringReader("/<?[^]>"), 2))
         lexer(all)
         val tp = parser_type(all)
         assert(tp is Type.Ptr)

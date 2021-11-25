@@ -67,15 +67,14 @@ fun code_ft (tp: Type) {
             ""
         ))
         is Type.Tuple -> {
-            val ce    = tp.toce()
-            val tpexp = tp.expand()
+            val ce = tp.toce()
 
             val struct = Pair("""
                 struct $ce;                    
 
             """.trimIndent(), """
                 struct $ce {
-                    ${tpexp  // do not filter to keep correct i
+                    ${tp.vec  // do not filter to keep correct i
                         .mapIndexed { i,sub -> if (sub is Type.Unit) "" else { sub.pos() + " _" + (i+1).toString() + ";\n" } }
                         .joinToString("")
                     }
@@ -84,8 +83,8 @@ fun code_ft (tp: Type) {
             """.trimIndent())
 
             TYPES.add(Triple(
-                //Pair(ce, deps(tpexp.toSet()).let { println(ce);println(it);it }),
-                Pair(ce, deps(tpexp.toSet())),
+                //Pair(ce, deps(tp.vec.toSet()).let { println(ce);println(it);it }),
+                Pair(ce, deps(tp.vec.toSet())),
     """
                 ${if (tp.containsRec()) struct.first else struct.second }
                 void output_std_${ce}_ (${tp.pos()} v);
@@ -100,7 +99,7 @@ fun code_ft (tp: Type) {
                 ${if (tp.containsRec()) struct.second else "" }
                 void output_std_${ce}_ (${tp.pos()} v) {
                     printf("[");
-                    ${tpexp
+                    ${tp.vec
                         .mapIndexed { i,sub ->
                             sub.output("_", if (sub is Type.Unit) "" else "v._${i+1}")
                         }
@@ -115,7 +114,7 @@ fun code_ft (tp: Type) {
 
             """.trimIndent() + (if (!tp.containsRec()) "" else """
                 void free_${ce} (${tp.pos()}* v) {
-                    ${tpexp
+                    ${tp.vec
                         .mapIndexed { i, sub ->
                             if (!sub.containsRec()) "" else """
                                 free_${sub.toce()}(&v->_${i + 1});
@@ -127,7 +126,7 @@ fun code_ft (tp: Type) {
                 }
                 ${tp.pos()} copy_${ce} (${tp.pos()} v) {
                     ${tp.pos()} ret;
-                    ${tpexp
+                    ${tp.vec
                         .mapIndexed { i, sub -> if (sub is Type.Unit) "" else
                             "ret._${i + 1} = " +
                                 (if (!sub.containsRec()) {

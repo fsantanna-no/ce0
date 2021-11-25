@@ -37,7 +37,7 @@ fun Type.Ptr.scopeDepth (): Int {
     }
 }
 
-fun Type.isSupOf_ (sub: Type, ups1: List<Type>, ups2: List<Type>): Boolean {
+fun Type.isSupOf_ (sub: Type, ups1: List<Type.Union>, ups2: List<Type.Union>): Boolean {
     return when {
         (this is Type.Any  || sub is Type.Any) -> true
         (this is Type.Nat  || sub is Type.Nat) -> (sub !is Type.UCons)
@@ -62,7 +62,7 @@ fun Type.isSupOf_ (sub: Type, ups1: List<Type>, ups2: List<Type>): Boolean {
             (this.scopeDepth() >= sub.scopeDepth()) && this.pln.isSupOf_(sub.pln,ups1,ups2)
         }
         (this is Type.Tuple && sub is Type.Tuple) ->
-            (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf_(y,listOf(this)+ups1,listOf(sub)+ups2) }
+            (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf_(y,ups1,ups2) }
         (this is Type.Union && sub is Type.Union) -> {
             if ((this.isnull == sub.isnull) && (this.vec.size == sub.vec.size)) {
                 // ok
