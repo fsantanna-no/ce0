@@ -14,6 +14,21 @@ fun check_01 (s: Stmt) {
     s.visit(::fs, null, null)
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
+fun Expr.order (): List<Expr> {
+    return when (this) {
+        is Expr.Unit, is Expr.Var, is Expr.Nat, is Expr.Func -> listOf(this)
+        is Expr.TDisc -> this.tup.order() + this
+        is Expr.UDisc -> this.uni.order() + this
+        is Expr.UPred -> this.uni.order() + this
+        is Expr.New   -> this.arg.order() + this
+        is Expr.Dnref -> this.ptr.order() + this
+        is Expr.Upref -> this.pln.order() + this
+        else -> { println(this) ; TODO() }
+    }
+}
+
 fun check_02 (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
@@ -22,9 +37,26 @@ fun check_02 (s: Stmt) {
                     "undeclared variable \"${e.tk_.str}\""
                 }
             }
+            is Expr.Upref -> {
+                var track = false   // start tracking count if crosses UDisc
+                var count = 1       // must remain positive after track (no uprefs)
+                for (ee in e.order()) {
+                    println(ee)
+                    count = when (ee) {
+                        is Expr.UDisc -> { track=true ; 1 }
+                        is Expr.Dnref -> count+1
+                        is Expr.Upref -> count-1
+                        else -> count
+                    }
+                }
+                println(count)
+                All_assert_tk(e.tk, !track || count>0) {
+                    "invalid operand to `/´ : union discriminator"
+                }
+            }
             is Expr.Dnref -> {
                 All_assert_tk(e.tk, TPS[e.ptr] is Type.Ptr) {
-                    "unexpected operand to `\\´ : not a pointer"
+                    "invalid operand to `\\´ : not a pointer"
                 }
             }
             is Expr.UDisc -> {

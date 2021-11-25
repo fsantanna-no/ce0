@@ -256,7 +256,7 @@ class TEnv {
             var x: ()
             output std x\
         """.trimIndent())
-        assert(out == "(ln 2, col 13): unexpected operand to `\\´ : not a pointer") { out }
+        assert(out == "(ln 2, col 13): invalid operand to `\\´ : not a pointer") { out }
     }
     @Test
     fun c13_type_dnref () {
@@ -1737,29 +1737,29 @@ class TEnv {
             set y = /x!1.1  -- can't point to .1 inside union (union might change)
             output std y
         """.trimIndent())
-        assert(out == "ERR") { out }
+        assert(out == "(ln 3, col 9): invalid operand to `/´ : union discriminator") { out }
     }
     @Test
-    fun o02_pointer_union_ok () {
+    fun o02_pointer_union_err () {
         val out = inp2env("""
             var x: <?^>
             set x = new <.1 new <.1 <.0>>>
             var y: /<?^>
-            set y = /x!1
+            set y = /x!1    -- udisc
             output std y
         """.trimIndent())
-        assert(out == "OK") { out }
+        assert(out == "(ln 4, col 12): unexpected operand to `/´") { out }
     }
     @Test
-    fun o03_pointer_union_ok () {
+    fun o03_pointer_union_err () {
         val out = inp2env("""
             var x: <?[^]>
             set x = new <.1 [new <.1 [<.0>]>]>
             var y: /<?[^]>
-            set y = /x!1.1
+            set y = /x!1.1  -- crossing udisc
             output std y
         """.trimIndent())
-        assert(out == "OK") { out }
+        assert(out == "(ln 4, col 9): invalid operand to `/´ : union discriminator") { out }
     }
     @Test
     fun o04_pointer_union_err () {
@@ -1767,9 +1767,29 @@ class TEnv {
             var x: <(),[()]>
             set x = <.2 [()]>
             var y: /()
-            set y = /x!2.1
+            set y = /x!2.1  -- crossing udisc
             output std y
         """.trimIndent())
-        assert(out == "ERR") { out }
+        assert(out == "(ln 4, col 9): invalid operand to `/´ : union discriminator") { out }
+    }
+    @Test
+    fun o05_pointer_union_ok () {
+        val out = inp2env("""
+            var x: </()>
+            var y: /()
+            set y = /x!1\   -- ok: crosses udisc but dnrefs a pointer before the upref
+            output std y
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun o06_pointer_union_err () {
+        val out = inp2env("""
+            var x: </()>
+            var y: //()
+            set y = //x!1\   -- no: upref after dnref fires the problem again
+            output std y
+        """.trimIndent())
+        assert(out == "(ln 3, col 9): invalid operand to `/´ : union discriminator") { out }
     }
 }
