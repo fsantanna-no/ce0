@@ -466,7 +466,6 @@ class TEnv {
                 var v: ()
                 --set p2 = /v
             }
-            output std p\
         """.trimIndent())
         assert(out == "(ln 5, col 12): invalid assignment : type mismatch") { out }
     }
@@ -566,7 +565,7 @@ class TEnv {
         assert(out == "OK") { out }
     }
     @Test
-    fun e09_ptr_ok () {
+    fun e09_ptr_err () {
         val out = inp2env("""
             { @a
                 var pa: /_int
@@ -581,7 +580,7 @@ class TEnv {
                 }
             }
         """.trimIndent())
-        assert(out == "OK") { out }
+        assert(out == "(ln 6, col 16): invalid assignment : type mismatch") { out }
     }
     @Test
     fun e10_func_err () {
@@ -685,7 +684,8 @@ class TEnv {
                 }
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 15): invalid assignment : type mismatch") { out }
+        //assert(out == "(ln 7, col 15): invalid assignment : type mismatch") { out }
+        assert(out == "(ln 7, col 22): invalid call : type mismatch") { out }
     }
     @Test
     fun e16_call_ok () {
@@ -734,10 +734,37 @@ class TEnv {
         assert(out == "OK") { out }
     }
     @Test
-    fun e20_call_ok () {
+    fun e20_arg_ok () {
         val out = inp2env("""
             var f: /()@1->/()
             set f = func /()@1->/() { return arg }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun e21_local_err () {
+        val out = inp2env("""
+            var f: /()@1->/()
+            set f = func /()@1->/() {
+                {
+                    var x: /() = arg
+                    return x    -- err
+                }
+            }
+        """.trimIndent())
+        assert(out == "ERR") { out }
+    }
+    @Test
+    fun e22_local_ok () {
+        val out = inp2env("""
+            var f: /()@1->/()
+            set f = func /()@1->/() {
+                {
+                    var x: /()
+                    set x = arg
+                    return arg   -- ok
+                }
+            }
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -861,8 +888,8 @@ class TEnv {
     fun g05_ptr_caret_ok () {
         val out = inp2env("""
             var f : /_int@1 -> /_int@1
-            set f = func /_int -> /_int {
-                var ptr: /_int @1
+            set f = func /_int@1 -> /_int@1 {
+                var ptr: /_int@1
                 set ptr = arg
                 return ptr
             }

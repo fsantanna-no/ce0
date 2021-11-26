@@ -116,7 +116,9 @@ fun Expr.tps_add () {
             is Expr.Call  -> {
                 TPS[this.f].let {
                     when (it) {
-                        is Type.Func -> it.out
+                        // scope of output is tested in the call through XP
+                        // here, just returns the "top" scope to succeed
+                        is Type.Func -> it.out.map { if (it !is Type.Ptr) it else Type.Ptr(it.tk_,"@global",it.pln) }
                         is Type.Nat  -> it //Type.Nat(it.tk_).ups(this)
                         else -> error("impossible case")
                     }

@@ -16,7 +16,7 @@ class TPointers {
         """), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert((tp as Type.Ptr).scopeDepth() == 0)
+        assert((tp as Type.Ptr).scopeDepth()!!.third == 0)
     }
     @Test
     fun a03_glb () {
@@ -25,7 +25,7 @@ class TPointers {
         """), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert((tp as Type.Ptr).scopeDepth() == 0)
+        assert((tp as Type.Ptr).scopeDepth()!!.third == 0)
     }
 
     @Test
@@ -39,7 +39,7 @@ class TPointers {
         val s = parser_stmt(all)
         aux(s)
         val x = (s as Stmt.Block).body
-        assert(((x as Stmt.Var).type as Type.Ptr).scopeDepth()== 0)
+        assert(((x as Stmt.Var).type as Type.Ptr).scopeDepth()!!.third == 0)
     }
 
 }

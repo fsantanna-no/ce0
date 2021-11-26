@@ -5,6 +5,8 @@ fun check_01 (s: Stmt) {
                 val dst = TPS[s.dst]!!
                 val src = TPS[s.src]!!
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
+                    //println(dst.tostr())
+                    //println(src.tostr())
                     val str = if (s.dst is Expr.Var && s.dst.tk_.str=="_ret_") "return" else "assignment"
                     "invalid $str : type mismatch"
                 }
@@ -145,14 +147,15 @@ fun check_02 (s: Stmt) {
                 // check scopes
                 val (xp2,arg2) = if (tp !is Type.Func) Pair(xp,arg) else {
                     // all = expected return + arguments
-                    val all = XPS[e]!!.flatten() + TPS[e.arg]!!.flatten()
+                    val all = (XPS[e]!!.flatten() + TPS[e.arg]!!.flatten())
+                        //.filter { it !is Type.Func } // (ignore pointers in function types)
                     // ptrs = all ptrs+depths inside args
                     val ptrs = all.filter { it is Type.Ptr }.map { (it as Type.Ptr).let { Pair(it.scopeDepth()!!,it) } }
                     // sorted = ptrs sorted by grouped depths, substitute depth by increasing index
                     val sorted = ptrs
                         .groupBy  { it.first }
                         .toList()
-                        .sortedBy { it.first }
+                        .sortedBy { it.first.second }
                         .mapIndexed { i,(_,l) -> l.map { Pair((i+1),it.second) } }
                         .flatten()
                         //.let { it } // List<Pair<Int, Type.Ptr>>

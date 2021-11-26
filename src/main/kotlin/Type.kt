@@ -107,19 +107,36 @@ fun Type.Union.expand (): Array<Type> {
     return this.vec.map { aux(it, 1) }.toTypedArray()
 }
 
-fun Type.Ptr.scopeDepth (): Int? {
+// Boolean: absolute (@xxx), parameter (@1)
+fun Type.Ptr.scopeDepth (): Triple<Int,Boolean,Int>? {
+    fun off (ups: List<Any>): Int {
+        return ups     // offset of @N (max) of all crossing functions
+            .filter { it is Expr.Func }
+            .map {
+                (it as Expr.Func).type.flatten().filter { it is Type.Ptr }
+                    .map { (it as Type.Ptr).scope }
+                    .map { (if (it==null) "@1" else it).drop(1).toIntOrNull() }
+                    .filterNotNull()
+                    .maxOrNull()!!
+            }
+            .sum()
+    }
+    // dropWhile(Type).drop(1) so that prototype skips up func
+    //val lvl = this.ups_tolist().dropWhile { it is Type }.drop(1).filter { it is Expr.Func }.count()
+    val lvl = this.ups_tolist().filter { it is Expr.Func }.count()
     return when (this.scope) {
-        null -> this.ups_tolist().count { it is Stmt.Block }
-        "@global" -> 0
+        null -> Triple(lvl, true, this.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
+        "@global" -> Triple(lvl,true,0)
         else -> {
             val num = this.scope.drop(1).toIntOrNull()
             if (num == null) {
                 val blk = this.ups_first { it is Stmt.Block && it.scope == this.scope }
                 return if (blk == null) null else {
-                    1 + blk.ups_tolist().count { it is Stmt.Block }
+                    Triple(lvl, true, 1 + blk.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
                 }
             } else {
-                num
+                val n = this.ups_first { it is Expr.Func }.let { if (it==null) 0 else off(it.ups_tolist()) }
+                Triple(lvl, false, n+num)    // false = relative to function block
             }
         }
     }
