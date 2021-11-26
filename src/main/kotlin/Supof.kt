@@ -47,8 +47,8 @@ fun Type.isSupOf_ (sub: Type, ups1: List<Type.Union>, ups2: List<Type.Union>): B
         (this is Type.Unit && sub is Type.Unit) -> true
         (this is Type.Func && sub is Type.Func) -> (this.inp.isSupOf_(sub.inp,ups1,ups2) && sub.inp.isSupOf_(this.inp,ups1,ups2) && this.out.isSupOf_(sub.out,ups1,ups2) && sub.out.isSupOf_(this.out,ups1,ups2))
         (this is Type.Ptr && sub is Type.Ptr) -> {
-            println("${this.scope} = ${this.scopeDepth()}")
-            println("${sub.scope} = ${sub.scopeDepth()}")
+            //println("${this.scope} = ${this.scopeDepth()}")
+            //println("${sub.scope} = ${sub.scopeDepth()}")
             //println(sub)
             //println(UPS[sub])
             (this.scopeDepth()!! >= sub.scopeDepth()!!) && this.pln.isSupOf_(sub.pln,ups1,ups2)

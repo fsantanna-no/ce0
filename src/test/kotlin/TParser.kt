@@ -136,7 +136,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("//() @a @b"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Ptr && tp.scope=='b' && tp.pln is Type.Ptr && (tp.pln as Type.Ptr).scope=='a')
+        assert(tp is Type.Ptr && tp.scope=="@b" && tp.pln is Type.Ptr && (tp.pln as Type.Ptr).scope=="@a")
     }
 
     // EXPR
@@ -420,7 +420,7 @@ class TParser {
     }
     @Test
     fun c05_parser_stmt_var_global () {
-        val all = All_new(PushbackReader(StringReader("var x: /()@@"), 2))
+        val all = All_new(PushbackReader(StringReader("var x: /()@1"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert(s is Stmt.Var && s.type is Type.Ptr)
@@ -430,7 +430,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("{ @a }"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Block && s.scope=='a')
+        assert(s is Stmt.Block && s.scope=="@a")
     }
 
     // STMT_CALL

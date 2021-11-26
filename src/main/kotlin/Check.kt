@@ -34,7 +34,7 @@ fun check_02 (s: Stmt) {
         when (tp) {
             is Type.Ptr -> {
                 All_assert_tk(tp.tk, tp.scopeDepth() != null) {
-                    "undeclared scope \"@${tp.scope}\""
+                    "undeclared scope \"${tp.scope}\""
                 }
             }
 

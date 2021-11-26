@@ -451,7 +451,7 @@ class TEnv {
         s.visit(::fs, null, ::fe, null)
     }
 */
-    // POINTERS
+    // POINTERS / SCOPE / @global
 
     @Test
     fun e01_ptr_block_err () {
@@ -499,7 +499,7 @@ class TEnv {
         val out = inp2env("""
             var pout: /_int
             {
-                var pin: /_int @@
+                var pin: /_int @global
                 set pout = pin
             }
         """.trimIndent())
@@ -535,6 +535,112 @@ class TEnv {
             var pin: /_int @a
         """.trimIndent())
         assert(out == "(ln 1, col 10): undeclared scope \"@a\"") { out }
+    }
+    @Test
+    fun e07_ptr_ok () {
+        val out = inp2env("""
+            { @a
+                var pa: /_int
+                var f: ()->()
+                set f = func ()->() {
+                    var pf: /_int @a
+                    set pa = pf
+                }
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun e08_ptr_ok () {
+        val out = inp2env("""
+            var f: /()@1->()
+            set f = func /()@1->() {
+                var pf: /_int @1
+                set pa = arg
+            }
+            {
+                var x: ()
+                call f /x
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun e09_ptr_ok () {
+        val out = inp2env("""
+            { @a
+                var pa: /_int
+                var f: /()@1->()
+                set f = func /()@1->() {
+                    var pf: /_int @1
+                    set pa = arg
+                }
+                {
+                    var x: ()
+                    call f /x
+                }
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun e10_func_err () {
+        val out = inp2env("""
+            var f: /()@1->()
+            set f = func /()->() {}
+        """.trimIndent())
+        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+    }
+    @Test
+    fun e11_func_err () {
+        val out = inp2env("""
+            var f: /()@1->()
+            set f = func /()@2->() {}
+        """.trimIndent())
+        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+    }
+    @Test
+    fun e12_call_err () {
+        val out = inp2env("""
+            var f: [/()@1,/()@2]->()
+            set f = func [/()@1,/()@2]->() {}
+            {
+                var x: ()
+                {
+                    var y: ()
+                    call f [/y,/x]  -- err
+                }
+            }
+        """.trimIndent())
+        assert(out == "(ln 7, col 14): invalid call : type mismatch") { out }
+    }
+    @Test
+    fun e13_tuple_ok () {
+        val out = inp2env("""
+            { @a
+                var x: ()
+                { @b
+                    var y: ()
+                    var ps: [/()@a,/()@b]
+                    set ps = [/x,/y]
+                }
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun e13_tuple_err () {
+        val out = inp2env("""
+            { @a
+                var x: ()
+                { @b
+                    var y: ()
+                    var ps: [/()@a,/()@b]
+                    set ps = [/y,/x]
+                }
+            }
+        """.trimIndent())
+        assert(out == "(ln 6, col 16): invalid assignment : type mismatch") { out }
     }
 
     // POINTERS - DOUBLE
@@ -655,8 +761,8 @@ class TEnv {
     @Test
     fun g05_ptr_caret_ok () {
         val out = inp2env("""
-            var f : /_int -> /_int; set f = func /_int -> /_int {
-                var ptr: /_int@a; set ptr = arg
+            var f : /_int@1 -> /_int@1; set f = func /_int@1 -> /_int@1 {
+                var ptr: /_int @1; set ptr = arg
                 return ptr
             }
             var v: _int; set v = _10

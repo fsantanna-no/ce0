@@ -6,7 +6,7 @@ sealed class Type (val tk: Tk) {
     data class Union (val tk_: Tk.Chr, val isrec: Boolean, val isnull: Boolean, val vec: Array<Type>): Type(tk_)
     data class UCons (val tk_: Tk.Num, val arg: Type): Type(tk_)
     data class Func  (val tk_: Tk.Sym, val inp: Type, val out: Type): Type(tk_)
-    data class Ptr   (val tk_: Tk.Chr, val scope: Char?, val pln: Type): Type(tk_)
+    data class Ptr   (val tk_: Tk.Chr, val scope: String?, val pln: Type): Type(tk_)
     data class Rec   (val tk_: Tk.Up): Type(tk_)
 }
 
@@ -132,7 +132,7 @@ sealed class Stmt (val tk: Tk) {
     data class Ret   (val tk_: Tk.Key) : Stmt(tk_)
     data class Loop  (val tk_: Tk.Key, val block: Block) : Stmt(tk_)
     data class Break (val tk_: Tk.Key) : Stmt(tk_)
-    data class Block (val tk_: Tk.Chr, val scope: Char?, val body: Stmt) : Stmt(tk_)
+    data class Block (val tk_: Tk.Chr, val scope: String?, val body: Stmt) : Stmt(tk_)
 }
 
 fun parser_type (all: All): Type {

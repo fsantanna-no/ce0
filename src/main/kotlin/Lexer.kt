@@ -34,7 +34,7 @@ sealed class Tk (
     data class Str (val enu_: TK, val lin_: Int, val col_: Int, val str: String): Tk(enu_,lin_,col_)
     data class Num (val enu_: TK, val lin_: Int, val col_: Int, val num: Int):    Tk(enu_,lin_,col_)
     data class Up  (val enu_: TK, val lin_: Int, val col_: Int, val up:  Int):    Tk(enu_,lin_,col_)
-    data class Scope (val enu_: TK, val lin_: Int, val col_: Int, val scope: Char):Tk(enu_,lin_,col_)
+    data class Scope (val enu_: TK, val lin_: Int, val col_: Int, val scope: String):Tk(enu_,lin_,col_)
 }
 
 fun TK.toErr (chr: Char?): String {
@@ -86,6 +86,17 @@ fun token (all: All) {
     val COL = all.col
 
     var (c1,x1) = all.read()
+
+    fun lowers (): String {
+        var pay = ""
+        do {
+            pay += x1
+            all.read().let { c1=it.first ; x1=it.second }
+        } while (x1.isLetterOrDigit() || x1=='_')
+        all.unread(c1)
+        return pay
+    }
+
     when {
         (c1 == -1) -> all.tk1 = Tk.Sym(TK.EOF, LIN, COL, "")
         (x1 in arrayOf(')', '{', '}', '[', ']', '<' , '>' , ';' , ':' , '=' , ',' , '\\', '/' , '.', '!' , '?')) -> {
@@ -102,10 +113,13 @@ fun token (all: All) {
         }
         (x1 == '@') -> {
             all.read().let { c1=it.first ; x1=it.second }
-            if (x1=='@' || x1.isLetter()) {
-                all.tk1 = Tk.Scope(TK.XSCOPE, LIN, COL, x1)
-            } else {
-                all.tk1 = Tk.Err(TK.ERR, LIN, COL, "@"+x1)
+            when {
+                x1.isLowerCase() -> {
+                    var pay = lowers()
+                    all.tk1 = Tk.Scope(TK.XSCOPE, LIN, COL, "@"+pay)
+                }
+                x1.isDigit() -> all.tk1 = Tk.Scope(TK.XSCOPE, LIN, COL, "@"+x1)
+                else -> all.tk1 = Tk.Err(TK.ERR, LIN, COL, "@"+x1)
             }
         }
         (x1 == '(') -> {
@@ -170,12 +184,7 @@ fun token (all: All) {
             all.tk1 = Tk.Num(TK.XNUM, LIN, COL, pay.toInt())
         }
         x1.isLowerCase() -> {
-            var pay = ""
-            do {
-                pay += x1
-                all.read().let { c1=it.first ; x1=it.second }
-            } while (x1.isLetterOrDigit() || x1=='_')
-            all.unread(c1)
+            var pay = lowers()
             all.tk1 = key2tk[pay].let {
                 if (it != null) Tk.Key(it, LIN, COL, pay) else Tk.Str(TK.XVAR, LIN, COL, pay)
             }

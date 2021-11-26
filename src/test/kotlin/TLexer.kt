@@ -138,12 +138,17 @@ class TLexer {
 
     @Test
     fun c01_scope () {
-        val all = All_new(PushbackReader(StringReader("@@"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.XSCOPE && (all.tk1 as Tk.Scope).scope=='@')
+        val all = All_new(PushbackReader(StringReader("@global"), 2))
+        lexer(all) ; assert(all.tk1.enu==TK.XSCOPE && (all.tk1 as Tk.Scope).scope=="@global")
     }
     @Test
     fun c02_scope () {
-        val all = All_new(PushbackReader(StringReader("@1"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.ERR && (all.tk1 as Tk.Err).err=="@1")
+        val all = All_new(PushbackReader(StringReader("@_1"), 2))
+        lexer(all) ; assert(all.tk1.enu==TK.ERR && (all.tk1 as Tk.Err).err=="@_")
+    }
+    @Test
+    fun c03_scope () {
+        val all = All_new(PushbackReader(StringReader("@11"), 2))
+        lexer(all) ; assert(all.tk1.enu==TK.XSCOPE && (all.tk1 as Tk.Scope).scope=="@1")
     }
 }

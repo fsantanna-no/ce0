@@ -86,11 +86,16 @@ fun Expr.Var.env (): Stmt.Var? {
 fun Type.Ptr.scopeDepth (): Int? {
     return when (this.scope) {
         null -> this.ups_tolist().count { it is Stmt.Block }
-        '@'  -> 0
+        "@global" -> 0
         else -> {
-            val blk = this.ups_first { it is Stmt.Block && it.scope==this.scope }
-            return if (blk == null) null else {
-                1 + blk.ups_tolist().count { it is Stmt.Block }
+            val num = this.scope.drop(1).toIntOrNull()
+            if (num == null) {
+                val blk = this.ups_first { it is Stmt.Block && it.scope == this.scope }
+                return if (blk == null) null else {
+                    1 + blk.ups_tolist().count { it is Stmt.Block }
+                }
+            } else {
+                num
             }
         }
     }
