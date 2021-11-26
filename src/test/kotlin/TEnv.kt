@@ -645,13 +645,13 @@ class TEnv {
     @Test
     fun e13_call_ok () {
         val out = inp2env("""
-            var f: /()@1->()@1
-            set f = func /()@1->()@1 {}
+            var f: /()@1->/()@1
+            set f = func /()@1->/()@1 {}
             {
                 var x: /()
                 {
                     var y: /()
-                    set x = call f [x]  -- ok
+                    set x = call f x  -- ok
                 }
             }
         """.trimIndent())
@@ -660,53 +660,53 @@ class TEnv {
     @Test
     fun e14_call_err () {
         val out = inp2env("""
-            var f: /()@1->()@1
-            set f = func /()@1->()@1 {}
+            var f: /()@1->/()@1
+            set f = func /()@1->/()@1 {}
             {
                 var x: /()
                 {
                     var y: /()
-                    set x = call f [y]  -- err
+                    set x = call f y  -- err
                 }
             }
         """.trimIndent())
-        assert(out == "ERR") { out }
+        assert(out == "(ln 7, col 22): invalid call : type mismatch") { out }
     }
     @Test
     fun e15_call_err () {
         val out = inp2env("""
-            var f: /()@1->()@2
-            set f = func /()@1->()@2 {}
-            {
-                var /x: ()
-                {
-                    var /y: ()
-                    set x = call f [y]  -- err
-                }
-            }
-        """.trimIndent())
-        assert(out == "ERR") { out }
-    }
-    @Test
-    fun e16_call_ok () {
-        val out = inp2env("""
-            var f: /()@2->()@1
-            set f = func /()@2->()@1 {}
+            var f: /()@1->/()@2
+            set f = func /()@1->/()@2 {}
             {
                 var x: /()
                 {
                     var y: /()
-                    set x = call f [y]  -- ok
+                    set x = call f y  -- err
+                }
+            }
+        """.trimIndent())
+        assert(out == "(ln 7, col 15): invalid assignment : type mismatch") { out }
+    }
+    @Test
+    fun e16_call_ok () {
+        val out = inp2env("""
+            var f: /()@2->/()@1
+            set f = func /()@2->/()@1 {}
+            {
+                var x: /()
+                {
+                    var y: /()
+                    set x = call f y  -- ok
                 }
             }
         """.trimIndent())
         assert(out == "OK") { out }
     }
     @Test
-    fun e17_call_err () {
+    fun e17_call_ok () {
         val out = inp2env("""
             var f: [/()@1,/()@2]->()
-            set f = func [/()@1,/()@2]->() { return arg }
+            set f = func [/()@1,/()@2]->() { }
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -714,22 +714,30 @@ class TEnv {
     fun e18_call_err () {
         val out = inp2env("""
             var f: [/()@2,/()@1]->()
-            set f = func [/()@2,/()@1]->() { return arg }   -- err
+            set f = func [/()@1,/()@2]->() { }   -- err
         """.trimIndent())
-        assert(out == "ERR") { out }
+        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
     @Test
     fun e19_call_ok () {
         val out = inp2env("""
-            var f: /()@2->()@1
-            set f = func /()@2->()@1 {}
+            var f: /()@2->/()@1
+            set f = func /()@2->/()@1 {}
             {
                 var x: /()
                 {
                     var y: /()
-                    set y = call f [y]  -- ok
+                    set y = call f y  -- ok
                 }
             }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun e20_call_ok () {
+        val out = inp2env("""
+            var f: /()@1->/()
+            set f = func /()@1->/() { return arg }
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -852,13 +860,16 @@ class TEnv {
     @Test
     fun g05_ptr_caret_ok () {
         val out = inp2env("""
-            var f : /_int@1 -> /_int@1; set f = func /_int@1 -> /_int@1 {
-                var ptr: /_int @1; set ptr = arg
+            var f : /_int@1 -> /_int@1
+            set f = func /_int -> /_int {
+                var ptr: /_int @1
+                set ptr = arg
                 return ptr
             }
-            var v: _int; set v = _10
-            var p: /_int; set p = f v\
-            output std p\
+            var v: _int
+            set v = _10
+            var p: /_int
+            set p = f v\
         """.trimIndent())
         assert(out == "OK") { out }
     }

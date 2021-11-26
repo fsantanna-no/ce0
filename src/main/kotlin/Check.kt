@@ -16,6 +16,24 @@ fun check_01 (s: Stmt) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+fun Type.map2 (f: (Type)->Type): Type {
+    return when (this) {
+        is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> f(this)
+        is Type.Tuple -> f(Type.Tuple(this.tk_, this.vec.map { it.map2(f) }.toTypedArray()))
+        is Type.Union -> f(Type.Union(this.tk_, this.isrec, this.isnull, this.vec.map { it.map2(f) }.toTypedArray()))
+        is Type.UCons -> f(Type.UCons(this.tk_, f(this.arg)))
+        is Type.Func  -> f(Type.Func(this.tk_, this.inp.map2(f), this.out.map2(f)))
+        is Type.Ptr   -> {
+            // cannot map pln before
+            //   - that would change identity of original Ptr
+            //   - test relies on identity
+            val ret1 = f(this) as Type.Ptr
+            val ret2 = Type.Ptr(ret1.tk_, ret1.scope, this.pln.map2(f))
+            ret2
+        }
+    }
+}
+
 fun check_02 (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
@@ -141,15 +159,14 @@ fun check_02 (s: Stmt) {
                     //sorted.forEach { println(it.first.toString() + ": " + it.second.tostr()) }
 
                     // arg2 = scope in ptrs inside args are now increasing numbers (@1,@2,...)
-                    val arg2 = TPS[e.arg]!!.map { ptr ->
+                    val arg2 = TPS[e.arg]!!.map2 { ptr ->
                         if (ptr !is Type.Ptr) ptr else {
-                            // TODO: tostr() WRONG!
-                            val idx = sorted.find { it.second.tostr() == ptr.tostr() }!!.first
+                            val idx = sorted.find { it.second == ptr }!!.first
                             Type.Ptr(ptr.tk_, "@"+idx, ptr.pln)
                         }
                     }
                     // xp2 = scope in ptrs inside xp are now increasing numbers (@1,@2,...)
-                    val xp2 = XPS[e]!!.map { ptr ->
+                    val xp2 = XPS[e]!!.map2 { ptr ->
                         if (ptr !is Type.Ptr) ptr else {
                             val idx = sorted.find { it.second == ptr }!!.first
                             Type.Ptr(ptr.tk_, "@"+idx, ptr.pln)
@@ -160,13 +177,13 @@ fun check_02 (s: Stmt) {
                     Pair(xp2,arg2)
                 }
                 val inp = when (tp) {
-                    is Type.Func -> tp.inp.map { if (it !is Type.Ptr) it else Type.Ptr(it.tk_, "@1", it.pln) }
+                    is Type.Func -> tp.inp.map { if (it !is Type.Ptr || it.scope!=null) it else Type.Ptr(it.tk_, "@1", it.pln) }
                     is Type.Nat  -> tp
                     else -> error("impossible case")
                 }
+                //println(inp.tostr())
+                //println(arg2.tostr())
                 All_assert_tk(e.f.tk, inp.isSupOf(arg2)) {
-                    //println(inp.tostr())
-                    //println(arg2.tostr())
                     "invalid call : type mismatch"
                 }
 
