@@ -97,7 +97,7 @@ class TEnv {
         val out = inp2env("""
             var x: /_int @a
         """.trimIndent())
-        assert(out == "OK") { out }
+        assert(out == "(ln 1, col 8): undeclared scope \"@a\"") { out }
     }
     @Test
     fun b09_user_err () {
@@ -515,6 +515,26 @@ class TEnv {
             }
         """.trimIndent())
         assert(out == "OK")
+    }
+    @Test
+    fun e05_ptr_ok () {
+        val out = inp2env("""
+            { @a
+                var pout: /_int
+                {
+                    var pin: /_int @a
+                    set pout = pin  -- ok
+                }
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun e06_ptr_scope_err () {
+        val out = inp2env("""
+            var pin: /_int @a
+        """.trimIndent())
+        assert(out == "(ln 1, col 10): undeclared scope \"@a\"") { out }
     }
 
     // POINTERS - DOUBLE

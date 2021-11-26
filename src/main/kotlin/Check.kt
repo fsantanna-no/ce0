@@ -30,6 +30,16 @@ fun Expr.order (): List<Expr> {
 }
 
 fun check_02 (s: Stmt) {
+    fun ft (tp: Type) {
+        when (tp) {
+            is Type.Ptr -> {
+                All_assert_tk(tp.tk, tp.scopeDepth() != null) {
+                    "undeclared scope \"@${tp.scope}\""
+                }
+            }
+
+        }
+    }
     fun fe (e: Expr) {
         when (e) {
             is Expr.Var -> {
@@ -150,14 +160,14 @@ fun check_02 (s: Stmt) {
                 }
             }
             is Stmt.Ret -> {
-                val ok = s.ups_tolist().firstOrNull { it is Expr.Func } != null
+                val ok = s.ups_first { it is Expr.Func } != null
                 All_assert_tk(s.tk, ok) {
                     "invalid return : no enclosing function"
                 }
             }
         }
     }
-    s.visit(::fs, ::fe, null)
+    s.visit(::fs, ::fe, ::ft)
 }
 
 fun Type.containsRec (): Boolean {

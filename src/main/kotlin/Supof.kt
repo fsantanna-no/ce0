@@ -29,14 +29,6 @@ fun Type.isSupOf (sub: Type): Boolean {
     return this.isSupOf_(sub, emptyList(), emptyList())
 }
 
-fun Type.Ptr.scopeDepth (): Int {
-    return when (this.scope) {
-        null -> this.ups_tolist().count { it is Stmt.Block }
-        '@' -> 0
-        else -> TODO("scope ${this.scope}")
-    }
-}
-
 fun Type.isSupOf_ (sub: Type, ups1: List<Type.Union>, ups2: List<Type.Union>): Boolean {
     return when {
         (this is Type.Any  || sub is Type.Any) -> true
@@ -55,11 +47,11 @@ fun Type.isSupOf_ (sub: Type, ups1: List<Type.Union>, ups2: List<Type.Union>): B
         (this is Type.Unit && sub is Type.Unit) -> true
         (this is Type.Func && sub is Type.Func) -> (this.inp.isSupOf_(sub.inp,ups1,ups2) && sub.inp.isSupOf_(this.inp,ups1,ups2) && this.out.isSupOf_(sub.out,ups1,ups2) && sub.out.isSupOf_(this.out,ups1,ups2))
         (this is Type.Ptr && sub is Type.Ptr) -> {
-            //println(this.scopeDepth())
-            //println(sub.scopeDepth())
+            println("${this.scope} = ${this.scopeDepth()}")
+            println("${sub.scope} = ${sub.scopeDepth()}")
             //println(sub)
             //println(UPS[sub])
-            (this.scopeDepth() >= sub.scopeDepth()) && this.pln.isSupOf_(sub.pln,ups1,ups2)
+            (this.scopeDepth()!! >= sub.scopeDepth()!!) && this.pln.isSupOf_(sub.pln,ups1,ups2)
         }
         (this is Type.Tuple && sub is Type.Tuple) ->
             (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf_(y,ups1,ups2) }
