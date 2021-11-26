@@ -556,7 +556,7 @@ class TEnv {
             var f: /()@1->()
             set f = func /()@1->() {
                 var pf: /_int @1
-                set pa = arg
+                set pf = arg
             }
             {
                 var x: ()
@@ -641,6 +641,97 @@ class TEnv {
             }
         """.trimIndent())
         assert(out == "(ln 6, col 16): invalid assignment : type mismatch") { out }
+    }
+    @Test
+    fun e13_call_ok () {
+        val out = inp2env("""
+            var f: /()@1->()@1
+            set f = func /()@1->()@1 {}
+            {
+                var x: /()
+                {
+                    var y: /()
+                    set x = call f [x]  -- ok
+                }
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun e14_call_err () {
+        val out = inp2env("""
+            var f: /()@1->()@1
+            set f = func /()@1->()@1 {}
+            {
+                var x: /()
+                {
+                    var y: /()
+                    set x = call f [y]  -- err
+                }
+            }
+        """.trimIndent())
+        assert(out == "ERR") { out }
+    }
+    @Test
+    fun e15_call_err () {
+        val out = inp2env("""
+            var f: /()@1->()@2
+            set f = func /()@1->()@2 {}
+            {
+                var /x: ()
+                {
+                    var /y: ()
+                    set x = call f [y]  -- err
+                }
+            }
+        """.trimIndent())
+        assert(out == "ERR") { out }
+    }
+    @Test
+    fun e16_call_ok () {
+        val out = inp2env("""
+            var f: /()@2->()@1
+            set f = func /()@2->()@1 {}
+            {
+                var x: /()
+                {
+                    var y: /()
+                    set x = call f [y]  -- ok
+                }
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun e17_call_err () {
+        val out = inp2env("""
+            var f: [/()@1,/()@2]->()
+            set f = func [/()@1,/()@2]->() { return arg }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun e18_call_err () {
+        val out = inp2env("""
+            var f: [/()@2,/()@1]->()
+            set f = func [/()@2,/()@1]->() { return arg }   -- err
+        """.trimIndent())
+        assert(out == "ERR") { out }
+    }
+    @Test
+    fun e19_call_ok () {
+        val out = inp2env("""
+            var f: /()@2->()@1
+            set f = func /()@2->()@1 {}
+            {
+                var x: /()
+                {
+                    var y: /()
+                    set y = call f [y]  -- ok
+                }
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
     }
 
     // POINTERS - DOUBLE

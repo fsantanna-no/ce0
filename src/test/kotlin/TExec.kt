@@ -500,7 +500,7 @@ class TExec {
             var p: /_int; set p = f /v
             output std p\
         """.trimIndent())
-        assert(out == "10\n")
+        assert(out == "10\n") { out }
     }
     @Test
     fun i08_ptr_func_ok () {
@@ -696,7 +696,7 @@ class TExec {
             call _puts ptr\
         """.trimIndent())
         //assert(out == "(ln 5, col 9): invalid assignment of \"uni\" : borrowed in line 4")
-        assert(out == "(ln 4, col 20): unexpected operand to `/´") { out }    // TODO: dangling pointer to union
+        assert(out == "(ln 4, col 20): unexpected operand to `/´") { out }
     }
 
     // REC
