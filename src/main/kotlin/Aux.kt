@@ -83,24 +83,6 @@ fun Expr.Var.env (): Stmt.Var? {
     return this.env_first { it is Stmt.Var && it.tk_.str==this.tk_.str } as Stmt.Var?
 }
 
-fun Type.Ptr.scopeDepth (): Int? {
-    return when (this.scope) {
-        null -> this.ups_tolist().count { it is Stmt.Block }
-        "@global" -> 0
-        else -> {
-            val num = this.scope.drop(1).toIntOrNull()
-            if (num == null) {
-                val blk = this.ups_first { it is Stmt.Block && it.scope == this.scope }
-                return if (blk == null) null else {
-                    1 + blk.ups_tolist().count { it is Stmt.Block }
-                }
-            } else {
-                num
-            }
-        }
-    }
-}
-
 fun env_prelude (s: Stmt): Stmt {
     val stdo = Stmt.Var (
         Tk.Str(TK.XVAR,1,1,"output_std"),

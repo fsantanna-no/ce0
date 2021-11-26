@@ -16,42 +16,6 @@ fun check_01 (s: Stmt) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-fun Expr.flatten (): List<Expr> {
-    return when (this) {
-        is Expr.Unit, is Expr.Var, is Expr.Nat, is Expr.Func -> listOf(this)
-        is Expr.TDisc -> this.tup.flatten() + this
-        is Expr.UDisc -> this.uni.flatten() + this
-        is Expr.UPred -> this.uni.flatten() + this
-        is Expr.New   -> this.arg.flatten() + this
-        is Expr.Dnref -> this.ptr.flatten() + this
-        is Expr.Upref -> this.pln.flatten() + this
-        else -> { println(this) ; TODO() }
-    }
-}
-
-fun Type.flatten (): List<Type> {
-    // TODO: func/union do not make sense?
-    return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> listOf(this)
-        is Type.Tuple -> this.vec.map { it.flatten() }.flatten() + this
-        is Type.Union -> this.vec.map { it.flatten() }.flatten() + this
-        is Type.UCons -> this.arg.flatten() + this
-        is Type.Func  -> this.inp.flatten() + this.out.flatten() + this
-        is Type.Ptr   -> this.pln.flatten() + this
-    }
-}
-
-fun Type.map (f: (Type)->Type): Type {
-    return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> f(this)
-        is Type.Tuple -> f(Type.Tuple(this.tk_, this.vec.map { it.map(f) }.toTypedArray()))
-        is Type.Union -> f(Type.Union(this.tk_, this.isrec, this.isnull, this.vec.map { it.map(f) }.toTypedArray()))
-        is Type.UCons -> f(Type.UCons(this.tk_, f(this.arg)))
-        is Type.Func  -> f(Type.Func(this.tk_, this.inp.map(f), this.out.map(f)))
-        is Type.Ptr   -> f(Type.Ptr(this.tk_, this.scope, this.pln.map(f)))
-    }
-}
-
 fun check_02 (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
@@ -179,6 +143,7 @@ fun check_02 (s: Stmt) {
                     // arg2 = scope in ptrs inside args are now increasing numbers (@1,@2,...)
                     val arg2 = TPS[e.arg]!!.map { ptr ->
                         if (ptr !is Type.Ptr) ptr else {
+                            // TODO: tostr() WRONG!
                             val idx = sorted.find { it.second.tostr() == ptr.tostr() }!!.first
                             Type.Ptr(ptr.tk_, "@"+idx, ptr.pln)
                         }
@@ -238,18 +203,4 @@ fun check_02 (s: Stmt) {
         }
     }
     s.visit(::fs, ::fe, ::ft)
-}
-
-fun Type.containsRec (): Boolean {
-    return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
-        is Type.Rec   -> true
-        is Type.Tuple -> this.vec.any { it.containsRec() }
-        is Type.Union -> this.vec.any { it.containsRec() }
-        is Type.UCons -> this.arg.containsRec()
-    }
-}
-
-fun<T> Set<Set<T>>.unionAll (): Set<T> {
-    return this.fold(emptySet(), {x,y->x+y})
 }
