@@ -1,4 +1,14 @@
 fun check_01 (s: Stmt) {
+    fun ft (tp: Type) {
+        when (tp) {
+            is Type.Ptr -> {
+                All_assert_tk(tp.tk, tp.scopeDepth() != null) {
+                    "undeclared scope \"${tp.scope}\""
+                }
+            }
+
+        }
+    }
     fun fs (s: Stmt) {
         when (s) {
             is Stmt.Set -> {
@@ -13,7 +23,7 @@ fun check_01 (s: Stmt) {
             }
         }
     }
-    s.visit(::fs, null, null)
+    s.visit(::fs, null, ::ft)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -37,16 +47,6 @@ fun Type.map2 (f: (Type)->Type): Type {
 }
 
 fun check_02 (s: Stmt) {
-    fun ft (tp: Type) {
-        when (tp) {
-            is Type.Ptr -> {
-                All_assert_tk(tp.tk, tp.scopeDepth() != null) {
-                    "undeclared scope \"${tp.scope}\""
-                }
-            }
-
-        }
-    }
     fun fe (e: Expr) {
         when (e) {
             is Expr.Var -> {
@@ -153,13 +153,13 @@ fun check_02 (s: Stmt) {
                     val ptrs = all.filter { it is Type.Ptr }.map { (it as Type.Ptr).let { Pair(it.scopeDepth()!!,it) } }
                     // sorted = ptrs sorted by grouped depths, substitute depth by increasing index
                     val sorted = ptrs
-                        .groupBy  { it.first }
+                        .groupBy  { it.first.third }
                         .toList()
-                        .sortedBy { it.first.second }
+                        .sortedBy { it.first }
                         .mapIndexed { i,(_,l) -> l.map { Pair((i+1),it.second) } }
                         .flatten()
                         //.let { it } // List<Pair<Int, Type.Ptr>>
-                    //sorted.forEach { println(it.first.toString() + ": " + it.second.tostr()) }
+                    sorted.forEach { println(it.first.toString() + ": " + it.second.tostr()) }
 
                     // arg2 = scope in ptrs inside args are now increasing numbers (@1,@2,...)
                     val arg2 = TPS[e.arg]!!.map2 { ptr ->
@@ -175,8 +175,8 @@ fun check_02 (s: Stmt) {
                             Type.Ptr(ptr.tk_, "@"+idx, ptr.pln)
                         }
                     }
-                    //println(xp2.tostr())
-                    //println(arg2.tostr())
+                    println(xp2.tostr())
+                    println(arg2.tostr())
                     Pair(xp2,arg2)
                 }
                 val inp = when (tp) {
@@ -222,5 +222,5 @@ fun check_02 (s: Stmt) {
             }
         }
     }
-    s.visit(::fs, ::fe, ::ft)
+    s.visit(::fs, ::fe, null)
 }

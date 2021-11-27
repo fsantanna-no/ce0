@@ -543,8 +543,10 @@ class TExec {
     @Test
     fun i11_ptr_func_ok () {
         val out = all("""
-            var f : /_int -> /_int; set f = func /_int -> /_int {
-                var ptr: ^/_int; set ptr = arg
+            var f : /_int@1 -> /_int@1
+            set f = func /_int@1 -> /_int@1 {
+                var ptr: /_int@1
+                set ptr = arg
                 return ptr
             }
             var v: _int; set v = _10

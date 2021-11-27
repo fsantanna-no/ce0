@@ -747,12 +747,13 @@ class TEnv {
             var f: /()@1->/()
             set f = func /()@1->/() {
                 {
-                    var x: /() = arg
+                    var x: /()
+                    set x = arg
                     return x    -- err
                 }
             }
         """.trimIndent())
-        assert(out == "ERR") { out }
+        assert(out == "(ln 6, col 9): invalid return : type mismatch") { out }
     }
     @Test
     fun e22_local_ok () {
@@ -896,31 +897,26 @@ class TEnv {
             var v: _int
             set v = _10
             var p: /_int
-            set p = f v\
+            set p = f /v
         """.trimIndent())
         assert(out == "OK") { out }
     }
     @Test
     fun g06_ptr_caret_err () {
         val out = inp2env("""
-            var f : /_int -> /_int; set f = func /_int -> /_int {
-                var x: _int; set x = _10
-                var ptr: /_int @a; set ptr = /x
+            var f : /_int -> /_int
+            set f = func /_int -> /_int {
+                var x: _int
+                set x = _10
+                var ptr: /_int @1
+                set ptr = /x
                 return ptr
             }
             var v: _int; set v = _10
             var p: /_int; set p = f /v
             output std p\
         """.trimIndent())
-        assert(out == "(ln 3, col 9): invalid assignment : cannot hold local pointer \"x\" (ln 2)") { out }
-    }
-
-    @Test
-    fun g07_ptr_caret_err () {
-        val out = inp2env("""
-            var ptr: /_int @a
-        """.trimIndent())
-        assert(out == "OK") { out }
+        assert(out == "(ln 6, col 13): invalid assignment : type mismatch") { out }
     }
 
     @Test
@@ -936,44 +932,68 @@ class TEnv {
     @Test
     fun g09_ptr_arg_err () {
         val out = inp2env("""
-            var f: _int -> /_int @a; set f = func _int -> /_int @a
-            {
-                var ptr: /_int @a; set ptr = /arg
+            var f: _int -> /_int @1
+            set f = func _int -> /_int @1 {
+                var ptr: /_int @1
+                set ptr = arg   -- err: type mismatch
                 return ptr
             }
         """.trimIndent())
-        assert(out == "(ln 3, col 9): invalid assignment : cannot hold local pointer \"arg\" (ln 2)") { out }
+        assert(out == "ERR") { out }
     }
     @Test
     fun g10_ptr_out_err () {
         val out = inp2env("""
-            var f: /_int -> //_int; set f = func /_int -> //\_int
-            {
-                var ptr: ^/_int; set ptr = arg
+            var f: /_int -> //_int
+            set f = func /_int -> _int {
+                var ptr: /_int@global
+                set ptr = arg
                 return /ptr
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 5): invalid assignment : cannot hold local pointer \"ptr\" (ln 3)") { out }
+        assert(out == "(ln 4, col 13): invalid assignment : type mismatch") { out }
     }
     @Test
-    fun g11_ptr_func () {
+    fun g11_ptr_func_err () {
         val out = inp2env("""
-            var v: _int; set v = _10
-            var f : () -> /_int; set f = func () -> /_int {
+            var v: _int
+            set v = _10
+            var f : () -> /_int
+            set f = func () -> /_int {
                 return /v
             }
             var p: /_int
             {
-                set p = f ()
+                set p = f ()    // err
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 11): invalid assignment : cannot hold local pointer \"f\" (ln 2)") { out }
+        assert(out == "ERR") { out }
+    }
+    @Test
+    fun g11_ptr_func_ok () {
+        val out = inp2env("""
+            { @a
+                var v: _int
+                set v = _10
+                var f : () -> /_int@a
+                set f = func () -> /_int@a {
+                    return /v
+                }
+                var p: /_int
+                {
+                    set p = f ()
+                }
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
     }
     @Test
     fun g12_ptr_func () {
         val out = inp2env("""
-            var v: _int; set v = _10
-            var f : /_int -> /_int; set f = func /_int -> /_int {
+            var v: _int
+            set v = _10
+            var f : /_int -> /_int
+            set f = func /_int -> /_int {
                 return /v
             }
             var p: /_int
@@ -981,17 +1001,18 @@ class TEnv {
                 set p = f (/v)
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 11): invalid assignment : cannot hold local pointer \"f\" (ln 2)") { out }
+        assert(out == "TODO: estou em duvida") { out }
     }
     @Test
     fun g13_ptr_func () {
         val out = inp2env("""
             var v: /_int
-            var f : /_int -> (); set f = func /_int -> () {
+            var f : /_int -> ()
+            set f = func /_int -> () {
                 set v = arg
             }
         """.trimIndent())
-        assert(out == "(ln 3, col 11): invalid assignment : cannot hold local pointer \"arg\" (ln 2)") { out }
+        assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
     }
 
     // POINTERS - TUPLE - TYPE
@@ -1067,10 +1088,10 @@ class TEnv {
             var p: [_int,/_int]
             {
                 var v: _int
-                set p.2 = /v
+                set p.2 = /v    -- err
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 13): invalid assignment : cannot hold local pointer \"v\" (ln 3)") { out }
+        assert(out == "ERR") { out }
     }
     @Test
     fun h07_ptr_tup_err () {
@@ -1092,7 +1113,7 @@ class TEnv {
                 set p!1 = /v
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 13): invalid assignment : cannot hold local pointer \"v\" (ln 3)") { out }
+        assert(out == "ERR") { out }
     }
     @Test
     fun h09_ptr_type_err () {
@@ -1150,11 +1171,11 @@ class TEnv {
             var p: <?^>
             {
                 var l: <?^>; set l = new <.1 (new <.1 <.0>>)>
-                set p = l
+                set p = l   -- err: as if it is a pointer
             }
             output std p
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
+        assert(out == "ERR") { out }
     }
     @Test
     fun i01_list_2 () {
@@ -1173,12 +1194,13 @@ class TEnv {
         val out = inp2env("""
             var p: <?^>
             {
-                var l: [<?^>]; set l = [new <.1 (new <.1 <.0>>)>]
+                var l: [<?^>]
+                set l = [new <.1 (new <.1 <.0>>)>]
                 set p = l.1
             }
             output std p
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : cannot hold local pointer \"l\" (ln 3)") { out }
+        assert(out == "ERR") { out }
     }
     @Test
     fun i03_list () {
@@ -1459,13 +1481,14 @@ class TEnv {
     fun j20_rec_xepr_borrow_err () {
         val out = inp2env("""
             var x: [<^>]
-            var f: /<^> -> (); set f = func /<^> -> ()
+            var f: /<^> -> ()
+            set f = func /<^> -> ()
             {
                 output std arg
             }
             call f /x.1
         """.trimIndent())
-        assert(out == "(ln 6, col 8): invalid expression : expected `borrow` operation modifier") { out }
+        assert(out == "OK") { out }
     }
     @Test
     fun j21_rec_xepr_borrow_err () {
@@ -1637,10 +1660,13 @@ class TEnv {
     @Test
     fun l02_borrow_func_err () {
         val out = inp2env("""
-            var f: ()->(); set f = func ()->() {
+            var f: ()->()
+            set f = func ()->() {
                 var x: <^>
-                var y: /<^>; set y = /x --!1
-                var z: <^>; set z = x
+                var y: /<^>
+                --set y = /x --!1
+                --var z: <^>
+                --set z = x
             }
         """.trimIndent())
         //assert(out == "(ln 4, col 26): invalid operation on \"x\" : borrowed in line 3") { out }

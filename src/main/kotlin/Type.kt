@@ -117,7 +117,7 @@ fun Type.Ptr.scopeDepth (): Triple<Int,Boolean,Int>? {
                     .map { (it as Type.Ptr).scope }
                     .map { (if (it==null) "@1" else it).drop(1).toIntOrNull() }
                     .filterNotNull()
-                    .maxOrNull()!!
+                    .maxOrNull() ?: 0
             }
             .sum()
     }
