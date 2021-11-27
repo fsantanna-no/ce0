@@ -13,7 +13,8 @@ class TEnv {
         try {
             var s = parser_stmts(all, Pair(TK.EOF,null))
             s = env_prelude(s)
-            aux(s)
+            Aux_01(s)
+            Aux_02(s)
             check_01(s)
             check_02(s)
             return "OK"
@@ -27,7 +28,8 @@ class TEnv {
         val all = All_new(PushbackReader(StringReader(inp), 2))
         lexer(all)
         var s = parser_stmts(all, Pair(TK.EOF,null))
-        aux(s)
+        Aux_01(s)
+        Aux_02(s)
         return s
     }
 

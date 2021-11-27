@@ -37,7 +37,8 @@ class TPointers {
         """), 2))
         lexer(all)
         val s = parser_stmt(all)
-        aux(s)
+        Aux_01(s)
+        Aux_02(s)
         val x = (s as Stmt.Block).body
         assert(((x as Stmt.Var).type as Type.Ptr).toScope()!!.depth == 0)
     }
