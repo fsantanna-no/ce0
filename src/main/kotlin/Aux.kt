@@ -238,39 +238,28 @@ fun Expr.aux_02 (xp: Type) {
     xps_add(this, xp)
     when (this) {
         is Expr.TCons -> {
-            if (xp !is Type.Tuple) {
-                this.arg.forEachIndexed { _, e ->
-                    e.aux_02(Type_Any(this.tk))
-                }
-            } else {
-                this.arg.forEachIndexed { i, e ->
-                    e.aux_02(if (xp.vec.size>i) xp.vec[i] else Type_Any(this.tk))
-                }
+            this.arg.forEachIndexed { i,e ->
+                val xp2 = if (xp !is Type.Tuple) Type_Any(this.tk) else if (xp.vec.size>i) xp.vec[i] else Type_Any(this.tk)
+                e.aux_02(xp2)
             }
         }
         is Expr.UCons -> {
-            val sub = when {
+            val xp2 = when {
                 (xp !is Type.Union) -> Type_Any(this.tk)
                 (this.tk_.num == 0) -> Type_Unit(this.tk)
                 (xp.vec.size < this.tk_.num) -> Type_Any(this.tk)
                 else -> xp.expand()[this.tk_.num - 1]
             }
-            this.arg.aux_02(sub)
+            this.arg.aux_02(xp2)
         }
         is Expr.New -> this.arg.aux_02(xp)
         is Expr.Dnref -> {
-            if (xp is Type.Ptr) {
-                this.ptr.aux_02(Type_Any(this.tk))
-            } else {
-                this.ptr.aux_02(xp.keepAnyNat { Type.Ptr(Tk.Chr(TK.CHAR, this.tk.lin, this.tk.col, '\\'), null, xp) })
-            }
+            val xp2 = if (xp is Type.Ptr) Type_Any(this.tk) else xp.keepAnyNat { Type.Ptr(Tk.Chr(TK.CHAR, this.tk.lin, this.tk.col, '\\'), null, xp) }
+            this.ptr.aux_02(xp2)
         }
         is Expr.Upref -> {
-            if (xp !is Type.Ptr) {
-                this.pln.aux_02(Type_Any(this.tk))
-            } else {
-                this.pln.aux_02(xp.keepAnyNat { xp.pln })
-            }
+            val xp2 = if (xp !is Type.Ptr) Type_Any(this.tk) else xp.keepAnyNat { xp.pln }
+            this.pln.aux_02(xp2)
         }
         is Expr.TDisc -> this.tup.aux_02(Type_Any(this.tk))
         is Expr.UDisc -> this.uni.aux_02(Type_Any(this.tk))
