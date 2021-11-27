@@ -26,35 +26,35 @@ class TCode {
     @Test
     fun b01_expr_unit () {
         val e = Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
-        XPS[e] = tp_unit
+        AUX.xps[e] = tp_unit
         code_fe(e)
         assert(EXPRS.removeFirst().second == "")
     }
     @Test
     fun b02_expr_var () {
         val e = Expr.Var(Tk.Str(TK.XVAR,1,1,"xxx"))
-        ENV[e] = Env (
+        AUX.env[e] = Env (
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"xxx"),
                 Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))
             ),
             null
         )
-        XPS[e] = tp_unit
+        AUX.xps[e] = tp_unit
         code_fe(e)
         assert(EXPRS.removeFirst().second == "xxx")
     }
     @Test
     fun b03_expr_nat () {
         val e = Expr.Var(Tk.Str(TK.XNAT,1,1,"xxx"))
-        ENV[e] = Env (
+        AUX.env[e] = Env (
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"xxx"),
                 Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))
             ),
             null
         )
-        XPS[e] = tp_unit
+        AUX.xps[e] = tp_unit
         code_fe(e)
         assert(EXPRS.removeFirst().second == "xxx")
     }
@@ -67,7 +67,7 @@ class TCode {
                 Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()")),
             )
         )
-        XPS[e] = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray())
+        AUX.xps[e] = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray())
         e.visit(null, ::code_fe, null)
         EXPRS.removeFirst().second.let {
             //println(it)
@@ -80,15 +80,15 @@ class TCode {
             Tk.Num(TK.XNUM,1,1,1),
             Expr.Var(Tk.Str(TK.XVAR,1,1,"x"))
         )
-        ENV[e.tup] = Env (
+        AUX.env[e.tup] = Env (
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"x"),
                 Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))))
             ),
             null
         )
-        XPS[e] = tp_unit
-        XPS[e.tup] = tp_unit
+        AUX.xps[e] = tp_unit
+        AUX.xps[e.tup] = tp_unit
         e.visit(null, ::code_fe, null)
         EXPRS.removeFirst().second.let {
             assert(it == "x._1")

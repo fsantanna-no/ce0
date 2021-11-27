@@ -2,7 +2,14 @@ fun check_01 (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
             is Type.Ptr -> {
-                All_assert_tk(tp.tk, tp.scopeDepth() != null) {
+                val ok = when {
+                    (tp.scope == null) -> true
+                    (tp.scope == "@global") -> true
+                    (tp.scope.drop(1).toIntOrNull() != null) -> true
+                    (tp.ups_first { it is Stmt.Block && it.scope==tp.scope } != null) -> true
+                    else -> false
+                }
+                All_assert_tk(tp.tk, ok) {
                     "undeclared scope \"${tp.scope}\""
                 }
             }
@@ -12,8 +19,8 @@ fun check_01 (s: Stmt) {
     fun fs (s: Stmt) {
         when (s) {
             is Stmt.Set -> {
-                val dst = TPS[s.dst]!!
-                val src = TPS[s.src]!!
+                val dst = AUX.tps[s.dst]!!
+                val src = AUX.tps[s.src]!!
                 //println("SET (${s.tk.lin}): ${dst.tostr()} = ${src.tostr()}")
                 //println(s.dst)
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
@@ -70,12 +77,12 @@ fun check_02 (s: Stmt) {
                 }
             }
             is Expr.Dnref -> {
-                All_assert_tk(e.tk, TPS[e.ptr] is Type.Ptr) {
+                All_assert_tk(e.tk, AUX.tps[e.ptr] is Type.Ptr) {
                     "invalid operand to `\\´ : not a pointer"
                 }
             }
             is Expr.UDisc -> {
-                TPS[e.uni]!!.let {
+                AUX.tps[e.uni]!!.let {
                     All_assert_tk(e.tk, it is Type.Union) {
                         "invalid discriminator : type mismatch"
                     }
@@ -86,7 +93,7 @@ fun check_02 (s: Stmt) {
                 }
             }
             is Expr.UPred -> {
-                TPS[e.uni]!!.let {
+                AUX.tps[e.uni]!!.let {
                     All_assert_tk(e.tk, it is Type.Union) {
                         "invalid discriminator : type mismatch"
                     }
@@ -97,7 +104,7 @@ fun check_02 (s: Stmt) {
                 }
             }
             is Expr.TDisc -> {
-                TPS[e.tup].let {
+                AUX.tps[e.tup].let {
                     All_assert_tk(e.tk, it is Type.Tuple) {
                         "invalid discriminator : type mismatch"
                     }
@@ -108,49 +115,49 @@ fun check_02 (s: Stmt) {
                 }
             }
             is Expr.TCons -> {
-                All_assert_tk(e.tk, e.arg.size == (TPS[e] as Type.Tuple).vec.size) {
+                All_assert_tk(e.tk, e.arg.size == (AUX.tps[e] as Type.Tuple).vec.size) {
                     "invalid constructor : out of bounds XXX" // TODO: remove check
                 }
             }
             is Expr.UCons -> {
-                val xp = XPS[e] as Type.Union
+                val xp = AUX.xps[e] as Type.Union
                 val (MIN, MAX) = Pair(if (xp.isnull) 0 else 1, xp.vec.size)
                 All_assert_tk(e.tk, MIN <= e.tk_.num && e.tk_.num <= MAX) {
                     "invalid constructor : out of bounds XXX" // TODO: remove check
                 }
-                All_assert_tk(e.tk, e.tk_.num!=0 || TPS[e.arg]!!.isSupOf(Type_Unit(e.tk))) {
+                All_assert_tk(e.tk, e.tk_.num!=0 || AUX.tps[e.arg]!!.isSupOf(Type_Unit(e.tk))) {
                     "invalid constructor : type mismatch"
                 }
                 if (xp.isrec()) {
-                    All_assert_tk(e.tk, (e.tk_.num==0) || UPS[e] is Expr.New) {
+                    All_assert_tk(e.tk, (e.tk_.num==0) || AUX.ups[e] is Expr.New) {
                         "invalid constructor : expected `new`"
                     }
                 }
             }
             is Expr.New -> {
-                All_assert_tk(e.tk, TPS[e.arg].let { it is Type.UCons && it.tk_.num>0 }) {
+                All_assert_tk(e.tk, AUX.tps[e.arg].let { it is Type.UCons && it.tk_.num>0 }) {
                     "invalid `new` : expected constructor"
                 }
-                All_assert_tk(e.tk, XPS[e]!!.isrec()) {
+                All_assert_tk(e.tk, AUX.xps[e]!!.isrec()) {
                     "unexpected `new` : expected recursive type"
                 }
             }
             is Expr.Call -> {
-                val tp = TPS[e.f]
+                val tp = AUX.tps[e.f]
                 All_assert_tk(e.f.tk, tp is Type.Func || tp is Type.Nat) {
                     "invalid call : not a function"
                 }
 
-                val xp = XPS[e]!!
-                val arg = TPS[e.arg]!!
+                val xp = AUX.xps[e]!!
+                val arg = AUX.tps[e.arg]!!
 
                 // check scopes
                 val (xp2,arg2) = if (tp !is Type.Func) Pair(xp,arg) else {
                     // all = expected return + arguments
-                    val all = (XPS[e]!!.flatten() + TPS[e.arg]!!.flatten())
+                    val all = (AUX.xps[e]!!.flatten() + AUX.tps[e.arg]!!.flatten())
                         //.filter { it !is Type.Func } // (ignore pointers in function types)
                     // ptrs = all ptrs+depths inside args
-                    val ptrs = all.filter { it is Type.Ptr }.map { (it as Type.Ptr).let { Pair(it.scopeDepth()!!,it) } }
+                    val ptrs = all.filter { it is Type.Ptr }.map { (it as Type.Ptr).let { Pair(it.toScope()!!,it) } }
                     // sorted = ptrs sorted by grouped depths, substitute depth by increasing index
                     val sorted = ptrs
                         .groupBy  { it.first.depth }
@@ -162,14 +169,14 @@ fun check_02 (s: Stmt) {
                     //println("SORTED") ; sorted.forEach { println(it.first.toString() + ": " + it.second.tostr()) }
 
                     // arg2 = scope in ptrs inside args are now increasing numbers (@1,@2,...)
-                    val arg2 = TPS[e.arg]!!.map2 { ptr ->
+                    val arg2 = AUX.tps[e.arg]!!.map2 { ptr ->
                         if (ptr !is Type.Ptr) ptr else {
                             val idx = sorted.find { it.second == ptr }!!.first
                             Type.Ptr(ptr.tk_, "@"+idx, ptr.pln)
                         }
                     }
                     // xp2 = scope in ptrs inside xp are now increasing numbers (@1,@2,...)
-                    val xp2 = XPS[e]!!.map2 { ptr ->
+                    val xp2 = AUX.xps[e]!!.map2 { ptr ->
                         if (ptr !is Type.Ptr) ptr else {
                             val idx = sorted.find { it.second == ptr }!!.first
                             Type.Ptr(ptr.tk_, "@"+idx, ptr.pln)
@@ -203,7 +210,7 @@ fun check_02 (s: Stmt) {
                 }
             }
             is Stmt.If -> {
-                All_assert_tk(s.tk, TPS[s.tst] is Type.Nat) {
+                All_assert_tk(s.tk, AUX.tps[s.tst] is Type.Nat) {
                     "invalid condition : type mismatch"
                 }
             }

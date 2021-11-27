@@ -109,7 +109,7 @@ fun Type.Union.expand (): Array<Type> {
 
 data class Scope (val level: Int, val isabs: Boolean, val depth: Int)
 
-fun Type.Ptr.scopeDepth (): Scope? {
+fun Type.Ptr.toScope (): Scope? {
     // Offset of @N (max) of all crossing functions:
     //  func /()->() {              // +1
     //      func [/()@1,/()@2] {    // +2

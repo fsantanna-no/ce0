@@ -284,14 +284,14 @@ fun code_ft (tp: Type) {
 val EXPRS = ArrayDeque<Pair<String,String>>()
 
 fun Expr.UDisc.deref (str: String): String {
-    return if (TPS[this.uni]!!.isrec()) {
+    return if (AUX.tps[this.uni]!!.isrec()) {
         "(*($str))"
     } else {
         str
     }
 }
 fun Expr.UPred.deref (str: String): String {
-    return if (TPS[this.uni]!!.isrec()) {
+    return if (AUX.tps[this.uni]!!.isrec()) {
         "(*($str))"
     } else {
         str
@@ -299,8 +299,8 @@ fun Expr.UPred.deref (str: String): String {
 }
 
 fun code_fe (e: Expr) {
-    val xp = XPS[e]!!
-    val isunit = TPS[e] is Type.Unit
+    val xp = AUX.xps[e]!!
+    val isunit = AUX.tps[e] is Type.Unit
     EXPRS.addFirst(when (e) {
         is Expr.Unit -> Pair("", "")
         is Expr.Nat -> Pair("", e.tk_.str)
@@ -314,7 +314,7 @@ fun code_fe (e: Expr) {
         is Expr.TDisc -> EXPRS.removeFirst().let { Pair(it.first, it.second + "._" + e.tk_.num) }
         is Expr.UDisc -> EXPRS.removeFirst().let {
             val ee = e.deref(it.second)
-            val uni = TPS[e.uni]!!
+            val uni = AUX.tps[e.uni]!!
             val pre = if (e.tk_.num == 0) {
                 """
                 assert(${it.second} == NULL);
@@ -335,14 +335,14 @@ fun code_fe (e: Expr) {
             val pos = if (e.tk_.num == 0) {
                 "(${it.second} == NULL)"
             } else {
-                (if (TPS[e.uni].let { it is Type.Union && it.isnull }) "(${it.second} != NULL) && " else "") +
+                (if (AUX.tps[e.uni].let { it is Type.Union && it.isnull }) "(${it.second} != NULL) && " else "") +
                 "($ee.tag == ${e.tk_.num})"
             }
             Pair(it.first, pos)
         }
         is Expr.New  -> EXPRS.removeFirst().let {
             val ID  = "__tmp_" + e.hashCode().absoluteValue
-            val sup = XPS[e]!!.pos()
+            val sup = AUX.xps[e]!!.pos()
             val pre = """
                 $sup $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
@@ -360,7 +360,7 @@ fun code_fe (e: Expr) {
         }
         is Expr.UCons -> EXPRS.removeFirst().let {
             val ID  = "_tmp_" + e.hashCode().absoluteValue
-            val arg = if (TPS[e.arg] is Type.Unit) "" else (", ._${e.tk_.num} = " + it.second)
+            val arg = if (AUX.tps[e.arg] is Type.Unit) "" else (", ._${e.tk_.num} = " + it.second)
             val sup = "struct " + xp.toce()
             val pre = "$sup $ID = (($sup) { ${e.tk_.num} $arg });\n"
             when {
@@ -374,11 +374,11 @@ fun code_fe (e: Expr) {
             val f   = EXPRS.removeFirst()
             val snd =
                 if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
-                    TPS[e.arg]!!.output("", arg.second)
+                    AUX.tps[e.arg]!!.output("", arg.second)
                 } else {
                     f.second + "(" + arg.second + ")"
                 }
-            if (TPS[e] is Type.Unit) {
+            if (AUX.tps[e] is Type.Unit) {
                 Pair(f.first + arg.first + snd+";\n", "")
             } else {
                 Pair(f.first + arg.first, snd)
@@ -415,7 +415,7 @@ fun code_fs (s: Stmt) {
         is Stmt.Set  -> {
             val src = EXPRS.removeFirst()
             val dst = EXPRS.removeFirst()
-            val tp = TPS[s.dst]
+            val tp = AUX.tps[s.dst]
             dst.first + src.first +
                 (if (tp is Type.Unit) "" else (dst.second + " = ")) + src.second + ";\n"
         }
@@ -486,7 +486,7 @@ fun Stmt.code (): String {
             }
              */
         })
-    //TPS.forEach { println(it.first.first) }
+    //AUX.tps.forEach { println(it.first.first) }
     assert(EXPRS.size == 0)
     assert(CODE.size == 1)
     return ("""

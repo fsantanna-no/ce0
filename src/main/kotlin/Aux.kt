@@ -1,54 +1,56 @@
-val UPS = mutableMapOf<Any,Any>()
-val ENV = mutableMapOf<Any,Env>()
-val TPS = mutableMapOf<Expr,Type>()
-val XPS = mutableMapOf<Expr,Type>()  // needed b/c of TCons/UCons
-val SCP = mutableMapOf<Type.Ptr,String?>()
+object AUX {
+    val ups = mutableMapOf<Any,Any>()
+    val env = mutableMapOf<Any,Env>()
+    val tps = mutableMapOf<Expr,Type>()
+    val xps = mutableMapOf<Expr,Type>()  // needed b/c of TCons/UCons
+    val scp = mutableMapOf<Type.Ptr,String?>()
+}
 
 data class Env (val s: Stmt.Var, val prv: Env?)
 
 fun aux (s: Stmt) {
-    UPS.clear()
-    ENV.clear()
-    TPS.clear()
-    XPS.clear()
+    AUX.ups.clear()
+    AUX.env.clear()
+    AUX.tps.clear()
+    AUX.xps.clear()
     s.aux(null, null)
 }
 
 private
 fun ups_add (v: Any, up: Any?) {
     if (up == null) return
-    //assert(UPS[v] == null)    // fails b/c of expands
-    UPS[v] = up
+    //assert(AUX.ups[v] == null)    // fails b/c of expands
+    AUX.ups[v] = up
 }
 
 private
 fun env_add (v: Any, env: Env?) {
     if (env == null) return
-    assert(ENV[v] == null)
-    ENV[v] = env
+    assert(AUX.env[v] == null)
+    AUX.env[v] = env
 }
 
 private
 fun xps_add (e: Expr, tp: Type) {
-    //assert(XPS[e] == null)    // fails b/c of expands
-    XPS[e] = tp
+    //assert(AUX.xps[e] == null)    // fails b/c of expands
+    AUX.xps[e] = tp
 }
 
 fun Type.Ptr.scp (): String? {
-    return this.scope ?: SCP[this]  // use explicit pre calculated this.scope for call args
+    return this.scope ?: AUX.scp[this]  // use explicit pre calculated this.scope for call args
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 fun Any.ups_tolist (): List<Any> {
     return when {
-        (UPS[this] == null) -> emptyList()
-        else -> UPS[this]!!.let { listOf(it) + it.ups_tolist() }
+        (AUX.ups[this] == null) -> emptyList()
+        else -> AUX.ups[this]!!.let { listOf(it) + it.ups_tolist() }
     }
 }
 
 fun Any.ups_first (f: (Any)->Boolean): Any? {
-    val up = UPS[this]
+    val up = AUX.ups[this]
     return when {
         (up == null) -> null
         f(up) -> up
@@ -66,18 +68,7 @@ fun Any.env_first (f: (Stmt)->Boolean): Stmt? {
             else -> aux(env.prv)
         }
     }
-    return aux (ENV[this])
-}
-
-fun Any.env_all (f: (Stmt)->Boolean): Set<Stmt> {
-    fun aux (env: Env?): Set<Stmt> {
-        return when {
-            (env == null) -> emptySet()
-            f(env.s) -> setOf(env.s) + aux(env.prv)
-            else -> aux(env.prv)
-        }
-    }
-    return aux (ENV[this])
+    return aux (AUX.env[this])
 }
 
 fun Any.env (id: String): Stmt.Var? {
@@ -108,18 +99,18 @@ fun Type.up (up: Any): Type {
 }
 
 fun Expr.tps_add () {
-    assert(TPS[this] == null)
-    TPS[this] = try {
+    assert(AUX.tps[this] == null)
+    AUX.tps[this] = try {
         when (this) {
             is Expr.Unit  -> Type.Unit(this.tk_).up(this)
             is Expr.Nat   -> Type.Nat(this.tk_).up(this)
-            is Expr.Upref -> TPS[this.pln]!!.let { Type.Ptr(this.tk_,null,it).up(it) }
-            is Expr.Dnref -> (TPS[this.ptr] as Type.Ptr).pln
-            is Expr.TCons -> Type.Tuple(this.tk_, this.arg.map{TPS[it]!!}.toTypedArray()).up(this)
-            is Expr.UCons -> Type.UCons(this.tk_, TPS[this.arg]!!).up(this)
-            is Expr.New   -> TPS[this.arg]!!
+            is Expr.Upref -> AUX.tps[this.pln]!!.let { Type.Ptr(this.tk_,null,it).up(it) }
+            is Expr.Dnref -> (AUX.tps[this.ptr] as Type.Ptr).pln
+            is Expr.TCons -> Type.Tuple(this.tk_, this.arg.map{AUX.tps[it]!!}.toTypedArray()).up(this)
+            is Expr.UCons -> Type.UCons(this.tk_, AUX.tps[this.arg]!!).up(this)
+            is Expr.New   -> AUX.tps[this.arg]!!
             is Expr.Call  -> {
-                TPS[this.f].let {
+                AUX.tps[this.f].let {
                     when (it) {
                         // scope of output is tested in the call through XP
                         // here, just returns the "top" scope to succeed
@@ -131,8 +122,8 @@ fun Expr.tps_add () {
             }
             is Expr.Func  -> this.type
             is Expr.UPred -> Type.Nat(Tk.Str(TK.XNAT, this.tk.lin, this.tk.col, "int")).up(this)
-            is Expr.TDisc -> (TPS[this.tup] as Type.Tuple).vec[this.tk_.num-1].up(this)
-            is Expr.UDisc -> (TPS[this.uni] as Type.Union).let {
+            is Expr.TDisc -> (AUX.tps[this.tup] as Type.Tuple).vec[this.tk_.num-1].up(this)
+            is Expr.UDisc -> (AUX.tps[this.uni] as Type.Union).let {
                 if (this.tk_.num == 0) {
                     assert(it.isrec()) { "bug found" }
                     Type_Unit(this.tk).up(this)
@@ -157,7 +148,7 @@ fun Type.aux (up: Any) {
     fun up (tp: Type.Ptr): String? {
         var cur: Type = tp
         while (true) {
-            val nxt = UPS[cur]
+            val nxt = AUX.ups[cur]
             when {
                 (cur is Type.Ptr && cur.scope!=null) -> return cur.scope!!
                 (nxt == null) -> return null
@@ -174,7 +165,7 @@ fun Type.aux (up: Any) {
         is Type.Union -> this.vec.forEach { it.aux(this) }
         is Type.UCons -> this.arg.aux(this)
         is Type.Func  -> { this.inp.aux(this) ; this.out.aux(this) }
-        is Type.Ptr   -> { SCP[this]=up(this) ; this.pln.aux(this) }
+        is Type.Ptr   -> { AUX.scp[this]=up(this) ; this.pln.aux(this) }
     }
 }
 
@@ -224,7 +215,7 @@ fun Expr.aux (up: Any, env: Env?, xp: Type) {
         is Expr.UPred -> this.uni.aux(this, env, Type_Any(this.tk))
         is Expr.Call  -> {
             this.f.aux(this, env, Type_Any(this.tk))
-            val xp2 = TPS[this.f]!!.let { it.keepAnyNat{it} }
+            val xp2 = AUX.tps[this.f]!!.let { it.keepAnyNat{it} }
             this.arg.aux(this, env, if (xp2 is Type.Func) xp2.keepAnyNat{ xp2.inp } else Type_Any(this.tk))
         }
         is Expr.Func  -> {
@@ -246,7 +237,7 @@ fun Stmt.aux (up: Any?, env: Env?): Env? {
         }
         is Stmt.Set -> {
             this.dst.aux(this, env, Type_Any(this.tk))
-            this.src.aux(this, env, TPS[this.dst]!!)
+            this.src.aux(this, env, AUX.tps[this.dst]!!)
             env
         }
         is Stmt.Call -> { this.call.aux(this, env, Type_Any(this.tk)) ; env }
