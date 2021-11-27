@@ -107,7 +107,7 @@ fun Type.Union.expand (): Array<Type> {
     return this.vec.map { aux(it, 1) }.toTypedArray()
 }
 
-// Boolean: absolute (@xxx), parameter (@1)
+// <lvl,abs,depth>
 fun Type.Ptr.scopeDepth (): Triple<Int,Boolean,Int>? {
     // Offset of @N (max) of all crossing functions:
     //  func /()->() {              // +1

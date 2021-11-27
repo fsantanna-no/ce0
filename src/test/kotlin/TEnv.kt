@@ -588,8 +588,8 @@ class TEnv {
             var f: /()@1->()
             set f = func /()->() {}
         """.trimIndent())
-        //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
-        assert(out == "OK") { out }
+        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        //assert(out == "OK") { out }
     }
     @Test
     fun e11_func_err () {

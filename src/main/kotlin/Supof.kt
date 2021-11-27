@@ -57,7 +57,7 @@ fun Type.isSupOf_ (sub: Type, depth: Boolean, ups1: List<Type.Union>, ups2: List
                 // (dsub.third == 0):           globals as source are always ok
                 ((dthis.second==dsub.second || dthis.first==dsub.first || dsub.third==0) && dthis.third>=dsub.third)
             } else {
-                this.scp() == sub.scp()
+                this.scope == sub.scope // comparing func prototypes does not depend on scope calculation
             }
             ok && this.pln.isSupOf_(sub.pln,depth,ups1,ups2)
         }
