@@ -14,9 +14,9 @@ fun check_01 (s: Stmt) {
             is Stmt.Set -> {
                 val dst = TPS[s.dst]!!
                 val src = TPS[s.src]!!
+                //println("SET (${s.tk.lin}): ${dst.tostr()} = ${src.tostr()}")
+                //println(s.dst)
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
-                    //println(dst.tostr())
-                    //println(src.tostr())
                     val str = if (s.dst is Expr.Var && s.dst.tk_.str=="_ret_") "return" else "assignment"
                     "invalid $str : type mismatch"
                 }
@@ -159,7 +159,7 @@ fun check_02 (s: Stmt) {
                         .mapIndexed { i,(_,l) -> l.map { Pair((i+1),it.second) } }
                         .flatten()
                         //.let { it } // List<Pair<Int, Type.Ptr>>
-                    sorted.forEach { println(it.first.toString() + ": " + it.second.tostr()) }
+                    //println("SORTED") ; sorted.forEach { println(it.first.toString() + ": " + it.second.tostr()) }
 
                     // arg2 = scope in ptrs inside args are now increasing numbers (@1,@2,...)
                     val arg2 = TPS[e.arg]!!.map2 { ptr ->
@@ -175,27 +175,20 @@ fun check_02 (s: Stmt) {
                             Type.Ptr(ptr.tk_, "@"+idx, ptr.pln)
                         }
                     }
-                    println(xp2.tostr())
-                    println(arg2.tostr())
                     Pair(xp2,arg2)
                 }
-                val inp = when (tp) {
-                    is Type.Func -> tp.inp.map { if (it !is Type.Ptr || it.scope!=null) it else Type.Ptr(it.tk_, "@1", it.pln) }
-                    is Type.Nat  -> tp
+                val (inp,out) = when (tp) {
+                    is Type.Func -> Pair(tp.inp,tp.out)
+                    is Type.Nat  -> Pair(tp,tp)
                     else -> error("impossible case")
                 }
+                //println("INP, ARG2")
                 //println(inp.tostr())
                 //println(arg2.tostr())
-                All_assert_tk(e.f.tk, inp.isSupOf(arg2)) {
-                    "invalid call : type mismatch"
-                }
-
-                val out = when (tp) {
-                    is Type.Func -> tp.out.map { if (it !is Type.Ptr) it else Type.Ptr(it.tk_, "@1", it.pln) }
-                    is Type.Nat  -> tp
-                    else -> error("impossible case")
-                }
-                All_assert_tk(e.f.tk, xp2.isSupOf(out)) {
+                //println("XP2, OUT")
+                //println(xp2.tostr())
+                //println(out.tostr())
+                All_assert_tk(e.f.tk, inp.isSupOf(arg2) && xp2.isSupOf(out)) {
                     "invalid call : type mismatch"
                 }
             }

@@ -109,28 +109,38 @@ fun Type.Union.expand (): Array<Type> {
 
 // Boolean: absolute (@xxx), parameter (@1)
 fun Type.Ptr.scopeDepth (): Triple<Int,Boolean,Int>? {
+    // Offset of @N (max) of all crossing functions:
+    //  func /()->() {              // +1
+    //      func [/()@1,/()@2] {    // +2
+    //          ...                 // off=3
     fun off (ups: List<Any>): Int {
-        return ups     // offset of @N (max) of all crossing functions
+        return ups
             .filter { it is Expr.Func }
             .map {
                 (it as Expr.Func).type.flatten().filter { it is Type.Ptr }
-                    .map { (it as Type.Ptr).scope }
-                    .map { (if (it==null) "@1" else it).drop(1).toIntOrNull() }
+                    .map { (it as Type.Ptr).scp()!!.drop(1).toIntOrNull() }
                     .filterNotNull()
                     .maxOrNull() ?: 0
             }
             .sum()
     }
+
+    // Level of function nesting:
+    //  func ... {
+    //      ...             // lvl=1
+    //      func ... {
+    //          ...         // lvl=1
+    val lvl = this.ups_tolist().filter { it is Expr.Func }.count()
     // dropWhile(Type).drop(1) so that prototype skips up func
     //val lvl = this.ups_tolist().dropWhile { it is Type }.drop(1).filter { it is Expr.Func }.count()
-    val lvl = this.ups_tolist().filter { it is Expr.Func }.count()
-    return when (this.scope) {
+
+    return when (this.scp()) {
         null -> Triple(lvl, true, this.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
         "@global" -> Triple(lvl,true,0)
         else -> {
-            val num = this.scope.drop(1).toIntOrNull()
+            val num = this.scp()!!.drop(1).toIntOrNull()
             if (num == null) {
-                val blk = this.ups_first { it is Stmt.Block && it.scope == this.scope }
+                val blk = this.ups_first { it is Stmt.Block && it.scope==this.scp() }
                 return if (blk == null) null else {
                     Triple(lvl, true, 1 + blk.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
                 }

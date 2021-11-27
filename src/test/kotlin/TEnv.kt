@@ -588,7 +588,8 @@ class TEnv {
             var f: /()@1->()
             set f = func /()->() {}
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out == "OK") { out }
     }
     @Test
     fun e11_func_err () {
@@ -932,14 +933,14 @@ class TEnv {
     @Test
     fun g09_ptr_arg_err () {
         val out = inp2env("""
-            var f: _int -> /_int @1
-            set f = func _int -> /_int @1 {
-                var ptr: /_int @1
+            var f: () -> /() @1
+            set f = func () -> /() @1 {
+                var ptr: /() @1
                 set ptr = arg   -- err: type mismatch
                 return ptr
             }
         """.trimIndent())
-        assert(out == "ERR") { out }
+        assert(out == "(ln 4, col 13): invalid assignment : type mismatch") { out }
     }
     @Test
     fun g10_ptr_out_err () {
@@ -956,18 +957,19 @@ class TEnv {
     @Test
     fun g11_ptr_func_err () {
         val out = inp2env("""
-            var v: _int
-            set v = _10
-            var f : () -> /_int
-            set f = func () -> /_int {
-                return /v
-            }
-            var p: /_int
+            var p: /()
             {
-                set p = f ()    // err
+                var v: ()
+                var f : () -> /()
+                set f = func () -> /() {
+                    return /v       -- err: /v may not be at expected @1
+                }
+                {
+                    set p = f ()    -- p=@1 is smaller than /v
+                }
             }
         """.trimIndent())
-        assert(out == "ERR") { out }
+        assert(out == "(ln 6, col 9): invalid return : type mismatch") { out }
     }
     @Test
     fun g11_ptr_func_ok () {
@@ -988,22 +990,6 @@ class TEnv {
         assert(out == "OK") { out }
     }
     @Test
-    fun g12_ptr_func () {
-        val out = inp2env("""
-            var v: _int
-            set v = _10
-            var f : /_int -> /_int
-            set f = func /_int -> /_int {
-                return /v
-            }
-            var p: /_int
-            {
-                set p = f (/v)
-            }
-        """.trimIndent())
-        assert(out == "TODO: estou em duvida") { out }
-    }
-    @Test
     fun g13_ptr_func () {
         val out = inp2env("""
             var v: /_int
@@ -1013,6 +999,81 @@ class TEnv {
             }
         """.trimIndent())
         assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
+    }
+    @Test
+    fun g14_ptr_func_err () {
+        val out = inp2env("""
+            var f : /() -> /()
+            set f = func /() -> /() {
+                return arg
+            }
+            var p: /()
+            {
+                var x: /()
+                set p = f x     -- err: call p/x have diff scopes (@1 will be x which is greater)
+            }
+        """.trimIndent())
+        assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }
+    }
+    @Test
+    fun g15_ptr_func_ok () {
+        val out = inp2env("""
+            var f : /() -> /()
+            set f = func /() -> /() {
+                return arg
+            }
+            var p: /()
+            {
+                var x: /()
+                set x = f p     -- ok: call p/x have diff scopes (@1 will be x which is greater)
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun g16_ptr_func_ok () {
+        val out = inp2env("""
+            var f : /()@1 -> /()@2
+            set f = func /()@1 -> /()@2 {
+                return arg
+            }
+            var p: /()
+            {
+                var x: /()
+                set x = f p     -- ok: call p/x have diff scopes (@1 will be x which is greater)
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun g17_ptr_func_err () {
+        val out = inp2env("""
+            var f : /()@2 -> /()@1
+            set f = func /()@2 -> /()@1 {
+                return arg     -- err
+            }
+            var p: /()
+            {
+                var x: /()
+                set x = f p
+            }
+        """.trimIndent())
+        assert(out == "(ln 3, col 5): invalid return : type mismatch") { out }
+    }
+    @Test
+    fun g18_ptr_func_err () {
+        val out = inp2env("""
+            var f : /()@1 -> /()@2
+            set f = func /()@1 -> /()@2 {
+                return arg
+            }
+            var p: /()
+            {
+                var x: /()
+                set p = f x     -- err: @2=p <= @1=x (false) 
+            }
+        """.trimIndent())
+        assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }
     }
 
     // POINTERS - TUPLE - TYPE

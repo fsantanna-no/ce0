@@ -2,6 +2,7 @@ val UPS = mutableMapOf<Any,Any>()
 val ENV = mutableMapOf<Any,Env>()
 val TPS = mutableMapOf<Expr,Type>()
 val XPS = mutableMapOf<Expr,Type>()  // needed b/c of TCons/UCons
+val SCP = mutableMapOf<Type.Ptr,String?>()
 
 data class Env (val s: Stmt.Var, val prv: Env?)
 
@@ -31,6 +32,10 @@ private
 fun xps_add (e: Expr, tp: Type) {
     //assert(XPS[e] == null)    // fails b/c of expands
     XPS[e] = tp
+}
+
+fun Type.Ptr.scp (): String? {
+    return this.scope ?: SCP[this]  // respect this.scope if set (b/c of calculated args)
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -145,12 +150,31 @@ fun Expr.tps_add () {
 private
 fun Type.aux (up: Any) {
     ups_add(this, up)
+
+    // Derived scope from pointers above myself:
+    // /(/x)@a      --> /x is also @a
+    // func /x->()  --> /x is @1 (default)
+    fun up (tp: Type.Ptr): String? {
+        var cur: Type = tp
+        while (true) {
+            val nxt = UPS[cur]
+            when {
+                (cur is Type.Ptr && cur.scope!=null) -> return cur.scope!!
+                (nxt == null) -> return null
+                (nxt is Type.Func) -> return "@1"
+                (nxt is Stmt.Var && nxt.tk_.str=="_ret_") -> return "@1"
+                (nxt !is Type) -> return null
+                else -> cur = nxt
+            }
+        }
+    }
+
     when (this) {
         is Type.Tuple -> this.vec.forEach { it.aux(this) }
         is Type.Union -> this.vec.forEach { it.aux(this) }
         is Type.UCons -> this.arg.aux(this)
         is Type.Func  -> { this.inp.aux(this) ; this.out.aux(this) }
-        is Type.Ptr   -> this.pln.aux(this)
+        is Type.Ptr   -> { SCP[this]=up(this) ; this.pln.aux(this) }
     }
 }
 

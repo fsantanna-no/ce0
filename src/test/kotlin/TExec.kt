@@ -512,7 +512,7 @@ class TExec {
             var p: /_int; set p = f ()
             output std p\
         """.trimIndent())
-        assert(out == "10\n")
+        assert(out == "10\n") { out }
     }
     @Test
     fun i09_ptr_func_err () {
@@ -549,8 +549,10 @@ class TExec {
                 set ptr = arg
                 return ptr
             }
-            var v: _int; set v = _10
-            var p: /_int; set p = f /v
+            var v: _int
+            set v = _10
+            var p: /_int
+            set p = f /v
             output std p\
         """.trimIndent())
         assert(out == "10\n") { out }

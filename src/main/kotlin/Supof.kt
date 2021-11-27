@@ -47,18 +47,17 @@ fun Type.isSupOf_ (sub: Type, depth: Boolean, ups1: List<Type.Union>, ups2: List
         (this is Type.Unit && sub is Type.Unit) -> true
         (this is Type.Func && sub is Type.Func) -> (this.inp.isSupOf_(sub.inp,false,ups1,ups2) && sub.inp.isSupOf_(this.inp,false,ups1,ups2) && this.out.isSupOf_(sub.out,false,ups1,ups2) && sub.out.isSupOf_(this.out,false,ups1,ups2))
         (this is Type.Ptr && sub is Type.Ptr) -> {
-            //println("${this.scope} = ${this.scopeDepth()}")
-            //println("${sub.scope} = ${sub.scopeDepth()}")
-            //println(sub)
-            //println(UPS[sub])
+            //println("SUPOF ${this.tk.lin}: ${this.scp()}/${this.scopeDepth()} = ${sub.scp()}/${sub.scopeDepth()}")
+            //println(this)
             val ok = if (depth) {
                 val dthis = this.scopeDepth()!!
                 val dsub = sub.scopeDepth()!!
-                // @aaa = @1    // reject (true==false || false)
-                // only if are in the same function
-                ((dthis.second==dsub.second || dsub.second || dthis.first==dsub.first) && dthis.third>=dsub.third)
+                // (dthis.second==dsub.second): abs vs abs || rel vs rel // (no @aaa vs @1)
+                // (dthis.first==dsub.first):   unless @1=@aaa are in the same function (then always @1<=@aaa)
+                // (dsub.third == 0):           globals as source are always ok
+                ((dthis.second==dsub.second || dthis.first==dsub.first || dsub.third==0) && dthis.third>=dsub.third)
             } else {
-                (this.scope == sub.scope)
+                this.scp() == sub.scp()
             }
             ok && this.pln.isSupOf_(sub.pln,depth,ups1,ups2)
         }
