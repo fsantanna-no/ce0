@@ -153,7 +153,7 @@ fun check_02 (s: Stmt) {
                     val ptrs = all.filter { it is Type.Ptr }.map { (it as Type.Ptr).let { Pair(it.scopeDepth()!!,it) } }
                     // sorted = ptrs sorted by grouped depths, substitute depth by increasing index
                     val sorted = ptrs
-                        .groupBy  { it.first.third }
+                        .groupBy  { it.first.depth }
                         .toList()
                         .sortedBy { it.first }
                         .mapIndexed { i,(_,l) -> l.map { Pair((i+1),it.second) } }

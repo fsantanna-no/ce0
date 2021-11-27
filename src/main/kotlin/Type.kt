@@ -107,8 +107,9 @@ fun Type.Union.expand (): Array<Type> {
     return this.vec.map { aux(it, 1) }.toTypedArray()
 }
 
-// <lvl,abs,depth>
-fun Type.Ptr.scopeDepth (): Triple<Int,Boolean,Int>? {
+data class Scope (val level: Int, val isabs: Boolean, val depth: Int)
+
+fun Type.Ptr.scopeDepth (): Scope? {
     // Offset of @N (max) of all crossing functions:
     //  func /()->() {              // +1
     //      func [/()@1,/()@2] {    // +2
@@ -135,18 +136,18 @@ fun Type.Ptr.scopeDepth (): Triple<Int,Boolean,Int>? {
     //val lvl = this.ups_tolist().dropWhile { it is Type }.drop(1).filter { it is Expr.Func }.count()
 
     return when (this.scp()) {
-        null -> Triple(lvl, true, this.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
-        "@global" -> Triple(lvl,true,0)
+        null -> Scope(lvl, true, this.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
+        "@global" -> Scope(lvl,true,0)
         else -> {
             val num = this.scp()!!.drop(1).toIntOrNull()
             if (num == null) {
                 val blk = this.ups_first { it is Stmt.Block && it.scope==this.scp() }
                 return if (blk == null) null else {
-                    Triple(lvl, true, 1 + blk.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
+                    Scope(lvl, true, 1 + blk.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
                 }
             } else {
                 val n = this.ups_first { it is Expr.Func }.let { if (it==null) 0 else off(it.ups_tolist()) }
-                Triple(lvl, false, n+num)    // false = relative to function block
+                Scope(lvl, false, n+num)    // false = relative to function block
             }
         }
     }

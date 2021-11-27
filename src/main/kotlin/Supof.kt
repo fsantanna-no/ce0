@@ -52,10 +52,10 @@ fun Type.isSupOf_ (sub: Type, depth: Boolean, ups1: List<Type.Union>, ups2: List
             val ok = if (depth) {
                 val dthis = this.scopeDepth()!!
                 val dsub = sub.scopeDepth()!!
-                // (dthis.second==dsub.second): abs vs abs || rel vs rel // (no @aaa vs @1)
-                // (dthis.first==dsub.first):   unless @1=@aaa are in the same function (then always @1<=@aaa)
-                // (dsub.third == 0):           globals as source are always ok
-                ((dthis.second==dsub.second || dthis.first==dsub.first || dsub.third==0) && dthis.third>=dsub.third)
+                // (dthis.isbas==dsub.isabs): abs vs abs || rel vs rel // (no @aaa vs @1)
+                // (dthis.level==dsub.level): unless @1=@aaa are in the same function (then always @1<=@aaa)
+                // (dsub.depth == 0):         globals as source are always ok
+                ((dthis.isabs==dsub.isabs || dthis.level==dsub.level || dsub.depth==0) && dthis.depth>=dsub.depth)
             } else {
                 this.scope == sub.scope // comparing func prototypes does not depend on scope calculation
             }

@@ -35,7 +35,7 @@ fun xps_add (e: Expr, tp: Type) {
 }
 
 fun Type.Ptr.scp (): String? {
-    return this.scope ?: SCP[this]  // respect this.scope if set (b/c of calculated args)
+    return this.scope ?: SCP[this]  // use explicit pre calculated this.scope for call args
 }
 
 //////////////////////////////////////////////////////////////////////////////
