@@ -2,9 +2,9 @@ object AUX {
     // aux_01
     val ups = mutableMapOf<Any,Any>()
     val env = mutableMapOf<Any,Env>()
-    // aux_02
+    // aux_02: xps depend on tps // tps depend on xps (TCons/UCons)
     val tps = mutableMapOf<Expr,Type>()
-    val xps = mutableMapOf<Expr,Type>()  // needed b/c of TCons/UCons
+    val xps = mutableMapOf<Expr,Type>()  // needed to determine tps of
     val scp = mutableMapOf<Type.Ptr,String?>()
 }
 

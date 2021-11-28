@@ -16,6 +16,15 @@ fun check_01 (s: Stmt) {
 
         }
     }
+    fun fe (e: Expr) {
+        when (e) {
+            is Expr.Var -> {
+                All_assert_tk(e.tk, e.env() != null) {
+                    "undeclared variable \"${e.tk_.str}\""
+                }
+            }
+        }
+    }
     fun fs (s: Stmt) {
         when (s) {
             is Stmt.Set -> {
@@ -30,7 +39,7 @@ fun check_01 (s: Stmt) {
             }
         }
     }
-    s.visit(::fs, null, ::ft)
+    s.visit(::fs, ::fe, ::ft)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -56,11 +65,6 @@ fun Type.map2 (f: (Type)->Type): Type {
 fun check_02 (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
-            is Expr.Var -> {
-                All_assert_tk(e.tk, e.env()!=null) {
-                    "undeclared variable \"${e.tk_.str}\""
-                }
-            }
             is Expr.Upref -> {
                 var track = false   // start tracking count if crosses UDisc
                 var count = 1       // must remain positive after track (no uprefs)
@@ -97,10 +101,6 @@ fun check_02 (s: Stmt) {
                     All_assert_tk(e.tk, it is Type.Union) {
                         "invalid discriminator : type mismatch"
                     }
-                    val (MIN,MAX) = Pair(if (it.isrec()) 0 else 1, (it as Type.Union).vec.size)
-                    All_assert_tk(e.tk, MIN<=e.tk_.num && e.tk_.num<=MAX) {
-                        "invalid discriminator : out of bounds XXX" // TODO: remove check
-                    }
                 }
             }
             is Expr.TDisc -> {
@@ -114,17 +114,8 @@ fun check_02 (s: Stmt) {
                     }
                 }
             }
-            is Expr.TCons -> {
-                All_assert_tk(e.tk, e.arg.size == (AUX.tps[e] as Type.Tuple).vec.size) {
-                    "invalid constructor : out of bounds XXX" // TODO: remove check
-                }
-            }
             is Expr.UCons -> {
                 val xp = AUX.xps[e] as Type.Union
-                val (MIN, MAX) = Pair(if (xp.isnull) 0 else 1, xp.vec.size)
-                All_assert_tk(e.tk, MIN <= e.tk_.num && e.tk_.num <= MAX) {
-                    "invalid constructor : out of bounds XXX" // TODO: remove check
-                }
                 All_assert_tk(e.tk, e.tk_.num!=0 || AUX.tps[e.arg]!!.isSupOf(Type_Unit(e.tk))) {
                     "invalid constructor : type mismatch"
                 }
@@ -143,16 +134,16 @@ fun check_02 (s: Stmt) {
                 }
             }
             is Expr.Call -> {
-                val tp = AUX.tps[e.f]
-                All_assert_tk(e.f.tk, tp is Type.Func || tp is Type.Nat) {
+                val tp_ret = AUX.tps[e]!!
+                val tp_f   = AUX.tps[e.f]
+                val tp_arg = AUX.tps[e.arg]!!
+
+                All_assert_tk(e.f.tk, tp_f is Type.Func || tp_f is Type.Nat) {
                     "invalid call : not a function"
                 }
 
-                val xp = AUX.xps[e]!!
-                val arg = AUX.tps[e.arg]!!
-
                 // check scopes
-                val (xp2,arg2) = if (tp !is Type.Func) Pair(xp,arg) else {
+                val (xp2,arg2) = if (tp_f !is Type.Func) Pair(tp_ret,tp_arg) else {
                     // all = expected return + arguments
                     val all = (AUX.xps[e]!!.flatten() + AUX.tps[e.arg]!!.flatten())
                         //.filter { it !is Type.Func } // (ignore pointers in function types)
@@ -184,9 +175,9 @@ fun check_02 (s: Stmt) {
                     }
                     Pair(xp2,arg2)
                 }
-                val (inp,out) = when (tp) {
-                    is Type.Func -> Pair(tp.inp,tp.out)
-                    is Type.Nat  -> Pair(tp,tp)
+                val (inp,out) = when (tp_f) {
+                    is Type.Func -> Pair(tp_f.inp,tp_f.out)
+                    is Type.Nat  -> Pair(tp_f,tp_f)
                     else -> error("impossible case")
                 }
                 //println("INP, ARG2")
