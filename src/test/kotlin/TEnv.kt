@@ -14,10 +14,10 @@ class TEnv {
             var s = parser_stmts(all, Pair(TK.EOF,null))
             s = env_prelude(s)
             Aux_01_upsenvs(s)
-            check_01_notps(s)
-            Aux_02_tps(s)
-            check_02_noxps(s)
-            s.aux_03_xps()
+            check_01_no_scp_tps_xps(s)
+            Aux_03_tps(s)
+            check_02_no_xps(s)
+            s.aux_04_xps()
             check_03(s)
             return "OK"
         } catch (e: Throwable) {
@@ -31,7 +31,7 @@ class TEnv {
         lexer(all)
         var s = parser_stmts(all, Pair(TK.EOF,null))
         Aux_01_upsenvs(s)
-        Aux_02_tps(s)
+        Aux_03_tps(s)
         return s
     }
 

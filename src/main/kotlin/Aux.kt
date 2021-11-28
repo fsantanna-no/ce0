@@ -4,10 +4,9 @@ object AUX {
     // aux_01
     val ups = mutableMapOf<Any,Any>()
     val env = mutableMapOf<Any,Env>()
-    // aux_02: xps depend on tps // tps depend on xps (TCons/UCons)
-    val tps = mutableMapOf<Expr,Type>()
-    val xps = mutableMapOf<Expr,Type>()  // needed to determine tps of
     val scp = mutableMapOf<Type.Ptr,String?>()
+    val tps = mutableMapOf<Expr,Type>()
+    val xps = mutableMapOf<Expr,Type>()
 }
 
 fun Type.Ptr.scp (): String? {
@@ -171,13 +170,42 @@ fun Stmt.aux_01_upsenvs (up: Any?, env: Env?): Env? {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+fun ft (tp: Type) {
+    // Derived scope from pointers above myself:
+    // /(/x)@a      --> /x is also @a
+    // func /x->()  --> /x is @1 (default)
+    fun up (tp: Type.Ptr): String? {
+        var cur: Type = tp
+        while (true) {
+            val nxt = AUX.ups[cur]
+            when {
+                (cur is Type.Ptr && cur.scope!=null) -> return cur.scope!!
+                (nxt == null) -> return null
+                (nxt is Type.Func) -> return "@1"
+                (nxt is Stmt.Var && nxt.tk_.str=="_ret_") -> return "@1"
+                (nxt !is Type) -> return null
+                else -> cur = nxt
+            }
+        }
+    }
+    when (tp) {
+        is Type.Ptr -> AUX.scp[tp] = up(tp)
+    }
+}
+
+fun Aux_02_scp (s: Stmt) {
+    s.visit(null, null, ::ft)
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 private
 fun Type.up (up: Any): Type {
     ups_add(this, up)
     return this
 }
 
-fun Aux_02_tps (s: Stmt) {
+fun Aux_03_tps (s: Stmt) {
     fun fe (e: Expr) {
         AUX.tps[e] = when (e) {
             is Expr.Unit  -> Type.Unit(e.tk_).up(e)
@@ -246,12 +274,12 @@ fun Aux_02_tps (s: Stmt) {
 ///////////////////////////////////////////////////////////////////////////////
 
 private
-fun Expr.aux_03_xps (xp: Type) {
+fun Expr.aux_04_xps (xp: Type) {
     AUX.xps[this] = xp
     when (this) {
         is Expr.TCons -> {
             assert(xp is Type.Tuple && xp.vec.size==this.arg.size)
-            this.arg.forEachIndexed { i,e -> e.aux_03_xps((xp as Type.Tuple).vec[i]) }
+            this.arg.forEachIndexed { i,e -> e.aux_04_xps((xp as Type.Tuple).vec[i]) }
         }
         is Expr.UCons -> {
             assert(xp is Type.Union && xp.vec.size>=this.tk_.num)
@@ -259,51 +287,51 @@ fun Expr.aux_03_xps (xp: Type) {
                 (this.tk_.num == 0) -> Type_Unit(this.tk)
                 else -> (xp as Type.Union).expand()[this.tk_.num - 1]
             }
-            this.arg.aux_03_xps(xp2)
+            this.arg.aux_04_xps(xp2)
         }
-        is Expr.New -> this.arg.aux_03_xps(xp)
+        is Expr.New -> this.arg.aux_04_xps(xp)
         is Expr.Dnref -> {
-            this.ptr.aux_03_xps(xp.keepAnyNat {
+            this.ptr.aux_04_xps(xp.keepAnyNat {
                 Type.Ptr(Tk.Chr(TK.CHAR, this.tk.lin, this.tk.col, '\\'), null, xp)
             })
         }
         is Expr.Upref -> {
-            this.pln.aux_03_xps(xp.keepAnyNat { (xp as Type.Ptr).pln })
+            this.pln.aux_04_xps(xp.keepAnyNat { (xp as Type.Ptr).pln })
         }
-        is Expr.TDisc -> this.tup.aux_03_xps(Type_Any(this.tk))
-        is Expr.UDisc -> this.uni.aux_03_xps(Type_Any(this.tk))
-        is Expr.UPred -> this.uni.aux_03_xps(Type_Any(this.tk))
+        is Expr.TDisc -> this.tup.aux_04_xps(Type_Any(this.tk))
+        is Expr.UDisc -> this.uni.aux_04_xps(Type_Any(this.tk))
+        is Expr.UPred -> this.uni.aux_04_xps(Type_Any(this.tk))
         is Expr.Call  -> {
-            this.f.aux_03_xps(Type_Any(this.tk))
+            this.f.aux_04_xps(Type_Any(this.tk))
             val xp2 = AUX.tps[this.f]!!.let { it.keepAnyNat{it} }
             val arg = when (xp2) {
                 is Type.Func -> xp2.keepAnyNat{ xp2.inp }
                 is Type.Nat  -> xp2
                 else -> error("impossible case")
             }
-            this.arg.aux_03_xps(arg)
+            this.arg.aux_04_xps(arg)
         }
-        is Expr.Func  -> this.block.aux_03_xps()
+        is Expr.Func  -> this.block.aux_04_xps()
     }
 }
 
-fun Stmt.aux_03_xps () {
+fun Stmt.aux_04_xps () {
     when (this) {
         is Stmt.Set -> {
-            this.dst.aux_03_xps(Type_Any(this.tk))
-            this.src.aux_03_xps(AUX.tps[this.dst]!!)
+            this.dst.aux_04_xps(Type_Any(this.tk))
+            this.src.aux_04_xps(AUX.tps[this.dst]!!)
         }
-        is Stmt.Call -> this.call.aux_03_xps(Type_Any(this.tk))
+        is Stmt.Call -> this.call.aux_04_xps(Type_Any(this.tk))
         is Stmt.Seq -> {
-            this.s1.aux_03_xps()
-            this.s2.aux_03_xps()
+            this.s1.aux_04_xps()
+            this.s2.aux_04_xps()
         }
         is Stmt.If -> {
-            this.tst.aux_03_xps(Type_Nat(this.tk,"int"))
-            this.true_.aux_03_xps()
-            this.false_.aux_03_xps()
+            this.tst.aux_04_xps(Type_Nat(this.tk,"int"))
+            this.true_.aux_04_xps()
+            this.false_.aux_04_xps()
         }
-        is Stmt.Loop  -> this.block.aux_03_xps()
-        is Stmt.Block -> this.body.aux_03_xps()
+        is Stmt.Loop  -> this.block.aux_04_xps()
+        is Stmt.Block -> this.body.aux_04_xps()
     }
 }

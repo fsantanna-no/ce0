@@ -1,4 +1,4 @@
-fun check_01_notps (s: Stmt) {
+fun check_01_no_scp_tps_xps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
             is Type.Ptr -> {
@@ -61,7 +61,7 @@ fun check_01_notps (s: Stmt) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-fun check_02_noxps (s: Stmt) {
+fun check_02_no_xps (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.UCons -> {
