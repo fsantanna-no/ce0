@@ -83,14 +83,6 @@ fun Aux_01_upsenvs (s: Stmt) {
 }
 
 private
-fun Any.ups_tolist (): List<Any> {
-    return when {
-        (AUX.ups[this] == null) -> emptyList()
-        else -> AUX.ups[this]!!.let { listOf(it) + it.ups_tolist() }
-    }
-}
-
-private
 fun Type.aux_01_upsenvs (up: Any) {
     ups_add(this, up)
 

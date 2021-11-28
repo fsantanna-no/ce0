@@ -1,4 +1,4 @@
-fun check_01_varscope (s: Stmt) {
+fun check_01_notps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
             is Type.Ptr -> {
@@ -23,14 +23,45 @@ fun check_01_varscope (s: Stmt) {
                     "undeclared variable \"${e.tk_.str}\""
                 }
             }
+            is Expr.Upref -> {
+                var track = false   // start tracking count if crosses UDisc
+                var count = 1       // must remain positive after track (no uprefs)
+                for (ee in e.flatten()) {
+                    count = when (ee) {
+                        is Expr.UDisc -> { track=true ; 1 }
+                        is Expr.Dnref -> count+1
+                        is Expr.Upref -> count-1
+                        else -> count
+                    }
+                }
+                All_assert_tk(e.tk, !track || count>0) {
+                    "invalid operand to `/´ : union discriminator"
+                }
+            }
         }
     }
-    s.visit(null, ::fe, ::ft)
+    fun fs (s: Stmt) {
+        when (s) {
+            is Stmt.Var -> {
+                val dcl = s.env(s.tk_.str)
+                All_assert_tk(s.tk, dcl == null || dcl.tk_.str in arrayOf("arg", "_ret_")) {
+                    "invalid declaration : \"${s.tk_.str}\" is already declared (ln ${dcl!!.tk.lin})"
+                }
+            }
+            is Stmt.Ret -> {
+                val ok = s.ups_first { it is Expr.Func } != null
+                All_assert_tk(s.tk, ok) {
+                    "invalid return : no enclosing function"
+                }
+            }
+        }
+    }
+    s.visit(::fs, ::fe, ::ft)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-fun check_02_supof (s: Stmt) {
+fun check_02_noxps (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.UCons -> {
@@ -38,10 +69,22 @@ fun check_02_supof (s: Stmt) {
                     "invalid constructor : type mismatch"
                 }
             }
+            is Expr.UPred -> {
+                AUX.tps[e.uni]!!.let {
+                    All_assert_tk(e.tk, it is Type.Union) {
+                        "invalid discriminator : type mismatch"
+                    }
+                }
+            }
         }
     }
     fun fs (s: Stmt) {
         when (s) {
+            is Stmt.If -> {
+                All_assert_tk(s.tk, AUX.tps[s.tst] is Type.Nat) {
+                    "invalid condition : type mismatch"
+                }
+            }
             is Stmt.Set -> {
                 val dst = AUX.tps[s.dst]!!
                 val src = AUX.tps[s.src]!!
@@ -80,34 +123,6 @@ fun Type.map2 (f: (Type)->Type): Type {
 fun check_03 (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
-            is Expr.Upref -> {
-                var track = false   // start tracking count if crosses UDisc
-                var count = 1       // must remain positive after track (no uprefs)
-                for (ee in e.flatten()) {
-                    count = when (ee) {
-                        is Expr.UDisc -> { track=true ; 1 }
-                        is Expr.Dnref -> count+1
-                        is Expr.Upref -> count-1
-                        else -> count
-                    }
-                }
-                All_assert_tk(e.tk, !track || count>0) {
-                    "invalid operand to `/´ : union discriminator"
-                }
-            }
-            is Expr.UDisc -> {
-            }
-            is Expr.UPred -> {
-                AUX.tps[e.uni]!!.let {
-                    All_assert_tk(e.tk, it is Type.Union) {
-                        "invalid discriminator : type mismatch"
-                    }
-                    val (MIN,MAX) = Pair(if (it.isrec()) 0 else 1, (it as Type.Union).vec.size)
-                    All_assert_tk(e.tk, MIN<=e.tk_.num && e.tk_.num<=MAX) {
-                        "invalid discriminator : out of bounds XXX" // TODO: remove check
-                    }
-                }
-            }
             is Expr.UCons -> {
                 val xp2 = AUX.xps[e] as Type.Union
                 if (xp2.isrec()) {
@@ -128,10 +143,6 @@ fun check_03 (s: Stmt) {
                 val tp_ret = AUX.tps[e]!!
                 val tp_f   = AUX.tps[e.f]
                 val tp_arg = AUX.tps[e.arg]!!
-
-                All_assert_tk(e.f.tk, tp_f is Type.Func || tp_f is Type.Nat) {
-                    "invalid call : not a function"
-                }
 
                 // check scopes
                 val (xp2,arg2) = if (tp_f !is Type.Func) Pair(tp_ret,tp_arg) else {
@@ -183,26 +194,5 @@ fun check_03 (s: Stmt) {
             }
         }
     }
-    fun fs (s: Stmt) {
-        when (s) {
-            is Stmt.Var -> {
-                val dcl = s.env(s.tk_.str)
-                All_assert_tk(s.tk, dcl == null || dcl.tk_.str in arrayOf("arg", "_ret_")) {
-                    "invalid declaration : \"${s.tk_.str}\" is already declared (ln ${dcl!!.tk.lin})"
-                }
-            }
-            is Stmt.If -> {
-                All_assert_tk(s.tk, AUX.tps[s.tst] is Type.Nat) {
-                    "invalid condition : type mismatch"
-                }
-            }
-            is Stmt.Ret -> {
-                val ok = s.ups_first { it is Expr.Func } != null
-                All_assert_tk(s.tk, ok) {
-                    "invalid return : no enclosing function"
-                }
-            }
-        }
-    }
-    s.visit(::fs, ::fe, null)
+    s.visit(null, ::fe, null)
 }

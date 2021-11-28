@@ -126,6 +126,13 @@ fun Type.Ptr.toScope (): Scope? {
             .sum()
     }
 
+    fun Any.ups_tolist (): List<Any> {
+        return when {
+            (AUX.ups[this] == null) -> emptyList()
+            else -> AUX.ups[this]!!.let { listOf(it) + it.ups_tolist() }
+        }
+    }
+
     // Level of function nesting:
     //  func ... {
     //      ...             // lvl=1

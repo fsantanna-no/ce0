@@ -14,9 +14,9 @@ class TEnv {
             var s = parser_stmts(all, Pair(TK.EOF,null))
             s = env_prelude(s)
             Aux_01_upsenvs(s)
-            check_01_varscope(s)
+            check_01_notps(s)
             Aux_02_tps(s)
-            check_02_supof(s)
+            check_02_noxps(s)
             s.aux_03_xps()
             check_03(s)
             return "OK"
