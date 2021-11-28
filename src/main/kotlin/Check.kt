@@ -108,18 +108,9 @@ fun check_03 (s: Stmt) {
                     }
                 }
             }
-            is Expr.TCons -> {
-                All_assert_tk(e.tk, e.arg.size == (AUX.tps[e] as Type.Tuple).vec.size) {
-                    "invalid constructor : out of bounds XXX" // TODO: remove check
-                }
-            }
             is Expr.UCons -> {
-                val xp = AUX.xps[e] as Type.Union
-                val (MIN, MAX) = Pair(if (xp.isnull) 0 else 1, xp.vec.size)
-                All_assert_tk(e.tk, MIN <= e.tk_.num && e.tk_.num <= MAX) {
-                    "invalid constructor : out of bounds XXX" // TODO: remove check
-                }
-                if (xp.isrec()) {
+                val xp2 = AUX.xps[e] as Type.Union
+                if (xp2.isrec()) {
                     All_assert_tk(e.tk, (e.tk_.num==0) || AUX.ups[e] is Expr.New) {
                         "invalid constructor : expected `new`"
                     }

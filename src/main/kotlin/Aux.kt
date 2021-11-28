@@ -10,14 +10,6 @@ object AUX {
 
 data class Env (val s: Stmt.Var, val prv: Env?)
 
-fun Aux_01_upsenvs (s: Stmt) {
-    AUX.ups.clear()
-    AUX.env.clear()
-    AUX.tps.clear()
-    AUX.xps.clear()
-    s.aux_01_upsenvs(null, null)
-}
-
 fun Aux_03_xps (s: Stmt) {
     s.aux_03_xps()
 }
@@ -47,13 +39,6 @@ fun Type.Ptr.scp (): String? {
 }
 
 //////////////////////////////////////////////////////////////////////////////
-
-fun Any.ups_tolist (): List<Any> {
-    return when {
-        (AUX.ups[this] == null) -> emptyList()
-        else -> AUX.ups[this]!!.let { listOf(it) + it.ups_tolist() }
-    }
-}
 
 fun Any.ups_first (f: (Any)->Boolean): Any? {
     val up = AUX.ups[this]
@@ -99,9 +84,19 @@ fun env_prelude (s: Stmt): Stmt {
 
 //////////////////////////////////////////////////////////////////////////////
 
-fun Type.up (up: Any): Type {
-    ups_add(this, up)
-    return this
+fun Aux_01_upsenvs (s: Stmt) {
+    AUX.ups.clear()
+    AUX.env.clear()
+    AUX.tps.clear()
+    AUX.xps.clear()
+    s.aux_01_upsenvs(null, null)
+}
+
+fun Any.ups_tolist (): List<Any> {
+    return when {
+        (AUX.ups[this] == null) -> emptyList()
+        else -> AUX.ups[this]!!.let { listOf(it) + it.ups_tolist() }
+    }
 }
 
 private
@@ -193,6 +188,12 @@ fun Stmt.aux_01_upsenvs (up: Any?, env: Env?): Env? {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+private
+fun Type.up (up: Any): Type {
+    ups_add(this, up)
+    return this
+}
+
 fun Aux_02_tps (s: Stmt) {
     fun fe (e: Expr) {
         AUX.tps[e] = when (e) {
@@ -266,28 +267,25 @@ fun Expr.aux_03_xps (xp: Type) {
     xps_add(this, xp)
     when (this) {
         is Expr.TCons -> {
-            this.arg.forEachIndexed { i,e ->
-                val xp2 = if (xp !is Type.Tuple) Type_Any(this.tk) else if (xp.vec.size>i) xp.vec[i] else Type_Any(this.tk)
-                e.aux_03_xps(xp2)
-            }
+            assert(xp is Type.Tuple && xp.vec.size==this.arg.size)
+            this.arg.forEachIndexed { i,e -> e.aux_03_xps((xp as Type.Tuple).vec[i]) }
         }
         is Expr.UCons -> {
+            assert(xp is Type.Union && xp.vec.size>=this.tk_.num)
             val xp2 = when {
-                (xp !is Type.Union) -> Type_Any(this.tk)
                 (this.tk_.num == 0) -> Type_Unit(this.tk)
-                (xp.vec.size < this.tk_.num) -> Type_Any(this.tk)
-                else -> xp.expand()[this.tk_.num - 1]
+                else -> (xp as Type.Union).expand()[this.tk_.num - 1]
             }
             this.arg.aux_03_xps(xp2)
         }
         is Expr.New -> this.arg.aux_03_xps(xp)
         is Expr.Dnref -> {
-            val xp2 = if (xp is Type.Ptr) Type_Any(this.tk) else xp.keepAnyNat { Type.Ptr(Tk.Chr(TK.CHAR, this.tk.lin, this.tk.col, '\\'), null, xp) }
-            this.ptr.aux_03_xps(xp2)
+            this.ptr.aux_03_xps(xp.keepAnyNat {
+                Type.Ptr(Tk.Chr(TK.CHAR, this.tk.lin, this.tk.col, '\\'), null, xp)
+            })
         }
         is Expr.Upref -> {
-            val xp2 = if (xp !is Type.Ptr) Type_Any(this.tk) else xp.keepAnyNat { xp.pln }
-            this.pln.aux_03_xps(xp2)
+            this.pln.aux_03_xps(xp.keepAnyNat { (xp as Type.Ptr).pln })
         }
         is Expr.TDisc -> this.tup.aux_03_xps(Type_Any(this.tk))
         is Expr.UDisc -> this.uni.aux_03_xps(Type_Any(this.tk))
@@ -295,7 +293,12 @@ fun Expr.aux_03_xps (xp: Type) {
         is Expr.Call  -> {
             this.f.aux_03_xps(Type_Any(this.tk))
             val xp2 = AUX.tps[this.f]!!.let { it.keepAnyNat{it} }
-            this.arg.aux_03_xps(if (xp2 is Type.Func) xp2.keepAnyNat{ xp2.inp } else Type_Any(this.tk))
+            val arg = when (xp2) {
+                is Type.Func -> xp2.keepAnyNat{ xp2.inp }
+                is Type.Nat  -> xp2
+                else -> error("impossible case")
+            }
+            this.arg.aux_03_xps(arg)
         }
         is Expr.Func  -> this.block.aux_03_xps()
     }
