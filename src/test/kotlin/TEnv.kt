@@ -13,10 +13,11 @@ class TEnv {
         try {
             var s = parser_stmts(all, Pair(TK.EOF,null))
             s = env_prelude(s)
-            Aux_01(s)
-            check_01(s)
-            Aux_02(s)
-            check_02(s)
+            Aux_01_upsenvs(s)
+            check_01_varscope(s)
+            Aux_02_tps(s)
+            check_02_supof(s)
+            Aux_03_xps(s)
             check_03(s)
             return "OK"
         } catch (e: Throwable) {
@@ -29,8 +30,8 @@ class TEnv {
         val all = All_new(PushbackReader(StringReader(inp), 2))
         lexer(all)
         var s = parser_stmts(all, Pair(TK.EOF,null))
-        Aux_01(s)
-        Aux_02(s)
+        Aux_01_upsenvs(s)
+        Aux_02_tps(s)
         return s
     }
 
@@ -406,7 +407,8 @@ class TEnv {
             var x: _int
             set x = <.0 [()]>
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
     }
     @Test
     fun c23_list_zero_err2 () {
@@ -414,7 +416,8 @@ class TEnv {
             var x: <? ^>
             set x = <.0 [()]>
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
     }
 
     // DEPTH

@@ -16,10 +16,11 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
     try {
         var s = parser_stmts(all, Pair(TK.EOF,null))
         s = env_prelude(s)
-        Aux_01(s)
-        check_01(s)
-        Aux_02(s)
-        check_02(s)
+        Aux_01_upsenvs(s)
+        check_01_varscope(s)
+        Aux_02_tps(s)
+        check_02_supof(s)
+        Aux_03_xps(s)
         check_03(s)
         return Pair(true, s.code())
     } catch (e: Throwable) {

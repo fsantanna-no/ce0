@@ -1,4 +1,4 @@
-fun check_01 (s: Stmt) {
+fun check_01_varscope (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
             is Type.Ptr -> {
@@ -30,13 +30,22 @@ fun check_01 (s: Stmt) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-fun check_02 (s: Stmt) {
-    fun fs(s: Stmt) {
+fun check_02_supof (s: Stmt) {
+    fun fe (e: Expr) {
+        when (e) {
+            is Expr.UCons -> {
+                All_assert_tk(e.tk, e.tk_.num != 0 || AUX.tps[e.arg]!!.isSupOf(Type_Unit(e.tk))) {
+                    "invalid constructor : type mismatch"
+                }
+            }
+        }
+    }
+    fun fs (s: Stmt) {
         when (s) {
             is Stmt.Set -> {
                 val dst = AUX.tps[s.dst]!!
                 val src = AUX.tps[s.src]!!
-                println("SET (${s.tk.lin}): ${dst.tostr()} = ${src.tostr()}")
+                //println("SET (${s.tk.lin}): ${dst.tostr()} = ${src.tostr()}")
                 //println(s.dst)
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
                     val str = if (s.dst is Expr.Var && s.dst.tk_.str == "_ret_") "return" else "assignment"
@@ -45,7 +54,7 @@ fun check_02 (s: Stmt) {
             }
         }
     }
-    s.visit(::fs, null, null)
+    s.visit(::fs, ::fe, null)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -86,44 +95,29 @@ fun check_03 (s: Stmt) {
                     "invalid operand to `/´ : union discriminator"
                 }
             }
-            is Expr.Dnref -> {
-                All_assert_tk(e.tk, AUX.tps[e.ptr] is Type.Ptr) {
-                    "invalid operand to `\\´ : not a pointer"
-                }
-            }
             is Expr.UDisc -> {
-                AUX.tps[e.uni]!!.let {
-                    All_assert_tk(e.tk, it is Type.Union) {
-                        "invalid discriminator : type mismatch"
-                    }
-                    val (MIN,MAX) = Pair(if (it.isrec()) 0 else 1, (it as Type.Union).vec.size)
-                    All_assert_tk(e.tk, MIN<=e.tk_.num && e.tk_.num<=MAX) {
-                        "invalid discriminator : out of bounds"
-                    }
-                }
             }
             is Expr.UPred -> {
                 AUX.tps[e.uni]!!.let {
                     All_assert_tk(e.tk, it is Type.Union) {
                         "invalid discriminator : type mismatch"
                     }
+                    val (MIN,MAX) = Pair(if (it.isrec()) 0 else 1, (it as Type.Union).vec.size)
+                    All_assert_tk(e.tk, MIN<=e.tk_.num && e.tk_.num<=MAX) {
+                        "invalid discriminator : out of bounds XXX" // TODO: remove check
+                    }
                 }
             }
-            is Expr.TDisc -> {
-                AUX.tps[e.tup].let {
-                    All_assert_tk(e.tk, it is Type.Tuple) {
-                        "invalid discriminator : type mismatch"
-                    }
-                    val (MIN,MAX) = Pair(1, (it as Type.Tuple).vec.size)
-                    All_assert_tk(e.tk, MIN<=e.tk_.num && e.tk_.num<=MAX) {
-                        "invalid discriminator : out of bounds"
-                    }
+            is Expr.TCons -> {
+                All_assert_tk(e.tk, e.arg.size == (AUX.tps[e] as Type.Tuple).vec.size) {
+                    "invalid constructor : out of bounds XXX" // TODO: remove check
                 }
             }
             is Expr.UCons -> {
                 val xp = AUX.xps[e] as Type.Union
-                All_assert_tk(e.tk, e.tk_.num!=0 || AUX.tps[e.arg]!!.isSupOf(Type_Unit(e.tk))) {
-                    "invalid constructor : type mismatch"
+                val (MIN, MAX) = Pair(if (xp.isnull) 0 else 1, xp.vec.size)
+                All_assert_tk(e.tk, MIN <= e.tk_.num && e.tk_.num <= MAX) {
+                    "invalid constructor : out of bounds XXX" // TODO: remove check
                 }
                 if (xp.isrec()) {
                     All_assert_tk(e.tk, (e.tk_.num==0) || AUX.ups[e] is Expr.New) {
