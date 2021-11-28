@@ -16,9 +16,10 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
     try {
         var s = parser_stmts(all, Pair(TK.EOF,null))
         s = env_prelude(s)
-        Aux_01_upsenvs(s)
-        check_01_no_scp_tps_xps(s)
+        aux_clear()
+        s.aux_01_upsenvs(null, null)
         Aux_02_scp(s)
+        check_01_no_scp_tps_xps(s)
         Aux_03_tps(s)
         check_02_no_xps(s)
         s.aux_04_xps()

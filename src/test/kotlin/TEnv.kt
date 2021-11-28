@@ -13,7 +13,9 @@ class TEnv {
         try {
             var s = parser_stmts(all, Pair(TK.EOF,null))
             s = env_prelude(s)
-            Aux_01_upsenvs(s)
+            aux_clear()
+            s.aux_01_upsenvs(null, null)
+            Aux_02_scp(s)
             check_01_no_scp_tps_xps(s)
             Aux_03_tps(s)
             check_02_no_xps(s)
@@ -30,7 +32,8 @@ class TEnv {
         val all = All_new(PushbackReader(StringReader(inp), 2))
         lexer(all)
         var s = parser_stmts(all, Pair(TK.EOF,null))
-        Aux_01_upsenvs(s)
+        aux_clear()
+        s.aux_01_upsenvs(null,null)
         Aux_03_tps(s)
         return s
     }

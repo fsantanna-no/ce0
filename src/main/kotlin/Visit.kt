@@ -1,16 +1,19 @@
-private val X = mutableSetOf<String>()
-val VISIT = ArrayDeque<Stmt>()
+// TODO: remove this hack completely
+var XPD = false
+private val XPDS = mutableSetOf<String>()
 
 private
 fun Type.visit (ft: ((Type)->Unit)?) {
-    val ce = this.toce()
-    if (X.contains(ce)) {
-        return
+    if (XPD) {
+        val ce = this.toce()
+        if (XPDS.contains(ce)) {
+            return
+        }
+        XPDS.add(ce)
     }
-    X.add(ce)
     when (this) {
         is Type.Tuple -> this.vec.forEach { it.visit(ft) }
-        is Type.Union -> this.expand().forEach { it.visit(ft) }
+        is Type.Union -> (if (XPD) this.expand() else this.vec).forEach { it.visit(ft) }
         is Type.UCons -> this.arg.visit(ft)
         is Type.Func  -> { this.inp.visit(ft) ; this.out.visit(ft) }
         is Type.Ptr   -> this.pln.visit(ft)
@@ -39,7 +42,7 @@ fun Expr.visit (fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
 }
 
 fun Stmt.visit (fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
-    X.clear()
+    XPDS.clear()
     return this.visit_(fs, fe, ft)
 }
 

@@ -667,12 +667,15 @@ class TExec {
     @Test
     fun f10_ptr_func () {
         val out = all("""
-            var v: _int; set v = _10
-            var f : /_int -> /_int; set f = func (/_int -> /_int) {
+            var v: _int
+            set v = _10
+            var f : /_int -> /_int
+            set f = func (/_int -> /_int) {
                 return /v
             }
             {
-                var p: /_int; set p = f (/v)
+                var p: /_int
+                set p = f (/v)
                 output std p\
             }
         """.trimIndent())
@@ -877,6 +880,15 @@ class TExec {
             output std n
         """.trimIndent())
         assert(out == "<.1 <.1 <.1 <.1 <.0>>>>>\n") { out }
+    }
+    @Test
+    fun j11_rec_double2 () {
+        val out = all("""
+            var n: <?<^^>>
+            set n = <.0>
+            output std n
+        """.trimIndent())
+        assert(out == "<.0>\n") { out }
     }
     @Test
     fun j09_tup_list_err () {

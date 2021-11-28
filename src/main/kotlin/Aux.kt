@@ -73,12 +73,11 @@ fun env_add (v: Any, env: Env?) {
     AUX.env[v] = env
 }
 
-fun Aux_01_upsenvs (s: Stmt) {
+fun aux_clear () {
     AUX.ups.clear()
     AUX.env.clear()
     AUX.tps.clear()
     AUX.xps.clear()
-    s.aux_01_upsenvs(null, null)
 }
 
 private
@@ -108,7 +107,7 @@ fun Type.aux_01_upsenvs (up: Any) {
         is Type.Union -> this.vec.forEach { it.aux_01_upsenvs(this) }
         is Type.UCons -> this.arg.aux_01_upsenvs(this)
         is Type.Func  -> { this.inp.aux_01_upsenvs(this) ; this.out.aux_01_upsenvs(this) }
-        is Type.Ptr   -> { AUX.scp[this]=up(this) ; this.pln.aux_01_upsenvs(this) }
+        is Type.Ptr   -> this.pln.aux_01_upsenvs(this)
     }
 }
 
@@ -136,7 +135,6 @@ fun Expr.aux_01_upsenvs (up: Any, env: Env?) {
     }
 }
 
-private
 fun Stmt.aux_01_upsenvs (up: Any?, env: Env?): Env? {
     ups_add(this, up)
     env_add(this, env)
