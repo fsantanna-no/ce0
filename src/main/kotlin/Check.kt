@@ -25,21 +25,27 @@ fun check_01 (s: Stmt) {
             }
         }
     }
-    fun fs (s: Stmt) {
+    s.visit(null, ::fe, ::ft)
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+fun check_02 (s: Stmt) {
+    fun fs(s: Stmt) {
         when (s) {
             is Stmt.Set -> {
                 val dst = AUX.tps[s.dst]!!
                 val src = AUX.tps[s.src]!!
-                //println("SET (${s.tk.lin}): ${dst.tostr()} = ${src.tostr()}")
+                println("SET (${s.tk.lin}): ${dst.tostr()} = ${src.tostr()}")
                 //println(s.dst)
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
-                    val str = if (s.dst is Expr.Var && s.dst.tk_.str=="_ret_") "return" else "assignment"
+                    val str = if (s.dst is Expr.Var && s.dst.tk_.str == "_ret_") "return" else "assignment"
                     "invalid $str : type mismatch"
                 }
             }
         }
     }
-    s.visit(::fs, ::fe, ::ft)
+    s.visit(::fs, null, null)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -62,7 +68,7 @@ fun Type.map2 (f: (Type)->Type): Type {
     }
 }
 
-fun check_02 (s: Stmt) {
+fun check_03 (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.Upref -> {

@@ -14,9 +14,10 @@ class TEnv {
             var s = parser_stmts(all, Pair(TK.EOF,null))
             s = env_prelude(s)
             Aux_01(s)
-            Aux_02(s)
             check_01(s)
+            Aux_02(s)
             check_02(s)
+            check_03(s)
             return "OK"
         } catch (e: Throwable) {
             //throw e
@@ -117,6 +118,7 @@ class TEnv {
             set l = <.1 ()>
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        //assert(out == "(ln 2, col 11): invalid constructor : expected `new`") { out }
     }
     @Test
     fun b11_user_empty_err () {
@@ -259,6 +261,14 @@ class TEnv {
             output std x\
         """.trimIndent())
         assert(out == "(ln 2, col 13): invalid operand to `\\´ : not a pointer") { out }
+    }
+    @Test
+    fun c12_type_dnref2 () {
+        val out = inp2env("""
+            var x: ()
+            set x = x\
+        """.trimIndent())
+        assert(out == "(ln 2, col 10): invalid operand to `\\´ : not a pointer") { out }
     }
     @Test
     fun c13_type_dnref () {
