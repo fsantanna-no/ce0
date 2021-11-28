@@ -17,7 +17,7 @@ class TEnv {
             check_01_varscope(s)
             Aux_02_tps(s)
             check_02_supof(s)
-            Aux_03_xps(s)
+            s.aux_03_xps()
             check_03(s)
             return "OK"
         } catch (e: Throwable) {

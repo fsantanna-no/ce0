@@ -1,3 +1,5 @@
+data class Env (val s: Stmt.Var, val prv: Env?)
+
 object AUX {
     // aux_01
     val ups = mutableMapOf<Any,Any>()
@@ -6,32 +8,6 @@ object AUX {
     val tps = mutableMapOf<Expr,Type>()
     val xps = mutableMapOf<Expr,Type>()  // needed to determine tps of
     val scp = mutableMapOf<Type.Ptr,String?>()
-}
-
-data class Env (val s: Stmt.Var, val prv: Env?)
-
-fun Aux_03_xps (s: Stmt) {
-    s.aux_03_xps()
-}
-
-private
-fun ups_add (v: Any, up: Any?) {
-    if (up == null) return
-    //assert(AUX.ups[v] == null)    // fails b/c of expands
-    AUX.ups[v] = up
-}
-
-private
-fun env_add (v: Any, env: Env?) {
-    if (env == null) return
-    assert(AUX.env[v] == null)
-    AUX.env[v] = env
-}
-
-private
-fun xps_add (e: Expr, tp: Type) {
-    //assert(AUX.xps[e] == null)    // fails b/c of expands
-    AUX.xps[e] = tp
 }
 
 fun Type.Ptr.scp (): String? {
@@ -48,8 +24,6 @@ fun Any.ups_first (f: (Any)->Boolean): Any? {
         else -> up.ups_first(f)
     }
 }
-
-//////////////////////////////////////////////////////////////////////////////
 
 fun Any.env_first (f: (Stmt)->Boolean): Stmt? {
     fun aux (env: Env?): Stmt? {
@@ -70,6 +44,8 @@ fun Expr.Var.env (): Stmt.Var? {
     return this.env_first { it is Stmt.Var && it.tk_.str==this.tk_.str } as Stmt.Var?
 }
 
+//////////////////////////////////////////////////////////////////////////////
+
 fun env_prelude (s: Stmt): Stmt {
     val stdo = Stmt.Var (
         Tk.Str(TK.XVAR,1,1,"output_std"),
@@ -84,6 +60,20 @@ fun env_prelude (s: Stmt): Stmt {
 
 //////////////////////////////////////////////////////////////////////////////
 
+private
+fun ups_add (v: Any, up: Any?) {
+    if (up == null) return
+    //assert(AUX.ups[v] == null)    // fails b/c of expands
+    AUX.ups[v] = up
+}
+
+private
+fun env_add (v: Any, env: Env?) {
+    if (env == null) return
+    assert(AUX.env[v] == null)
+    AUX.env[v] = env
+}
+
 fun Aux_01_upsenvs (s: Stmt) {
     AUX.ups.clear()
     AUX.env.clear()
@@ -92,6 +82,7 @@ fun Aux_01_upsenvs (s: Stmt) {
     s.aux_01_upsenvs(null, null)
 }
 
+private
 fun Any.ups_tolist (): List<Any> {
     return when {
         (AUX.ups[this] == null) -> emptyList()
@@ -264,7 +255,7 @@ fun Aux_02_tps (s: Stmt) {
 
 private
 fun Expr.aux_03_xps (xp: Type) {
-    xps_add(this, xp)
+    AUX.xps[this] = xp
     when (this) {
         is Expr.TCons -> {
             assert(xp is Type.Tuple && xp.vec.size==this.arg.size)
@@ -304,7 +295,6 @@ fun Expr.aux_03_xps (xp: Type) {
     }
 }
 
-private
 fun Stmt.aux_03_xps () {
     when (this) {
         is Stmt.Set -> {
