@@ -1,16 +1,13 @@
+data class Scope (val level: Int, val isabs: Boolean, val depth: Int)
 data class Env (val s: Stmt.Var, val prv: Env?)
 
 object AUX {
     // aux_01
     val ups = mutableMapOf<Any,Any>()
     val env = mutableMapOf<Any,Env>()
-    val scp = mutableMapOf<Type.Ptr,String?>()
+    val scp = mutableMapOf<Type.Ptr,Scope>()
     val tps = mutableMapOf<Expr,Type>()
     val xps = mutableMapOf<Expr,Type>()
-}
-
-fun Type.Ptr.scp (): String? {
-    return this.scope ?: AUX.scp[this]  // use explicit pre calculated this.scope for call args
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -168,42 +165,13 @@ fun Stmt.aux_01_upsenvs (up: Any?, env: Env?): Env? {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-fun ft (tp: Type) {
-    // Derived scope from pointers above myself:
-    // /(/x)@a      --> /x is also @a
-    // func /x->()  --> /x is @1 (default)
-    fun up (tp: Type.Ptr): String? {
-        var cur: Type = tp
-        while (true) {
-            val nxt = AUX.ups[cur]
-            when {
-                (cur is Type.Ptr && cur.scope!=null) -> return cur.scope!!
-                (nxt == null) -> return null
-                (nxt is Type.Func) -> return "@1"
-                (nxt is Stmt.Var && nxt.tk_.str=="_ret_") -> return "@1"
-                (nxt !is Type) -> return null
-                else -> cur = nxt
-            }
-        }
-    }
-    when (tp) {
-        is Type.Ptr -> AUX.scp[tp] = up(tp)
-    }
-}
-
-fun Aux_02_scp (s: Stmt) {
-    s.visit(null, null, ::ft)
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
 private
 fun Type.up (up: Any): Type {
     ups_add(this, up)
     return this
 }
 
-fun Aux_03_tps (s: Stmt) {
+fun Aux_02_tps (s: Stmt) {
     fun fe (e: Expr) {
         AUX.tps[e] = when (e) {
             is Expr.Unit  -> Type.Unit(e.tk_).up(e)
@@ -271,6 +239,83 @@ fun Aux_03_tps (s: Stmt) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+fun Aux_03_scp (s: Stmt) {
+    for (tp in AUX.tps.values) {
+        // Derived scope from pointers above myself:
+        // /(/x)@a      --> /x is also @a
+        // func /x->()  --> /x is @1 (default)
+        fun up(tp: Type.Ptr): String? {
+            var cur: Type = tp
+            while (true) {
+                val nxt = AUX.ups[cur]
+                when {
+                    (cur is Type.Ptr && cur.scope != null) -> return cur.scope!!
+                    (nxt == null) -> return null
+                    (nxt is Type.Func) -> return "@1"
+                    (nxt is Stmt.Var && nxt.tk_.str == "_ret_") -> return "@1"
+                    (nxt !is Type) -> return null
+                    else -> cur = nxt
+                }
+            }
+        }
+
+        // Offset of @N (max) of all crossing functions:
+        //  func /()->() {              // +1
+        //      func [/()@1,/()@2] {    // +2
+        //          ...                 // off=3
+        fun off(ups: List<Any>): Int {
+            return ups
+                .filter { it is Expr.Func }
+                .map {
+                    (it as Expr.Func).type.flatten().filter { it is Type.Ptr }
+                        .map { AUX.scp[it as Type.Ptr]!! }
+                        .filter { !it.isabs }
+                        .map { it.depth }
+                        .maxOrNull() ?: 0
+                }
+                .sum()
+        }
+
+        fun Any.ups_tolist(): List<Any> {
+            return when {
+                (AUX.ups[this] == null) -> emptyList()
+                else -> AUX.ups[this]!!.let { listOf(it) + it.ups_tolist() }
+            }
+        }
+
+        // Level of function nesting:
+        //  func ... {
+        //      ...             // lvl=1
+        //      func ... {
+        //          ...         // lvl=1
+        val lvl = tp.ups_tolist().filter { it is Expr.Func }.count()
+        // dropWhile(Type).drop(1) so that prototype skips up func
+        //val lvl = this.ups_tolist().dropWhile { it is Type }.drop(1).filter { it is Expr.Func }.count()
+
+        when (tp) {
+            is Type.Ptr -> {
+                val id = up(tp)
+                AUX.scp[tp] = when (id) {
+                    null -> Scope(lvl, true, tp.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
+                    "@global" -> Scope(lvl, true, 0)
+                    else -> {
+                        val num = id.drop(1).toIntOrNull()
+                        if (num == null) {
+                            val blk = tp.ups_first { it is Stmt.Block && it.scope == id }!!
+                            Scope(lvl, true, 1 + blk.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
+                        } else {
+                            val n = tp.ups_first { it is Expr.Func }.let { if (it == null) 0 else off(it.ups_tolist()) }
+                            Scope(lvl, false, n + num)    // false = relative to function block
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 private
 fun Expr.aux_04_xps (xp: Type) {
     AUX.xps[this] = xp
@@ -290,7 +335,9 @@ fun Expr.aux_04_xps (xp: Type) {
         is Expr.New -> this.arg.aux_04_xps(xp)
         is Expr.Dnref -> {
             this.ptr.aux_04_xps(xp.keepAnyNat {
-                Type.Ptr(Tk.Chr(TK.CHAR, this.tk.lin, this.tk.col, '\\'), null, xp)
+                val tp = Type.Ptr(Tk.Chr(TK.CHAR, this.tk.lin, this.tk.col, '\\'), null, xp)
+                print("aux: ") ; println(tp)
+                tp
             })
         }
         is Expr.Upref -> {

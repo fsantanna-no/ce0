@@ -107,59 +107,6 @@ fun Type.Union.expand (): Array<Type> {
     return this.vec.map { aux(it, 1) }.toTypedArray()
 }
 
-data class Scope (val level: Int, val isabs: Boolean, val depth: Int)
-
-fun Type.Ptr.toScope (): Scope? {
-    // Offset of @N (max) of all crossing functions:
-    //  func /()->() {              // +1
-    //      func [/()@1,/()@2] {    // +2
-    //          ...                 // off=3
-    fun off (ups: List<Any>): Int {
-        return ups
-            .filter { it is Expr.Func }
-            .map {
-                (it as Expr.Func).type.flatten().filter { it is Type.Ptr }
-                    .map { (it as Type.Ptr).scp()!!.drop(1).toIntOrNull() }
-                    .filterNotNull()
-                    .maxOrNull() ?: 0
-            }
-            .sum()
-    }
-
-    fun Any.ups_tolist (): List<Any> {
-        return when {
-            (AUX.ups[this] == null) -> emptyList()
-            else -> AUX.ups[this]!!.let { listOf(it) + it.ups_tolist() }
-        }
-    }
-
-    // Level of function nesting:
-    //  func ... {
-    //      ...             // lvl=1
-    //      func ... {
-    //          ...         // lvl=1
-    val lvl = this.ups_tolist().filter { it is Expr.Func }.count()
-    // dropWhile(Type).drop(1) so that prototype skips up func
-    //val lvl = this.ups_tolist().dropWhile { it is Type }.drop(1).filter { it is Expr.Func }.count()
-
-    return when (this.scp()) {
-        null -> Scope(lvl, true, this.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
-        "@global" -> Scope(lvl,true,0)
-        else -> {
-            val num = this.scp()!!.drop(1).toIntOrNull()
-            if (num == null) {
-                val blk = this.ups_first { it is Stmt.Block && it.scope==this.scp() }
-                return if (blk == null) null else {
-                    Scope(lvl, true, 1 + blk.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
-                }
-            } else {
-                val n = this.ups_first { it is Expr.Func }.let { if (it==null) 0 else off(it.ups_tolist()) }
-                Scope(lvl, false, n+num)    // false = relative to function block
-            }
-        }
-    }
-}
-
 fun Type.containsRec (): Boolean {
     return when (this) {
         is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false

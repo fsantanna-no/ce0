@@ -15,15 +15,15 @@ class TEnv {
             s = env_prelude(s)
             aux_clear()
             s.aux_01_upsenvs(null, null)
-            Aux_02_scp(s)
             check_01_no_scp_tps_xps(s)
-            Aux_03_tps(s)
+            Aux_02_tps(s)
+            Aux_03_scp(s)
             check_02_no_xps(s)
             s.aux_04_xps()
             check_03(s)
             return "OK"
         } catch (e: Throwable) {
-            //throw e
+            throw e
             return e.message!!
         }
     }
@@ -34,7 +34,7 @@ class TEnv {
         var s = parser_stmts(all, Pair(TK.EOF,null))
         aux_clear()
         s.aux_01_upsenvs(null,null)
-        Aux_03_tps(s)
+        Aux_02_tps(s)
         return s
     }
 
