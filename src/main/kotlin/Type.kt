@@ -86,6 +86,10 @@ fun Type.isnullptr (): Boolean {
     return this is Type.Union && this.isnull && this.vec.size==1 && this.vec[0] is Type.Ptr
 }
 
+fun Type.level (): Int {
+    return this.ups_tolist().filter { it is Expr.Func }.count()
+}
+
 // TODO: use it to detect recursive unions that do not require tags b/c of single subtype+null pointer
 // (e.g., lists). Remove field/tests from the struct.
 fun Type.isnullexrec (): Boolean {

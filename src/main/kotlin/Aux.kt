@@ -12,6 +12,13 @@ object AUX {
 
 //////////////////////////////////////////////////////////////////////////////
 
+fun Any.ups_tolist(): List<Any> {
+    return when {
+        (AUX.ups[this] == null) -> emptyList()
+        else -> AUX.ups[this]!!.let { listOf(it) + it.ups_tolist() }
+    }
+}
+
 fun Any.ups_first (f: (Any)->Boolean): Any? {
     val up = AUX.ups[this]
     return when {
@@ -193,7 +200,7 @@ fun Aux_02_tps (s: Stmt) {
                     when (it) {
                         // scope of output is tested in the call through XP
                         // here, just returns the "top" scope to succeed
-                        is Type.Func -> it.out.map { if (it !is Type.Ptr) it else Type.Ptr(it.tk_, "@global", it.pln) }
+                        is Type.Func -> it.out.map { if (it !is Type.Ptr) it else Type.Ptr(it.tk_, "@global", it.pln).scp_add(Scope(0,true,0)) }
                         is Type.Nat  -> it //Type.Nat(it.tk_).ups(e)
                         else -> {
                             All_assert_tk(e.f.tk, false) {
@@ -239,12 +246,21 @@ fun Aux_02_tps (s: Stmt) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-fun Aux_03_scp (s: Stmt) {
-    for (tp in AUX.tps.values) {
+fun Type.Ptr.scp_add (scope: Scope): Type.Ptr {
+    AUX.scp[this] = scope
+    return this
+}
+
+fun Aux_03_scp () {
+    fun ft (tp: Type) {
+        if (tp !is Type.Ptr) {
+            return
+        }
+
         // Derived scope from pointers above myself:
         // /(/x)@a      --> /x is also @a
         // func /x->()  --> /x is @1 (default)
-        fun up(tp: Type.Ptr): String? {
+        fun up (tp: Type.Ptr): String? {
             var cur: Type = tp
             while (true) {
                 val nxt = AUX.ups[cur]
@@ -263,24 +279,18 @@ fun Aux_03_scp (s: Stmt) {
         //  func /()->() {              // +1
         //      func [/()@1,/()@2] {    // +2
         //          ...                 // off=3
-        fun off(ups: List<Any>): Int {
+        fun off (ups: List<Any>): Int {
             return ups
                 .filter { it is Expr.Func }
                 .map {
                     (it as Expr.Func).type.flatten().filter { it is Type.Ptr }
-                        .map { AUX.scp[it as Type.Ptr]!! }
-                        .filter { !it.isabs }
-                        .map { it.depth }
+                        .map { up(it as Type.Ptr) }
+                        .filterNotNull()
+                        .map { it.toIntOrNull() }
+                        .filterNotNull()
                         .maxOrNull() ?: 0
                 }
                 .sum()
-        }
-
-        fun Any.ups_tolist(): List<Any> {
-            return when {
-                (AUX.ups[this] == null) -> emptyList()
-                else -> AUX.ups[this]!!.let { listOf(it) + it.ups_tolist() }
-            }
         }
 
         // Level of function nesting:
@@ -288,29 +298,28 @@ fun Aux_03_scp (s: Stmt) {
         //      ...             // lvl=1
         //      func ... {
         //          ...         // lvl=1
-        val lvl = tp.ups_tolist().filter { it is Expr.Func }.count()
+        val lvl = tp.level()
         // dropWhile(Type).drop(1) so that prototype skips up func
         //val lvl = this.ups_tolist().dropWhile { it is Type }.drop(1).filter { it is Expr.Func }.count()
 
-        when (tp) {
-            is Type.Ptr -> {
-                val id = up(tp)
-                AUX.scp[tp] = when (id) {
-                    null -> Scope(lvl, true, tp.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
-                    "@global" -> Scope(lvl, true, 0)
-                    else -> {
-                        val num = id.drop(1).toIntOrNull()
-                        if (num == null) {
-                            val blk = tp.ups_first { it is Stmt.Block && it.scope == id }!!
-                            Scope(lvl, true, 1 + blk.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
-                        } else {
-                            val n = tp.ups_first { it is Expr.Func }.let { if (it == null) 0 else off(it.ups_tolist()) }
-                            Scope(lvl, false, n + num)    // false = relative to function block
-                        }
-                    }
+        val id = up(tp)
+        AUX.scp[tp] = when (id) {
+            null -> Scope(lvl, true, tp.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
+            "@global" -> Scope(lvl, true, 0)
+            else -> {
+                val num = id.drop(1).toIntOrNull()
+                if (num == null) {
+                    val blk = tp.ups_first { it is Stmt.Block && it.scope == id }!!
+                    Scope(lvl, true, 1 + blk.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
+                } else {
+                    val n = tp.ups_first { it is Expr.Func }.let { if (it == null) 0 else off(it.ups_tolist()) }
+                    Scope(lvl, false, n + num)    // false = relative to function block
                 }
             }
         }
+    }
+    for (tp in AUX.tps.values) {
+        tp.visit(::ft)
     }
 }
 
@@ -335,9 +344,7 @@ fun Expr.aux_04_xps (xp: Type) {
         is Expr.New -> this.arg.aux_04_xps(xp)
         is Expr.Dnref -> {
             this.ptr.aux_04_xps(xp.keepAnyNat {
-                val tp = Type.Ptr(Tk.Chr(TK.CHAR, this.tk.lin, this.tk.col, '\\'), null, xp)
-                print("aux: ") ; println(tp)
-                tp
+                Type.Ptr(Tk.Chr(TK.CHAR, this.tk.lin, this.tk.col, '\\'), null, xp).scp_add(Scope(0,true,0))
             })
         }
         is Expr.Upref -> {

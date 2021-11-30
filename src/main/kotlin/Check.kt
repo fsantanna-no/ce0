@@ -114,9 +114,7 @@ fun Type.map2 (f: (Type)->Type): Type {
             //   - that would change identity of original Ptr
             //   - test relies on identity
             val ret1 = f(this) as Type.Ptr
-            val ret2 = Type.Ptr(ret1.tk_, ret1.scope, this.pln.map2(f))
-            print("map2: ") ; println(ret2)
-            ret2
+            Type.Ptr(ret1.tk_, ret1.scope, this.pln.map2(f)).scp_add(AUX.scp[ret1]!!)
         }
     }
 }
@@ -166,20 +164,14 @@ fun check_03 (s: Stmt) {
                     val arg2 = AUX.tps[e.arg]!!.map2 { ptr ->
                         if (ptr !is Type.Ptr) ptr else {
                             val idx = sorted.find { it.second == ptr }!!.first
-                            val tp = Type.Ptr(ptr.tk_, "@"+idx, ptr.pln)
-                            print("arg2: ") ; println(tp)
-                            AUX.scp[tp] = Scope(999, false, 1)
-                            tp
+                            Type.Ptr(ptr.tk_, "@"+idx, ptr.pln).scp_add(Scope(ptr.level(),false,idx))
                         }
                     }
                     // xp2 = scope in ptrs inside xp are now increasing numbers (@1,@2,...)
                     val xp2 = AUX.xps[e]!!.map2 { ptr ->
                         if (ptr !is Type.Ptr) ptr else {
                             val idx = sorted.find { it.second == ptr }!!.first
-                            val tp = Type.Ptr(ptr.tk_, "@"+idx, ptr.pln)
-                            print("xp2: ") ; println(tp)
-                            AUX.scp[tp] = Scope(999, false, 1)
-                            tp
+                            Type.Ptr(ptr.tk_, "@"+idx, ptr.pln).scp_add(Scope(ptr.level(), false, idx))
                         }
                     }
                     Pair(xp2,arg2)

@@ -2,7 +2,6 @@
 var XPD = false
 private val XPDS = mutableSetOf<String>()
 
-private
 fun Type.visit (ft: ((Type)->Unit)?) {
     if (XPD) {
         val ce = this.toce()

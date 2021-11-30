@@ -17,13 +17,13 @@ class TEnv {
             s.aux_01_upsenvs(null, null)
             check_01_no_scp_tps_xps(s)
             Aux_02_tps(s)
-            Aux_03_scp(s)
+            Aux_03_scp()
             check_02_no_xps(s)
             s.aux_04_xps()
             check_03(s)
             return "OK"
         } catch (e: Throwable) {
-            throw e
+            //throw e
             return e.message!!
         }
     }
