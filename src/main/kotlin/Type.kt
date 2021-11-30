@@ -84,6 +84,7 @@ fun Type.isrec (): Boolean {
 
 fun Type.isnullptr (): Boolean {
     return this is Type.Union && this.isnull && this.vec.size==1 && this.vec[0] is Type.Ptr
+    //false
 }
 
 fun Type.level (): Int {

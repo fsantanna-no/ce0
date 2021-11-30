@@ -711,7 +711,8 @@ class TExec {
     @Test
     fun j00_list () {
         val out = all("""
-            var l: <?^>; set l = <.0>
+            var l: <?^>
+            set l = <.0>
             output std l
         """.trimIndent())
         //assert(out == "(ln 1, col 5): invalid assignment : type mismatch") { out }

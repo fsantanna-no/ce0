@@ -26,8 +26,9 @@ fun Type.pos (): String {
         is Type.Tuple -> "struct " + this.toce()
         is Type.Union -> if (this.isnullptr()) {
             (this.vec[0] as Type.Ptr).pln.pos() + "*"
+            //((if (xpd) this.expand() else this.vec)[0] as Type.Ptr).pln.pos(false) + "*"
         } else {
-            "struct " + this.toce() + (if (this.isrec())  "*" else "")
+            "struct " + this.toce() + (if (this.isrec())  "*" else "") //
         }
         is Type.Func  -> this.toce() + "*"
     }
@@ -150,8 +151,8 @@ fun code_ft (tp: Type) {
 
             val ce    = tp.toce()
             val exrec = tp.isrec()
-            val xv    = (if (exrec) "(*v)" else "v")
-            val ret   = (if (exrec) "(*ret)" else "ret")
+            val xv    = (if (exrec) "(*v)" else "v") //"v"
+            val ret   = (if (exrec) "(*ret)" else "ret") //"ret"
             val tpexp = tp.expand()
 
             val struct = Pair ("""
@@ -286,6 +287,7 @@ val EXPRS = ArrayDeque<Pair<String,String>>()
 fun Expr.UDisc.deref (str: String): String {
     return if (AUX.tps[this.uni]!!.isrec()) {
         "(*($str))"
+        //str
     } else {
         str
     }
@@ -293,6 +295,7 @@ fun Expr.UDisc.deref (str: String): String {
 fun Expr.UPred.deref (str: String): String {
     return if (AUX.tps[this.uni]!!.isrec()) {
         "(*($str))"
+        //str
     } else {
         str
     }
@@ -473,7 +476,8 @@ fun Stmt.code (): String {
     fun gt (a: String, b: String): Boolean {
         return (ord[a]!=null && (ord[a]!!.contains(b) || ord[a]!!.any { gt(it,b) }))
     }
-    val TPS =
+    val TPS = //TYPES
+    ///*
         TYPES.sortedWith(Comparator { x: Triple<Pair<String, Set<String>>, String, String>, y: Triple<Pair<String, Set<String>>, String, String> ->
             when {
                 gt(x.first.first, y.first.first) ->  1
@@ -488,6 +492,7 @@ fun Stmt.code (): String {
             }
              */
         })
+     //*/
     //AUX.tps.forEach { println(it.first.first) }
     assert(EXPRS.size == 0)
     assert(CODE.size == 1)
