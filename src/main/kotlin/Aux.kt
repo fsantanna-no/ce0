@@ -246,6 +246,11 @@ fun Aux_02_tps (s: Stmt) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+// Every single Type.Ptr created after Aux_03_scp must use this function
+//  Functions that currently do not use it:
+//      - Type.map (not used after AUX.tps)
+//      - Type.lincol (not used after parser)
+//      - Type.Union.expand (used after Aux_03_scp, problem??)
 fun Type.Ptr.scp_add (scope: Scope): Type.Ptr {
     AUX.scp[this] = scope
     return this
