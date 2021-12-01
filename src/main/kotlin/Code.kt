@@ -92,7 +92,6 @@ fun code_ft (tp: Type) {
                 void output_std_${ce} (${tp.pos()} v);
                 ${if (!tp.containsRec()) "" else """
                     void free_${ce} (${tp.pos()}* v);
-                    ${tp.pos()} copy_${ce} (${tp.pos()} v);
 
                 """
                 }
@@ -124,22 +123,6 @@ fun code_ft (tp: Type) {
                         }
                         .joinToString("")
                     }
-                }
-                ${tp.pos()} copy_${ce} (${tp.pos()} v) {
-                    ${tp.pos()} ret;
-                    ${tp.vec
-                        .mapIndexed { i, sub -> if (sub is Type.Unit) "" else
-                            "ret._${i + 1} = " +
-                                (if (!sub.containsRec()) {
-                                    "v._${i + 1}"
-                                } else {
-                                    "copy_${sub.toce()}(v._${i + 1})"
-                                }) +
-                            ";\n"
-                       }
-                        .joinToString("")
-                    }
-                    return ret;
                 }
 
             """.trimIndent())))
@@ -187,7 +170,6 @@ fun code_ft (tp: Type) {
                 void output_std_${ce} (${tp.pos()} v);
                 ${if (!tp.containsRec()) "" else """
                     void free_${ce} (${tp.pos()}* v);
-                    ${tp.pos()} copy_${ce} (${tp.pos()} v);
 
                 """
             }
@@ -249,33 +231,6 @@ fun code_ft (tp: Type) {
                     }
                     ${ if (!exrec) "" else "free($xv);\n" }
                 }
-                ${tp.pos()} copy_${ce} (${tp.pos()} v) {
-                    ${ if (!exrec) "${tp.pos()} ret = { $xv.tag };\n" else {
-                        val nul = if (!tp.isnull) "" else "if (v == NULL) return NULL;"
-                        """
-                            $nul
-                            ${tp.pos()} ret = malloc(sizeof(*ret));
-                            assert(ret != NULL && "not enough memory");
-                            ($ret).tag = $xv.tag;
-
-                        """.trimIndent()
-                    } }
-                    switch ($xv.tag) {
-                        ${ tpexp
-                            .mapIndexed { i,sub -> if (sub is Type.Unit) "" else
-                                "case ${i+1}:\n" + (
-                                    if (sub.containsRec()) {
-                                        "($ret)._${i+1} = copy_${sub.toce()}($xv._${i+1});\nbreak;\n"
-                                    } else {
-                                        "($ret)._${i+1} = $xv._${i + 1};\nbreak;\n"
-                                    }
-                                )
-                            }
-                            .joinToString("")
-                        }
-                    }
-                    return ret;
-                }
 
             """.trimIndent())))
         }
@@ -286,16 +241,16 @@ val EXPRS = ArrayDeque<Pair<String,String>>()
 
 fun Expr.UDisc.deref (str: String): String {
     return if (AUX.tps[this.uni]!!.isrec()) {
-        "(*($str))"
-        //str
+        //"(*($str))"
+        str
     } else {
         str
     }
 }
 fun Expr.UPred.deref (str: String): String {
     return if (AUX.tps[this.uni]!!.isrec()) {
-        "(*($str))"
-        //str
+        //"(*($str))"
+        str
     } else {
         str
     }
@@ -476,8 +431,8 @@ fun Stmt.code (): String {
     fun gt (a: String, b: String): Boolean {
         return (ord[a]!=null && (ord[a]!!.contains(b) || ord[a]!!.any { gt(it,b) }))
     }
-    val TPS = //TYPES
-    ///*
+    val TPS = TYPES
+    /*
         TYPES.sortedWith(Comparator { x: Triple<Pair<String, Set<String>>, String, String>, y: Triple<Pair<String, Set<String>>, String, String> ->
             when {
                 gt(x.first.first, y.first.first) ->  1
@@ -492,7 +447,7 @@ fun Stmt.code (): String {
             }
              */
         })
-     //*/
+    */
     //AUX.tps.forEach { println(it.first.first) }
     assert(EXPRS.size == 0)
     assert(CODE.size == 1)
