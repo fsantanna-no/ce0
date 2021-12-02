@@ -142,7 +142,7 @@ class TExec {
         val out = all("""
             var n: _int ; set n = _1
             var x: [[_int,_int],[_int,_int]] ; set x = [[n,n],[n,n]]
-            output std x
+            output std /x
         """.trimIndent())
         assert(out == "[[1,1],[1,1]]\n") { out }
     }
@@ -175,7 +175,7 @@ class TExec {
             var y: _(char*); set y = _("hello")
             var n: _int; set n = _10
             var x: [_int,_(char*)]; set x = [n,y]
-            output std x
+            output std /x
         """.trimIndent())
         assert(out == "[10,\"hello\"]\n")
     }
@@ -287,7 +287,7 @@ class TExec {
     fun e02_out () {
         val out = all("""
             var x: [(),()]; set x = [(),()]
-            output std x
+            output std /x
         """.trimIndent())
         assert(out == "[(),()]\n")
     }
@@ -306,7 +306,7 @@ class TExec {
     fun f01_bool () {
         val out = all("""
             var b : <(),()>; set b = <.1>
-            output std b
+            output std /b
         """.trimIndent())
         assert(out == "<.1>\n") { out }
     }
@@ -318,7 +318,7 @@ class TExec {
             var x : <<<()>>>; set x = <.1 y>
             var yy: <<()>>; set yy = x!1
             var zz: <()>; set zz = yy!1
-            output std zz
+            output std /zz
         """.trimIndent())
         assert(out == "<.1>\n") { out }
     }
@@ -326,7 +326,7 @@ class TExec {
     fun f05_user_big () {
         val out = all("""
             var s: <[_int,_int,_int,_int],_int,_int>; set s = <.1 [_1,_2,_3,_4]>
-            output std s
+            output std /s
         """.trimIndent())
         assert(out == "<.1 [1,2,3,4]>\n") { out }
     }
@@ -334,7 +334,7 @@ class TExec {
     fun f06_user_big () {
         val out = all("""
             var x: <[<()>,<()>]>; set x = <.1 [<.1>,<.1>]>
-            output std x
+            output std /x
         """.trimIndent())
         assert(out == "<.1 [<.1>,<.1>]>\n") { out }
     }
@@ -574,7 +574,7 @@ class TExec {
             var v: [_int,_int]; set v = [_10,_20]
             var p: /_int; set p = /v.1
             set p\ = _20
-            output std v
+            output std /v
         """.trimIndent())
         assert(out == "[20,20]\n")
     }
@@ -594,7 +594,7 @@ class TExec {
             var v: [_int]; set v = [_10]
             var p: /_int; set p = /v.1
             set p\ = _20
-            output std v
+            output std /v
         """.trimIndent())
         assert(out == "[20]\n") { out }
     }
@@ -709,22 +709,32 @@ class TExec {
     // REC
 
     @Test
-    fun j00_list () {
+    fun j00_list_err () {
         val out = all("""
             var l: <?^>
             set l = <.0>
             output std l
         """.trimIndent())
-        //assert(out == "(ln 1, col 5): invalid assignment : type mismatch") { out }
-        assert(out == "<.0>\n") { out }
+        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+    }
+    @Test
+    fun j00_list_err2 () {
+        val out = all("""
+            var l: <?/^>
+            set l = <.0>    -- l is not a pointer, cannot accept NULL
+            output std l
+        """.trimIndent())
+        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
     @Test
     fun j01_list () {
         val out = all("""
-            var l: <?/^>; set l = <.0>
+            var l: /<?/^>
+            set l = <.0>
             output std l
         """.trimIndent())
-        assert(out == "(ln 1, col 10): invalid type declaration : unexpected `^´") { out }
+        //assert(out == "(ln 1, col 5): invalid assignment : type mismatch") { out }
+        assert(out == "<.0>\n") { out }
     }
     @Test
     fun j02_list_new_err_dst () {
@@ -745,7 +755,8 @@ class TExec {
     @Test
     fun j02_list_new_ok () {
         val out = all("""
-            var l: <?^>; set l = new <.1 <.0>>
+            var l: /<?/^>
+            set l = new <.1 <.0>>
             output std l
         """.trimIndent())
         assert(out == "<.1 <.0>>\n") { out }
@@ -1087,7 +1098,7 @@ class TExec {
         assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
         //assert(out == "out.exe: out.c:133: main: Assertion `(*(x))._1._2 == NULL' failed.\n") { out }
     }
-    @Test
+    @Test // TODO: esse vai falhar enquanto nao voltar isnullptr
     fun l04_ptr_null () {
         val out = all("""
             var n: _int; set n = _10
@@ -1096,7 +1107,6 @@ class TExec {
         """.trimIndent())
         assert(out == "10\n") { out }
     }
-
 
     // ALL
 

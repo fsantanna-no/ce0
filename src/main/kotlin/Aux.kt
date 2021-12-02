@@ -193,7 +193,12 @@ fun Aux_02_tps (s: Stmt) {
                 }
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { AUX.tps[it]!! }.toTypedArray()).up(e)
-            is Expr.UCons -> Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e)
+            is Expr.UCons -> {
+                val ret = Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e)
+                if (e.tk_.num > 0) ret else {
+                    Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'\\'), null, ret)
+                }
+            }
             is Expr.New   -> AUX.tps[e.arg]!!
             is Expr.Call -> {
                 AUX.tps[e.f].let {
@@ -339,14 +344,17 @@ fun Expr.aux_04_xps (xp: Type) {
             this.arg.forEachIndexed { i,e -> e.aux_04_xps((xp as Type.Tuple).vec[i]) }
         }
         is Expr.UCons -> {
-            assert(xp is Type.Union && xp.vec.size>=this.tk_.num)
+            assert(xp is Type.Union && xp.vec.size>=this.tk_.num || this.tk_.num==0)
             val xp2 = when {
                 (this.tk_.num == 0) -> Type_Unit(this.tk)
                 else -> (xp as Type.Union).expand()[this.tk_.num - 1]
             }
             this.arg.aux_04_xps(xp2)
         }
-        is Expr.New -> this.arg.aux_04_xps(xp)
+        is Expr.New -> {
+            assert(xp is Type.Ptr)
+            this.arg.aux_04_xps((xp as Type.Ptr).pln)
+        }
         is Expr.Dnref -> {
             this.ptr.aux_04_xps(xp.keepAnyNat {
                 Type.Ptr(Tk.Chr(TK.CHAR, this.tk.lin, this.tk.col, '\\'), null, xp).scp_add(Scope(0,true,0))
