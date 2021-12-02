@@ -7,11 +7,6 @@ fun parser_type (all: All): Type {
             all.accept(TK.CHAR,'/') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val pln = one()
-//                /*
-                All_assert_tk(tk0,pln !is Type.Rec) {
-                    "invalid type declaration : unexpected `^´"
-                }
-//                 */
                 val scope = if (!all.accept(TK.XSCOPE)) null else {
                     (all.tk0 as Tk.Scope).scope
                 }
@@ -41,7 +36,10 @@ fun parser_type (all: All): Type {
                     all.accept_err(TK.CHAR, '>')
                     fun f (tp: Type, n: Int): Boolean {
                         return when (tp) {
-                            is Type.Rec   -> return n <= tp.tk_.up
+                            is Type.Ptr   -> tp.pln.let {
+                                f(it,n) || (it is Type.Rec && n==it.tk_.up)
+                            }
+                            //is Type.Rec   -> return n <= tp.tk_.up
                             is Type.Tuple -> tp.vec.any { f(it, n) }
                             is Type.Union -> tp.vec.any { f(it, n+1) }
                             else -> false

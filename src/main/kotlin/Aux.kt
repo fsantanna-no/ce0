@@ -199,7 +199,7 @@ fun Aux_02_tps (s: Stmt) {
                     Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'\\'), null, ret)
                 }
             }
-            is Expr.New   -> AUX.tps[e.arg]!!
+            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), null, AUX.tps[e.arg]!!)
             is Expr.Call -> {
                 AUX.tps[e.f].let {
                     when (it) {
@@ -351,10 +351,7 @@ fun Expr.aux_04_xps (xp: Type) {
             }
             this.arg.aux_04_xps(xp2)
         }
-        is Expr.New -> {
-            assert(xp is Type.Ptr)
-            this.arg.aux_04_xps((xp as Type.Ptr).pln)
-        }
+        is Expr.New -> this.arg.aux_04_xps((xp as Type.Ptr).pln)
         is Expr.Dnref -> {
             this.ptr.aux_04_xps(xp.keepAnyNat {
                 Type.Ptr(Tk.Chr(TK.CHAR, this.tk.lin, this.tk.col, '\\'), null, xp).scp_add(Scope(0,true,0))

@@ -1,6 +1,9 @@
 fun check_01_no_scp_tps_xps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
+            is Type.Rec -> All_assert_tk(tp.tk, AUX.ups[tp] is Type.Ptr) {
+                "invalid `^´ : expected pointer type"
+            }
             is Type.Ptr -> {
                 val ok = when {
                     (tp.scope == null) -> true
@@ -123,10 +126,12 @@ fun check_03 (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.UCons -> {
-                val xp2 = AUX.xps[e] as Type.Union
-                if (xp2.isrec()) {
-                    All_assert_tk(e.tk, (e.tk_.num==0) || AUX.ups[e] is Expr.New) {
-                        "invalid constructor : expected `new`"
+                if (e.tk_.num != 0) {
+                    val xp2 = AUX.xps[e] as Type.Union
+                    if (xp2.isrec()) {
+                        All_assert_tk(e.tk, AUX.ups[e] is Expr.New) {
+                            "invalid constructor : expected `new`"
+                        }
                     }
                 }
             }
@@ -134,7 +139,7 @@ fun check_03 (s: Stmt) {
                 All_assert_tk(e.tk, AUX.tps[e.arg].let { it is Type.UCons && it.tk_.num>0 }) {
                     "invalid `new` : expected constructor"
                 }
-                All_assert_tk(e.tk, AUX.xps[e]!!.isrec()) {
+                All_assert_tk(e.tk, AUX.xps[e.arg]!!.isrec()) {
                     "unexpected `new` : expected recursive type"
                 }
             }

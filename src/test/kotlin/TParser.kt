@@ -96,8 +96,27 @@ class TParser {
         assert(tp is Type.Ptr && tp.pln is Type.Unit)
     }
     @Test
-    fun a10_parser_type_ptr () {
+    fun a10_parser_type_ptr0 () {
         val all = All_new(PushbackReader(StringReader("/<?[^]>"), 2))
+        lexer(all)
+        //val tp = parser_type(all)
+        try {
+            parser_type(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 2): invalid type declaration : unexpected `?´") { e.message!! }
+        }
+    }
+    @Test
+    fun a10_parser_type_ptr1 () {
+        val all = All_new(PushbackReader(StringReader("/<[^]>"), 2))
+        lexer(all)
+        val tp = parser_type(all)
+        assert(tp is Type.Ptr)      // error on check
+    }
+    @Test
+    fun a10_parser_type_ptr2 () {
+        val all = All_new(PushbackReader(StringReader("/<?[/^]>"), 2))
         lexer(all)
         val tp = parser_type(all)
         assert(tp is Type.Ptr)
