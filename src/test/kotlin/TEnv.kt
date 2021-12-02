@@ -1328,6 +1328,22 @@ class TEnv {
     @Test
     fun i06_uni_rec_ok4 () {
         val out = inp2env("""
+            var ret: /<(),/</^^,/^>>
+            set ret = new <.2 new <.1 new <.1>>>
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun i06_uni_rec_ok5 () {
+        val out = inp2env("""
+            var ret: /<(),/</^^,/^>>
+            set ret = new <.2 new <.2 new <.1 new <.1>>>>
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun i06_uni_rec_ok6 () {
+        val out = inp2env("""
             var ret: /<(),/<?/^^,/^>>
             set ret = new <.2 new <.2 new <.1 new <.1>>>>
         """.trimIndent())
@@ -1363,11 +1379,19 @@ class TEnv {
     fun i09_mutual () {
         val out = inp2env("""
             var e: /<</^^,()>, ()>
-            set e = new <.1 new <.2>>
+            set e = new <.1 <.2>>
             var s: /<</^^,()>, ()>
-            set s = e\!1
+            set s = e\!1!1
         """.trimIndent())
         assert(out == "OK") { out }
+    }
+    @Test
+    fun i10_mutual () {
+        val out = inp2env("""
+            var e: /<</^^,()>, ()>
+            set e = new <.1 new <.2>>   -- err: ~new~ <.2>
+        """.trimIndent())
+        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
 
     // XEXPR
