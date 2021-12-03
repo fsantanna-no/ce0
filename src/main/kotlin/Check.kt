@@ -1,8 +1,16 @@
 fun check_01_no_scp_tps_xps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
-            is Type.Rec -> All_assert_tk(tp.tk, AUX.ups[tp] is Type.Ptr) {
-                "invalid `^´ : expected pointer type"
+            is Type.Rec -> {
+                val str = "^".repeat(tp.tk_.up)
+                All_assert_tk(tp.tk, AUX.ups[tp] is Type.Ptr) {
+                    "invalid `$str´ : expected pointer type"
+                }
+                val unions = tp.ups_tolist().count { it is Type.Union }
+                All_assert_tk(tp.tk, unions >= tp.tk_.up) {
+                    "invalid `$str´ : missing enclosing recursive type"
+                }
+
             }
             is Type.Ptr -> {
                 val ok = when {
@@ -91,7 +99,6 @@ fun check_02_no_xps (s: Stmt) {
             is Stmt.Set -> {
                 val dst = AUX.tps[s.dst]!!
                 val src = AUX.tps[s.src]!!
-                //println("SET (${s.tk.lin}): ${dst.tostr()} = ${src.tostr()}")
                 //println(s.dst)
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
                     val str = if (s.dst is Expr.Var && s.dst.tk_.str == "_ret_") "return" else "assignment"

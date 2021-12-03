@@ -711,11 +711,12 @@ class TExec {
     @Test
     fun j00_list_err () {
         val out = all("""
-            var l: <?^>
+            var l: /<?/^>
             set l = <.0>
             output std l
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out == "<.0>") { out }
     }
     @Test
     fun j00_list_err2 () {
@@ -739,18 +740,21 @@ class TExec {
     @Test
     fun j02_list_new_err_dst () {
         val out = all("""
-            var l: /<?^>; set l = new <.1 <.0>>
+            var l: /<?/^>
+            set l = new <.1 <.0>>
             output std l
         """.trimIndent())
-        assert(out == "(ln 1, col 21): invalid assignment : type mismatch") { out }
+        //assert(out == "(ln 1, col 21): invalid assignment : type mismatch") { out }
+        assert(out == "<.1 <.0>>") { out }
     }
     @Test
     fun j02_list_new_err_src () {
         val out = all("""
-            var l: /<?^>; set l = new _1
+            var l: /<?/^>
+            set l = new _1
             output std l
         """.trimIndent())
-        assert(out == "(ln 1, col 23): invalid `new` : expected constructor") { out }
+        assert(out == "(ln 2, col 9): invalid `new` : expected constructor") { out }
     }
     @Test
     fun j02_list_new_ok () {
@@ -764,18 +768,19 @@ class TExec {
     @Test
     fun j02_list_pln () {
         val out = all("""
-            var l: <?^>; set l = <.1 <.0>>
+            var l: <?/^>; set l = <.1 <.0>>
             output std l
         """.trimIndent())
-        assert(out == "(ln 1, col 24): invalid constructor : expected `new`") { out }
+        assert(out == "(ln 1, col 25): invalid constructor : expected `new`") { out }
     }
     @Test
     fun j03_list () {
         val out = all("""
-            var l: <?^>; set l = new <.1 new <.1 <.0>>>
-            output std l!1
+            var l: /<?/^>
+            set l = new <.1 new <.1 <.0>>>
+            output std l\!1
         """.trimIndent())
-        assert(out == "<.1 <.0>>\n")
+        assert(out == "<.1 <.0>>\n") { out }
     }
     @Test
     fun j04_list_disc_null_err () {

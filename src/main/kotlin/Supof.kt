@@ -36,20 +36,16 @@ fun Type.isSupOf_ (sub: Type, depth: Boolean, ups1: List<Type.Union>, ups2: List
         (this is Type.Rec  && sub is Type.Rec)  -> (this.tk_.up == sub.tk_.up)
         (this is Type.Rec) -> ups1[this.tk_.up-1].let { it.isSupOf_(sub, depth, ups1.drop(this.tk_.up),ups2) }
         (sub  is Type.Rec) -> ups2[sub.tk_.up-1].let { this.isSupOf_(it, depth, ups1,ups2.drop(sub.tk_.up)) }
-        //(this is Type.Rec) -> ups1[this.tk_.up-1].let { it.isSupOf_(sub, depth, listOf(it)+ups1,ups2) }
-        //(sub  is Type.Rec) -> ups2[sub.tk_.up-1].let { this.isSupOf_(it, depth, ups1,listOf(it)+ups2) }
+        (this is Type.Ptr && sub is Type.UCons) -> {
+            (sub.tk_.num==0 && sub.arg is Type.Unit && (this.pln is Type.Rec || this.pln.isrec()))
+        }
         (this is Type.Union && sub is Type.UCons) -> {
             when {
                 (sub.tk_.num == 0) -> this.isnull && sub.arg is Type.Unit
                 (this.vec.size < sub.tk_.num) -> false
                 else -> {
-                    val ups1_ = if (!this.isrec) ups1 else listOf(this)+ups1
-                    //println(this.tostr())
-                    //println(sub.tostr())
-                    //print("YYY: ") ; println(ups1_.map { it.tostr() })
-                    val ups2_ = if (!this.isrec)  ups2 else listOf(this)+ups2   // TODO: use this?
-                    this.vec[sub.tk_.num-1].isSupOf_(sub.arg, depth, ups1_, ups2_)
-                    //this.vec[sub.tk_.num-1].isSupOf_(sub.arg, depth, listOf(this)+ups1, ups2)
+                    // TODO: use this for sub??
+                    this.vec[sub.tk_.num-1].isSupOf_(sub.arg, depth, listOf(this)+ups1, listOf(this)+ups2)
                 }
             }
         }
@@ -88,10 +84,7 @@ fun Type.isSupOf_ (sub: Type, depth: Boolean, ups1: List<Type.Union>, ups2: List
                 return true
             }
             xxx.add(pair)
-            val ups1_ = if (!this.isrec) ups1 else listOf(this)+ups1
-            val ups2_ = if (!sub.isrec)  ups2 else listOf(sub)+ups2
-            //print("XXX: ") ; println(ups1_.map { it.tostr() })
-            return this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf_(y,depth,ups1_,ups2_) }
+            return this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf_(y,depth,listOf(this)+ups1,listOf(sub)+ups2) }
         }
         else -> false
     }

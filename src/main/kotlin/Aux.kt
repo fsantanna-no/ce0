@@ -193,12 +193,7 @@ fun Aux_02_tps (s: Stmt) {
                 }
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { AUX.tps[it]!! }.toTypedArray()).up(e)
-            is Expr.UCons -> {
-                val ret = Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e)
-                if (e.tk_.num > 0) ret else {
-                    Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'\\'), null, ret)
-                }
-            }
+            is Expr.UCons -> Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e)
             is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), null, AUX.tps[e.arg]!!)
             is Expr.Call -> {
                 AUX.tps[e.f].let {
