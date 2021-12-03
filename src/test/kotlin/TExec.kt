@@ -716,16 +716,7 @@ class TExec {
             output std l
         """.trimIndent())
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
-        assert(out == "<.0>") { out }
-    }
-    @Test
-    fun j00_list_err2 () {
-        val out = all("""
-            var l: <?/^>
-            set l = <.0>    -- l is not a pointer, cannot accept NULL
-            output std l
-        """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out == "<.0>\n") { out }
     }
     @Test
     fun j01_list () {
@@ -745,7 +736,7 @@ class TExec {
             output std l
         """.trimIndent())
         //assert(out == "(ln 1, col 21): invalid assignment : type mismatch") { out }
-        assert(out == "<.1 <.0>>") { out }
+        assert(out == "<.1 <.0>>\n") { out }
     }
     @Test
     fun j02_list_new_err_src () {
@@ -768,10 +759,12 @@ class TExec {
     @Test
     fun j02_list_pln () {
         val out = all("""
-            var l: <?/^>; set l = <.1 <.0>>
-            output std l
+            var l: <?/^>
+            set l = <.1 <.0>>
+            output std /l
         """.trimIndent())
-        assert(out == "(ln 1, col 25): invalid constructor : expected `new`") { out }
+        //assert(out == "(ln 1, col 25): invalid constructor : expected `new`") { out }
+        assert(out == "<.1 <.0>>\n") { out }
     }
     @Test
     fun j03_list () {
@@ -785,15 +778,18 @@ class TExec {
     @Test
     fun j04_list_disc_null_err () {
         val out = all("""
-            var l: <?^>; set l = new <.1 <.0>>
+            var l: <?/^>
+            set l = <.1 <.0>>
             output std l!0
         """.trimIndent())
-        assert(out == "out.exe: out.c:87: main: Assertion `l == NULL' failed.\n")
+        //assert(out == "out.exe: out.c:87: main: Assertion `l == NULL' failed.\n") { out }
+        assert(out == "(ln 3, col 14): invalid discriminator : union cannot be <.0>") { out }
     }
     @Test
     fun j05_list_disc_null_err () {
         val out = all("""
-            var l: <?^>; set l = <.0>
+            var l: <?^>
+            set l = <.0>
             output std l!1
         """.trimIndent())
         assert(out == "out.exe: out.c:83: main: Assertion `l != NULL' failed.\n") { out }

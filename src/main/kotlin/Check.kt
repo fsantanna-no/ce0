@@ -87,6 +87,13 @@ fun check_02_no_xps (s: Stmt) {
                     }
                 }
             }
+            is Expr.UDisc -> {
+                if (AUX.ups[e] !is Expr.Dnref) {
+                    All_assert_tk(e.tk, e.tk_.num != 0) { // TODO: isnullptr
+                        "invalid discriminator : union cannot be <.0>"
+                    }
+                }
+            }
         }
     }
     fun fs (s: Stmt) {
@@ -132,19 +139,9 @@ fun Type.map2 (f: (Type)->Type): Type {
 fun check_03 (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
-            is Expr.UCons -> {
-                if (e.tk_.num != 0) {
-                    val xp2 = AUX.xps[e] as Type.Union
-                    if (xp2.isrec()) {
-                        All_assert_tk(e.tk, AUX.ups[e] is Expr.New) {
-                            "invalid constructor : expected `new`"
-                        }
-                    }
-                }
-            }
             is Expr.New -> {
                 All_assert_tk(e.tk, AUX.tps[e.arg].let { it is Type.UCons && it.tk_.num>0 }) {
-                    "invalid `new` : expected constructor"
+                    "invalid `new` : expected constructor" // TODO: remove?
                 }
                 All_assert_tk(e.tk, AUX.xps[e.arg]!!.isrec()) {
                     "unexpected `new` : expected recursive type"

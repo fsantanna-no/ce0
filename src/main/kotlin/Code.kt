@@ -285,7 +285,7 @@ fun code_fe (e: Expr) {
                 """.trimIndent()
             } else {
                 """
-                ${ if (uni.let { it is Type.Union && it.isnull }) "assert(${it.second} != NULL);\n" else "" }
+                ${ if (uni.let { it is Type.Union && it.isnull }) "assert(&${it.second} != NULL);\n" else "" }
                 ${ if (uni.isnullptr()) "" else "assert($ee.tag == ${e.tk_.num});" }
 
                 """.trimIndent()

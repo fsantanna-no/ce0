@@ -148,7 +148,8 @@ class TEnv {
             --output std l!0
         """.trimIndent())
         //assert(out == "(ln 2, col 11): invalid expression : expected `new` operation modifier") { out }
-        assert(out == "(ln 2, col 11): invalid constructor : expected `new`") { out }
+        //assert(out == "(ln 2, col 11): invalid constructor : expected `new`") { out }
+        assert(out == "OK") { out }
     }
     @Test
     fun b13_user_empty_ok () {
@@ -1291,7 +1292,8 @@ class TEnv {
             var ret: <(),<?/^^,/^>>
             set ret  = <.1>
         """.trimIndent())
-        assert(out == "(ln 2, col 14): invalid constructor : expected `new`") { out }
+        //assert(out == "(ln 2, col 14): invalid constructor : expected `new`") { out }
+        assert(out == "OK") { out }
     }
     @Test
     fun i05_uni_rec_ok () {
@@ -1462,9 +1464,10 @@ class TEnv {
             set x = <.1 <.0>>
         """.trimIndent())
         //assert(out == "(ln 1, col 20): expected expression : have `<´") { out }
-        assert(out == "(ln 2, col 11): invalid constructor : expected `new`") { out }
+        //assert(out == "(ln 2, col 11): invalid constructor : expected `new`") { out }
         //assert(out == "(ln 1, col 20): invalid `copy` : expected recursive variable")
         //assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
+        assert(out == "OK") { out }
     }
     @Test
     fun j08_rec_xepr_double_rec_err () {
@@ -2062,7 +2065,7 @@ class TEnv {
     fun m03 () {
         val out = inp2env("""
             var l: <?/^>
-            set l = <.0>    -- ERR: not a pointer
+            set l = <.0>    -- ERR: l is not a pointer, cannot accept NULL
             output std /l
         """.trimIndent())
         assert(out == "ERR") { out }
