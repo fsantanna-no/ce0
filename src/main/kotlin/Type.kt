@@ -82,11 +82,6 @@ fun Type.isrec (): Boolean {
     return (this is Type.Union) && this.isrec
 }
 
-fun Type.isnullptr (): Boolean {
-    return this is Type.Union && this.isnull && this.vec.size==1 && this.vec[0] is Type.Ptr
-    //false
-}
-
 fun Type.level (): Int {
     return this.ups_tolist().filter { it is Expr.Func }.count()
 }
