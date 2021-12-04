@@ -86,12 +86,6 @@ fun Type.level (): Int {
     return this.ups_tolist().filter { it is Expr.Func }.count()
 }
 
-// TODO: use it to detect recursive unions that do not require tags b/c of single subtype+null pointer
-// (e.g., lists). Remove field/tests from the struct.
-fun Type.isnullexrec (): Boolean {
-    return this is Type.Union && this.isrec() && this.isnull && this.vec.size==1
-}
-
 fun Type.Union.expand (): Array<Type> {
     fun aux (cur: Type, up: Int): Type {
         return when (cur) {

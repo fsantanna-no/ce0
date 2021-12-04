@@ -2183,10 +2183,18 @@ class TEnv {
         //assert(out == "(ln 1, col 16): invalid type declaration : unexpected `^´") { out }
     }
     @Test
+    fun n08_hold_err () {
+        val out = inp2env("""
+            var x: /<? <?//^^>>  -- err: <? ...>
+        """.trimIndent())
+        assert(out == "(ln 1, col 12): invalid type declaration : unexpected `?´") { out }
+        //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
+    }
+    @Test
     fun n08_hold_ok1 () {
         val out = inp2env("""
-            var x: /<? <?//^^>>
-            set x = new <.1 <.0>>
+            var x: /<? <(),//^^>>
+            set x = new <.1 <.1>>
         """.trimIndent())
         assert(out == "OK") { out }
         //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
@@ -2198,7 +2206,8 @@ class TEnv {
             set x = <.0>
         """.trimIndent())
         //assert(out == "OK") { out }
-        assert(out == "(ln 2, col 11): unexpected <.0> : not a pointer") { out }
+        //assert(out == "(ln 2, col 11): unexpected <.0> : not a pointer") { out }
+        assert(out == "(ln 1, col 8): invalid type declaration : unexpected `?´") { out }
     }
     @Test
     fun n08_hold_ok3 () {
@@ -2208,8 +2217,9 @@ class TEnv {
             set x\!1.1 = <.1 /x>  -- ok
         """.trimIndent())
         //assert(out == "OK") { out }
-        assert(out == "(ln 2, col 20): unexpected <.0> : not a pointer") { out }
+        //assert(out == "(ln 2, col 20): unexpected <.0> : not a pointer") { out }
         //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
+        assert(out == "(ln 1, col 13): invalid type declaration : unexpected `?´") { out }
     }
     @Test
     fun n09_hold_err () {
@@ -2223,7 +2233,8 @@ class TEnv {
         //assert(out == "(ln 2, col 35): invalid `consume` : expected recursive variable") { out }
         //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
         //assert(out == "OK") { out }
-        assert(out == "(ln 2, col 20): unexpected <.0> : not a pointer") { out }
+        //assert(out == "(ln 2, col 20): unexpected <.0> : not a pointer") { out }
+        assert(out == "(ln 1, col 13): invalid type declaration : unexpected `?´") { out }
     }
 
     // POINTER CROSSING UNION

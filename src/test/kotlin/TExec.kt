@@ -1101,40 +1101,61 @@ class TExec {
     @Test
     fun l02_hold_ok () {
         val out = all("""
-            var x: /<? [<?//^^>,_int,/^]>; set x = new <.1 [<.0>,_1,new <.1 [<.0>,_2,<.0>]>]>
+            var x: /<? [<(),//^^>,_int,/^]>
+            set x = new <.1 [<.0>,_1,new <.1 [<.0>,_2,<.0>]>]>
             set x!1.3!1.1 = <.1 /x>
-            set x!1.1 = <.1 /x!1.3>
+            set x!1.1 = <.1 /x!1.3> -- err: address of field inside union
             output std x!1.3!1.2
             output std x!1.1!1\!1.1!1\!1.2
         """.trimIndent())
         //assert(out == "2\n1\n") { out }
-        assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
+        //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
+        assert(out == "(ln 4, col 17): invalid operand to `/´ : union discriminator") { out }
+    }
+    @Test
+    fun l02_hold_ok1 () {
+        val out = all("""
+            var x: /<? [<(),/^^>,_int,/^]>
+            set x = new <.1 [<.1>,_1,new <.1 [<.1>,_2,<.0>]>]>
+            set x\!1.3\!1.1 = <.2 x>
+            set x\!1.1 = <.2 x\!1.3>
+            output std x\!1.3\!1.2
+            output std x\!1.1!2\ --!1.1!1\!1.2
+        """.trimIndent())
+        //assert(out == "2\n1\n") { out }
+        //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
+        assert(out == "(ln 4, col 17): invalid operand to `/´ : union discriminator") { out }
     }
     @Test
     fun l02_hold_ok2 () {
         val out = all("""
-            var x: /<? [<?//^^>,_int,/^]>; set x = new <.1 [<.0>,_2,<.0>]>
+            var x: /<? [<(),//^^>,_int,/^]>
+            set x = new <.1 [<.1>,_2,<.0>]>
             output std x
         """.trimIndent())
-        //assert(out == "<.1 [_,2,<.0>]>\n") { out }
-        assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
+        assert(out == "<.1 [<.1>,2,<.0>]>\n") { out }
+        //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
     }
     @Test
     fun l03_hold_err () {
         val out = all("""
-            var x: /<? [<?//^^>,/^]>; set x = new <.1 [<.0>,new <.1 [<.0>,<.0>]>]>
-            set x!1.2 = <.0>    -- no, set previously
+            var x: /<? [<(),//^^>,/^]>
+            set x = new <.1 [<.1>,new <.1 [<.1>,<.0>]>]>
+            set x\!1.2 = <.0>
             output std x
         """.trimIndent())
-        assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
+        //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
         //assert(out == "out.exe: out.c:133: main: Assertion `(*(x))._1._2 == NULL' failed.\n") { out }
+        assert(out == "<.1 [<.1>,<.0>]>\n") { out }
     }
     @Test // TODO: esse vai falhar enquanto nao voltar isnullptr
     fun l04_ptr_null () {
         val out = all("""
-            var n: _int; set n = _10
-            var x: <?/_int>; set x = <.1 /n>
-            output std x!1\
+            var n: _int
+            set n = _10
+            var x: <(),/_int>
+            set x = <.2 /n>
+            output std x!2\
         """.trimIndent())
         assert(out == "10\n") { out }
     }
@@ -1290,7 +1311,8 @@ class TExec {
     @Test
     fun z10_return_move () {
         val out = all("""
-            var f: ()-><(),_int,/<?[_int,/^]>>; set f = func ()-><(),_int,/<?[_int,/^]>> {
+            var f: ()-><(),_int,/<?[_int,/^]>>
+            set f = func ()-><(),_int,/<?[_int,/^]>> {
                 var str: /<?[_int,/^]>; set str = <.0>
                 return <.3 str>
             }

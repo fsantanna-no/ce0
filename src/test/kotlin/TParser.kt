@@ -136,8 +136,14 @@ class TParser {
     fun a12_parser_type_ptr_null () {
         val all = All_new(PushbackReader(StringReader("<? /()>"), 2))
         lexer(all)
-        val tp = parser_type(all)
-        assert(tp is Type.Union && tp.isnull)
+        //val tp = parser_type(all)
+        //assert(tp is Type.Union && tp.isnull)
+        try {
+            parser_type(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 1): invalid type declaration : unexpected `?´")
+        }
     }
     @Test
     fun a13_parser_type_ptr_null () {
