@@ -94,6 +94,7 @@ fun check_02_no_xps (s: Stmt) {
                 val src = AUX.tps[s.src]!!
                 //println(s.dst)
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
+                    //println("SET (${s.tk.lin}): ${dst.tostr()} = ${src.tostr()}")
                     val str = if (s.dst is Expr.Var && s.dst.tk_.str == "_ret_") "return" else "assignment"
                     "invalid $str : type mismatch"
                 }
