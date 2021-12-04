@@ -121,7 +121,12 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 Expr.UCons(tk0, cons)
             }
             all.accept(TK.NEW) -> {
-                Expr.New(all.tk0 as Tk.Key, parser_expr(all,false))
+                val tk0 = all.tk0
+                val e = parser_expr(all,false)
+                all.assert_tk(tk0, e !is Expr.UCons || e.tk_.num!=0) {
+                    "invalid `new` : unexpected <.0>"
+                }
+                Expr.New(tk0 as Tk.Key, e)
             }
             all.accept(TK.FUNC) -> {
                 val tk0 = all.tk0 as Tk.Key
@@ -180,6 +185,11 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 val num = all.tk0 as Tk.Num
                 all.assert_tk(all.tk0, e1 !is Expr.TCons && e1 !is Expr.UCons) {
                     "invalid discriminator : unexpected constructor"
+                }
+                if (chr.chr=='?' || chr.chr=='!') {
+                    All_assert_tk(all.tk0, num.num!=0 || e1 is Expr.Dnref) {
+                        "invalid discriminator : union cannot be <.0>"
+                    }
                 }
                 e1 = when {
                     (chr.chr == '?') -> Expr.UPred(num, e1)

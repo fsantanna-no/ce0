@@ -212,7 +212,6 @@ fun Aux_02_tps (s: Stmt) {
                 }
             }
             is Expr.Func -> e.type
-            is Expr.UPred -> Type.Nat(Tk.Str(TK.XNAT, e.tk.lin, e.tk.col, "int")).up(e)
             is Expr.TDisc -> AUX.tps[e.tup].let {
                 All_assert_tk(e.tk, it is Type.Tuple) {
                     "invalid discriminator : type mismatch"
@@ -223,19 +222,32 @@ fun Aux_02_tps (s: Stmt) {
                 }
                 it.vec[e.tk_.num - 1].up(e)
             }
-            is Expr.UDisc ->  AUX.tps[e.uni]!!.let {
-                All_assert_tk(e.tk, it is Type.Union) {
-                    "invalid discriminator : type mismatch"
+            is Expr.UDisc, is Expr.UPred -> {
+                val (tk_,uni) = when (e) {
+                    is Expr.UPred -> Pair(e.tk_,e.uni)
+                    is Expr.UDisc -> Pair(e.tk_,e.uni)
+                    else -> error("impossible case")
                 }
-                val (MIN,MAX) = Pair(if (it.isrec()) 0 else 1, (it as Type.Union).vec.size)
-                All_assert_tk(e.tk, MIN<=e.tk_.num && e.tk_.num<=MAX) {
+                val tp = AUX.tps[uni]!!
+
+                assert(tk_.num!=0 || tp.isrec()) { "bug found" }
+
+                All_assert_tk(e.tk, tp is Type.Union) {
+                    "invalid discriminator : not an union"
+                }
+                val (MIN, MAX) = Pair(if (tp.isrec()) 0 else 1, (tp as Type.Union).vec.size)
+                All_assert_tk(e.tk, MIN <= tk_.num && tk_.num <= MAX) {
                     "invalid discriminator : out of bounds"
                 }
-                if (e.tk_.num == 0) {
-                    assert(it.isrec()) { "bug found" }
-                    Type_Unit(e.tk).up(e)
-                } else {
-                    it.expand()[e.tk_.num - 1].up(e)
+
+                when (e) {
+                    is Expr.UDisc -> if (e.tk_.num == 0) {
+                        Type_Unit(e.tk).up(e)
+                    } else {
+                        tp.expand()[e.tk_.num - 1].up(e)
+                    }
+                    is Expr.UPred -> Type.Nat(Tk.Str(TK.XNAT, e.tk.lin, e.tk.col, "int")).up(e)
+                    else -> error("bug found")
                 }
             }
             is Expr.Var -> e.env()!!.type

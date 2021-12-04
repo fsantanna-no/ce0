@@ -231,6 +231,28 @@ class TParser {
             assert(e.message == "(ln 1, col 7): expected expression : have end of file")
         }
     }
+    @Test
+    fun b08_parser_expr_disc_err () {
+        val all = All_new(PushbackReader(StringReader("l!0"), 2))
+        lexer(all)
+        try {
+            parser_expr(all, false)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 3): invalid discriminator : union cannot be <.0>") { e.message!! }
+        }
+    }
+    @Test
+    fun b08_parser_expr_pred_err () {
+        val all = All_new(PushbackReader(StringReader("l?0"), 2))
+        lexer(all)
+        try {
+            parser_expr(all, false)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 3): invalid discriminator : union cannot be <.0>") { e.message!! }
+        }
+    }
 
     // CALL
 
@@ -390,10 +412,10 @@ class TParser {
     }
     @Test
     fun b26_parser_expr_pred () {
-        val all = All_new(PushbackReader(StringReader("x?0"), 2))
+        val all = All_new(PushbackReader(StringReader("x?1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.UPred && e.tk_.num==0 && e.uni is Expr.Var)
+        assert(e is Expr.UPred && e.tk_.num==1 && e.uni is Expr.Var)
     }
     @Test
     fun b27_parser_expr_idx () {

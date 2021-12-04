@@ -90,7 +90,7 @@ class TEnv {
         val out = inp2env("""
             output std ()!1
         """.trimIndent())
-        assert(out == "(ln 1, col 15): invalid discriminator : type mismatch")
+        assert(out == "(ln 1, col 15): invalid discriminator : not an union") { out }
     }
     @Test
     fun b07_user_out_err1 () {
@@ -156,7 +156,6 @@ class TEnv {
         val out = inp2env("""
             var l: <?/^>
             set l = new <.1 <.0>>
-            output std l!0
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
@@ -342,7 +341,7 @@ class TEnv {
             var x: [()]
             output std x!2
         """.trimIndent())
-        assert(out == "(ln 2, col 14): invalid discriminator : type mismatch")
+        assert(out == "(ln 2, col 14): invalid discriminator : not an union") { out }
     }
     @Test
     fun c15_tup_disc_err () {
@@ -1573,7 +1572,8 @@ class TEnv {
             var l: /<?/^>
             set l = new <.0>
         """.trimIndent())
-        assert(out == "(ln 2, col 9): invalid `new` : expected constructor") { out }
+        //assert(out == "(ln 2, col 9): invalid `new` : expected constructor") { out }
+        assert(out == "(ln 2, col 9): invalid `new` : unexpected <.0>") { out }
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
     @Test
@@ -2068,7 +2068,23 @@ class TEnv {
             set l = <.0>    -- ERR: l is not a pointer, cannot accept NULL
             output std /l
         """.trimIndent())
-        assert(out == "ERR") { out }
+        assert(out == "(ln 2, col 11): unexpected <.0> : not a pointer") { out }
+    }
+    @Test
+    fun m06_pred_notunion () {
+        val out = inp2env("""
+            var l: ()
+            call _f l?1
+        """.trimIndent())
+        assert(out == "(ln 2, col 11): invalid discriminator : not an union") { out }
+    }
+    @Test
+    fun m06_disc_notunion () {
+        val out = inp2env("""
+            var l: ()
+            call _f l!1
+        """.trimIndent())
+        assert(out == "(ln 2, col 11): invalid discriminator : not an union") { out }
     }
 
     // UNION SELF POINTER / HOLD
@@ -2181,7 +2197,8 @@ class TEnv {
             var x: <?/_int>
             set x = <.0>
         """.trimIndent())
-        assert(out == "OK") { out }
+        //assert(out == "OK") { out }
+        assert(out == "(ln 2, col 11): unexpected <.0> : not a pointer") { out }
     }
     @Test
     fun n08_hold_ok3 () {
@@ -2190,7 +2207,8 @@ class TEnv {
             set x = new <.1 [<.0>,<.0>]>
             set x\!1.1 = <.1 /x>  -- ok
         """.trimIndent())
-        assert(out == "OK") { out }
+        //assert(out == "OK") { out }
+        assert(out == "(ln 2, col 20): unexpected <.0> : not a pointer") { out }
         //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
     }
     @Test
@@ -2204,7 +2222,8 @@ class TEnv {
         """.trimIndent())
         //assert(out == "(ln 2, col 35): invalid `consume` : expected recursive variable") { out }
         //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
-        assert(out == "OK") { out }
+        //assert(out == "OK") { out }
+        assert(out == "(ln 2, col 20): unexpected <.0> : not a pointer") { out }
     }
 
     // POINTER CROSSING UNION

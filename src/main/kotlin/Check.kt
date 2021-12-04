@@ -80,20 +80,6 @@ fun check_02_no_xps (s: Stmt) {
                     "invalid constructor : type mismatch"
                 }
             }
-            is Expr.UPred -> {
-                AUX.tps[e.uni]!!.let {
-                    All_assert_tk(e.tk, it is Type.Union) {
-                        "invalid discriminator : type mismatch"
-                    }
-                }
-            }
-            is Expr.UDisc -> {
-                if (AUX.ups[e] !is Expr.Dnref) {
-                    All_assert_tk(e.tk, e.tk_.num != 0) { // TODO: isnullptr
-                        "invalid discriminator : union cannot be <.0>"
-                    }
-                }
-            }
         }
     }
     fun fs (s: Stmt) {
@@ -145,6 +131,13 @@ fun check_03 (s: Stmt) {
                 }
                 All_assert_tk(e.tk, AUX.xps[e.arg]!!.isrec()) {
                     "unexpected `new` : expected recursive type"
+                }
+            }
+            is Expr.UCons -> {
+                if (e.tk_.num == 0) {
+                    All_assert_tk(e.tk, AUX.xps[e] is Type.Ptr || AUX.ups[e] is Expr.UCons) {
+                        "unexpected <.0> : not a pointer"
+                    }
                 }
             }
             is Expr.Call -> {
