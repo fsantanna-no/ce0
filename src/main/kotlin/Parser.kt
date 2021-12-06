@@ -19,7 +19,6 @@ fun parser_type (all: All): Type {
             }
             all.accept(TK.CHAR,'[') || all.accept(TK.CHAR,'<') -> {
                 val tk0 = all.tk0 as Tk.Chr
-                val isnullable = (tk0.chr=='<' && all.accept(TK.CHAR,'?'))  // otherwise we would need "l = new <.1 ()>" vs "l = <.0>"
                 val tp = parser_type(all)
                 val tps = arrayListOf(tp)
                 while (true) {
@@ -45,12 +44,9 @@ fun parser_type (all: All): Type {
                             else -> false
                         }
                     }
-                    val vec    = tps.toTypedArray()
-                    val isrec  = vec.any { f(it, 1) }
-                    All_assert_tk(tk0,!isnullable || isrec) {
-                        "invalid type declaration : unexpected `?´"
-                    }
-                    Type.Union(tk0, isrec, isnullable, vec)
+                    val vec   = tps.toTypedArray()
+                    val isrec = vec.any { f(it, 1) }
+                    Type.Union(tk0, isrec, vec)
                 }
             }
             else -> {

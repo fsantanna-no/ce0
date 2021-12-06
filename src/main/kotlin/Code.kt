@@ -175,7 +175,7 @@ fun code_ft (tp: Type) {
                 ${if (tp.containsRec()) struct.second else "" }
                 void output_std_${ce}_ (${tp.pos()}* v) {
                     ${
-                        if (!tp.isnull) "" else """
+                        if (!tp.isrec) "" else """
                             if (v == NULL) {
                                 printf("<.0>");
                                 return;
@@ -271,12 +271,12 @@ fun code_fe (e: Expr) {
             val uni = AUX.tps[e.uni]!!
             val pre = if (e.tk_.num == 0) {
                 """
-                assert(${it.second} == NULL);
+                assert(&${it.second} == NULL);
 
                 """.trimIndent()
             } else {
                 """
-                ${ if (uni.let { it is Type.Union && it.isnull }) "assert(&${it.second} != NULL);\n" else "" }
+                ${ if (uni.let { it is Type.Union && it.isrec }) "assert(&${it.second} != NULL);\n" else "" }
                 assert($ee.tag == ${e.tk_.num});
 
                 """.trimIndent()
@@ -286,9 +286,9 @@ fun code_fe (e: Expr) {
         is Expr.UPred -> EXPRS.removeFirst().let {
             val ee = e.deref(it.second)
             val pos = if (e.tk_.num == 0) {
-                "(${it.second} == NULL)"
+                "(&${it.second} == NULL)"
             } else {
-                (if (AUX.tps[e.uni].let { it is Type.Union && it.isnull }) "(${it.second} != NULL) && " else "") +
+                (if (AUX.tps[e.uni].let { it is Type.Union && it.isrec }) "(${it.second} != NULL) && " else "") +
                 "($ee.tag == ${e.tk_.num})"
             }
             Pair(it.first, pos)

@@ -104,7 +104,8 @@ class TParser {
             parser_type(all)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 2): invalid type declaration : unexpected `?´") { e.message!! }
+            //assert(e.message == "(ln 1, col 2): invalid type declaration : unexpected `?´") { e.message!! }
+            assert(e.message == "(ln 1, col 3): expected type : have `?´") { e.message!! }
         }
     }
     @Test
@@ -116,7 +117,7 @@ class TParser {
     }
     @Test
     fun a10_parser_type_ptr2 () {
-        val all = All_new(PushbackReader(StringReader("/<?[/^]>"), 2))
+        val all = All_new(PushbackReader(StringReader("/<[/^]>"), 2))
         lexer(all)
         val tp = parser_type(all)
         assert(tp is Type.Ptr)
@@ -142,7 +143,8 @@ class TParser {
             parser_type(all)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 1): invalid type declaration : unexpected `?´")
+            //assert(e.message == "(ln 1, col 1): invalid type declaration : unexpected `?´") { e.message!! }
+            assert(e.message == "(ln 1, col 2): expected type : have `?´") { e.message!! }
         }
     }
     @Test
@@ -153,7 +155,8 @@ class TParser {
             parser_type(all)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 1): invalid type declaration : unexpected `?´")
+            //assert(e.message == "(ln 1, col 1): invalid type declaration : unexpected `?´") { e.message!! }
+            assert(e.message == "(ln 1, col 2): expected type : have `?´") { e.message!! }
         }
     }
     @Test

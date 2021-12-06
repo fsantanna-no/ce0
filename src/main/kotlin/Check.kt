@@ -110,7 +110,7 @@ fun Type.map2 (f: (Type)->Type): Type {
     return when (this) {
         is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> f(this)
         is Type.Tuple -> f(Type.Tuple(this.tk_, this.vec.map { it.map2(f) }.toTypedArray()))
-        is Type.Union -> f(Type.Union(this.tk_, this.isrec, this.isnull, this.vec.map { it.map2(f) }.toTypedArray()))
+        is Type.Union -> f(Type.Union(this.tk_, this.isrec, this.vec.map { it.map2(f) }.toTypedArray()))
         is Type.UCons -> f(Type.UCons(this.tk_, f(this.arg)))
         is Type.Func  -> f(Type.Func(this.tk_, this.inp.map2(f), this.out.map2(f)))
         is Type.Ptr   -> {

@@ -41,7 +41,7 @@ fun Type.isSupOf_ (sub: Type, depth: Boolean, ups1: List<Type.Union>, ups2: List
         }
         (this is Type.Union && sub is Type.UCons) -> {
             when {
-                (sub.tk_.num == 0) -> this.isnull && sub.arg is Type.Unit
+                (sub.tk_.num == 0) -> this.isrec && sub.arg is Type.Unit
                 (this.vec.size < sub.tk_.num) -> false
                 else -> {
                     // TODO: use this for sub??
@@ -74,7 +74,7 @@ fun Type.isSupOf_ (sub: Type, depth: Boolean, ups1: List<Type.Union>, ups2: List
         (this is Type.Tuple && sub is Type.Tuple) ->
             (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf_(y,depth,ups1,ups2) }
         (this is Type.Union && sub is Type.Union) -> {
-            if ((this.isnull == sub.isnull) && (this.vec.size == sub.vec.size)) {
+            if ((this.isrec == sub.isrec) && (this.vec.size == sub.vec.size)) {
                 // ok
             } else {
                 return false

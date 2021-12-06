@@ -230,11 +230,11 @@ fun Aux_02_tps (s: Stmt) {
                 }
                 val tp = AUX.tps[uni]!!
 
-                assert(tk_.num!=0 || tp.isrec()) { "bug found" }
-
                 All_assert_tk(e.tk, tp is Type.Union) {
                     "invalid discriminator : not an union"
                 }
+                assert(tk_.num!=0 || tp.isrec()) { "bug found" }
+
                 val (MIN, MAX) = Pair(if (tp.isrec()) 0 else 1, (tp as Type.Union).vec.size)
                 All_assert_tk(e.tk, MIN <= tk_.num && tk_.num <= MAX) {
                     "invalid discriminator : out of bounds"

@@ -711,7 +711,7 @@ class TExec {
     @Test
     fun j00_list_err () {
         val out = all("""
-            var l: /<?/^>
+            var l: /</^>
             set l = <.0>
             output std l
         """.trimIndent())
@@ -721,7 +721,7 @@ class TExec {
     @Test
     fun j01_list () {
         val out = all("""
-            var l: /<?/^>
+            var l: /</^>
             set l = <.0>
             output std l
         """.trimIndent())
@@ -731,7 +731,7 @@ class TExec {
     @Test
     fun j02_list_new_err_dst () {
         val out = all("""
-            var l: /<?/^>
+            var l: /</^>
             set l = new <.1 <.0>>
             output std l
         """.trimIndent())
@@ -741,7 +741,7 @@ class TExec {
     @Test
     fun j02_list_new_err_src () {
         val out = all("""
-            var l: /<?/^>
+            var l: /</^>
             set l = new _1
             output std l
         """.trimIndent())
@@ -750,7 +750,7 @@ class TExec {
     @Test
     fun j02_list_new_ok () {
         val out = all("""
-            var l: /<?/^>
+            var l: /</^>
             set l = new <.1 <.0>>
             output std l
         """.trimIndent())
@@ -759,7 +759,7 @@ class TExec {
     @Test
     fun j02_list_pln () {
         val out = all("""
-            var l: <?/^>
+            var l: </^>
             set l = <.1 <.0>>
             output std /l
         """.trimIndent())
@@ -769,7 +769,7 @@ class TExec {
     @Test
     fun j03_list () {
         val out = all("""
-            var l: /<?/^>
+            var l: /</^>
             set l = new <.1 new <.1 <.0>>>
             output std l\!1
         """.trimIndent())
@@ -778,7 +778,7 @@ class TExec {
     @Test
     fun j05_list_disc_null_err () {
         val out = all("""
-            var l: /<?/^>
+            var l: /</^>
             set l = <.0>
             output std l\!1
         """.trimIndent())
@@ -787,9 +787,9 @@ class TExec {
     @Test
     fun j06_list_1 () {
         val out = all("""
-            var l: /<?/^>
+            var l: /</^>
             set l = new <.1 new <.1 <.0>>>
-            var p: //<?/^>
+            var p: //</^>
             {
                 set p = /l --!1
             }
@@ -800,9 +800,9 @@ class TExec {
     @Test
     fun j06_list_2 () {
         val out = all("""
-            var l: /<?/^>
+            var l: /</^>
             set l = new <.1 new <.1 <.0>>>
-            var p: /<?/^>
+            var p: /</^>
             {
                 set p = l --!1
             }
@@ -813,9 +813,9 @@ class TExec {
     @Test
     fun j06_list_ptr () {
         val out = all("""
-            var l: /<?/^>
+            var l: /</^>
             set l = new <.1 new <.1 <.0>>>
-            var p: //<?/^>
+            var p: //</^>
             {
                 set p = /l --!1
             }
@@ -826,9 +826,9 @@ class TExec {
     @Test
     fun j07_list_move () {
         val out = all("""
-            var l1: /<?/^>
+            var l1: /</^>
             set l1 = new <.1 <.0>>
-            var l2: /<?/^>
+            var l2: /</^>
             set l2 = l1
             output std /l1
             output std /l2
@@ -844,13 +844,14 @@ class TExec {
             var l2: /</^>
             set l2 = l1
         """.trimIndent())
-        assert(out == "(ln 4, col 8): invalid assignment : type mismatch") { out }
+        //assert(out == "(ln 4, col 8): invalid assignment : type mismatch") { out }
+        assert(out == "(ln 1, col 11): expected type : have `?´") { out }
     }
     @Test
     fun j08_list_move () {
         val out = all("""
-            var l1: /<?/^>; set l1 = new <.1 <.0>>
-            var l2: /<?/^>; set l2 = <.0>
+            var l1: /</^>; set l1 = new <.1 <.0>>
+            var l2: /</^>; set l2 = <.0>
             set l2 = new <.1 l1>
             output std l2
         """.trimIndent())
@@ -859,8 +860,8 @@ class TExec {
     @Test
     fun j09_list_move () {
         val out = all("""
-            var l1: /<?/^>; set l1 = new <.1 <.0>>
-            var l2: [_int,/<?/^>]; set l2 = [_10, l1]
+            var l1: /</^>; set l1 = new <.1 <.0>>
+            var l2: [_int,/</^>]; set l2 = [_10, l1]
             output std l1
             output std l2.2
         """.trimIndent())
@@ -870,7 +871,7 @@ class TExec {
     @Test
     fun j10_rec () {
         val out = all("""
-            var n: </<?/^>>
+            var n: </</^>>
             set n = <.1 new <.1 <.0>>>
             output std /n
         """.trimIndent())
@@ -879,9 +880,9 @@ class TExec {
     @Test
     fun j11_borrow_1 () {
         val out = all("""
-            var x: /<?/^>
+            var x: /</^>
             set x = new <.1 new <.1 <.0>>>
-            var y: //<?/^>
+            var y: //</^>
             set y = /x
             output std y\
         """.trimIndent())
@@ -890,9 +891,9 @@ class TExec {
     @Test
     fun j11_borrow_2 () {
         val out = all("""
-            var x: /<?/^>
+            var x: /</^>
             set x = new <.1 new <.1 <.0>>>
-            var y: //<?/^>
+            var y: //</^>
             set y = /x --!1
             output std y\
         """.trimIndent())
@@ -901,7 +902,7 @@ class TExec {
     @Test
     fun j11_rec_double () {
         val out = all("""
-            var n: /<?</^^>>
+            var n: /<</^^>>
             set n = new <.1 <.1 new <.1 <.1 <.0>>>>>
             output std n
         """.trimIndent())
@@ -910,7 +911,7 @@ class TExec {
     @Test
     fun j11_rec_double2 () {
         val out = all("""
-            var n: /<?</^^>>
+            var n: /<</^^>>
             set n = <.0>
             output std n
         """.trimIndent())
@@ -919,7 +920,7 @@ class TExec {
     @Test
     fun j09_tup_list_err () {
         val out = all("""
-            var t: [_int,/<?/^>]
+            var t: [_int,/</^>]
             set t = [_10, new <.1 <.0>>]
             output std /t
         """.trimIndent())
@@ -928,11 +929,11 @@ class TExec {
     @Test
     fun j10_tup_copy_ok () {
         val out = all("""
-            var l: /<?/^>
+            var l: /</^>
             set l = <.0>
-            var t1: [/<?/^>]
+            var t1: [/</^>]
             set t1 = [l]
-            var t2: [/<?/^>]
+            var t2: [/</^>]
             set t2 = [t1.1]
             output std /t2
         """.trimIndent())
@@ -941,11 +942,11 @@ class TExec {
     @Test
     fun j11_tup_move_ok () {
         val out = all("""
-            var l: /<?/^>
+            var l: /</^>
             set l = <.0>
-            var t1: [/<?/^>]
+            var t1: [/</^>]
             set t1 = [l]
-            var t2: [/<?/^>]
+            var t2: [/</^>]
             set t2 = [t1.1]
             output std /t2
         """.trimIndent())
@@ -954,11 +955,11 @@ class TExec {
     @Test
     fun j11_tup_copy_ok () {
         val out = all("""
-            var l: /<?/^>
+            var l: /</^>
             set l = new <.1 <.0>>
-            var t1: [/<?/^>]
+            var t1: [/</^>]
             set t1 = [l]
-            var t2: [/<?/^>]
+            var t2: [/</^>]
             set t2 = [t1.1]
             output std /t2
         """.trimIndent())
@@ -967,11 +968,11 @@ class TExec {
     @Test
     fun j12_tup_copy_ok () {
         val out = all("""
-            var l: /<?(),/^>
+            var l: /<(),/^>
             set l = new <.2 new <.1>>
-            var t1: [/<?(),/^>]
+            var t1: [/<(),/^>]
             set t1 = [l]
-            var t2: [/<?(),/^>]
+            var t2: [/<(),/^>]
             set t2 = [t1.1]
             output std /t2
         """.trimIndent())
@@ -980,11 +981,11 @@ class TExec {
     @Test
     fun j13_tup_copy_ok () {
         val out = all("""
-            var l: /<?(),/^>
+            var l: /<(),/^>
             set l = new <.2 new <.1>>
-            var t1: [(),/<?(),/^>]
+            var t1: [(),/<(),/^>]
             set t1 = [(), l]
-            var t2: [(),/<?(),/^>]
+            var t2: [(),/<(),/^>]
             set t2 = [(), t1.2]
             output std /t2
         """.trimIndent())
@@ -993,8 +994,8 @@ class TExec {
     @Test
     fun j14_tup_copy_ok () {
         val out = all("""
-            var l1: /<?/^>; set l1 = <.0>
-            var l2: /<?/^>; set l2 = l1
+            var l1: /</^>; set l1 = <.0>
+            var l2: /</^>; set l2 = l1
             output std l2
         """.trimIndent())
         assert(out == "<.0>\n") { out }
@@ -1002,8 +1003,8 @@ class TExec {
     @Test
     fun j15_tup_copy_ok () {
         val out = all("""
-            var l1: /<?/^>; set l1 = new <.1 <.0>>
-            var l2: /<?/^>; set l2 = l1
+            var l1: /</^>; set l1 = new <.1 <.0>>
+            var l2: /</^>; set l2 = l1
             output std l2
         """.trimIndent())
         assert(out == "<.1 <.0>>\n") { out }
@@ -1011,9 +1012,9 @@ class TExec {
     @Test
     fun j16_tup_move_copy_ok () {
         val out = all("""
-            var l1: /<?/^>; set l1 = new <.1 <.0>>
-            var l2: /<?/^>; set l2 = new <.1 l1>
-            var t3: [(),/<?/^>]
+            var l1: /</^>; set l1 = new <.1 <.0>>
+            var l2: /</^>; set l2 = new <.1 l1>
+            var t3: [(),/</^>]
             set t3 = [(), new <.1 l2\!1>]
             output std l1
             output std /t3
@@ -1023,8 +1024,8 @@ class TExec {
     @Test
     fun j17_uni_rec () {
         val out = all("""
-            var v1: /<(),/<?[/^^,/^]>>; set v1 = new <.2 <.0>>
-            var v2: /<(),/<?[/^^,/^]>>; set v2 = new <.2 new <.1 [new <.1>,<.0>]>>
+            var v1: /<(),/<[/^^,/^]>>; set v1 = new <.2 <.0>>
+            var v2: /<(),/<[/^^,/^]>>; set v2 = new <.2 new <.1 [new <.1>,<.0>]>>
             output std v1
             output std v2
         """.trimIndent())
@@ -1033,8 +1034,8 @@ class TExec {
     @Test
     fun j18_tup_copy_rec_ok () {
         val out = all("""
-            var l1: [/<?/^>]; set l1 = [new <.1 <.0>>]
-            var l2: [/<?/^>]; set l2 = l1
+            var l1: [/</^>]; set l1 = [new <.1 <.0>>]
+            var l2: [/</^>]; set l2 = l1
             output std /l2
         """.trimIndent())
         assert(out == "[<.1 <.0>>]\n") { out }
@@ -1042,7 +1043,7 @@ class TExec {
     @Test
     fun j19_consume_ok () {
         val out = all("""
-            var x: /<?/^>; set x = new <.1 <.0>>
+            var x: /</^>; set x = new <.1 <.0>>
             set x = x
             output std x
         """.trimIndent())
@@ -1051,8 +1052,8 @@ class TExec {
     @Test
     fun j20_consume_ok () {
         val out = all("""
-            var x: /<?/^>; set x = new <.1 <.0>>
-            var y: /<?/^>
+            var x: /</^>; set x = new <.1 <.0>>
+            var y: /</^>
             if _1 {
                 set y = x
             } else {
@@ -1090,8 +1091,8 @@ class TExec {
     @Test
     fun l01_hold_ok () {
         val out = all("""
-            var x: /<? [<(),//^^>,/^]>; set x = new <.1 [<.1>,<.0>]>
-            var y: /<? [<(),//^^>,/^]>; set y = new <.1 [<.1>,x]>
+            var x: /< [<(),//^^>,/^]>; set x = new <.1 [<.1>,<.0>]>
+            var y: /< [<(),//^^>,/^]>; set y = new <.1 [<.1>,x]>
             set y\!1.2\!1.1 = <.1>
             output std y
         """.trimIndent())
@@ -1101,7 +1102,7 @@ class TExec {
     @Test
     fun l02_hold_ok () {
         val out = all("""
-            var x: /<? [<(),//^^>,_int,/^]>
+            var x: /< [<(),//^^>,_int,/^]>
             set x = new <.1 [<.0>,_1,new <.1 [<.0>,_2,<.0>]>]>
             set x!1.3!1.1 = <.1 /x>
             set x!1.1 = <.1 /x!1.3> -- err: address of field inside union
@@ -1115,7 +1116,7 @@ class TExec {
     @Test
     fun l02_hold_ok1 () {
         val out = all("""
-            var x: /<? [<(),/^^>,_int,/^]>
+            var x: /< [<(),/^^>,_int,/^]>
             set x = new <.1 [<.1>,_1,new <.1 [<.1>,_2,<.0>]>]>
             set x\!1.3\!1.1 = <.2 x>
             set x\!1.1 = <.2 x\!1.3>
@@ -1129,7 +1130,7 @@ class TExec {
     @Test
     fun l02_hold_ok2 () {
         val out = all("""
-            var x: /<? [<(),//^^>,_int,/^]>
+            var x: /< [<(),//^^>,_int,/^]>
             set x = new <.1 [<.1>,_2,<.0>]>
             output std x
         """.trimIndent())
@@ -1139,7 +1140,7 @@ class TExec {
     @Test
     fun l03_hold_err () {
         val out = all("""
-            var x: /<? [<(),//^^>,/^]>
+            var x: /< [<(),//^^>,/^]>
             set x = new <.1 [<.1>,new <.1 [<.1>,<.0>]>]>
             set x\!1.2 = <.0>
             output std x
@@ -1236,9 +1237,9 @@ class TExec {
     @Test
     fun z06_type_complex () {
         val out = all("""
-            var x: /<?[(),/^]>; set x = new <.1 [(),<.0>]>
-            var y: [(),/<?[(),/^]>]; set y = [(), new <.1 [(),<.0>]>]
-            var z: [(),//<?[(),/^]>]; set z = [(), /x]
+            var x: /<[(),/^]>; set x = new <.1 [(),<.0>]>
+            var y: [(),/<[(),/^]>]; set y = [(), new <.1 [(),<.0>]>]
+            var z: [(),//<[(),/^]>]; set z = [(), /x]
             output std z.2\\!1.2\!0
         """.trimIndent())
         assert(out == "()\n") { out }
@@ -1246,25 +1247,38 @@ class TExec {
     @Test
     fun z07_type_complex_bug () {
         val out = all("""
-            var x: /<?[(),/^]>; set x = <.0>
-            var z: [(),//<?[(),/^]>]; set z = [(), /x]
-            output std z.2\!0
+            var x: /<[(),/^]>
+            set x = <.0>
+            var z: [(),//<[(),/^]>]
+            set z = [(), /x]
+            output std z.2\\!0
         """.trimIndent())
         assert(out == "()\n") { out }
     }
     @Test
     fun z07_type_complex () {
         val out = all("""
-            var x: /<?[(),/^]>; set x = <.0>
-            var z: [(),//<?[(),/^]>]; set z = [(), /x]
+            var x: /<[(),/^]>
+            set x = <.0>
+            var z: [(),//<[(),/^]>]
+            set z = [(), /x]
             output std z.2\\!0
+        """.trimIndent())
+        assert(out == "()\n") { out }
+    }
+    @Test
+    fun zxx_type_complex () {
+        val out = all("""
+            var z: /</^>
+            output std z\!0
         """.trimIndent())
         assert(out == "()\n") { out }
     }
     @Test
     fun z08_type_complex () {
         val out = all("""
-            var y: [(),/<?[(),/^]>]; set y = [(), new <.1 [(),<.0>]>]
+            var y: [(),/<[(),/^]>]
+            set y = [(), new <.1 [(),<.0>]>]
             output std /y
         """.trimIndent())
         assert(out == "[(),<.1 [(),<.0>]>]\n") { out }
@@ -1272,12 +1286,12 @@ class TExec {
     @Test
     fun z08_func_arg () {
         val out = all("""
-            var x1: /<?/^>; set x1 = <.0>
+            var x1: /</^>; set x1 = <.0>
             var y1: _int; set y1 = x1\?0
-            var x2: //<?/^>; set x2 = /x1
+            var x2: //</^>; set x2 = /x1
             var y2: _int; set y2 = x2\\?1
             set x2\ = new <.1 <.0>>
-            var f: //<?/^>->_int; set f = func //<?/^>->_int {
+            var f: //</^>->_int; set f = func //</^>->_int {
                 return arg\\?1
             }
             var y3: _int; set y3 = f x2
@@ -1290,7 +1304,7 @@ class TExec {
     fun z09_output_string () {
         val out = all("""
             var f: ()->(); set f = func ()->() {
-                var s1: /<?[_int,/^]>; set s1 = new <.1 [_1,<.0>]>
+                var s1: /<[_int,/^]>; set s1 = new <.1 [_1,<.0>]>
                 output std s1
             }
             call f
@@ -1301,7 +1315,7 @@ class TExec {
     fun z10_output_string () {
         val out = all("""
             var f: ()->(); set f = func ()->() {
-                var s1: /<?[_int,/^]>; set s1 = new <.1 [_1,<.0>]>
+                var s1: /<[_int,/^]>; set s1 = new <.1 [_1,<.0>]>
                 output std s1
             }
             call f
@@ -1311,12 +1325,12 @@ class TExec {
     @Test
     fun z10_return_move () {
         val out = all("""
-            var f: ()-><(),_int,/<?[_int,/^]>>
-            set f = func ()-><(),_int,/<?[_int,/^]>> {
-                var str: /<?[_int,/^]>; set str = <.0>
+            var f: ()-><(),_int,/<[_int,/^]>>
+            set f = func ()-><(),_int,/<[_int,/^]>> {
+                var str: /<[_int,/^]>; set str = <.0>
                 return <.3 str>
             }
-            var x: <(),_int,/<?[_int,/^]>>; set x = call f ()
+            var x: <(),_int,/<[_int,/^]>>; set x = call f ()
             output std x!3
         """.trimIndent())
         assert(out == "<.0>\n") { out }
@@ -1332,8 +1346,8 @@ class TExec {
     @Test
     fun z12_union_tuple () {
         val out = all("""
-            var tk2: <(),_int,/<?[_int,/^]>>; set tk2 = <.3 <.0>>
-            var s21: /<(),_int,/<?[_int,/^]>>; set s21 = /tk2
+            var tk2: <(),_int,/<[_int,/^]>>; set tk2 = <.3 <.0>>
+            var s21: /<(),_int,/<[_int,/^]>>; set s21 = /tk2
             output std s21\!3
         """.trimIndent())
         assert(out == "<.0>\n") { out }
