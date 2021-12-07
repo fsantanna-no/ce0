@@ -288,7 +288,7 @@ fun code_fe (e: Expr) {
             val pos = if (e.tk_.num == 0) {
                 "(&${it.second} == NULL)"
             } else {
-                (if (AUX.tps[e.uni].let { it is Type.Union && it.isrec }) "(${it.second} != NULL) && " else "") +
+                (if (AUX.tps[e.uni].let { it is Type.Union && it.isrec }) "(&${it.second} != NULL) && " else "") +
                 "($ee.tag == ${e.tk_.num})"
             }
             Pair(it.first, pos)
@@ -422,8 +422,8 @@ fun Stmt.code (): String {
     fun gt (a: String, b: String): Boolean {
         return (ord[a]!=null && (ord[a]!!.contains(b) || ord[a]!!.any { gt(it,b) }))
     }
-    val TPS = TYPES
-    /*
+    val TPS = //TYPES
+    ///*
         TYPES.sortedWith(Comparator { x: Triple<Pair<String, Set<String>>, String, String>, y: Triple<Pair<String, Set<String>>, String, String> ->
             when {
                 gt(x.first.first, y.first.first) ->  1
@@ -438,7 +438,7 @@ fun Stmt.code (): String {
             }
              */
         })
-    */
+    //*/
     //AUX.tps.forEach { println(it.first.first) }
     assert(EXPRS.size == 0)
     assert(CODE.size == 1)

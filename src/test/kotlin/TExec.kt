@@ -1121,11 +1121,11 @@ class TExec {
             set x\!1.3\!1.1 = <.2 x>
             set x\!1.1 = <.2 x\!1.3>
             output std x\!1.3\!1.2
-            output std x\!1.1!2\ --!1.1!1\!1.2
+            output std x\!1.2
         """.trimIndent())
-        //assert(out == "2\n1\n") { out }
+        assert(out == "2\n1\n") { out }
         //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
-        assert(out == "(ln 4, col 17): invalid operand to `/´ : union discriminator") { out }
+        //assert(out == "(ln 4, col 17): invalid operand to `/´ : union discriminator") { out }
     }
     @Test
     fun l02_hold_ok2 () {
@@ -1286,19 +1286,39 @@ class TExec {
     @Test
     fun z08_func_arg () {
         val out = all("""
-            var x1: /</^>; set x1 = <.0>
-            var y1: _int; set y1 = x1\?0
-            var x2: //</^>; set x2 = /x1
-            var y2: _int; set y2 = x2\\?1
+            var x1: /</^>
+            set x1 = <.0>
+            var y1: _int
+            set y1 = x1\?0
+            var x2: //</^>
+            set x2 = /x1
+            var y2: _int
+            set y2 = x2\\?1
             set x2\ = new <.1 <.0>>
-            var f: //</^>->_int; set f = func //</^>->_int {
+            var f: //</^>->_int
+            set f = func //</^>->_int {
                 return arg\\?1
             }
-            var y3: _int; set y3 = f x2
-            var ret: _int; set ret = _(y1 + y2 + y3)
+            var y3: _int
+            set y3 = f x2
+            var ret: _int
+            set ret = _(y1 + y2 + y3)
             output std ret
         """.trimIndent())
         assert(out == "2\n") { out }
+    }
+    @Test
+    fun z08_func_alt () {
+        val out = all("""
+            var x1: /</^>
+            set x1 = <.0>
+            var x2: //</^>
+            set x2 = /x1
+            var y2: _int
+            set y2 = x2\\?1
+            output std y2
+        """.trimIndent())
+        assert(out == "0\n") { out }
     }
     @Test
     fun z09_output_string () {
@@ -1327,10 +1347,12 @@ class TExec {
         val out = all("""
             var f: ()-><(),_int,/<[_int,/^]>>
             set f = func ()-><(),_int,/<[_int,/^]>> {
-                var str: /<[_int,/^]>; set str = <.0>
+                var str: /<[_int,/^]> @1
+                set str = <.0>
                 return <.3 str>
             }
-            var x: <(),_int,/<[_int,/^]>>; set x = call f ()
+            var x: <(),_int,/<[_int,/^]>>
+            set x = call f ()
             output std x!3
         """.trimIndent())
         assert(out == "<.0>\n") { out }
