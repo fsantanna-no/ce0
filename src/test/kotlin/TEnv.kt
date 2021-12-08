@@ -1177,7 +1177,7 @@ class TEnv {
                 set p.2 = /v    -- err
             }
         """.trimIndent())
-        assert(out == "ERR") { out }
+        assert(out == "(ln 4, col 13): invalid assignment : type mismatch") { out }
     }
     @Test
     fun h07_ptr_tup_err () {
@@ -1199,7 +1199,7 @@ class TEnv {
                 set p!1 = /v
             }
         """.trimIndent())
-        assert(out == "ERR") { out }
+        assert(out == "(ln 4, col 13): invalid assignment : type mismatch") { out }
     }
     @Test
     fun h09_ptr_type_err () {

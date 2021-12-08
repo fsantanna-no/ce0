@@ -220,7 +220,7 @@ fun Aux_02_tps (s: Stmt) {
                 All_assert_tk(e.tk, MIN <= e.tk_.num && e.tk_.num <= MAX) {
                     "invalid discriminator : out of bounds"
                 }
-                it.vec[e.tk_.num - 1].up(e)
+                it.vec[e.tk_.num - 1]
             }
             is Expr.UDisc, is Expr.UPred -> {
                 val (tk_,uni) = when (e) {
@@ -244,7 +244,7 @@ fun Aux_02_tps (s: Stmt) {
                     is Expr.UDisc -> if (e.tk_.num == 0) {
                         Type_Unit(e.tk).up(e)
                     } else {
-                        tp.expand()[e.tk_.num - 1].up(e)
+                        tp.expand()[e.tk_.num - 1]
                     }
                     is Expr.UPred -> Type.Nat(Tk.Str(TK.XNAT, e.tk.lin, e.tk.col, "int")).up(e)
                     else -> error("bug found")
