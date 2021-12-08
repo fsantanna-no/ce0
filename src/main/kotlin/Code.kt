@@ -257,6 +257,13 @@ fun code_fe (e: Expr) {
                 $sup $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
                 *$ID = ${it.second};
+                {
+                    __News* __new = malloc(sizeof(__News));
+                    assert(__new!=NULL && "not enough memory");
+                    __new->val = $ID;
+                    __new->nxt = __news_cur;
+                    __news_cur = __new;
+                }
 
             """.trimIndent()
             Pair(it.first+pre, ID)
@@ -349,7 +356,13 @@ fun code_fs (s: Stmt) {
             val e = EXPRS.removeFirst()
             e.first + e.second + ";\n"
         }
-        is Stmt.Block -> "{\n" + CODE.removeFirst() + "}\n"
+        is Stmt.Block -> """
+            {
+                __News* __news_cur  __attribute__((__cleanup__(__news_free))) = NULL;
+                ${CODE.removeFirst()}
+            }
+            
+            """.trimIndent()
         is Stmt.Ret   -> {
             //EXPRS.removeFirst()
             val f = s.ups_first { it is Expr.Func } as Expr.Func
@@ -413,7 +426,24 @@ fun Stmt.code (): String {
         #define output_std_Ptr(x)    (output_std_Ptr_(x), puts(""))
         ${TPS.map { it.second }.joinToString("")}
         ${TPS.map { it.third }.joinToString("")}
+        
+        typedef struct __News {
+            void* val;
+            struct __News* nxt;
+        } __News;
+        
+        void __news_free (__News** news) {
+            while (*news != NULL) {
+                __News* cur = *news;
+                *news = cur->nxt;
+                free(cur->val);
+                free(cur);
+            }
+            *news = NULL;
+        }
+        
         int main (void) {
+            __News* __news_cur  __attribute__((__cleanup__(__news_free))) = NULL;
             ${CODE.removeFirst()}
         }
 
