@@ -17,7 +17,10 @@ class TExec {
             return out2
         }
         //val (_,out3) = exec("./out.exe")
-        val (_,out3) = exec("valgrind ./out.exe") // search in tests output for "definitely lost"
+        val (_,out3) = exec("valgrind ./out.exe")
+            // search in tests output for
+            //  - "definitely lost"
+            //  - "Invalid read of size"
         //println(out3)
         return out3
     }
@@ -1160,6 +1163,27 @@ class TExec {
         """.trimIndent())
         assert(out == "10\n") { out }
     }
+
+    // ALLOC / SCOPE / NEWS
+
+    @Test
+    fun e07_ptr_ok () {
+        val out = all("""
+            { @a
+                var pa: /</^>
+                var f: ()->()
+                set f = func ()->() {
+                    var pf: /</^> @a
+                    set pf = new <.1 <.0>>
+                    set pa = pf
+                }
+                call f
+                output std pa
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+
 
     // ALL
 

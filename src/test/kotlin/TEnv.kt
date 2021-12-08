@@ -572,7 +572,7 @@ class TEnv {
                 }
             }
         """.trimIndent())
-        assert(out == "OK") { out }
+        assert(out == "<.1 <.0>>") { out }
     }
     @Test
     fun e08_ptr_ok () {
