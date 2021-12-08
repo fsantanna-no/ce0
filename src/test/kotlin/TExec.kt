@@ -360,7 +360,7 @@ class TExec {
             var z: <(),()>; set z = <.2>
             output std z!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:50: main: Assertion `z.tag == 1' failed.\n") { out }
+        assert(out == "out.exe: out.c:49: main: Assertion `z.tag == 1' failed.\n") { out }
     }
     @Test
     fun f12_user_disc_pred_idx () {
@@ -782,7 +782,7 @@ class TExec {
             set l = <.0>
             output std l\!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:52: main: Assertion `&(*l) != NULL' failed.\n") { out }
+        assert(out == "out.exe: out.c:51: main: Assertion `&(*l) != NULL' failed.\n") { out }
     }
     @Test
     fun j06_list_1 () {

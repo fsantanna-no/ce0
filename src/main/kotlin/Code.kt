@@ -87,11 +87,7 @@ fun code_ft (tp: Type) {
                 ${if (tp.containsRec()) struct.first else struct.second }
                 void output_std_${ce}_ (${tp.pos()}* v);
                 void output_std_${ce} (${tp.pos()}* v);
-                ${if (!tp.containsRec()) "" else """
-                    void free_${ce} (${tp.pos()}* v);
-
-                """
-                }
+                
             ""","""
                 ${if (tp.containsRec()) struct.second else "" }
                 void output_std_${ce}_ (${tp.pos()}* v) {
@@ -114,24 +110,10 @@ fun code_ft (tp: Type) {
                     puts("");
                 }
 
-            """.trimIndent() + (if (!tp.containsRec()) "" else """
-                void free_${ce} (${tp.pos()}* v) {
-                    ${tp.vec
-                        .mapIndexed { i, sub ->
-                            if (!sub.containsRec()) "" else """
-                                free_${sub.toce()}(&v->_${i + 1});
-
-                            """.trimIndent()
-                        }
-                        .joinToString("")
-                    }
-                }
-
-            """.trimIndent())))
+            """.trimIndent()))
         }
         is Type.Union -> {
             val ce    = tp.toce()
-            val exrec = tp.isrec()
             val tpexp = tp.expand()
 
             val struct = Pair ("""
@@ -143,15 +125,15 @@ fun code_ft (tp: Type) {
                     int tag;
                     union {
                         ${tpexp  // do not filter to keep correct i
-                        .mapIndexed { i,sub ->
-                            when {
-                                sub is Type.Unit -> ""
-                                sub is Type.Rec -> error("bug found") //"struct $ce* _${i+1};\n"
-                                else -> "${sub.pos()} _${i+1};\n"
+                            .mapIndexed { i,sub ->
+                                when {
+                                    sub is Type.Unit -> ""
+                                    sub is Type.Rec -> error("bug found") //"struct $ce* _${i+1};\n"
+                                    else -> "${sub.pos()} _${i+1};\n"
+                                }
                             }
+                            .joinToString("")
                         }
-                        .joinToString("")
-                    }
                     };
                 };
 
@@ -164,11 +146,6 @@ fun code_ft (tp: Type) {
                 ${if (tp.containsRec()) struct.first else struct.second }
                 void output_std_${ce}_ (${tp.pos()}* v);
                 void output_std_${ce} (${tp.pos()}* v);
-                ${if (!tp.containsRec()) "" else """
-                    void free_${ce} (${tp.pos()}* v);
-
-                """
-            }
 
             """.trimIndent(),
             """
@@ -208,27 +185,7 @@ fun code_ft (tp: Type) {
                     puts("");
                 }
 
-            """.trimIndent() + (if (!tp.containsRec()) "" else """
-                void free_${ce} (${tp.pos()}* v) {
-                    ${ "" /*if (!tp.isnullable) "" else "if (v == NULL) return;\n"*/ }
-                    if (v == NULL) return;
-                    switch (v->tag) {
-                        ${ tpexp
-                            .mapIndexed { i,tp2 ->
-                                if (!tp2.containsRec()) "" else """
-                                    case ${i+1}:
-                                        free_${tp2.toce()}(&v->_${i+1});
-                                        break;
-
-                                """.trimIndent()
-                            }
-                            .joinToString("")
-                        }
-                    }
-                    ${ if (!exrec) "" else "free(v);\n" }
-                }
-
-            """.trimIndent())))
+            """.trimIndent()))
         }
     }
 }
