@@ -60,8 +60,8 @@ fun Type.isSupOf_ (sub: Type, depth: Boolean, ups1: List<Type.Union>, ups2: List
         (this is Type.Ptr && sub is Type.Ptr) -> {
             //println("SUPOF ${this.tk.lin}: ${AUX.scp[this]} = ${AUX.scp[sub]}")
             val ok = if (depth) {
-                val dthis = AUX.scp[this]!!
-                val dsub  = AUX.scp[sub]!!
+                val dthis = this.scope()
+                val dsub  = sub.scope()
                 // (dthis.isbas==dsub.isabs): abs vs abs || rel vs rel // (no @aaa vs @1)
                 // (dthis.level==dsub.level): unless @aaa=@1 are in the same function (then always @1<=@aaa)
                 // (dsub.depth == 0):         globals as source are always ok

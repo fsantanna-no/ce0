@@ -1,3 +1,5 @@
+data class Scope (val level: Int, val isabs: Boolean, val depth: Int)
+
 sealed class Type (val tk: Tk) {
     data class Any   (val tk_: Tk.Chr): Type(tk_)
     data class Unit  (val tk_: Tk.Sym): Type(tk_)
@@ -90,10 +92,10 @@ fun Type.Union.expand (): Array<Type> {
     fun aux (cur: Type, up: Int): Type {
         return when (cur) {
             is Type.Rec   -> if (up == cur.tk_.up) this else { assert(up>cur.tk_.up) ; cur }
-            is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray())
-            is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray())
-            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scope, aux(cur.pln,up))
-            is Type.Func  -> Type.Func(cur.tk_, aux(cur.inp,up), aux(cur.out,up))
+            is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray()).up(AUX.ups[cur]!!)
+            is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray()).up(AUX.ups[cur]!!)
+            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scope, aux(cur.pln,up)).up(AUX.ups[cur]!!)
+            is Type.Func  -> Type.Func(cur.tk_, aux(cur.inp,up), aux(cur.out,up)).up(AUX.ups[cur]!!)
             is Type.UCons -> error("bug found")
             else -> cur
         }
@@ -108,5 +110,73 @@ fun Type.containsRec (): Boolean {
         is Type.Tuple -> this.vec.any { it.containsRec() }
         is Type.Union -> this.vec.any { it.containsRec() }
         is Type.UCons -> this.arg.containsRec()
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+
+fun Type.Ptr.scope (): Scope {
+    println(this)
+
+    // Derived scope from pointers above myself:
+    // /(/x)@a      --> /x is also @a
+    // func /x->()  --> /x is @1 (default)
+    fun up (tp: Type.Ptr): String? {
+        var cur: Type = tp
+        while (true) {
+            val nxt = AUX.ups[cur]
+            when {
+                (cur is Type.Ptr && cur.scope != null) -> return cur.scope!!
+                (nxt == null) -> return null
+                (nxt is Type.Func) -> return "@1"
+                (nxt is Stmt.Var && nxt.tk_.str == "_ret_") -> return "@1"
+                (nxt !is Type) -> return null
+                else -> cur = nxt
+            }
+        }
+    }
+
+    // Offset of @N (max) of all crossing functions:
+    //  func /()->() {              // +1
+    //      func [/()@1,/()@2] {    // +2
+    //          ...                 // off=3
+    fun off (ups: List<Any>): Int {
+        return ups
+            .filter { it is Expr.Func }
+            .map {
+                (it as Expr.Func).type.flatten().filter { it is Type.Ptr }
+                    .map { up(it as Type.Ptr) }
+                    .filterNotNull()
+                    .map { it.toIntOrNull() }
+                    .filterNotNull()
+                    .maxOrNull() ?: 0
+            }
+            .sum()
+    }
+
+    // Level of function nesting:
+    //  func ... {
+    //      ...             // lvl=1
+    //      func ... {
+    //          ...         // lvl=1
+    val lvl = this.level()
+    // dropWhile(Type).drop(1) so that prototype skips up func
+    //val lvl = this.ups_tolist().dropWhile { it is Type }.drop(1).filter { it is Expr.Func }.count()
+
+    val id = up(this)
+    return when (id) {
+        null -> Scope(lvl, true, this.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
+        "@global" -> Scope(lvl, true, 0)
+        else -> {
+            val num = id.drop(1).toIntOrNull()
+            if (num == null) {
+                val blk = this.ups_first { it is Stmt.Block && it.scope == id }!!
+                Scope(lvl, true, 1 + blk.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
+            } else {
+                val n = this.ups_first { it is Expr.Func }.let { if (it == null) 0 else off(it.ups_tolist()) }
+                Scope(lvl, false, n + num)    // false = relative to function block
+            }
+        }
     }
 }

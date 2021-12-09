@@ -127,6 +127,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("<(),<(),^^>>"), 2))
         lexer(all)
         val tp1 = parser_type(all)
+        tp1.visit { AUX.ups[it] = Any() }
         val tp2 = (tp1 as Type.Union).expand()[1]
         // <(),<(),^^>> = <(),<(),<(),^^>>>
         val ok1 = tp1.isSupOf(tp2)

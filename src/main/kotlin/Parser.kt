@@ -136,13 +136,14 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 val block = parser_block(all)
                 val lin = block.tk.lin
                 val col = block.tk.col
+                //println(tpf.inp)
 
                 val xblock = Stmt.Block(block.tk_, null,
                     Stmt.Seq(block.tk,
                         Stmt.Var(Tk.Str(TK.XVAR,lin,col,"_ret_"), tpf.out.lincol(lin,col)),
                         Stmt.Block(block.tk_, null,
                             Stmt.Seq(block.tk,
-                                Stmt.Var(Tk.Str(TK.XVAR,lin,col,"arg"), tpf.inp.lincol(lin,col)),
+                                Stmt.Var(Tk.Str(TK.XVAR,lin,col,"arg"), tpf.inp.lincol(lin,col)), //.let{println(it);it}),
                                 Stmt.Seq(block.tk,
                                     Stmt.Set(
                                         Tk.Chr(TK.XVAR,lin,col,'='),

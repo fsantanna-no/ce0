@@ -16,8 +16,8 @@ class TExec {
         if (!ok2) {
             return out2
         }
-        //val (_,out3) = exec("./out.exe")
-        val (_,out3) = exec("valgrind ./out.exe")
+        val (_,out3) = exec("./out.exe")
+        //val (_,out3) = exec("valgrind ./out.exe")
             // search in tests output for
             //  - "definitely lost"
             //  - "Invalid read of size"
@@ -1167,7 +1167,7 @@ class TExec {
     // ALLOC / SCOPE / NEWS
 
     @Test
-    fun e07_ptr_ok () {
+    fun m01_scope_a () {
         val out = all("""
             { @a
                 var pa: /</^>
@@ -1181,9 +1181,41 @@ class TExec {
                 output std pa
             }
         """.trimIndent())
-        assert(out == "OK") { out }
+        assert(out == "<.1 <.0>>\n") { out }
     }
-
+    @Test
+    fun m01_scope_f () {
+        val out = all("""
+            var f: /</^>@1->()
+            set f = func /</^>@1->() {
+                var pf: /</^> @1
+                set pf = arg
+                output std pf
+            }
+            {
+                var x: /</^>
+                set x = new <.1 <.0>>
+                call f x
+            }
+        """.trimIndent())
+        assert(out == "<.1 <.0>>\n") { out }
+    }
+    @Test
+    fun m02_scope_f () {
+        val out = all("""
+            var f: /</^>@1->()
+            set f = func /</^>@1->() {
+                set arg\!1 = new <.1 <.0>>
+            }
+            {
+                var x: /</^>
+                set x = new <.1 <.0>>
+                call f x
+                output std x
+            }
+        """.trimIndent())
+        assert(out == "<.1 <.1 <.0>>>\n") { out }
+    }
 
     // ALL
 
@@ -1294,6 +1326,7 @@ class TExec {
     fun zxx_type_complex () {
         val out = all("""
             var z: /</^>
+            set z = <.0>
             output std z\!0
         """.trimIndent())
         assert(out == "()\n") { out }

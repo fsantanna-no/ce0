@@ -17,9 +17,8 @@ class TEnv {
             s.aux_01_upsenvs(null, null)
             check_01_no_scp_tps_xps(s)
             Aux_02_tps(s)
-            Aux_03_scp()
             check_02_no_xps(s)
-            s.aux_04_xps()
+            s.aux_03_xps()
             check_03(s)
             return "OK"
         } catch (e: Throwable) {
@@ -572,7 +571,7 @@ class TEnv {
                 }
             }
         """.trimIndent())
-        assert(out == "<.1 <.0>>") { out }
+        assert(out == "OK") { out }
     }
     @Test
     fun e08_ptr_ok () {
@@ -791,6 +790,17 @@ class TEnv {
                     set x = arg
                     return arg   -- ok
                 }
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun e23_union_ok () {
+        val out = inp2env("""
+            {
+                var x: /</^>
+                var y: /</^>
+                set x\!1 = y
             }
         """.trimIndent())
         assert(out == "OK") { out }

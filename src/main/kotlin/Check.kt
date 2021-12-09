@@ -92,7 +92,9 @@ fun check_02_no_xps (s: Stmt) {
             is Stmt.Set -> {
                 val dst = AUX.tps[s.dst]!!
                 val src = AUX.tps[s.src]!!
-                //println(s.dst)
+                //print("SET ") ; println(s.dst)
+                //val scp = (dst as Type.Ptr).scope()
+                //print("scope ") ; print(scp)
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
                     //println("SET (${s.tk.lin}): ${dst.tostr()} = ${src.tostr()}")
                     val str = if (s.dst is Expr.Var && s.dst.tk_.str == "_ret_") "return" else "assignment"
@@ -118,7 +120,7 @@ fun Type.map2 (f: (Type)->Type): Type {
             //   - that would change identity of original Ptr
             //   - test relies on identity
             val ret1 = f(this) as Type.Ptr
-            Type.Ptr(ret1.tk_, ret1.scope, this.pln.map2(f)).scp_add(AUX.scp[ret1]!!)
+            Type.Ptr(ret1.tk_, ret1.scope, this.pln.map2(f))
         }
     }
 }
@@ -152,7 +154,7 @@ fun check_03 (s: Stmt) {
                     val all = (AUX.xps[e]!!.flatten() + AUX.tps[e.arg]!!.flatten())
                         //.filter { it !is Type.Func } // (ignore pointers in function types)
                     // ptrs = all ptrs+depths inside args
-                    val ptrs = all.filter { it is Type.Ptr }.map { (it as Type.Ptr).let { Pair(AUX.scp[it]!!,it) } }
+                    val ptrs = all.filter { it is Type.Ptr }.map { (it as Type.Ptr).let { Pair(it.scope(),it) } }
                     // sorted = ptrs sorted by grouped depths, substitute depth by increasing index
                     val sorted = ptrs
                         .groupBy  { it.first.depth }
@@ -167,14 +169,14 @@ fun check_03 (s: Stmt) {
                     val arg2 = AUX.tps[e.arg]!!.map2 { ptr ->
                         if (ptr !is Type.Ptr) ptr else {
                             val idx = sorted.find { it.second == ptr }!!.first
-                            Type.Ptr(ptr.tk_, "@"+idx, ptr.pln).scp_add(Scope(ptr.level(),false,idx))
+                            Type.Ptr(ptr.tk_, "@"+idx, ptr.pln)
                         }
                     }
                     // xp2 = scope in ptrs inside xp are now increasing numbers (@1,@2,...)
                     val xp2 = AUX.xps[e]!!.map2 { ptr ->
                         if (ptr !is Type.Ptr) ptr else {
                             val idx = sorted.find { it.second == ptr }!!.first
-                            Type.Ptr(ptr.tk_, "@"+idx, ptr.pln).scp_add(Scope(ptr.level(), false, idx))
+                            Type.Ptr(ptr.tk_, "@"+idx, ptr.pln)
                         }
                     }
                     Pair(xp2,arg2)

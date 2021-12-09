@@ -254,6 +254,8 @@ fun code_fe (e: Expr) {
             val ID  = "__tmp_" + e.hashCode().absoluteValue
             val ptr = AUX.xps[e] as Type.Ptr
             val sup = ptr.pos()
+            //println(ptr.scope)
+            //println(AUX.scp[ptr])
             val pre = """
                 $sup $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
@@ -263,7 +265,7 @@ fun code_fe (e: Expr) {
                     assert(__new!=NULL && "not enough memory");
                     __new->val = $ID;
                     __new->nxt = *__news_cur;
-                    *${if (ptr.scope==null) "__news_cur" else "__news_${ptr.scope!!.drop(1)}"} = __new;
+                    *${if (ptr.scope==null) "__news_cur" else "__news_${ptr.scope().depth}"} = __new;
                 }
 
             """.trimIndent()
@@ -362,7 +364,7 @@ fun code_fs (s: Stmt) {
                 __News* __news  __attribute__((__cleanup__(__news_free))) = NULL;
                 __News** __news_cur = &__news;
                 ${ if (s.scope == null) "" else {
-                    "__News** __news_${s.scope!!.drop(1)} = &__news;"
+                    "__News** __news_${1 + s.ups_tolist().count{ it is Stmt.Block }} = &__news;"
                 }}
                 ${CODE.removeFirst()}
             }

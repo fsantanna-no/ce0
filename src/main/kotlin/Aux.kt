@@ -1,11 +1,8 @@
-data class Scope (val level: Int, val isabs: Boolean, val depth: Int)
 data class Env (val s: Stmt.Var, val prv: Env?)
 
 object AUX {
-    // aux_01
     val ups = mutableMapOf<Any,Any>()
     val env = mutableMapOf<Any,Env>()
-    val scp = mutableMapOf<Type.Ptr,Scope>()
     val tps = mutableMapOf<Expr,Type>()
     val xps = mutableMapOf<Expr,Type>()
 }
@@ -172,7 +169,7 @@ fun Stmt.aux_01_upsenvs (up: Any?, env: Env?): Env? {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-private
+//private
 fun Type.up (up: Any): Type {
     ups_add(this, up)
     return this
@@ -189,7 +186,7 @@ fun Aux_02_tps (s: Stmt) {
                     All_assert_tk(e.tk, it is Type.Ptr) {
                         "invalid operand to `\\´ : not a pointer"
                     }
-                    (it as Type.Ptr).pln
+                    (it as Type.Ptr).pln //.let { print("dnref ");println(AUX.tps[e.ptr]) ; it }
                 }
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { AUX.tps[it]!! }.toTypedArray()).up(e)
@@ -200,7 +197,7 @@ fun Aux_02_tps (s: Stmt) {
                     when (it) {
                         // scope of output is tested in the call through XP
                         // here, just returns the "top" scope to succeed
-                        is Type.Func -> it.out.map { if (it !is Type.Ptr) it else Type.Ptr(it.tk_, "@global", it.pln).scp_add(Scope(0,true,0)) }
+                        is Type.Func -> it.out.map { if (it !is Type.Ptr) it else Type.Ptr(it.tk_, "@global", it.pln) }
                         is Type.Nat  -> it //Type.Nat(it.tk_).ups(e)
                         else -> {
                             All_assert_tk(e.f.tk, false) {
@@ -244,111 +241,28 @@ fun Aux_02_tps (s: Stmt) {
                     is Expr.UDisc -> if (e.tk_.num == 0) {
                         Type_Unit(e.tk).up(e)
                     } else {
-                        tp.expand()[e.tk_.num - 1]
+                        tp.expand()[e.tk_.num - 1] //.let { print("udisc ");println(tp) ; it }
                     }
                     is Expr.UPred -> Type.Nat(Tk.Str(TK.XNAT, e.tk.lin, e.tk.col, "int")).up(e)
                     else -> error("bug found")
                 }
             }
-            is Expr.Var -> e.env()!!.type
+            is Expr.Var -> e.env()!!.type //.let { print(">>> [${e.tk_.str}] ");println(it);it }
         }
     }
     s.visit(null, ::fe, null)
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-// Every single Type.Ptr created after Aux_03_scp must use this function
-//  Functions that currently do not use it:
-//      - Type.map (not used after AUX.tps)
-//      - Type.lincol (not used after parser)
-//      - Type.Union.expand (used after Aux_03_scp, problem??)
-fun Type.Ptr.scp_add (scope: Scope): Type.Ptr {
-    AUX.scp[this] = scope
-    return this
-}
-
-fun Aux_03_scp () {
-    fun ft (tp: Type) {
-        if (tp !is Type.Ptr) {
-            return
-        }
-
-        // Derived scope from pointers above myself:
-        // /(/x)@a      --> /x is also @a
-        // func /x->()  --> /x is @1 (default)
-        fun up (tp: Type.Ptr): String? {
-            var cur: Type = tp
-            while (true) {
-                val nxt = AUX.ups[cur]
-                when {
-                    (cur is Type.Ptr && cur.scope != null) -> return cur.scope!!
-                    (nxt == null) -> return null
-                    (nxt is Type.Func) -> return "@1"
-                    (nxt is Stmt.Var && nxt.tk_.str == "_ret_") -> return "@1"
-                    (nxt !is Type) -> return null
-                    else -> cur = nxt
-                }
-            }
-        }
-
-        // Offset of @N (max) of all crossing functions:
-        //  func /()->() {              // +1
-        //      func [/()@1,/()@2] {    // +2
-        //          ...                 // off=3
-        fun off (ups: List<Any>): Int {
-            return ups
-                .filter { it is Expr.Func }
-                .map {
-                    (it as Expr.Func).type.flatten().filter { it is Type.Ptr }
-                        .map { up(it as Type.Ptr) }
-                        .filterNotNull()
-                        .map { it.toIntOrNull() }
-                        .filterNotNull()
-                        .maxOrNull() ?: 0
-                }
-                .sum()
-        }
-
-        // Level of function nesting:
-        //  func ... {
-        //      ...             // lvl=1
-        //      func ... {
-        //          ...         // lvl=1
-        val lvl = tp.level()
-        // dropWhile(Type).drop(1) so that prototype skips up func
-        //val lvl = this.ups_tolist().dropWhile { it is Type }.drop(1).filter { it is Expr.Func }.count()
-
-        val id = up(tp)
-        AUX.scp[tp] = when (id) {
-            null -> Scope(lvl, true, tp.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
-            "@global" -> Scope(lvl, true, 0)
-            else -> {
-                val num = id.drop(1).toIntOrNull()
-                if (num == null) {
-                    val blk = tp.ups_first { it is Stmt.Block && it.scope == id }!!
-                    Scope(lvl, true, 1 + blk.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
-                } else {
-                    val n = tp.ups_first { it is Expr.Func }.let { if (it == null) 0 else off(it.ups_tolist()) }
-                    Scope(lvl, false, n + num)    // false = relative to function block
-                }
-            }
-        }
-    }
-    for (tp in AUX.tps.values) {
-        tp.visit(::ft)
-    }
+    //println(s)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 private
-fun Expr.aux_04_xps (xp: Type) {
+fun Expr.aux_03_xps (xp: Type) {
     AUX.xps[this] = xp
     when (this) {
         is Expr.TCons -> {
             assert(xp is Type.Tuple && xp.vec.size==this.arg.size)
-            this.arg.forEachIndexed { i,e -> e.aux_04_xps((xp as Type.Tuple).vec[i]) }
+            this.arg.forEachIndexed { i,e -> e.aux_03_xps((xp as Type.Tuple).vec[i]) }
         }
         is Expr.UCons -> {
             assert(xp is Type.Union && xp.vec.size>=this.tk_.num || this.tk_.num==0)
@@ -356,51 +270,51 @@ fun Expr.aux_04_xps (xp: Type) {
                 (this.tk_.num == 0) -> Type_Unit(this.tk)
                 else -> (xp as Type.Union).expand()[this.tk_.num - 1]
             }
-            this.arg.aux_04_xps(xp2)
+            this.arg.aux_03_xps(xp2)
         }
-        is Expr.New -> this.arg.aux_04_xps((xp as Type.Ptr).pln)
+        is Expr.New -> this.arg.aux_03_xps((xp as Type.Ptr).pln)
         is Expr.Dnref -> {
-            this.ptr.aux_04_xps(xp.keepAnyNat {
-                Type.Ptr(Tk.Chr(TK.CHAR, this.tk.lin, this.tk.col, '\\'), null, xp).scp_add(Scope(0,true,0))
+            this.ptr.aux_03_xps(xp.keepAnyNat {
+                Type.Ptr(Tk.Chr(TK.CHAR, this.tk.lin, this.tk.col, '\\'), null, xp).up(this)
             })
         }
         is Expr.Upref -> {
-            this.pln.aux_04_xps(xp.keepAnyNat { (xp as Type.Ptr).pln })
+            this.pln.aux_03_xps(xp.keepAnyNat { (xp as Type.Ptr).pln })
         }
-        is Expr.TDisc -> this.tup.aux_04_xps(Type_Any(this.tk))
-        is Expr.UDisc -> this.uni.aux_04_xps(Type_Any(this.tk))
-        is Expr.UPred -> this.uni.aux_04_xps(Type_Any(this.tk))
+        is Expr.TDisc -> this.tup.aux_03_xps(Type_Any(this.tk))
+        is Expr.UDisc -> this.uni.aux_03_xps(Type_Any(this.tk))
+        is Expr.UPred -> this.uni.aux_03_xps(Type_Any(this.tk))
         is Expr.Call  -> {
-            this.f.aux_04_xps(Type_Any(this.tk))
+            this.f.aux_03_xps(Type_Any(this.tk))
             val xp2 = AUX.tps[this.f]!!.let { it.keepAnyNat{it} }
             val arg = when (xp2) {
                 is Type.Func -> xp2.keepAnyNat{ xp2.inp }
                 is Type.Nat  -> xp2
                 else -> error("impossible case")
             }
-            this.arg.aux_04_xps(arg)
+            this.arg.aux_03_xps(arg)
         }
-        is Expr.Func  -> this.block.aux_04_xps()
+        is Expr.Func  -> this.block.aux_03_xps()
     }
 }
 
-fun Stmt.aux_04_xps () {
+fun Stmt.aux_03_xps () {
     when (this) {
         is Stmt.Set -> {
-            this.dst.aux_04_xps(Type_Any(this.tk))
-            this.src.aux_04_xps(AUX.tps[this.dst]!!)
+            this.dst.aux_03_xps(Type_Any(this.tk))
+            this.src.aux_03_xps(AUX.tps[this.dst]!!)
         }
-        is Stmt.Call -> this.call.aux_04_xps(Type_Any(this.tk))
+        is Stmt.Call -> this.call.aux_03_xps(Type_Any(this.tk))
         is Stmt.Seq -> {
-            this.s1.aux_04_xps()
-            this.s2.aux_04_xps()
+            this.s1.aux_03_xps()
+            this.s2.aux_03_xps()
         }
         is Stmt.If -> {
-            this.tst.aux_04_xps(Type_Nat(this.tk,"int"))
-            this.true_.aux_04_xps()
-            this.false_.aux_04_xps()
+            this.tst.aux_03_xps(Type_Nat(this.tk,"int"))
+            this.true_.aux_03_xps()
+            this.false_.aux_03_xps()
         }
-        is Stmt.Loop  -> this.block.aux_04_xps()
-        is Stmt.Block -> this.body.aux_04_xps()
+        is Stmt.Loop  -> this.block.aux_03_xps()
+        is Stmt.Block -> this.body.aux_03_xps()
     }
 }
