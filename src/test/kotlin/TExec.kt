@@ -1233,6 +1233,22 @@ class TExec {
         """.trimIndent())
         assert(out == "<.1 <.1 <.0>>>\n") { out }
     }
+    @Test
+    fun m04_scope_f () {
+        val out = all("""
+            var f: /</^>->()
+            set f = func /</^>->() {
+                set arg\!1 = new <.1 <.0>>
+            }
+            {
+                var x: /</^>
+                set x = new <.1 <.0>>
+                call f x
+                output std x
+            }
+        """.trimIndent())
+        assert(out == "<.1 <.1 <.0>>>\n") { out }
+    }
 
     // ALL
 

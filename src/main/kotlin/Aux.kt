@@ -262,9 +262,9 @@ fun Expr.aux_03_xps (xp: Type) {
     when (this) {
         is Expr.TCons -> {
             when (xp) {
-                is Type.Any, is Type.Nat -> this.arg.forEachIndexed { i,e -> e.aux_03_xps(xp) }
+                is Type.Any, is Type.Nat -> this.arg.forEachIndexed { _,e -> e.aux_03_xps(xp) }
                 is Type.Tuple -> {
-                    assert(xp is Type.Tuple && xp.vec.size==this.arg.size)
+                    assert(xp.vec.size==this.arg.size)
                     this.arg.forEachIndexed { i,e -> e.aux_03_xps(xp.vec[i]) }
                 }
                 else -> error("bug found")

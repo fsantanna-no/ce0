@@ -117,8 +117,6 @@ fun Type.containsRec (): Boolean {
 
 
 fun Type.Ptr.scope (): Scope {
-    println(this)
-
     // Derived scope from pointers above myself:
     // /(/x)@a      --> /x is also @a
     // func /x->()  --> /x is @1 (default)

@@ -491,14 +491,14 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("call ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Call && s.call is Expr.Call)
+        assert(s is Stmt.Call)
     }
     @Test
     fun c04_parser_stmt_call () {
         val all = All_new(PushbackReader(StringReader("call () ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Call && s.call is Expr.Call)
+        assert(s is Stmt.Call)
     }
     @Test
     fun c05_parser_stmt_call () {
