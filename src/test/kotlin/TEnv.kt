@@ -805,6 +805,14 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK") { out }
     }
+    @Test
+    fun e24_err () {
+        val out = inp2env("""
+            var x: /</^>
+            output std [x,x]
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
 
     // POINTERS - DOUBLE
 

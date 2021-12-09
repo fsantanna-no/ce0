@@ -125,11 +125,29 @@ class TCode {
             #define output_std_Ptr(x)    (output_std_Ptr_(x), puts(""))
 
 
+
+            typedef struct __News {
+                void* val;
+                struct __News* nxt;
+            } __News;
+            
+            void __news_free (__News** news) {
+                while (*news != NULL) {
+                    __News* cur = *news;
+                    *news = cur->nxt;
+                    free(cur->val);
+                    free(cur);
+                }
+                *news = NULL;
+            }
+
             int main (void) {
+                __News* __news  __attribute__((__cleanup__(__news_free))) = NULL;
+                __News** __news_cur = &__news;
                 
             }
 
-        """.trimIndent())
+        """.trimIndent()) { out }
     }
 
     // STRING -> C

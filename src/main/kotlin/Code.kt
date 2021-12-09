@@ -254,8 +254,15 @@ fun code_fe (e: Expr) {
             val ID  = "__tmp_" + e.hashCode().absoluteValue
             val ptr = AUX.xps[e] as Type.Ptr
             val sup = ptr.pos()
+            val pool = ptr.scope().let {
+                when {
+                    !it.isabs -> "__news__${it.depth}"
+                    (ptr.scope == null) -> "__news_cur"
+                    else -> "__news_${it.depth}"
+                }
+            }
             //println(ptr.scope)
-            //println(AUX.scp[ptr])
+            //println(scp)
             val pre = """
                 $sup $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
@@ -265,7 +272,7 @@ fun code_fe (e: Expr) {
                     assert(__new!=NULL && "not enough memory");
                     __new->val = $ID;
                     __new->nxt = *__news_cur;
-                    *${if (ptr.scope==null) "__news_cur" else "__news_${ptr.scope().depth}"} = __new;
+                    *$pool = __new;
                 }
 
             """.trimIndent()
