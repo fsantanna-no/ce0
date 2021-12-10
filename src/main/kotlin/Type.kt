@@ -115,6 +115,15 @@ fun Type.containsRec (): Boolean {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+fun Type.Ptr.topool (): String {
+    return this.scope().let {
+        when {
+            !it.isabs -> "__news__${it.depth}"
+            (this.scope == null) -> "__news_cur"
+            else -> "__news_${it.depth}"
+        }
+    }
+}
 
 fun Type.Ptr.scope (): Scope {
     // Derived scope from pointers above myself:

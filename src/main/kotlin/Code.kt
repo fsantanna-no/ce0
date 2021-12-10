@@ -50,6 +50,16 @@ fun deps (tps: Set<Type>): Set<String> {
         .toSet()
 }
 
+fun Type.Func.news (): String {
+    val ats = mutableSetOf<String>()
+    this.visit { if (it is Type.Ptr && it.scope != null) ats.add(it.scope) }
+    return ats.sorted().map {
+        "__News** __news__${it.drop(1)}"
+    }.joinToString(", ").let {
+        if (it.length == 0) "" else it + ","
+    }
+}
+
 fun code_ft (tp: Type) {
     tp.toce().let {
         if (TYPEX.contains(it)) {
@@ -59,11 +69,16 @@ fun code_ft (tp: Type) {
     }
 
     when (tp) {
-        is Type.Func -> TYPES.add(Triple(
-            Pair(tp.toce(), deps(setOf(tp.inp,tp.out))),
-            "typedef ${tp.out.pos()} ${tp.toce()} (${tp.inp.pos()});\n",
-            ""
-        ))
+        is Type.Func -> {
+            val ats = mutableSetOf<String>()
+            tp.visit { if (it is Type.Ptr && it.scope!=null) ats.add(it.scope) }
+            val news = tp.news()
+            TYPES.add(Triple(
+                Pair(tp.toce(), deps(setOf(tp.inp,tp.out))),
+                "typedef ${tp.out.pos()} ${tp.toce()} ($news ${tp.inp.pos()});\n",
+                ""
+            ))
+        }
         is Type.Tuple -> {
             val ce = tp.toce()
 
@@ -253,26 +268,18 @@ fun code_fe (e: Expr) {
         is Expr.New  -> EXPRS.removeFirst().let {
             val ID  = "__tmp_" + e.hashCode().absoluteValue
             val ptr = AUX.xps[e] as Type.Ptr
-            val sup = ptr.pos()
-            val pool = ptr.scope().let {
-                when {
-                    !it.isabs -> "__news__${it.depth}"
-                    (ptr.scope == null) -> "__news_cur"
-                    else -> "__news_${it.depth}"
-                }
-            }
             //println(ptr.scope)
             //println(scp)
             val pre = """
-                $sup $ID = malloc(sizeof(*$ID));
+                ${ptr.pos()} $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
                 *$ID = ${it.second};
                 {
                     __News* __new = malloc(sizeof(__News));
                     assert(__new!=NULL && "not enough memory");
                     __new->val = $ID;
-                    __new->nxt = *__news_cur;
-                    *$pool = __new;
+                    __new->nxt = *${ptr.topool()};
+                    *${ptr.topool()} = __new;
                 }
 
             """.trimIndent()
@@ -295,11 +302,41 @@ fun code_fe (e: Expr) {
         is Expr.Call  -> {
             val arg = EXPRS.removeFirst()
             val f   = EXPRS.removeFirst()
+            val tf  = AUX.tps[e.f]
+            val news = if (tf !is Type.Func) "" else {
+                val tfs = (tf.out.flatten() + tf.inp.flatten())
+                    .filter { it is Type.Ptr }
+                    .let { it as List<Type.Ptr> }
+                val tas = (AUX.xps[e]!!.flatten() + AUX.tps[e.arg]!!.flatten())
+                    .filter { it is Type.Ptr }
+                    .let { it as List<Type.Ptr> }
+                //assert(tf.size == ta.size)
+                val news = tfs.zip(tas)                // [ (ptr,ptr), ... ]
+                    .groupBy { it.first.scope }     // [ @1=[(ptr,ptr),...], ... ]
+                    .filterKeys { it != null }      // [ @1=[(ptr,ptr),...], ... ]
+                    .toList()                       // [ (@1,[(ptr,ptr),...]), ... ]
+                    .sortedBy { it.first }          // [ (@1,[(ptr,ptr),...]), ... ]
+                    .map { it.second }              // [ [(ptr,ptr),...], ... ]
+                    .map { it.map { it.second } }   // [ [ptr,...], ... ]
+                    .map { it.map { Pair(it.scope(), it) } }   // [ [(scp(),ptr),...], ... ]
+                    .map { it.sortedBy { it.first.depth } }   // [ [(scp(),ptr),...], ... ]
+                    .map { it.first() }             // [ (scp(),ptr), ... ]
+                    .map { it.second }              // [ ptr, ... ]
+                    .map { it.topool() }            // [ __news_xxx, ... ]
+                    .joinToString(", ").let {
+                        if (it.length == 0) "" else it + ", "
+                    }
+                print("TFs: "); println(tfs)
+                print("TAs: "); println(tas)
+                println(news)
+                news
+            }
+
             val snd =
                 if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
                     AUX.tps[e.arg]!!.output("", arg.second)
                 } else {
-                    f.second + "(" + arg.second + ")"
+                    f.second + "(" + news + arg.second + ")"
                 }
             if (AUX.tps[e] is Type.Unit) {
                 Pair(f.first + arg.first + snd+";\n", "")
@@ -311,8 +348,9 @@ fun code_fe (e: Expr) {
             val ID  = "_func_" + e.hashCode().absoluteValue
             val out = e.type.out.let { if (it is Type.Unit) "void" else it.pos() }
             val (inp,dcl) = e.type.inp.let { if (it is Type.Unit) Pair("void","int _arg_;") else Pair(it.pos()+" _arg_","") }
+            val news = e.type.news()
             val pre = """
-                auto $out $ID ($inp) {
+                auto $out $ID ($news $inp) {
                     $dcl
                     ${CODE.removeFirst()}
                 }
@@ -430,6 +468,7 @@ fun Stmt.code (): String {
         #include <assert.h>
         #include <stdio.h>
         #include <stdlib.h>
+        
         #define output_std_Unit_()   printf("()")
         #define output_std_Unit()    (output_std_Unit_(), puts(""))
         #define output_std_int_(x)   printf("%d",x)
@@ -438,8 +477,6 @@ fun Stmt.code (): String {
         #define output_std_char_(x)  (output_std_int_(x), puts(""))
         #define output_std_Ptr_(x)   printf("%p",x)
         #define output_std_Ptr(x)    (output_std_Ptr_(x), puts(""))
-        ${TPS.map { it.second }.joinToString("")}
-        ${TPS.map { it.third }.joinToString("")}
         
         typedef struct __News {
             void* val;
@@ -456,6 +493,9 @@ fun Stmt.code (): String {
             *news = NULL;
         }
         
+        ${TPS.map { it.second }.joinToString("")}
+        ${TPS.map { it.third }.joinToString("")}
+
         int main (void) {
             __News* __news  __attribute__((__cleanup__(__news_free))) = NULL;
             __News** __news_cur = &__news;

@@ -115,6 +115,7 @@ class TCode {
             #include <assert.h>
             #include <stdio.h>
             #include <stdlib.h>
+            
             #define output_std_Unit_()   printf("()")
             #define output_std_Unit()    (output_std_Unit_(), puts(""))
             #define output_std_int_(x)   printf("%d",x)
@@ -123,8 +124,6 @@ class TCode {
             #define output_std_char_(x)  (output_std_int_(x), puts(""))
             #define output_std_Ptr_(x)   printf("%p",x)
             #define output_std_Ptr(x)    (output_std_Ptr_(x), puts(""))
-
-
 
             typedef struct __News {
                 void* val;
@@ -140,6 +139,9 @@ class TCode {
                 }
                 *news = NULL;
             }
+
+
+
 
             int main (void) {
                 __News* __news  __attribute__((__cleanup__(__news_free))) = NULL;
