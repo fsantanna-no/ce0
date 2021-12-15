@@ -443,7 +443,8 @@ class TExec {
     @Test
     fun i02_ptr_func () {
         val out = all("""
-        var f : /_int -> (); set f = func /_int -> () {
+        var f : /_int@1 -> ()
+        set f = func /_int@1 -> () {
            set arg\ = _(*arg+1)
            return
         }
@@ -456,12 +457,14 @@ class TExec {
     @Test
     fun i03_ptr_func () {
         val out = all("""
-            var f: /_int->_int; set f = func /_int->_int { return arg\ }
-            var g: /_int->_int; set g = f
+            var f: /_int@1->_int
+            set f = func /_int@1->_int { return arg\ }
+            var g: /_int@1->_int
+            set g = f
             var x: _int; set x = _10
             output std g (/x)
         """.trimIndent())
-        assert(out == "10\n")
+        assert(out == "10\n") { out }
     }
     @Test
     fun i05_ptr_block_err () {
@@ -496,7 +499,8 @@ class TExec {
     @Test
     fun i07_ptr_func_ok () {
         val out = all("""
-            var f : /_int -> /_int; set f = func /_int -> /_int {
+            var f : /_int@1 -> /_int@1
+            set f = func /_int@1 -> /_int@1 {
                 return arg
             }
             var v: _int; set v = _10
@@ -508,11 +512,14 @@ class TExec {
     @Test
     fun i08_ptr_func_ok () {
         val out = all("""
-            var v: _int; set v = _10
-            var f : () -> /_int; set f = func () -> /_int {
+            var v: _int
+            set v = _10
+            var f : () -> /_int
+            set f = func () -> /_int {
                 return /v
             }
-            var p: /_int; set p = f ()
+            var p: /_int
+            set p = f ()
             output std p\
         """.trimIndent())
         assert(out == "10\n") { out }
@@ -672,8 +679,8 @@ class TExec {
         val out = all("""
             var v: _int
             set v = _10
-            var f : /_int -> /_int
-            set f = func (/_int -> /_int) {
+            var f : /_int@1 -> /_int@1
+            set f = func (/_int@1 -> /_int@1) {
                 return /v
             }
             {
@@ -682,7 +689,7 @@ class TExec {
                 output std p\
             }
         """.trimIndent())
-        assert(out == "10\n")
+        assert(out == "10\n") { out }
     }
     @Test
     fun i20_ptr_uni_ok () {
@@ -1236,8 +1243,8 @@ class TExec {
     @Test
     fun m04_scope_f () {
         val out = all("""
-            var f: /</^>->()
-            set f = func /</^>->() {
+            var f: /</^@1>@1->()
+            set f = func /</^@1>@1->() {
                 set arg\!1 = new <.1 <.0>>
             }
             {

@@ -869,7 +869,8 @@ class TEnv {
     @Test
     fun g01_ptr_func_ok () {
         val out = inp2env("""
-            var f : (/_int -> /_int); set f = func (/_int -> /_int) {
+            var f : (/_int@1 -> /_int@1)
+            set f = func (/_int@1 -> /_int@1) {
                 return arg
             }
             var v: _int; set v = _10
@@ -1004,7 +1005,7 @@ class TEnv {
             {
                 var v: ()
                 var f : () -> /()
-                set f = func () -> /() {
+                set f = func () -> /()@1 {
                     return /v       -- err: /v may not be at expected @1
                 }
                 {
@@ -1061,8 +1062,8 @@ class TEnv {
     @Test
     fun g15_ptr_func_ok () {
         val out = inp2env("""
-            var f : /() -> /()
-            set f = func /() -> /() {
+            var f : /()@1 -> /()@1
+            set f = func /()@1 -> /()@1 {
                 return arg
             }
             var p: /()
@@ -1640,8 +1641,8 @@ class TEnv {
     fun j20_rec_xepr_borrow_err () {
         val out = inp2env("""
             var x: [/</^>]
-            var f: //</^> -> ()
-            set f = func //</^> -> ()
+            var f: //</^@1>@1@1 -> ()
+            set f = func //</^@1>@1@1 -> ()
             {
                 output std arg
             }
@@ -1693,7 +1694,7 @@ class TEnv {
     fun j24_rec_xepr_borrow_ok () {
         val out = inp2env("""
             var x: [/</^>]
-            var f: //</^> -> (); set f = func //</^> -> ()
+            var f: //</^@1>@1@1 -> (); set f = func //</^@1>@1@1 -> ()
             {
                 output std arg
             }
@@ -1843,8 +1844,8 @@ class TEnv {
     fun l03_borrow_err () {
         val out = inp2env("""
             var x: /</^>
-            var f: //</^> -> ()
-            set f = func //</^> -> ()
+            var f: //</^@1>@1@1 -> ()
+            set f = func //</^@1>@1@1 -> ()
             {
                 set x = <.0>
             }
@@ -1858,8 +1859,8 @@ class TEnv {
     fun l03_borrow_err2 () {
         val out = inp2env("""
             var x: /</^>
-            var f: //</^> -> ()
-            set f = func //</^> -> ()
+            var f: //</^@1>@1@1 -> ()
+            set f = func //</^@1>@1@1 -> ()
             {
                 set x = <.0>
             }

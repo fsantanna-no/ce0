@@ -376,6 +376,8 @@ fun code_fs (s: Stmt) {
         is Stmt.Set  -> {
             val src = EXPRS.removeFirst()
             val dst = EXPRS.removeFirst()
+            //print("XXX ") ; println(AUX.tps[s.dst])
+            //println(s)
             val tp = AUX.tps[s.dst]
             dst.first + src.first +
                 (if (tp is Type.Unit) "" else (dst.second + " = ")) + src.second + ";\n"
