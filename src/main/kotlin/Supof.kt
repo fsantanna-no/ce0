@@ -40,13 +40,21 @@ fun Type.isSupOf_ (sub: Type, depth: Boolean, ups1: List<Type.Union>, ups2: List
             (sub.tk_.num==0 && sub.arg is Type.Unit && (this.pln is Type.Rec || this.pln.isrec()))
         }
         (this is Type.Union && sub is Type.UCons) -> {
+            println("===")
+            println(this.tostr())
+            println(sub.tostr())
             when {
                 (sub.tk_.num == 0) -> this.isrec && sub.arg is Type.Unit
                 (this.vec.size < sub.tk_.num) -> false
                 else -> {
                     // TODO: use this for sub??
-                    this.vec[sub.tk_.num-1].isSupOf_(sub.arg, depth, listOf(this)+ups1, listOf(this)+ups2)
+                    //println(this.expand()[sub.tk_.num-1].tostr())
+                    //println(sub.arg.tostr())
+                    this.expand()[sub.tk_.num-1].isSupOf_(sub.arg, depth, listOf(this)+ups1, listOf(this)+ups2)
                 }
+            }.let {
+                println(it)
+                it
             }
         }
         (this::class != sub::class) -> false
@@ -62,6 +70,8 @@ fun Type.isSupOf_ (sub: Type, depth: Boolean, ups1: List<Type.Union>, ups2: List
             val ok = if (depth) {
                 val dthis = this.scope()
                 val dsub  = sub.scope()
+                println(dthis)
+                println(dsub)
                 // (dthis.isbas==dsub.isabs): abs vs abs || rel vs rel // (no @aaa vs @1)
                 // (dthis.level==dsub.level): unless @aaa=@1 are in the same function (then always @1<=@aaa)
                 // (dsub.depth == 0):         globals as source are always ok

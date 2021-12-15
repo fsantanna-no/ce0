@@ -76,9 +76,15 @@ fun check_02_no_xps (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.UCons -> {
+                val tp = Type.UCons(e.tk_, AUX.tps[e.arg]!!)
+                All_assert_tk(e.tk, e.tp.isSupOf(tp)) {
+                    "invalid constructor : type mismatch"
+                }
+                /*
                 All_assert_tk(e.tk, e.tk_.num != 0 || AUX.tps[e.arg]!!.isSupOf(Type_Unit(e.tk))) {
                     "invalid constructor : type mismatch"
                 }
+                 */
             }
         }
     }
@@ -96,7 +102,9 @@ fun check_02_no_xps (s: Stmt) {
                 //val scp = (dst as Type.Ptr).scope()
                 //print("scope ") ; print(scp)
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
-                    //println("SET (${s.tk.lin}): ${dst.tostr()} = ${src.tostr()}")
+                    println("SET (${s.tk.lin}): ${dst.tostr()} = ${src.tostr()}")
+                    //println(dst)
+                    //println(src)
                     val str = if (s.dst is Expr.Var && s.dst.tk_.str == "_ret_") "return" else "assignment"
                     "invalid $str : type mismatch"
                 }
@@ -129,7 +137,7 @@ fun check_03 (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.New -> {
-                All_assert_tk(e.tk, AUX.tps[e.arg].let { it is Type.UCons && it.tk_.num>0 }) {
+                All_assert_tk(e.tk, AUX.tps[e.arg] is Type.Union && e.arg.tk_.num>0) {
                     "invalid `new` : expected constructor" // TODO: remove?
                 }
                 All_assert_tk(e.tk, AUX.xps[e.arg]!!.isrec()) {

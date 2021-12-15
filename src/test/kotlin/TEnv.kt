@@ -125,7 +125,7 @@ class TEnv {
     fun b10_user_empty_err () {
         val out = inp2env("""
             var l: </^>
-            set l = <.1 ()>
+            set l = <.1 ()>:<()>
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
         //assert(out == "(ln 2, col 11): invalid constructor : expected `new`") { out }
@@ -134,7 +134,17 @@ class TEnv {
     fun b11_user_empty_err () {
         val out = inp2env("""
             var l: <()>
-            set l = <.1>
+            set l = <.2>:<()>
+            --output std l!2
+        """.trimIndent())
+        //assert(out == "(ln 3, col 14): invalid discriminator : out of bounds") { out }
+        assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
+    }
+    @Test
+    fun b11_user_empty_err2 () {
+        val out = inp2env("""
+            var l: <()>
+            set l = <.1>:<()>
             output std l!2
         """.trimIndent())
         assert(out == "(ln 3, col 14): invalid discriminator : out of bounds") { out }
@@ -143,7 +153,8 @@ class TEnv {
     fun b12_user_empty_err () {
         val out = inp2env("""
             var l: </^>
-            set l = <.1 <.0>>
+            --set l = <.0>:/</^>
+            set l = <.1 <.0>:/</^>>:</^>
             --output std l!0
         """.trimIndent())
         //assert(out == "(ln 2, col 11): invalid expression : expected `new` operation modifier") { out }
@@ -154,7 +165,7 @@ class TEnv {
     fun b13_user_empty_ok () {
         val out = inp2env("""
             var l: </^>
-            set l = new <.1 <.0>>
+            set l = new <.1 <.0>:/</^>>:</^>
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
@@ -162,7 +173,7 @@ class TEnv {
     fun b14_user_empty_ok () {
         val out = inp2env("""
             var l: /</^>
-            set l = new <.1 <.0>>
+            set l = new <.1 <.0>:/</^>>:</^>
             output std l\!0
         """.trimIndent())
         assert(out == "OK") { out }
@@ -376,29 +387,29 @@ class TEnv {
     @Test
     fun c19_uni_disc_err () {
         val out = inp2env("""
-            output std <.1>!2
+            output std <.1>:<()>!2
         """.trimIndent())
-        assert(out == "(ln 1, col 17): invalid discriminator : unexpected constructor") { out }
+        assert(out == "(ln 1, col 22): invalid discriminator : unexpected constructor") { out }
     }
     @Test
     fun c19_uni_pred_err () {
         val out = inp2env("""
-            output std <.1>?1
+            output std <.1>:<()>?1
         """.trimIndent())
-        assert(out == "(ln 1, col 17): invalid discriminator : unexpected constructor") { out }
+        assert(out == "(ln 1, col 22): invalid discriminator : unexpected constructor") { out }
     }
     @Test
     fun c20_uni_disc_err () {
         val out = inp2env("""
-            output std <.2>!2
+            output std <.2>:<()>!2
         """.trimIndent())
-        assert(out == "(ln 1, col 17): invalid discriminator : unexpected constructor") { out }
+        assert(out == "(ln 1, col 22): invalid discriminator : unexpected constructor") { out }
     }
     @Test
     fun c21_uni_disc_err () {
         val out = inp2env("""
             var x: <()>
-            set x = <.2>
+            set x = <.2>:<(),()>
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
@@ -414,7 +425,7 @@ class TEnv {
     fun c23_list_zero_err () {
         val out = inp2env("""
             var x: _int
-            set x = <.0 [()]>
+            set x = <.0 [()]>:<()>
         """.trimIndent())
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
         assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
@@ -423,7 +434,7 @@ class TEnv {
     fun c23_list_zero_err2 () {
         val out = inp2env("""
             var x: < /^>
-            set x = <.0 [()]>
+            set x = <.0 [()]>:<()>
         """.trimIndent())
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
         assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
@@ -1226,7 +1237,7 @@ class TEnv {
             var p: </_int>
             {
                 var v: _int
-                set p = <.1 /v>
+                set p = <.1 /v>:</_int>
             }
         """.trimIndent())
         assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }

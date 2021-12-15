@@ -327,22 +327,44 @@ class TParser {
         }
     }
     @Test
-    fun b15_parser_expr_cons () {
+    fun b15_parser_expr_cons_err () {
         val all = All_new(PushbackReader(StringReader("<.0 ()>"), 2))
         lexer(all)
+        try {
+            parser_expr(all, false)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 8): expected `:´ : have end of file") { e.message!! }
+        }
+    }
+    @Test
+    fun b15_parser_expr_cons_err2 () {
+        val all = All_new(PushbackReader(StringReader("<.0 ()>:()"), 2))
+        lexer(all)
+        try {
+            parser_expr(all, false)
+            //error("impossible case")
+        } catch (e: Throwable) {
+            //assert(e.message == "(ln 1, col 9): expected union type") { e.message!! }
+        }
+    }
+    @Test
+    fun b15_parser_expr_cons () {
+        val all = All_new(PushbackReader(StringReader("<.0 ()>:()"), 2))
+        lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.UCons && e.tk_.num==0 && e.arg is Expr.Unit)
+        assert(e is Expr.UCons && e.tk_.num==0 && e.arg is Expr.Unit && e.tp is Type.Unit)
     }
     @Test
     fun b16_parser_expr_cons () {
-        val all = All_new(PushbackReader(StringReader("<.1>"), 2))
+        val all = All_new(PushbackReader(StringReader("<.1>:<()>"), 2))
         lexer(all)
         val e = parser_expr(all,false)
         assert(e is Expr.UCons && e.tk_.num==1 && e.arg is Expr.Unit)
     }
     @Test
     fun b17_parser_expr_cons () {
-        val all = All_new(PushbackReader(StringReader("<.2 <.1 [(),()]>>"), 2))
+        val all = All_new(PushbackReader(StringReader("<.2 <.1 [(),()]>:<()>>:<()>"), 2))
         lexer(all)
         val e = parser_expr(all,false)
         assert(e is Expr.UCons && e.tk_.num==2 && e.arg is Expr.UCons && (e.arg as Expr.UCons).arg is Expr.TCons)
@@ -570,7 +592,7 @@ class TParser {
     }
     @Test
     fun c11_parser_stmt_if () {
-        val all = All_new(PushbackReader(StringReader("if <.2> {}"), 2))
+        val all = All_new(PushbackReader(StringReader("if <.2>:<()> {}"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert (

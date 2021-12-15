@@ -94,7 +94,7 @@ fun Type.Union.expand (): Array<Type> {
             is Type.Rec   -> if (up == cur.tk_.up) this else { assert(up>cur.tk_.up) ; cur }
             is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray()).up(AUX.ups[cur]!!)
             is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray()).up(AUX.ups[cur]!!)
-            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scope, aux(cur.pln,up)).up(AUX.ups[cur]!!)
+            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scope, aux(cur.pln,up)) //.up(AUX.ups[cur]!!)
             is Type.Func  -> Type.Func(cur.tk_, aux(cur.inp,up), aux(cur.out,up)).up(AUX.ups[cur]!!)
             is Type.UCons -> error("bug found")
             else -> cur
