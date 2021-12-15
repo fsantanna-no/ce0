@@ -93,7 +93,7 @@ fun Type.aux_01_upsenvs (up: Any) {
         while (true) {
             val nxt = AUX.ups[cur]
             when {
-                (cur is Type.Ptr && cur.scope!=null) -> return cur.scope!!
+                (cur is Type.Ptr) -> return cur.scope.scp
                 (nxt == null) -> return null
                 (nxt is Type.Func) -> return "@1"
                 (nxt is Stmt.Var && nxt.tk_.str=="_ret_") -> return "@1"
@@ -180,7 +180,7 @@ fun Aux_02_tps (s: Stmt) {
         AUX.tps[e] = when (e) {
             is Expr.Unit  -> Type.Unit(e.tk_).up(e)
             is Expr.Nat   -> Type.Nat(e.tk_).up(e)
-            is Expr.Upref -> AUX.tps[e.pln]!!.let { Type.Ptr(e.tk_, null, it).up(it) }
+            is Expr.Upref -> AUX.tps[e.pln]!!.let { Type.Ptr(e.tk_, e.scope, it).up(it) }
             is Expr.Dnref -> AUX.tps[e.ptr].let {
                 if (it is Type.Nat) it else {
                     All_assert_tk(e.tk, it is Type.Ptr) {
@@ -191,13 +191,13 @@ fun Aux_02_tps (s: Stmt) {
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { AUX.tps[it]!! }.toTypedArray()).up(e)
             is Expr.UCons -> Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e)
-            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), null, AUX.tps[e.arg]!!)
+            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scope, AUX.tps[e.arg]!!)
             is Expr.Call -> {
                 AUX.tps[e.f].let {
                     when (it) {
                         // scope of output is tested in the call through XP
                         // here, just returns the "top" scope to succeed
-                        is Type.Func -> it.out.map { if (it !is Type.Ptr) it else Type.Ptr(it.tk_, "@global", it.pln) }
+                        is Type.Func -> it.out //.map { if (it !is Type.Ptr) it else Type.Ptr(it.tk_, null, it.pln) }
                         is Type.Nat  -> it //Type.Nat(it.tk_).ups(e)
                         else -> {
                             All_assert_tk(e.f.tk, false) {
@@ -281,7 +281,7 @@ fun Expr.aux_03_xps (xp: Type) {
         is Expr.New -> this.arg.aux_03_xps((xp as Type.Ptr).pln)
         is Expr.Dnref -> {
             this.ptr.aux_03_xps(xp.keepAnyNat {
-                Type.Ptr(Tk.Chr(TK.CHAR, this.tk.lin, this.tk.col, '\\'), null, xp).up(this)
+                Type.Ptr(Tk.Chr(TK.CHAR, this.tk.lin, this.tk.col, '\\'), Tk.Scope(TK.XSCOPE,this.tk.lin,this.tk.col,"@TODO"), xp).up(this)
             })
         }
         is Expr.Upref -> {

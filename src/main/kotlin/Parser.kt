@@ -7,10 +7,8 @@ fun parser_type (all: All): Type {
             all.accept(TK.CHAR,'/') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val pln = one()
-                val scope = if (!all.accept(TK.XSCOPE)) null else {
-                    (all.tk0 as Tk.Scope).scope
-                }
-                Type.Ptr(tk0, scope, pln)
+                all.accept_err(TK.XSCOPE)
+                Type.Ptr(tk0, all.tk0 as Tk.Scope, pln)
             }
             all.accept(TK.CHAR,'(') -> {
                 val tp = parser_type(all)
@@ -80,7 +78,8 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 all.assert_tk(all.tk0, e is Expr.Nat || e is Expr.Var || e is Expr.TDisc || e is Expr.Dnref || e is Expr.Upref) {
                     "unexpected operand to `/´"
                 }
-                Expr.Upref(tk0,e)
+                all.accept_err(TK.XSCOPE)
+                Expr.Upref(tk0, all.tk0 as Tk.Scope, e)
             }
             all.accept(TK.CHAR,'(') -> {
                 val e = parser_expr(all, false)
@@ -122,7 +121,8 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 all.assert_tk(tk0, e !is Expr.UCons || e.tk_.num!=0) {
                     "invalid `new` : unexpected <.0>"
                 }
-                Expr.New(tk0 as Tk.Key, e)
+                all.accept_err(TK.XSCOPE)
+                Expr.New(tk0 as Tk.Key, all.tk0 as Tk.Scope, e)
             }
             all.accept(TK.FUNC) -> {
                 val tk0 = all.tk0 as Tk.Key
@@ -277,10 +277,10 @@ fun parser_attr (all: All): Attr {
 fun parser_block (all: All): Stmt.Block {
     all.accept_err(TK.CHAR,'{')
     val tk0 = all.tk0 as Tk.Chr
-    val scope = if (all.accept(TK.XSCOPE)) (all.tk0 as Tk.Scope).scope else null
+    val scp = all.accept(TK.XSCOPE).let { if (it) all.tk0 as Tk.Scope else null }
     val ret = parser_stmts(all, Pair(TK.CHAR,'}'))
     all.accept_err(TK.CHAR,'}')
-    return Stmt.Block(tk0, scope, ret)
+    return Stmt.Block(tk0, scp, ret)
 }
 
 fun parser_stmt (all: All): Stmt {

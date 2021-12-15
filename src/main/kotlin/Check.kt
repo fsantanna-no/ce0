@@ -14,14 +14,15 @@ fun check_01_no_scp_tps_xps (s: Stmt) {
             }
             is Type.Ptr -> {
                 val ok = when {
-                    (tp.scope == null) -> true
-                    (tp.scope == "@global") -> true
-                    (tp.scope.drop(1).toIntOrNull() != null) -> true
-                    (tp.ups_first { it is Stmt.Block && it.scope==tp.scope } != null) -> true
+                    (tp.scope == null) -> TODO()
+                    (tp.scope.scp == "@global") -> true
+                    (tp.scope.scp == "@local")  -> true
+                    (tp.scope.scp.drop(1).toIntOrNull() != null) -> true
+                    (tp.ups_first { it is Stmt.Block && it.scope!=null && it.scope.scp==tp.scope.scp } != null) -> true
                     else -> false
                 }
                 All_assert_tk(tp.tk, ok) {
-                    "undeclared scope \"${tp.scope}\""
+                    "undeclared scope \"${tp.scope!!.scp}\""
                 }
             }
 
@@ -169,14 +170,14 @@ fun check_03 (s: Stmt) {
                     val arg2 = AUX.tps[e.arg]!!.map2 { ptr ->
                         if (ptr !is Type.Ptr) ptr else {
                             val idx = sorted.find { it.second == ptr }!!.first
-                            Type.Ptr(ptr.tk_, "@"+idx, ptr.pln)
+                            Type.Ptr(ptr.tk_, Tk.Scope(TK.XSCOPE,ptr.tk.lin,ptr.tk.col,"@"+idx), ptr.pln)
                         }
                     }
                     // xp2 = scope in ptrs inside xp are now increasing numbers (@1,@2,...)
                     val xp2 = AUX.xps[e]!!.map2 { ptr ->
                         if (ptr !is Type.Ptr) ptr else {
                             val idx = sorted.find { it.second == ptr }!!.first
-                            Type.Ptr(ptr.tk_, "@"+idx, ptr.pln)
+                            Type.Ptr(ptr.tk_, Tk.Scope(TK.XSCOPE,ptr.tk.lin,ptr.tk.col,"@"+idx), ptr.pln)
                         }
                     }
                     Pair(xp2,arg2)

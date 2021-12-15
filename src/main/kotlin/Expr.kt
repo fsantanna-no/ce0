@@ -7,9 +7,9 @@ sealed class Expr (val tk: Tk) {
     data class TDisc (val tk_: Tk.Num, val tup: Expr): Expr(tk_)
     data class UDisc (val tk_: Tk.Num, val uni: Expr): Expr(tk_)
     data class UPred (val tk_: Tk.Num, val uni: Expr): Expr(tk_)
-    data class New   (val tk_: Tk.Key, val arg: Expr): Expr(tk_)
+    data class New   (val tk_: Tk.Key, val scope: Tk.Scope, val arg: Expr): Expr(tk_)
     data class Dnref (val tk_: Tk,     val ptr: Expr): Expr(tk_)
-    data class Upref (val tk_: Tk.Chr, val pln: Expr): Expr(tk_)
+    data class Upref (val tk_: Tk.Chr, val scope: Tk.Scope, val pln: Expr): Expr(tk_)
     data class Call  (val tk_: Tk.Key, val f: Expr, val arg: Expr): Expr(tk_)
     data class Func  (val tk_: Tk.Key, val type: Type.Func, val block: Stmt.Block) : Expr(tk_)
 }

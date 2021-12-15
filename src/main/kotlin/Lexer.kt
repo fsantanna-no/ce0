@@ -34,7 +34,7 @@ sealed class Tk (
     data class Str (val enu_: TK, val lin_: Int, val col_: Int, val str: String): Tk(enu_,lin_,col_)
     data class Num (val enu_: TK, val lin_: Int, val col_: Int, val num: Int):    Tk(enu_,lin_,col_)
     data class Up  (val enu_: TK, val lin_: Int, val col_: Int, val up:  Int):    Tk(enu_,lin_,col_)
-    data class Scope (val enu_: TK, val lin_: Int, val col_: Int, val scope: String):Tk(enu_,lin_,col_)
+    data class Scope (val enu_: TK, val lin_: Int, val col_: Int, val scp: String):Tk(enu_,lin_,col_)
 }
 
 fun TK.toErr (chr: Char?): String {
@@ -44,7 +44,7 @@ fun TK.toErr (chr: Char?): String {
         TK.XNAT   -> "`_´"
         TK.XVAR   -> "variable identifier"
         TK.XNUM   -> "number"
-        //TK.XSCOPE -> "scope"
+        TK.XSCOPE -> "`@´"
         else -> TODO(this.toString())
     }
 }
@@ -119,7 +119,7 @@ fun token (all: All) {
                     all.tk1 = Tk.Scope(TK.XSCOPE, LIN, COL, "@"+pay)
                 }
                 x1.isDigit() -> all.tk1 = Tk.Scope(TK.XSCOPE, LIN, COL, "@"+x1)
-                else -> all.tk1 = Tk.Err(TK.ERR, LIN, COL, "@"+x1)
+                else -> all.tk1 = Tk.Err(TK.ERR, LIN, COL, "@")
             }
         }
         (x1 == '(') -> {

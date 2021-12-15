@@ -52,7 +52,7 @@ fun deps (tps: Set<Type>): Set<String> {
 
 fun Type.Func.news (isproto: Boolean): String {
     val ats = mutableSetOf<String>()
-    this.visit { if (it is Type.Ptr && it.scope != null) ats.add(it.scope) }
+    this.visit { if (it is Type.Ptr) ats.add(it.scope.scp) }
     return ats.sorted().map {
         "__News**" + (if (isproto) "" else " __news__${it.drop(1)}")
     }.joinToString(", ").let {
@@ -71,7 +71,7 @@ fun code_ft (tp: Type) {
     when (tp) {
         is Type.Func -> {
             val ats = mutableSetOf<String>()
-            tp.visit { if (it is Type.Ptr && it.scope!=null) ats.add(it.scope) }
+            tp.visit { if (it is Type.Ptr) ats.add(it.scope.scp) }
             val news = tp.news(true)
             TYPES.add(Triple(
                 Pair(tp.toce(), deps(setOf(tp.inp,tp.out))),
@@ -313,9 +313,8 @@ fun code_fe (e: Expr) {
                 //assert(tf.size == ta.size)
                 val news = tfs.zip(tas)                // [ (ptr,ptr), ... ]
                     .groupBy { it.first.scope }     // [ @1=[(ptr,ptr),...], ... ]
-                    .filterKeys { it != null }      // [ @1=[(ptr,ptr),...], ... ]
                     .toList()                       // [ (@1,[(ptr,ptr),...]), ... ]
-                    .sortedBy { it.first }          // [ (@1,[(ptr,ptr),...]), ... ]
+                    .sortedBy { it.first.scp }    // [ (@1,[(ptr,ptr),...]), ... ]
                     .map { it.second }              // [ [(ptr,ptr),...], ... ]
                     .map { it.map { it.second } }   // [ [ptr,...], ... ]
                     .map { it.map { Pair(it.scope(), it) } }   // [ [(scp(),ptr),...], ... ]
@@ -409,7 +408,6 @@ fun code_fs (s: Stmt) {
         is Stmt.Block -> """
             {
                 __News* __news  __attribute__((__cleanup__(__news_free))) = NULL;
-                __News** __news_cur = &__news;
                 ${ if (s.scope == null) "" else {
                     "__News** __news_${1 + s.ups_tolist().count{ it is Stmt.Block }} = &__news;"
                 }}
@@ -500,7 +498,7 @@ fun Stmt.code (): String {
 
         int main (void) {
             __News* __news  __attribute__((__cleanup__(__news_free))) = NULL;
-            __News** __news_cur = &__news;
+            __News** __news_0   = &__news;
             ${CODE.removeFirst()}
         }
 

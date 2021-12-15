@@ -116,7 +116,7 @@ class TEnv {
     fun b10_user_err () {
         val out = inp2env("""
             var x: <()>
-            var y: </^>
+            var y: </^ @local>
             set y = x
         """.trimIndent())
         assert(out == "(ln 3, col 7): invalid assignment : type mismatch") { out }
@@ -124,7 +124,7 @@ class TEnv {
     @Test
     fun b10_user_empty_err () {
         val out = inp2env("""
-            var l: </^>
+            var l: </^ @global>
             set l = <.1 ()>
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
@@ -142,7 +142,7 @@ class TEnv {
     @Test
     fun b12_user_empty_err () {
         val out = inp2env("""
-            var l: </^>
+            var l: </^ @local>
             set l = <.1 <.0>>
             --output std l!0
         """.trimIndent())
@@ -153,16 +153,16 @@ class TEnv {
     @Test
     fun b13_user_empty_ok () {
         val out = inp2env("""
-            var l: </^>
-            set l = new <.1 <.0>>
+            var l: </^ @local>
+            set l = new <.1 <.0>> @local
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
     @Test
     fun b14_user_empty_ok () {
         val out = inp2env("""
-            var l: /</^>
-            set l = new <.1 <.0>>
+            var l: /</^ @local> @local
+            set l = new <.1 <.0>> @local
             output std l\!0
         """.trimIndent())
         assert(out == "OK") { out }
@@ -223,7 +223,7 @@ class TEnv {
     @Test
     fun c07_type_upref () {
         val out = inp2env("""
-            var x: /()
+            var x: /() @local
             set x = ()
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
@@ -233,7 +233,7 @@ class TEnv {
         val out = inp2env("""
             var y: ()
             var x: ()
-            set x = /y
+            set x = /y @local
         """.trimIndent())
         assert(out == "(ln 3, col 7): invalid assignment : type mismatch")
     }
@@ -241,8 +241,8 @@ class TEnv {
     fun c09_type_upref () {
         val out = inp2env("""
             var y: ()
-            var x: /()
-            set x = /y
+            var x: /() @local
+            set x = /y @local
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -250,8 +250,8 @@ class TEnv {
     fun c10_type_upref () {
         val out = inp2env("""
             var y: [()]
-            var x: /()
-            set x = /y
+            var x: /() @local
+            set x = /y @local
         """.trimIndent())
         assert(out == "(ln 3, col 7): invalid assignment : type mismatch")
     }
@@ -259,8 +259,10 @@ class TEnv {
     fun c11_type_upref () {
         val out = inp2env("""
             var y: ()
-            var x: /(); set x = /y
-            var z: _x; set z = /x
+            var x: /() @local
+            set x = /y @local
+            var z: _x
+            set z = /x @local
         """.trimIndent())
         assert(out == "OK")
     }
@@ -284,11 +286,12 @@ class TEnv {
     fun c13_type_dnref () {
         val out = inp2env("""
             var x: ()
-            var y: /(); set y = /x
-            var z: /()
+            var y: /() @local
+            set y = /x @local
+            var z: /() @local
             set z = y\
         """.trimIndent())
-        assert(out == "(ln 4, col 7): invalid assignment : type mismatch")
+        assert(out == "(ln 5, col 7): invalid assignment : type mismatch") { out }
     }
     @Test
     fun c14_type_func_err () {
@@ -422,7 +425,7 @@ class TEnv {
     @Test
     fun c23_list_zero_err2 () {
         val out = inp2env("""
-            var x: < /^>
+            var x: < /^ @local>
             set x = <.0 [()]>
         """.trimIndent())
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
@@ -480,11 +483,11 @@ class TEnv {
     @Test
     fun e01_ptr_block_err () {
         val out = inp2env("""
-            var p1: /()
-            var p2: /()
+            var p1: /() @local
+            var p2: /() @local
             {
                 var v: ()
-                set p1 = /v     -- ERRO p1=0 < v=1
+                set p1 = /v  @local    -- ERRO p1=0 < v=1
             }
             {
                 var v: ()
@@ -497,11 +500,11 @@ class TEnv {
     fun e02_ptr_block_err () {
         val out = inp2env("""
             var x: ()
-            var p: /()
+            var p: /() @local
             {
                 var y: ()
-                set p = /x  -- ok
-                set p = /y  -- no
+                set p = /x @local  -- ok
+                set p = /y @local  -- no
             }
         """.trimIndent())
         assert(out == "(ln 6, col 11): invalid assignment : type mismatch") { out }
@@ -509,9 +512,9 @@ class TEnv {
     @Test
     fun e03_ptr_err () {
         val out = inp2env("""
-            var pout: /_int
+            var pout: /_int @local
             {
-                var pin: /_int
+                var pin: /_int @local
                 set pout = pin  -- no
             }
         """.trimIndent())
@@ -520,7 +523,7 @@ class TEnv {
     @Test
     fun e03_ptr_ok () {
         val out = inp2env("""
-            var pout: /_int
+            var pout: /_int @local
             {
                 var pin: /_int @global
                 set pout = pin
@@ -531,9 +534,9 @@ class TEnv {
     @Test
     fun e04_ptr_ok () {
         val out = inp2env("""
-            var pout: /_int
+            var pout: /_int @local
             {
-                var pin: /_int
+                var pin: /_int @local
                 set pin = pout
             }
         """.trimIndent())
@@ -543,7 +546,7 @@ class TEnv {
     fun e05_ptr_ok () {
         val out = inp2env("""
             { @a
-                var pout: /_int
+                var pout: /_int @local
                 {
                     var pin: /_int @a
                     set pout = pin  -- ok
@@ -563,7 +566,7 @@ class TEnv {
     fun e07_ptr_ok () {
         val out = inp2env("""
             { @a
-                var pa: /_int
+                var pa: /_int @local
                 var f: ()->()
                 set f = func ()->() {
                     var pf: /_int @a
@@ -583,7 +586,7 @@ class TEnv {
             }
             {
                 var x: ()
-                call f /x
+                call f /x @local
             }
         """.trimIndent())
         assert(out == "OK") { out }
@@ -610,7 +613,7 @@ class TEnv {
     fun e10_func_err () {
         val out = inp2env("""
             var f: /()@1->()
-            set f = func /()->() {}
+            set f = func /()@1->() {}
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
         //assert(out == "OK") { out }
@@ -624,15 +627,23 @@ class TEnv {
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
     @Test
+    fun e12_func_ok () {
+        val out = inp2env("""
+            var f: [/()@1,/()@2]->()
+            set f = func [/()@1,/()@2]->() {}
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
     fun e12_call_err () {
         val out = inp2env("""
             var f: [/()@1,/()@2]->()
             set f = func [/()@1,/()@2]->() {}
-            {
+            { @a
                 var x: ()
                 {
                     var y: ()
-                    call f [/y,/x]  -- err
+                    call f [/y@local,/x@a]  -- err
                 }
             }
         """.trimIndent())

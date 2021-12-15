@@ -8,7 +8,7 @@ sealed class Type (val tk: Tk) {
     data class Union (val tk_: Tk.Chr, val isrec: Boolean, val vec: Array<Type>): Type(tk_)
     data class UCons (val tk_: Tk.Num, val arg: Type): Type(tk_)
     data class Func  (val tk_: Tk.Sym, val inp: Type, val out: Type): Type(tk_)
-    data class Ptr   (val tk_: Tk.Chr, val scope: String?, val pln: Type): Type(tk_)
+    data class Ptr   (val tk_: Tk.Chr, val scope: Tk.Scope, val pln: Type): Type(tk_)
     data class Rec   (val tk_: Tk.Up): Type(tk_)
 }
 
@@ -28,7 +28,7 @@ fun Type.tostr (): String {
         is Type.Unit  -> "()"
         is Type.Nat   -> this.tk_.str
         is Type.Rec   -> "^".repeat(this.tk_.up)
-        is Type.Ptr   -> "/" + this.pln.tostr() + if (this.scope==null) "" else this.scope
+        is Type.Ptr   -> "/" + this.pln.tostr() + this.scope
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
         is Type.UCons -> "<." + this.tk_.num + " " + this.arg.tostr() + ">"
@@ -134,7 +134,7 @@ fun Type.Ptr.scope (): Scope {
         while (true) {
             val nxt = AUX.ups[cur]
             when {
-                (cur is Type.Ptr && cur.scope != null) -> return cur.scope!!
+                (cur is Type.Ptr) -> return cur.scope!!.scp
                 (nxt == null) -> return null
                 (nxt is Type.Func) -> return "@1"
                 (nxt is Stmt.Var && nxt.tk_.str == "_ret_") -> return "@1"
@@ -173,14 +173,15 @@ fun Type.Ptr.scope (): Scope {
 
     val id = up(this)
     return when (id) {
-        null -> Scope(lvl, true, this.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
+        null -> TODO()
         "@global" -> Scope(lvl, true, 0)
+        "@local"  -> Scope(lvl, true, this.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
         else -> {
             val num = id.drop(1).toIntOrNull()
-            if (num == null) {
-                val blk = this.ups_first { it is Stmt.Block && it.scope == id }!!
+            if (num == null) {  // @aaa
+                val blk = this.ups_first { it is Stmt.Block && it.scope!=null && it.scope.scp == id }!!
                 Scope(lvl, true, 1 + blk.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
-            } else {
+            } else {            // @1
                 val n = this.ups_first { it is Expr.Func }.let { if (it == null) 0 else off(it.ups_tolist()) }
                 Scope(lvl, false, n + num)    // false = relative to function block
             }

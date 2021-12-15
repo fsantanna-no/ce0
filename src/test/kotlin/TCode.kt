@@ -145,7 +145,7 @@ class TCode {
 
             int main (void) {
                 __News* __news  __attribute__((__cleanup__(__news_free))) = NULL;
-                __News** __news_cur = &__news;
+                __News** __news_0   = &__news;
                 
             }
 

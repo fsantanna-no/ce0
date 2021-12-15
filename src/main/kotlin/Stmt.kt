@@ -9,5 +9,5 @@ sealed class Stmt (val tk: Tk) {
     data class Ret   (val tk_: Tk.Key) : Stmt(tk_)
     data class Loop  (val tk_: Tk.Key, val block: Block) : Stmt(tk_)
     data class Break (val tk_: Tk.Key) : Stmt(tk_)
-    data class Block (val tk_: Tk.Chr, val scope: String?, val body: Stmt) : Stmt(tk_)
+    data class Block (val tk_: Tk.Chr, val scope: Tk.Scope?, val body: Stmt) : Stmt(tk_)
 }
