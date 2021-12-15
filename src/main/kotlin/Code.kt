@@ -50,11 +50,11 @@ fun deps (tps: Set<Type>): Set<String> {
         .toSet()
 }
 
-fun Type.Func.news (): String {
+fun Type.Func.news (isproto: Boolean): String {
     val ats = mutableSetOf<String>()
     this.visit { if (it is Type.Ptr && it.scope != null) ats.add(it.scope) }
     return ats.sorted().map {
-        "__News** __news__${it.drop(1)}"
+        "__News**" + (if (isproto) "" else " __news__${it.drop(1)}")
     }.joinToString(", ").let {
         if (it.length == 0) "" else it + ","
     }
@@ -72,7 +72,7 @@ fun code_ft (tp: Type) {
         is Type.Func -> {
             val ats = mutableSetOf<String>()
             tp.visit { if (it is Type.Ptr && it.scope!=null) ats.add(it.scope) }
-            val news = tp.news()
+            val news = tp.news(true)
             TYPES.add(Triple(
                 Pair(tp.toce(), deps(setOf(tp.inp,tp.out))),
                 "typedef ${tp.out.pos()} ${tp.toce()} ($news ${tp.inp.pos()});\n",
@@ -348,7 +348,7 @@ fun code_fe (e: Expr) {
             val ID  = "_func_" + e.hashCode().absoluteValue
             val out = e.type.out.let { if (it is Type.Unit) "void" else it.pos() }
             val (inp,dcl) = e.type.inp.let { if (it is Type.Unit) Pair("void","int _arg_;") else Pair(it.pos()+" _arg_","") }
-            val news = e.type.news()
+            val news = e.type.news(false)
             val pre = """
                 auto $out $ID ($news $inp) {
                     $dcl
