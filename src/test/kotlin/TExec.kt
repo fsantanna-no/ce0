@@ -434,8 +434,10 @@ class TExec {
     @Test
     fun i01_ptr () {
         val out = all("""
-            var y: _int; set y = _10
-            var x: /_int; set x = /y
+            var y: _int
+            set y = _10
+            var x: /_int @local
+            set x = /y @local
             output std x\
         """.trimIndent())
         assert(out == "10\n") { out }
@@ -448,8 +450,9 @@ class TExec {
            set arg\ = _(*arg+1)
            return
         }
-        var x: _int; set x = _1
-        call f /x
+        var x: _int
+        set x = _1
+        call f /x @local
         output std x
         """.trimIndent())
         assert(out == "2\n")
@@ -461,23 +464,24 @@ class TExec {
             set f = func /_int@1->_int { return arg\ }
             var g: /_int@1->_int
             set g = f
-            var x: _int; set x = _10
-            output std g (/x)
+            var x: _int
+            set x = _10
+            output std g (/x @local)
         """.trimIndent())
         assert(out == "10\n") { out }
     }
     @Test
     fun i05_ptr_block_err () {
         val out = all("""
-            var p1: /_int
-            var p2: /_int
+            var p1: /_int @local
+            var p2: /_int @local
             {
                 var v: _int; set v = _10
-                set p1 = /v  -- no
+                set p1 = /v @local  -- no
             }
             {
                 var v: _int; set v = _20
-                set p2 = /v
+                set p2 = /v @local
             }
             output std p1\
         """.trimIndent())
