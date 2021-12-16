@@ -76,8 +76,8 @@ fun check_02_no_xps (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.UCons -> {
-                val tp = Type.UCons(e.tk_, AUX.tps[e.arg]!!)
-                All_assert_tk(e.tk, e.tp.isSupOf(tp)) {
+                val tp = Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e.arg)
+                All_assert_tk(e.tk, e.type.isSupOf(tp)) {
                     "invalid constructor : type mismatch"
                 }
                 /*

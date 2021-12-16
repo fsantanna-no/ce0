@@ -377,7 +377,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("<.0 ()>:()"), 2))
         lexer(all)
         val e = parser_expr(all,false)
-        assert(e is Expr.UCons && e.tk_.num==0 && e.arg is Expr.Unit && e.tp is Type.Unit)
+        assert(e is Expr.UCons && e.tk_.num==0 && e.arg is Expr.Unit && e.type is Type.Unit)
     }
     @Test
     fun b16_parser_expr_cons () {

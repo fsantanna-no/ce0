@@ -3,7 +3,7 @@ sealed class Expr (val tk: Tk) {
     data class Var   (val tk_: Tk.Str): Expr(tk_)
     data class Nat   (val tk_: Tk.Str): Expr(tk_)
     data class TCons (val tk_: Tk.Chr, val arg: Array<Expr>): Expr(tk_)
-    data class UCons (val tk_: Tk.Num, val tp: Type, val arg: Expr): Expr(tk_)
+    data class UCons (val tk_: Tk.Num, val type: Type, val arg: Expr): Expr(tk_)
     data class TDisc (val tk_: Tk.Num, val tup: Expr): Expr(tk_)
     data class UDisc (val tk_: Tk.Num, val uni: Expr): Expr(tk_)
     data class UPred (val tk_: Tk.Num, val uni: Expr): Expr(tk_)
