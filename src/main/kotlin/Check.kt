@@ -92,7 +92,7 @@ fun check_02_no_xps (s: Stmt) {
             is Stmt.Set -> {
                 val dst = AUX.tps[s.dst]!!
                 val src = AUX.tps[s.src]!!
-                //print("SET ") ; println(s.dst)
+                //print("SET ") ; println(s.dst) ; println(s.src)
                 //val scp = (dst as Type.Ptr).scope()
                 //print("scope ") ; print(scp)
                 All_assert_tk(s.tk, dst.isSupOf(src)) {

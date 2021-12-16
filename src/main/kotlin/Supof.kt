@@ -58,7 +58,7 @@ fun Type.isSupOf_ (sub: Type, depth: Boolean, ups1: List<Type.Union>, ups2: List
             sub.out.isSupOf_(this.out,false,ups1,ups2)
         ) }
         (this is Type.Ptr && sub is Type.Ptr) -> {
-            //println("SUPOF [$depth] ${this.tk.lin}: ${this.scope()} = ${sub.scope()}")
+            //println("SUPOF [$depth] ${this.tk.lin}: ${this.scope()} = ${sub.scope()} / ${sub.scope}")
             val ok = if (depth) {
                 val dthis = this.scope()
                 val dsub  = sub.scope()

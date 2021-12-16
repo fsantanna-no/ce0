@@ -150,7 +150,7 @@ fun Stmt.aux_01_upsenvs (up: Any?, env: Env?): Env? {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-private
+//private
 fun Type.up (up: Any): Type {
     ups_add(this, up)
     return this
@@ -172,13 +172,15 @@ fun Aux_02_tps (s: Stmt) {
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { AUX.tps[it]!! }.toTypedArray()).up(e)
             is Expr.UCons -> Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e)
-            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scope, AUX.tps[e.arg]!!)
+            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scope, AUX.tps[e.arg]!!).up(e)
             is Expr.Call -> {
                 AUX.tps[e.f].let {
                     when (it) {
                         // scope of output is tested in the call through XP
                         // here, just returns the "top" scope to succeed
-                        is Type.Func -> it.out //.map { if (it !is Type.Ptr) it else Type.Ptr(it.tk_, null, it.pln) }
+                        is Type.Func -> it.out.map { if (it !is Type.Ptr) it else {
+                            Type.Ptr(it.tk_, null, it.pln).up(it)
+                        } }
                         is Type.Nat  -> it //Type.Nat(it.tk_).ups(e)
                         else -> {
                             All_assert_tk(e.f.tk, false) {

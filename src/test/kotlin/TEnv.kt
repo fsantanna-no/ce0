@@ -251,18 +251,18 @@ class TEnv {
         val out = inp2env("""
             var y: [()]
             var x: /() @local
-            set x = /y @local
+            set x = /y
         """.trimIndent())
-        assert(out == "(ln 3, col 7): invalid assignment : type mismatch")
+        assert(out == "(ln 3, col 7): invalid assignment : type mismatch") { out }
     }
     @Test
     fun c11_type_upref () {
         val out = inp2env("""
             var y: ()
             var x: /() @local
-            set x = /y @local
+            set x = /y
             var z: _x
-            set z = /x @local
+            set z = /x
         """.trimIndent())
         assert(out == "OK")
     }
@@ -287,7 +287,7 @@ class TEnv {
         val out = inp2env("""
             var x: ()
             var y: /() @local
-            set y = /x @local
+            set y = /x
             var z: /() @local
             set z = y\
         """.trimIndent())
@@ -487,7 +487,7 @@ class TEnv {
             var p2: /() @local
             {
                 var v: ()
-                set p1 = /v  @local    -- ERRO p1=0 < v=1
+                set p1 = /v -- ERRO p1=0 < v=1
             }
             {
                 var v: ()
@@ -503,8 +503,8 @@ class TEnv {
             var p: /() @local
             {
                 var y: ()
-                set p = /x @local  -- ok
-                set p = /y @local  -- no
+                set p = /x   -- ok
+                set p = /y   -- no
             }
         """.trimIndent())
         assert(out == "(ln 6, col 11): invalid assignment : type mismatch") { out }
@@ -586,7 +586,7 @@ class TEnv {
             }
             {
                 var x: ()
-                call f /x @local
+                call f /x
             }
         """.trimIndent())
         assert(out == "OK") { out }
@@ -603,7 +603,7 @@ class TEnv {
                 }
                 {
                     var x: ()
-                    call f /x @local
+                    call f /x
                 }
             }
         """.trimIndent())
@@ -643,7 +643,7 @@ class TEnv {
                 var x: ()
                 {
                     var y: ()
-                    call f [/y@local,/x@a]  -- err
+                    call f [/y,/x]  -- err
                 }
             }
         """.trimIndent())
@@ -789,16 +789,11 @@ class TEnv {
     fun e20_arg_err () {
         val out = inp2env("""
             var f: /()@2->/()@1
-            set f = func /()@2->/()@1 { return arg }
+            set f = func /()@2->/()@1 {
+                return arg
+            }
         """.trimIndent())
-        assert(out == "    @Test\n" +
-                "    fun e20_arg_ok2 () {\n" +
-                "        val out = inp2env(\"\"\"\n" +
-                "            var f: /()@1->/()@2\n" +
-                "            set f = func /()@1->/()@2 { return arg }\n" +
-                "        \"\"\".trimIndent())\n" +
-                "        assert(out == \"OK\") { out }\n" +
-                "    }\n") { out }
+        assert(out == "(ln 3, col 5): invalid return : type mismatch") { out }
     }
     @Test
     fun e21_local_err () {
@@ -856,7 +851,7 @@ class TEnv {
             var p: //_int @local @local
             {
                 var y: /_int @local
-                set p = /y @local
+                set p = /y
             }
         """.trimIndent())
         assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
@@ -868,8 +863,8 @@ class TEnv {
             var z: _int
             set z = _10
             var y: /_int @local
-            set y = /z @local
-            set p = /y @local
+            set y = /z
+            set p = /y
             output std p\\
         """.trimIndent())
         assert(out == "OK") { out }
@@ -880,8 +875,8 @@ class TEnv {
             var p: //_int @local @local
             {
                 var z: _int; set z = _10
-                var y: /_int @local; set y = /z @local
-                set p = /y @local
+                var y: /_int @local; set y = /z
+                set p = /y
             }
         """.trimIndent())
         assert(out == "(ln 5, col 11): invalid assignment : type mismatch") { out }
@@ -892,8 +887,8 @@ class TEnv {
             var p: /_int @local
             {
                 var x: _int; set x = _10
-                var y: /_int @local; set y = /x @local
-                var z: //_int @local @local; set z = /y @local
+                var y: /_int @local; set y = /x
+                var z: //_int @local @local; set z = /y
                 set p = z\
             }
         """.trimIndent())
@@ -912,7 +907,7 @@ class TEnv {
             var v: _int
             set v = _10
             var p: /_int @local
-            set p = f (/v @local)
+            set p = f (/v)
             output std p\
         """.trimIndent())
         assert(out == "OK") { out }
@@ -924,7 +919,7 @@ class TEnv {
             set v = _10
             var f : () -> /_int@1
             set f = func () -> /_int@1 {
-                return /v @global
+                return /v
             }
             var p: /_int @local
             set p = f ()
@@ -940,7 +935,7 @@ class TEnv {
             set v = _10
             var f : () -> /_int@1
             set f = func () -> /_int@1 {
-                return /v @global
+                return /v
             }
             var p: /_int @local
             set p = f ()
@@ -953,7 +948,7 @@ class TEnv {
         val out = inp2env("""
             var f : () -> /_int@1; set f = func () -> /_int@1 {
                 var v: _int; set v = _10
-                return /v@local
+                return /v
             }
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid return : type mismatch") { out }
@@ -980,7 +975,7 @@ class TEnv {
             var v: _int
             set v = _10
             var p: /_int @local
-            set p = f /v @local
+            set p = f /v
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -992,7 +987,7 @@ class TEnv {
                 var x: _int
                 set x = _10
                 var ptr: /_int @1
-                set ptr = /x @local
+                set ptr = /x
                 return ptr
             }
         """.trimIndent())
@@ -1004,7 +999,7 @@ class TEnv {
         val out = inp2env("""
             var f: _int -> /_int@1; set f = func _int -> /_int@1
             {
-                return /arg @local
+                return /arg
             }
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid return : type mismatch") { out }
@@ -1014,7 +1009,7 @@ class TEnv {
         val out = inp2env("""
             var f: _int -> /_int@1; set f = func _int -> /_int@1
             {
-                return /arg @1  -- /arg is @local, not @1
+                return /arg
             }
         """.trimIndent())
         assert(out == "(ln 3, col 5): invalid return : type mismatch") { out }
@@ -1038,7 +1033,7 @@ class TEnv {
             set f = func /_int@1 -> _int {
                 var ptr: /_int@global
                 set ptr = arg
-                return /ptr @1
+                return /ptr
             }
         """.trimIndent())
         assert(out == "(ln 4, col 13): invalid assignment : type mismatch") { out }
@@ -1051,7 +1046,7 @@ class TEnv {
                 var v: ()
                 var f : () -> /()@1
                 set f = func () -> /()@1 {
-                    return /v @1      -- err: /v may not be at expected @1
+                    return /v      -- err: /v may not be at expected @1
                 }
                 {
                     --set p = f ()    -- p=@1 is smaller than /v
@@ -1068,7 +1063,7 @@ class TEnv {
                 set v = _10
                 var f : () -> /_int@a
                 set f = func () -> /_int@a {
-                    return /v @a
+                    return /v
                 }
                 var p: /_int @local
                 {
@@ -1102,8 +1097,8 @@ class TEnv {
                 set p = f x     -- err: call p/x have diff scopes (@1 will be x which is greater)
             }
         """.trimIndent())
-        //assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }
-        assert(out == "(ln 8, col 11): invalid assignment : type mismatch") { out }
+        assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }
+        //assert(out == "(ln 8, col 11): invalid assignment : type mismatch") { out }
     }
     @Test
     fun g15_ptr_func_ok () {
@@ -1163,8 +1158,8 @@ class TEnv {
                 set p = f x     -- err: @2=p <= @1=x (false) 
             }
         """.trimIndent())
-        //assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }
-        assert(out == "(ln 8, col 11): invalid assignment : type mismatch") { out }
+        assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }
+        //assert(out == "(ln 8, col 11): invalid assignment : type mismatch") { out }
     }
 
     // POINTERS - TUPLE - TYPE
@@ -1175,7 +1170,7 @@ class TEnv {
             var p: /[_int,_int] @local
             {
                 var y: [_int,_int]; set y = [_10,_20]
-                set p = /y @local
+                set p = /y
             }
         """.trimIndent())
         assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
@@ -1186,7 +1181,7 @@ class TEnv {
             var p: /() @local
             {
                 var y: [()]
-                set p = /y.1 @local
+                set p = /y.1
             }
         """.trimIndent())
         assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
@@ -1197,7 +1192,7 @@ class TEnv {
             var p: /() @local
             {
                 var y: [()]
-                set p = /y.1 @local
+                set p = /y.1
             }
         """.trimIndent())
         assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
@@ -1207,7 +1202,7 @@ class TEnv {
         val out = inp2env("""
             var v: [_int,_int]; set v = [_10,_20]
             var p: /_int @local
-            set p = /v.1 @local
+            set p = /v.1
             set p\ = _20
             output std v
         """.trimIndent())
@@ -1219,7 +1214,7 @@ class TEnv {
             var p: /_int @local
             {
                 var v: [_int,_int]; set v = [_10,_20]
-                set p = /v.1 @local
+                set p = /v.1
             }
         """.trimIndent())
         assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
@@ -1230,7 +1225,7 @@ class TEnv {
             var p: /() @local
             {
                 var v: [()]
-                set p = /v.1 @local
+                set p = /v.1
             }
         """.trimIndent())
         assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
@@ -1241,7 +1236,7 @@ class TEnv {
             var p: [_int,/_int @local]
             {
                 var v: _int
-                set p.2 = /v @local    -- err
+                set p.2 = /v     -- err
             }
         """.trimIndent())
         assert(out == "(ln 4, col 13): invalid assignment : type mismatch") { out }
@@ -1252,7 +1247,7 @@ class TEnv {
             var p: [_int,/_int @local]
             {
                 var v: _int
-                set p = [_10,/v @local]
+                set p = [_10,/v]
             }
         """.trimIndent())
         assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
@@ -1263,7 +1258,7 @@ class TEnv {
             var p: </_int @local>
             {
                 var v: _int
-                set p!1 = /v @local
+                set p!1 = /v
             }
         """.trimIndent())
         assert(out == "(ln 4, col 13): invalid assignment : type mismatch") { out }
@@ -1274,7 +1269,7 @@ class TEnv {
             var p: </_int @local>
             {
                 var v: _int
-                set p = <.1 /v @local>
+                set p = <.1 /v>
             }
         """.trimIndent())
         assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
@@ -1325,7 +1320,7 @@ class TEnv {
             var p: /</^ @local> @local
             {
                 var l: [/</^ @local> @local]; set l = [new <.1 (new <.1 <.0>> @local)> @local]
-                set p = /l.1 @local
+                set p = /l.1
             }
             output std p
         """.trimIndent())
@@ -1486,7 +1481,7 @@ class TEnv {
         val out = inp2env("""
             var x: </^ @local>
             var y: /</^ @local> @local
-            set y = /x @local
+            set y = /x
         """.trimIndent())
         //assert(out == "(ln 2, col 23): expected expression : have `\\´") { out }
         assert(out == "OK") { out }
@@ -1513,7 +1508,7 @@ class TEnv {
         val out = inp2env("""
             var x: </^ @local>
             var y: /</^ @local> @local
-            set y = /x @local
+            set y = /x
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1522,7 +1517,7 @@ class TEnv {
         val out = inp2env("""
             var x: _int
             var y: /_int @local
-            set y = /x @local
+            set y = /x
         """.trimIndent())
         //assert(out == "(ln 2, col 23): invalid `borrow` : expected pointer to recursive variable") { out }
         assert(out == "OK") { out }
@@ -1668,7 +1663,7 @@ class TEnv {
         val out = inp2env("""
             var x: <()>
             var y: /_int @local
-            set y = /x @local
+            set y = /x
         """.trimIndent())
         //assert(out == "(ln 2, col 16): invalid `borrow` : expected pointer to recursive variable")
         assert(out == "OK") { out }
@@ -1678,7 +1673,7 @@ class TEnv {
         val out = inp2env("""
             var x: /<(),/^ @local> @local
             var y: /_int @local
-            set y = /x @local
+            set y = /x
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1687,7 +1682,7 @@ class TEnv {
         val out = inp2env("""
             var x: [/</^ @local> @local]
             var y: /_int @local
-            set y = /x @local
+            set y = /x
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1709,7 +1704,7 @@ class TEnv {
             {
                 output std arg
             }
-            call f /x.1 @local
+            call f /x.1
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1718,7 +1713,7 @@ class TEnv {
         val out = inp2env("""
             var x: [/</^ @local> @local]
             var y: //</^ @local> @local @local
-            set y = /x.1 @local
+            set y = /x.1
         """.trimIndent())
         //assert(out == "(ln 2, col 15): invalid expression : expected `borrow` operation modifier") { out }
         assert(out == "OK") { out }
@@ -1728,7 +1723,7 @@ class TEnv {
         val out = inp2env("""
             var x: /</^ @local> @local
             var y: //</^ @local> @local @local
-            set y = /x @local --!1
+            set y = /x --!1
             var z: /</^ @local> @local
             set z = y\
         """.trimIndent())
@@ -1740,7 +1735,7 @@ class TEnv {
         val out = inp2env("""
             var x: /</^ @local> @local
             var y: //</^ @local> @local @local
-            set y = /x @local --!1
+            set y = /x --!1
             var z: /</^ @local> @local
             set z = y\
         """.trimIndent())
@@ -1752,7 +1747,7 @@ class TEnv {
         val out = inp2env("""
             var x: /</^ @local> @local
             var y: //</^ @local> @local @local
-            set y = /x @local --!1
+            set y = /x --!1
             var z: /</^ @local> @local
             set z = y\
         """.trimIndent())
@@ -1767,7 +1762,7 @@ class TEnv {
             {
                 output std arg
             }
-            call f /x.1 @local
+            call f /x.1
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1868,7 +1863,7 @@ class TEnv {
         val out = inp2env("""
             var x: /</^ @local> @local
             var y: //</^ @local> @local @local
-            set y = /x @local --!1
+            set y = /x --!1
             set x = <.0>
         """.trimIndent())
         //assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2") { out }
@@ -1879,7 +1874,7 @@ class TEnv {
         val out = inp2env("""
             var x: /</^ @local> @local
             var y: //</^ @local> @local @local
-            set y = /x @local --!1
+            set y = /x --!1
             var z: /</^ @local> @local
             set z = x
         """.trimIndent())
@@ -1907,7 +1902,7 @@ class TEnv {
             var x: /</^ @local> @local
             {
                 var y: //</^ @local> @local @local
-                set y = /x @local --!1
+                set y = /x --!1
             }
             var z: /</^ @local> @local
             set z = x
@@ -1923,7 +1918,7 @@ class TEnv {
             {
                 set x = <.0>
             }
-            call f /x @local --!1
+            call f /x --!1
         """.trimIndent())
         //assert(out == "(ln 4, col 9): undeclared variable \"x\"") { out }
         //assert(out == "(ln 4, col 11): invalid assignment of \"x\" : borrowed in line 3") { out }
@@ -1939,7 +1934,7 @@ class TEnv {
                 set x = <.0>
             }
             var y: //</^ @local> @local @local
-            set y = /x @local --!1
+            set y = /x --!1
             call f y
         """.trimIndent())
         assert(out == "OK") { out }
@@ -1955,7 +1950,7 @@ class TEnv {
                 set x = <.0>
             }
             var y: //</^ @local> @local @local
-            set y = /x @local --!1
+            set y = /x --!1
             var g: () -> (); set g = f
             call g ()
         """.trimIndent())
@@ -1968,7 +1963,7 @@ class TEnv {
         val out = inp2env("""
             var x: /</^ @local> @local
             var y: //</^ @local> @local @local
-            set y = /x @local --!1
+            set y = /x --!1
             set x = <.0>
         """.trimIndent())
         //assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2") { out }
@@ -1990,7 +1985,7 @@ class TEnv {
         val out = inp2env("""
             var x: /</^ @local> @local
             var y: [(),//</^ @local> @local @local]
-            set y = [(), /x @local] --/x!1]
+            set y = [(), /x] --/x!1]
             set x = <.0>
         """.trimIndent())
         //assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2") { out }
@@ -2012,7 +2007,7 @@ class TEnv {
         val out = inp2env("""
             var x: /</^ @local> @local
             var y: <//</^ @local> @local @local>
-            set y = <.1 /x @local> --/x!1>
+            set y = <.1 /x> --/x!1>
             set x = <.0>
         """.trimIndent())
         //assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2") { out }
@@ -2023,7 +2018,7 @@ class TEnv {
         val out = inp2env("""
             var x: [//</^ @local> @local @local,/</^ @local> @local]
             set x = [_,<.0>]
-            set x.1 = /x.2 @local --!1
+            set x.1 = /x.2 --!1
             var y: /</^ @local> @local
             set y = x.2
         """.trimIndent())
@@ -2037,7 +2032,7 @@ class TEnv {
         var f: ()->(); set f = func ()->() {
             set x = <.0>
             var y: //</^ @local> @local @local
-            set y = /x @local
+            set y = /x
             return f ()
         }
         call f ()
@@ -2066,7 +2061,7 @@ class TEnv {
             set x = <.0>
             var y: /</^ @local> @local
             set y = x
-            output std /x @local
+            output std /x
         """.trimIndent())
         assert(out == "OK") { out }
         //assert(out == "(ln 3, col 13): invalid access to \"x\" : consumed in line 2") { out }
@@ -2077,10 +2072,10 @@ class TEnv {
             var x: /</^ @local> @local
             set x = <.0>
             var y: //</^ @local> @local @local
-            set y = /x @local
+            set y = /x
             var z: /</^ @local> @local
             set z = y\
-            output std /x @local
+            output std /x
         """.trimIndent())
         assert(out == "OK") { out }
         //assert(out == "(ln 4, col 13): invalid access to \"x\" : consumed in line 3") { out }
@@ -2091,10 +2086,10 @@ class TEnv {
             var x: /</^ @local> @local
             set x = <.0>
             var y: //</^ @local> @local @local
-            set y = /x @local
+            set y = /x
             var z: /</^ @local> @local
             set z = y\
-            output std /x @local
+            output std /x
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -2104,7 +2099,7 @@ class TEnv {
             var x: /</^ @local> @local
             set x = <.0>
             set x = x
-            output std /x @local
+            output std /x
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -2154,7 +2149,7 @@ class TEnv {
         val out = inp2env("""
             var x: /<(),/^ @local> @local
             set x = new <.2 new <.1> @local> @local
-            output std /x @local
+            output std /x
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -2164,7 +2159,7 @@ class TEnv {
             var x: <()>
             set x = <.1>
             var y: /<()> @local
-            set y = /x @local --!1
+            set y = /x --!1
             set x = <.1>
         """.trimIndent())
         assert(out == "OK") { out }
@@ -2176,7 +2171,7 @@ class TEnv {
         val out = inp2env("""
             var l: </^ @local>
             set l = <.0>    -- ERR: l is not a pointer, cannot accept NULL
-            output std /l @local
+            output std /l
         """.trimIndent())
         assert(out == "(ln 2, col 11): unexpected <.0> : not a pointer") { out }
     }
@@ -2208,7 +2203,7 @@ class TEnv {
             set y = new <.1 [<.1>,x]> @local
             set y\!1.2\!1.1 = <.1>
             -- <.1 [<.1>,<.1 [<.1>,<.0>]>]>
-            output std /y @local
+            output std /y
         """.trimIndent())
         //assert(out == "OK") { out }
         //assert(out == "(ln 1, col 16): invalid type declaration : unexpected `^´") { out }
@@ -2221,8 +2216,8 @@ class TEnv {
             set x = new <.1 [<.1>,<.0>]> @local
             var y: /< [<(),//^^ @local @local>,/^ @local]> @local
             set y = new <.1 [<.1>, x]> @local
-            set y\!1.2\!1.1 = <.2 /y @local>
-            output std /y @local
+            set y\!1.2\!1.1 = <.2 /y>
+            output std /y
         """.trimIndent())
         //assert(out == "(ln 3, col 21): invalid expression : expected `hold` operation modifier") { out }
         //assert(out == "(ln 1, col 16): invalid type declaration : unexpected `^´") { out }
@@ -2239,8 +2234,8 @@ class TEnv {
                 -- can be consumed by + (but not -)
                 -- can hold itself (or borrows)
                 -- cannot set its parts
-            set y\!1.2\!1.1 = <.2 /y @local>
-            output std /y @local
+            set y\!1.2\!1.1 = <.2 /y>
+            output std /y
         """.trimIndent())
         assert(out == "OK") { out }
         //assert(out == "(ln 1, col 16): invalid type declaration : unexpected `^´") { out }
@@ -2252,8 +2247,8 @@ class TEnv {
             set x = new <.1 [<.1>,<.0>]> @local
             var y: /< [<(),//^^ @local @local>,/^ @local]> @local
             set y = new <.1 [<.1>, x]> @local
-            set y\!1.2\!1.1 = <.2 /y @local>
-            output std /y @local
+            set y\!1.2\!1.1 = <.2 /y>
+            output std /y
         """.trimIndent())
         assert(out == "OK") { out }
         //assert(out == "(ln 3, col 28): invalid `borrow` : expected pointer to recursive variable") { out }
@@ -2267,7 +2262,7 @@ class TEnv {
             var y: [(),/<[(),/^ @local]> @local]
             set y = [(), new <.1 [(),<.0>]> @local]
             var z: [(),//<[(),/^ @local]> @local @local]
-            set z = [(), /x @local]
+            set z = [(), /x]
             output std z.2\\!1.2\!0
         """.trimIndent())
         assert(out == "OK") { out }
@@ -2277,7 +2272,7 @@ class TEnv {
         val out = inp2env("""
             var x: /< [//^ @local @local,/^ @local]> @local
             set x = new <.1 [_,<.0>]> @local
-            set x\!1.1 = /x @local
+            set x\!1.1 = /x
         """.trimIndent())
         assert(out == "OK") { out }
         //assert(out == "(ln 1, col 12): invalid type declaration : unexpected `^´") { out }
@@ -2287,7 +2282,7 @@ class TEnv {
         val out = inp2env("""
             var x: /< [<(),//^^ @local @local>,/^ @local]> @local
             set x = new <.1 [<.1>,<.0>]> @local
-            set x\!1.1 = <.2 /x @local>  -- ok
+            set x\!1.1 = <.2 /x>  -- ok
         """.trimIndent())
         assert(out == "OK") { out }
         //assert(out == "(ln 1, col 16): invalid type declaration : unexpected `^´") { out }
@@ -2358,7 +2353,7 @@ class TEnv {
         val out = inp2env("""
             var x: <[()]>
             var y: /() @local
-            set y = /x!1.1 @local  -- can't point to .1 inside union (union might change)
+            set y = /x!1.1  -- can't point to .1 inside union (union might change)
             output std y
         """.trimIndent())
         assert(out == "(ln 3, col 9): invalid operand to `/´ : union discriminator") { out }
@@ -2380,7 +2375,7 @@ class TEnv {
             var x: /<[/^ @local]> @local
             set x = new <.1 [new <.1 [<.0>]> @local]> @local
             var y: //<[/^ @local]> @local @local
-            set y = /x\!1.1 @local  -- crossing udisc
+            set y = /x\!1.1  -- crossing udisc
             output std y
         """.trimIndent())
         assert(out == "(ln 4, col 9): invalid operand to `/´ : union discriminator") { out }
@@ -2391,7 +2386,7 @@ class TEnv {
             var x: <(),[()]>
             set x = <.2 [()]>
             var y: /() @local
-            set y = /x!2.1 @local  -- crossing udisc
+            set y = /x!2.1  -- crossing udisc
             output std y
         """.trimIndent())
         assert(out == "(ln 4, col 9): invalid operand to `/´ : union discriminator") { out }
@@ -2401,7 +2396,7 @@ class TEnv {
         val out = inp2env("""
             var x: </() @local>
             var y: /() @local
-            set y = /x!1\ @local   -- ok: crosses udisc but dnrefs a pointer before the upref
+            set y = /x!1\   -- ok: crosses udisc but dnrefs a pointer before the upref
             output std y
         """.trimIndent())
         assert(out == "OK") { out }
@@ -2411,7 +2406,7 @@ class TEnv {
         val out = inp2env("""
             var x: </() @local>
             var y: //() @local @local
-            set y = //x!1\ @local @local   -- no: upref after dnref fires the problem again
+            set y = //x!1\   -- no: upref after dnref fires the problem again
             output std y
         """.trimIndent())
         assert(out == "(ln 3, col 9): invalid operand to `/´ : union discriminator") { out }

@@ -28,7 +28,7 @@ fun Type.tostr (): String {
         is Type.Unit  -> "()"
         is Type.Nat   -> this.tk_.str
         is Type.Rec   -> "^".repeat(this.tk_.up)
-        is Type.Ptr   -> "/" + this.pln.tostr() + this.scope
+        is Type.Ptr   -> "/" + this.pln.tostr() + this.scope!!.scp
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
         is Type.UCons -> "<." + this.tk_.num + " " + this.arg.tostr() + ">"
@@ -88,10 +88,10 @@ fun Type.Union.expand (): Array<Type> {
     fun aux (cur: Type, up: Int): Type {
         return when (cur) {
             is Type.Rec   -> if (up == cur.tk_.up) this else { assert(up>cur.tk_.up) ; cur }
-            is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray()) //.up(AUX.ups[cur]!!)
-            is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray()) //.up(AUX.ups[cur]!!)
-            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scope, aux(cur.pln,up)) //.up(AUX.ups[cur]!!)
-            is Type.Func  -> Type.Func(cur.tk_, aux(cur.inp,up), aux(cur.out,up)) //.up(AUX.ups[cur]!!)
+            is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray()) .up(AUX.ups[cur]!!)
+            is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray()) .up(AUX.ups[cur]!!)
+            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scope, aux(cur.pln,up)) .up(AUX.ups[cur]!!)
+            is Type.Func  -> Type.Func(cur.tk_, aux(cur.inp,up), aux(cur.out,up)) .up(AUX.ups[cur]!!)
             is Type.UCons -> error("bug found")
             else -> cur
         }
@@ -148,8 +148,9 @@ fun Type.Ptr.scope (): Scope {
     // dropWhile(Type).drop(1) so that prototype skips up func
     //val lvl = this.ups_tolist().dropWhile { it is Type }.drop(1).filter { it is Expr.Func }.count()
 
-    val id = this.scope!!.scp
+    val id = this.scope?.scp
     return when (id) {
+        null -> Scope(lvl, true, this.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
         "@global" -> Scope(lvl, true, 0)
         "@local"  -> Scope(lvl, true, this.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
         else -> {
