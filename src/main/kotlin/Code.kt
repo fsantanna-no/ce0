@@ -52,7 +52,7 @@ fun deps (tps: Set<Type>): Set<String> {
 
 fun Type.Func.news (isproto: Boolean): String {
     val ats = mutableSetOf<String>()
-    this.visit { if (it is Type.Ptr) ats.add(it.scope.scp) }
+    this.visit { if (it is Type.Ptr) ats.add(it.scope!!.scp) }
     return ats.sorted().map {
         "__News**" + (if (isproto) "" else " __news__${it.drop(1)}")
     }.joinToString(", ").let {
@@ -71,7 +71,7 @@ fun code_ft (tp: Type) {
     when (tp) {
         is Type.Func -> {
             val ats = mutableSetOf<String>()
-            tp.visit { if (it is Type.Ptr) ats.add(it.scope.scp) }
+            tp.visit { if (it is Type.Ptr) ats.add(it.scope!!.scp) }
             val news = tp.news(true)
             TYPES.add(Triple(
                 Pair(tp.toce(), deps(setOf(tp.inp,tp.out))),
@@ -314,7 +314,7 @@ fun code_fe (e: Expr) {
                 val news = tfs.zip(tas)                // [ (ptr,ptr), ... ]
                     .groupBy { it.first.scope }     // [ @1=[(ptr,ptr),...], ... ]
                     .toList()                       // [ (@1,[(ptr,ptr),...]), ... ]
-                    .sortedBy { it.first.scp }    // [ (@1,[(ptr,ptr),...]), ... ]
+                    .sortedBy { it.first!!.scp }    // [ (@1,[(ptr,ptr),...]), ... ]
                     .map { it.second }              // [ [(ptr,ptr),...], ... ]
                     .map { it.map { it.second } }   // [ [ptr,...], ... ]
                     .map { it.map { Pair(it.scope(), it) } }   // [ [(scp(),ptr),...], ... ]

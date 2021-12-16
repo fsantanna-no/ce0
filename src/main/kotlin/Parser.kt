@@ -78,8 +78,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 all.assert_tk(all.tk0, e is Expr.Nat || e is Expr.Var || e is Expr.TDisc || e is Expr.Dnref || e is Expr.Upref) {
                     "unexpected operand to `/´"
                 }
-                all.accept_err(TK.XSCOPE)
-                Expr.Upref(tk0, all.tk0 as Tk.Scope, e)
+                Expr.Upref(tk0, e)
             }
             all.accept(TK.CHAR,'(') -> {
                 val e = parser_expr(all, false)

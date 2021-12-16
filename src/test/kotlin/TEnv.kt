@@ -233,7 +233,7 @@ class TEnv {
         val out = inp2env("""
             var y: ()
             var x: ()
-            set x = /y @local
+            set x = /y
         """.trimIndent())
         assert(out == "(ln 3, col 7): invalid assignment : type mismatch")
     }
@@ -242,7 +242,7 @@ class TEnv {
         val out = inp2env("""
             var y: ()
             var x: /() @local
-            set x = /y @local
+            set x = /y
         """.trimIndent())
         assert(out == "OK") { out }
     }

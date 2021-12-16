@@ -8,7 +8,7 @@ sealed class Type (val tk: Tk) {
     data class Union (val tk_: Tk.Chr, val isrec: Boolean, val vec: Array<Type>): Type(tk_)
     data class UCons (val tk_: Tk.Num, val arg: Type): Type(tk_)
     data class Func  (val tk_: Tk.Sym, val inp: Type, val out: Type): Type(tk_)
-    data class Ptr   (val tk_: Tk.Chr, val scope: Tk.Scope, val pln: Type): Type(tk_)
+    data class Ptr   (val tk_: Tk.Chr, val scope: Tk.Scope?, val pln: Type): Type(tk_)
     data class Rec   (val tk_: Tk.Up): Type(tk_)
 }
 
@@ -131,7 +131,7 @@ fun Type.Ptr.scope (): Scope {
             .filter { it is Expr.Func }
             .map {
                 (it as Expr.Func).type.flatten().filter { it is Type.Ptr }
-                    .map { (it as Type.Ptr).scope.scp }
+                    .map { (it as Type.Ptr).scope!!.scp }
                     .map { it.toIntOrNull() }
                     .filterNotNull()
                     .maxOrNull() ?: 0
@@ -148,7 +148,7 @@ fun Type.Ptr.scope (): Scope {
     // dropWhile(Type).drop(1) so that prototype skips up func
     //val lvl = this.ups_tolist().dropWhile { it is Type }.drop(1).filter { it is Expr.Func }.count()
 
-    val id = this.scope.scp
+    val id = this.scope!!.scp
     return when (id) {
         "@global" -> Scope(lvl, true, 0)
         "@local"  -> Scope(lvl, true, this.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
