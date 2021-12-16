@@ -14,7 +14,6 @@ fun check_01_no_scp_tps_xps (s: Stmt) {
             }
             is Type.Ptr -> {
                 val ok = when {
-                    (tp.scope == null) -> TODO()
                     (tp.scope.scp == "@global") -> true
                     (tp.scope.scp == "@local")  -> true
                     (tp.scope.scp.drop(1).toIntOrNull() != null) -> true

@@ -84,25 +84,6 @@ fun aux_clear () {
 private
 fun Type.aux_01_upsenvs (up: Any) {
     ups_add(this, up)
-
-    // Derived scope from pointers above myself:
-    // /(/x)@a      --> /x is also @a
-    // func /x->()  --> /x is @1 (default)
-    fun up (tp: Type.Ptr): String? {
-        var cur: Type = tp
-        while (true) {
-            val nxt = AUX.ups[cur]
-            when {
-                (cur is Type.Ptr) -> return cur.scope.scp
-                (nxt == null) -> return null
-                (nxt is Type.Func) -> return "@1"
-                (nxt is Stmt.Var && nxt.tk_.str=="_ret_") -> return "@1"
-                (nxt !is Type) -> return null
-                else -> cur = nxt
-            }
-        }
-    }
-
     when (this) {
         is Type.Tuple -> this.vec.forEach { it.aux_01_upsenvs(this) }
         is Type.Union -> this.vec.forEach { it.aux_01_upsenvs(this) }
@@ -169,7 +150,7 @@ fun Stmt.aux_01_upsenvs (up: Any?, env: Env?): Env? {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-//private
+private
 fun Type.up (up: Any): Type {
     ups_add(this, up)
     return this

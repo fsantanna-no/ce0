@@ -595,7 +595,7 @@ class TEnv {
     fun e09_ptr_err () {
         val out = inp2env("""
             { @a
-                var pa: /_int
+                var pa: /_int @local
                 var f: /()@1->()
                 set f = func /()@1->() {
                     var pf: /_int @1
@@ -603,7 +603,7 @@ class TEnv {
                 }
                 {
                     var x: ()
-                    call f /x
+                    call f /x @local
                 }
             }
         """.trimIndent())

@@ -84,18 +84,14 @@ fun Type.isrec (): Boolean {
     return (this is Type.Union) && this.isrec
 }
 
-fun Type.level (): Int {
-    return this.ups_tolist().filter { it is Expr.Func }.count()
-}
-
 fun Type.Union.expand (): Array<Type> {
     fun aux (cur: Type, up: Int): Type {
         return when (cur) {
             is Type.Rec   -> if (up == cur.tk_.up) this else { assert(up>cur.tk_.up) ; cur }
-            is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray()).up(AUX.ups[cur]!!)
-            is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray()).up(AUX.ups[cur]!!)
-            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scope, aux(cur.pln,up)).up(AUX.ups[cur]!!)
-            is Type.Func  -> Type.Func(cur.tk_, aux(cur.inp,up), aux(cur.out,up)).up(AUX.ups[cur]!!)
+            is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray()) //.up(AUX.ups[cur]!!)
+            is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray()) //.up(AUX.ups[cur]!!)
+            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scope, aux(cur.pln,up)) //.up(AUX.ups[cur]!!)
+            is Type.Func  -> Type.Func(cur.tk_, aux(cur.inp,up), aux(cur.out,up)) //.up(AUX.ups[cur]!!)
             is Type.UCons -> error("bug found")
             else -> cur
         }
@@ -119,30 +115,12 @@ fun Type.Ptr.topool (): String {
     return this.scope().let {
         when {
             !it.isabs -> "__news__${it.depth}"
-            (this.scope == null) -> "__news_cur"
             else -> "__news_${it.depth}"
         }
     }
 }
 
 fun Type.Ptr.scope (): Scope {
-    // Derived scope from pointers above myself:
-    // /(/x)@a      --> /x is also @a
-    // func /x->()  --> /x is @1 (default)
-    fun up (tp: Type.Ptr): String? {
-        var cur: Type = tp
-        while (true) {
-            val nxt = AUX.ups[cur]
-            when {
-                (cur is Type.Ptr) -> return cur.scope!!.scp
-                (nxt == null) -> return null
-                (nxt is Type.Func) -> return "@1"
-                (nxt is Stmt.Var && nxt.tk_.str == "_ret_") -> return "@1"
-                (nxt !is Type) -> return null
-                else -> cur = nxt
-            }
-        }
-    }
 
     // Offset of @N (max) of all crossing functions:
     //  func /()->() {              // +1
@@ -153,8 +131,7 @@ fun Type.Ptr.scope (): Scope {
             .filter { it is Expr.Func }
             .map {
                 (it as Expr.Func).type.flatten().filter { it is Type.Ptr }
-                    .map { up(it as Type.Ptr) }
-                    .filterNotNull()
+                    .map { (it as Type.Ptr).scope.scp }
                     .map { it.toIntOrNull() }
                     .filterNotNull()
                     .maxOrNull() ?: 0
@@ -167,13 +144,12 @@ fun Type.Ptr.scope (): Scope {
     //      ...             // lvl=1
     //      func ... {
     //          ...         // lvl=1
-    val lvl = this.level()
+    val lvl = this.ups_tolist().filter { it is Expr.Func }.count()
     // dropWhile(Type).drop(1) so that prototype skips up func
     //val lvl = this.ups_tolist().dropWhile { it is Type }.drop(1).filter { it is Expr.Func }.count()
 
-    val id = up(this)
+    val id = this.scope.scp
     return when (id) {
-        null -> TODO()
         "@global" -> Scope(lvl, true, 0)
         "@local"  -> Scope(lvl, true, this.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
         else -> {

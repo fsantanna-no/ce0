@@ -58,7 +58,7 @@ fun Type.isSupOf_ (sub: Type, depth: Boolean, ups1: List<Type.Union>, ups2: List
             sub.out.isSupOf_(this.out,false,ups1,ups2)
         ) }
         (this is Type.Ptr && sub is Type.Ptr) -> {
-            //println("SUPOF ${this.tk.lin}: ${AUX.scp[this]} = ${AUX.scp[sub]}")
+            //println("SUPOF [$depth] ${this.tk.lin}: ${this.scope()} = ${sub.scope()}")
             val ok = if (depth) {
                 val dthis = this.scope()
                 val dsub  = sub.scope()
@@ -67,8 +67,9 @@ fun Type.isSupOf_ (sub: Type, depth: Boolean, ups1: List<Type.Union>, ups2: List
                 // (dsub.depth == 0):         globals as source are always ok
                 ((dthis.isabs==dsub.isabs || dthis.level==dsub.level || dsub.depth==0) && dthis.depth>=dsub.depth)
             } else {
-                this.scope == sub.scope // comparing func prototypes does not depend on scope calculation
+                this.scope.scp == sub.scope.scp // comparing func prototypes does not depend on scope calculation
             }
+            //println(ok)
             ok && this.pln.isSupOf_(sub.pln,depth,ups1,ups2)
         }
         (this is Type.Tuple && sub is Type.Tuple) ->
