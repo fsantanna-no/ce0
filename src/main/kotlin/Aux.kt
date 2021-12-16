@@ -84,6 +84,7 @@ fun aux_clear () {
 private
 fun Type.aux_01_upsenvs (up: Any) {
     ups_add(this, up)
+
     when (this) {
         is Type.Tuple -> this.vec.forEach { it.aux_01_upsenvs(this) }
         is Type.Union -> this.vec.forEach { it.aux_01_upsenvs(this) }
@@ -171,7 +172,7 @@ fun Aux_02_tps (s: Stmt) {
                 }
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { AUX.tps[it]!! }.toTypedArray()).up(e)
-            is Expr.UCons -> Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e)
+            is Expr.UCons -> e.tp //Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e)
             is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scope, AUX.tps[e.arg]!!).up(e)
             is Expr.Call -> {
                 AUX.tps[e.f].let {

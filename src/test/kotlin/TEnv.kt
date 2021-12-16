@@ -142,8 +142,8 @@ class TEnv {
     @Test
     fun b12_user_empty_err () {
         val out = inp2env("""
-            var l: </^ @local>
-            set l = <.1 <.0>>
+            var l: </^ @local>:/</^>
+            set l = <.1 <.0>>:/</^>>:</^>
             --output std l!0
         """.trimIndent())
         //assert(out == "(ln 2, col 11): invalid expression : expected `new` operation modifier") { out }
@@ -154,7 +154,7 @@ class TEnv {
     fun b13_user_empty_ok () {
         val out = inp2env("""
             var l: </^ @local>
-            set l = new <.1 <.0>> @local
+            set l = new <.1 <.0>>:/</^>>:</^> @local
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
@@ -162,7 +162,7 @@ class TEnv {
     fun b14_user_empty_ok () {
         val out = inp2env("""
             var l: /</^ @local> @local
-            set l = new <.1 <.0>> @local
+            set l = new <.1 <.0>>:/</^>>:</^> @local
             output std l\!0
         """.trimIndent())
         assert(out == "OK") { out }
@@ -426,7 +426,7 @@ class TEnv {
     fun c23_list_zero_err2 () {
         val out = inp2env("""
             var x: < /^ @local>
-            set x = <.0 [()]>
+            set x = <.0 [()]>:<()>
         """.trimIndent())
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
         assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }

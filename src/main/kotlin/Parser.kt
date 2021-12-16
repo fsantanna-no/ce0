@@ -112,7 +112,9 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                     Expr.Unit(Tk.Sym(TK.UNIT, all.tk1.lin, all.tk1.col, "()"))
                 }
                 all.accept_err(TK.CHAR, '>')
-                Expr.UCons(tk0, cons)
+                all.accept_err(TK.CHAR, ':')
+                val tp = parser_type(all)
+                Expr.UCons(tk0, tp, cons)
             }
             all.accept(TK.NEW) -> {
                 val tk0 = all.tk0
@@ -121,7 +123,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                     "invalid `new` : unexpected <.0>"
                 }
                 all.accept_err(TK.XSCOPE)
-                Expr.New(tk0 as Tk.Key, all.tk0 as Tk.Scope, e)
+                Expr.New(tk0 as Tk.Key, all.tk0 as Tk.Scope, e as Expr.UCons)
             }
             all.accept(TK.FUNC) -> {
                 val tk0 = all.tk0 as Tk.Key
