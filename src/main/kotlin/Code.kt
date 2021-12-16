@@ -55,9 +55,7 @@ fun Type.Func.news (isproto: Boolean): String {
     this.visit { if (it is Type.Ptr) ats.add(it.scope!!.scp) }
     return ats.sorted().map {
         "__News**" + (if (isproto) "" else " __news__${it.drop(1)}")
-    }.joinToString(", ").let {
-        if (it.length == 0) "" else it + ","
-    }
+    }.joinToString(", ")
 }
 
 fun code_ft (tp: Type) {
@@ -73,9 +71,15 @@ fun code_ft (tp: Type) {
             val ats = mutableSetOf<String>()
             tp.visit { if (it is Type.Ptr) ats.add(it.scope!!.scp) }
             val news = tp.news(true)
+            val inp  = tp.inp.pos()
+            val news_inp = when {
+                news.isEmpty()  -> inp
+                (inp == "void") -> news
+                else            -> "$news, $inp"
+            }
             TYPES.add(Triple(
                 Pair(tp.toce(), deps(setOf(tp.inp,tp.out))),
-                "typedef ${tp.out.pos()} ${tp.toce()} ($news ${tp.inp.pos()});\n",
+                "typedef ${tp.out.pos()} ${tp.toce()} ($news_inp);\n",
                 ""
             ))
         }
@@ -322,20 +326,23 @@ fun code_fe (e: Expr) {
                     .map { it.first() }             // [ (scp(),ptr), ... ]
                     .map { it.second }              // [ ptr, ... ]
                     .map { it.topool() }            // [ __news_xxx, ... ]
-                    .joinToString(", ").let {
-                        if (it.length == 0) "" else it + ", "
-                    }
+                    .joinToString(", ")
                 print("TFs: "); println(tfs)
                 print("TAs: "); println(tas)
                 println(news)
                 news
+            }
+            val news_arg = when {
+                news.isEmpty() -> arg.second
+                arg.second.isEmpty() -> news
+                else -> "$news, ${arg.second}"
             }
 
             val snd =
                 if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
                     AUX.tps[e.arg]!!.output("", arg.second)
                 } else {
-                    f.second + "(" + news + arg.second + ")"
+                    f.second + "(" + news_arg + ")"
                 }
             if (AUX.tps[e] is Type.Unit) {
                 Pair(f.first + arg.first + snd+";\n", "")
@@ -345,11 +352,15 @@ fun code_fe (e: Expr) {
         }
         is Expr.Func  -> {
             val ID  = "_func_" + e.hashCode().absoluteValue
-            val out = e.type.out.let { if (it is Type.Unit) "void" else it.pos() }
-            val (inp,dcl) = e.type.inp.let { if (it is Type.Unit) Pair("void","int _arg_;") else Pair(it.pos()+" _arg_","") }
             val news = e.type.news(false)
+            val (inp,dcl) = e.type.inp.let { if (it is Type.Unit) Pair("void","int _arg_;") else Pair(it.pos()+" _arg_","") }
+            val news_inp = when {
+                news.isEmpty()  -> inp
+                (inp == "void") -> news
+                else            -> "$news, $inp"
+            }
             val pre = """
-                auto $out $ID ($news $inp) {
+                auto ${e.type.out.pos()} $ID ($news_inp) {
                     $dcl
                     ${CODE.removeFirst()}
                 }
@@ -408,9 +419,7 @@ fun code_fs (s: Stmt) {
         is Stmt.Block -> """
             {
                 __News* __news  __attribute__((__cleanup__(__news_free))) = NULL;
-                ${ if (s.scope == null) "" else {
-                    "__News** __news_${1 + s.ups_tolist().count{ it is Stmt.Block }} = &__news;"
-                }}
+                __News** __news_${1 + s.ups_tolist().count{ it is Stmt.Block }} = &__news;
                 ${CODE.removeFirst()}
             }
             
