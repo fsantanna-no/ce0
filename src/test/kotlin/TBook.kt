@@ -12,22 +12,42 @@ val nums = """
     set two = new <.1 one>:</^ @local> @local
 """.trimIndent()
 
-val Num  = "/</^@local>@local"
-val NumF = "/</^@1>@1"
+fun Num (ptr: Boolean, scope: String): String {
+    val ret = "</^$scope>"
+    return if (!ptr) ret else "/"+ret+scope
+}
+val NumTL = Num(true,  "@local")
+val NumT1 = Num(true,  "@1")
+val NumF1 = Num(false, "@1")
 
 val add = """
-    var add: [$NumF,$NumF] -> $NumF
-    set add = func ([$NumF,$NumF] -> $NumF) {
-        var x: $NumF
+    var add: [$NumT1,$NumT1] -> $NumT1
+    set add = func ([$NumT1,$NumT1] -> $NumT1) {
+        var x: $NumT1
         set x = arg.1
-        var y: $NumF
+        var y: $NumT1
         set y = arg.2
         if y\?0 {
             return x
         } else {
-            var ret: $NumF
-            set ret = new <.1 add [x,y\!1] @1>:</^@1> @1
-            return ret
+            return new <.1 add [x,y\!1] @1>:$NumF1 @1
+        }
+    }
+""".trimIndent()
+
+val mul = """
+    var mul: [$NumT1,$NumT1] -> $NumT1
+    set mul = func ([$NumT1,$NumT1] -> $NumT1) {
+        var x: $NumT1
+        set x = arg.1
+        var y: $NumT1
+        set y = arg.2
+        if y\?0 {
+            return <.0>: $NumT1
+        } else {
+            var z: ${NumT1}
+            set z = mul [x, y\!1] @1
+            return add [z,x] @1
         }
     }
 """.trimIndent()
@@ -74,17 +94,32 @@ class TBook {
             $add
             output std add [two,one]
         """.trimIndent())
-        assert(out == "<.1 <.1 <.0>>>\n") { out }
+        assert(out == "<.1 <.1 <.1 <.0>>>>\n") { out }
+    }
+    @Test
+    fun pre_04_mul () {
+        val out = all("""
+            $nums
+            $add
+            $mul
+            output std mul [two, add [two,one]]
+        """.trimIndent())
+        assert(out == "<.1 <.1 <.1 <.1 <.1 <.1 <.0>>>>>>>\n") { out }
     }
 
     @Test
     fun ch_01_01_square () {
         val out = all("""
-            var square: $NumF -> $NumF {
+            $nums
+            $add
+            $mul
+            var square: $NumT1 -> $NumT1
+            set square = func $NumT1 -> $NumT1 {
+                return mul [arg,arg] @1
             }
             output std square two
         """.trimIndent())
-        assert(out == "<.1 <.1 <.0>>>\n") { out }
+        assert(out == "<.1 <.1 <.1 <.1 <.0>>>>>\n") { out }
     }
 
 

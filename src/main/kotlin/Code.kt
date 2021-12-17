@@ -329,7 +329,7 @@ fun code_fe (e: Expr) {
                     .map { it.sortedBy { it.first.depth } } // [ [(scp(),ptr),...], ... ]
                     .map { it.first() }                     // [ (scp(),ptr), ... ]
                     .map { it.second }                      // [ ptr, ... ]
-                    .let { println(it) ; it }
+                    //.let { println(it) ; it }
                     .map { it.topool() }                    // [ __news_xxx, ... ]
                     //.toSet().toList().sorted()
                     .joinToString(", ")
