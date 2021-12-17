@@ -1085,7 +1085,7 @@ class TEnv {
                 }
                 var p: /_int @local
                 {
-                    set p = f ()
+                    set p = f () @a
                 }
             }
         """.trimIndent())
@@ -1112,7 +1112,7 @@ class TEnv {
             var p: /() @local
             {
                 var x: /() @local
-                set p = f x     -- err: call p/x have diff scopes (@1 will be x which is greater)
+                set p = f x @global    -- err: call p/x have diff scopes (@1 will be x which is greater)
             }
         """.trimIndent())
         assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }

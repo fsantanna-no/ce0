@@ -54,6 +54,14 @@ class TExec {
         assert(out == "10\n")
     }
     @Test
+    fun a06_int () {
+        val out = all("""
+            var x: _int
+            output std _10:_int
+        """.trimIndent())
+        assert(out == "10\n") { out }
+    }
+    @Test
     fun a07_syntax_error () {
         val out = all("""
             native {
@@ -255,7 +263,7 @@ class TExec {
                return v
             }
             --var n: _int = _10
-            output std g [f,_10]
+            output std g [f,_10:_int]
         """.trimIndent())
         assert(out == "10\n") { out }
     }
@@ -335,7 +343,7 @@ class TExec {
     fun f05_user_big () {
         val out = all("""
             var s: <[_int,_int,_int,_int],_int,_int>
-            set s = <.1 [_1,_2,_3,_4]>:<[_int,_int,_int,_int],_int,_int>
+            set s = <.1 [_1:_int,_2:_int,_3:_int,_4:_int]>:<[_int,_int,_int,_int],_int,_int>
             output std /s
         """.trimIndent())
         assert(out == "<.1 [1,2,3,4]>\n") { out }
@@ -597,7 +605,7 @@ class TExec {
     fun i13_ptr_tup () {
         val out = all("""
             var v: [_int,_int]
-            set v = [_10,_20]
+            set v = [_10:_int,_20:_int]
             var p: /_int @local
             set p = /v.1
             set p\ = _20
@@ -620,7 +628,7 @@ class TExec {
     @Test
     fun i14_ptr_type () {
         val out = all("""
-            var v: [_int]; set v = [_10]
+            var v: [_int]; set v = [_10:_int]
             var p: /_int @local; set p = /v.1
             set p\ = _20
             output std /v
@@ -631,7 +639,7 @@ class TExec {
     fun i15_ptr_tup () {
         val out = all("""
             var x: _int; set x = _10
-            var p: [_int,/_int @local]; set p = [_10,/x]
+            var p: [_int,/_int @local]; set p = [_10:_int,/x]
             var v: _int; set v = _20
             set p.2 = /v
             output std p.2\
@@ -642,9 +650,9 @@ class TExec {
     fun i16_ptr_tup () {
         val out = all("""
             var x: _int; set x = _10
-            var p: [_int,/_int @local]; set p = [_10,/x]
+            var p: [_int,/_int @local]; set p = [_10:_int,/x]
             var v: _int; set v = _20
-            set p = [_10,/v]
+            set p = [_10:_int,/v]
             output std p.2\
         """.trimIndent())
         assert(out == "20\n") { out }
@@ -682,7 +690,7 @@ class TExec {
         val out = all("""
             var x1: [_int,/_int @local]
             var v: _int; set v = _20
-            var x2: [_int,/_int @local]; set x2 = [_10,/v]
+            var x2: [_int,/_int @local]; set x2 = [_10:_int,/v]
             set x1 = x2
             output std x1.2\
         """.trimIndent())
@@ -928,7 +936,7 @@ class TExec {
             var l1: /</^ @local> @local
             set l1 = new <.1 <.0>: /</^ @local> @local>:</^ @local> @local
             var l2: [_int,/</^ @local> @local]
-            set l2 = [_10, l1]
+            set l2 = [_10:_int, l1]
             output std l1
             output std l2.2
         """.trimIndent())
@@ -1003,7 +1011,7 @@ class TExec {
     fun j09_tup_list_err () {
         val out = all("""
             var t: [_int,/</^ @local> @local]
-            set t = [_10, new <.1 <.0>:/</^ @local> @local>:</^ @local> @local]
+            set t = [_10:_int, new <.1 <.0>:/</^ @local> @local>:</^ @local> @local]
             output std /t
         """.trimIndent())
         assert(out == "[10,<.1 <.0>>]\n") { out }
@@ -1163,7 +1171,7 @@ class TExec {
     @Test
     fun k01_set_tuple () {
         val out = all("""
-            var xy: [_int,_int]; set xy = [_10,_10]
+            var xy: [_int,_int]; set xy = [_10:_int,_10:_int]
             set xy.1 = _20
             var x: _int; set x = xy.1
             var y: _int; set y = xy.2
@@ -1219,7 +1227,7 @@ class TExec {
             set z = <.0>: /< [<(),/^^ @local>,_int,/^ @local]> @local
             var o: <(),/< [<(),/^^ @local>,_int,/^ @local]> @local>
             set o = <.1>: <(),/< [<(),/^^ @local>,_int,/^ @local]> @local>
-            set x = new <.1 [o,_1,new <.1 [o,_2,z]>:< [<(),/^^ @local>,_int,/^ @local]> @local]>:< [<(),/^^ @local>,_int,/^ @local]> @local
+            set x = new <.1 [o,_1:_int,new <.1 [o,_2:_int,z]>:< [<(),/^^ @local>,_int,/^ @local]> @local]>:< [<(),/^^ @local>,_int,/^ @local]> @local
             set x\!1.3\!1.1 = <.2 x>: <(),/< [<(),/^^ @local>,_int,/^ @local]> @local>
             set x\!1.1 = <.2 x\!1.3>: <(),/< [<(),/^^ @local>,_int,/^ @local]> @local>
             output std x\!1.3\!1.2
@@ -1238,7 +1246,7 @@ class TExec {
             set o = <.1>: <(),//< [<(),//^^ @local @local>,_int,/^ @local]> @local @local>
 
             var x: /< [<(),//^^ @local @local>,_int,/^ @local]> @local
-            set x = new <.1 [o,_2,z]>:< [<(),//^^ @local @local>,_int,/^ @local]> @local
+            set x = new <.1 [o,_2:_int,z]>:< [<(),//^^ @local @local>,_int,/^ @local]> @local
             output std x
         """.trimIndent())
         assert(out == "<.1 [<.1>,2,<.0>]>\n") { out }
@@ -1539,7 +1547,7 @@ class TExec {
             var f: ()->()
             set f = func ()->() {
                 var s1: /<[_int,/^ @local]> @local
-                set s1 = new <.1 [_1,<.0>: /<[_int,/^ @local]> @local]>:<[_int,/^ @local]> @local
+                set s1 = new <.1 [_1:_int,<.0>: /<[_int,/^ @local]> @local]>:<[_int,/^ @local]> @local
                 output std s1
             }
             call f

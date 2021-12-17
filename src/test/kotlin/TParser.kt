@@ -213,7 +213,15 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("_x"), 2))
         lexer(all)
         val e = parser_expr(all,true)
-        assert(e is Expr.Nat && e.tk_.str=="x")
+        assert(e is Expr.Nat && e.tk_.str=="x" && e.type==null)
+    }
+    @Test
+    fun b09_parser_expr_nat () {
+        val all = All_new(PushbackReader(StringReader("_x:_int"), 2))
+        lexer(all)
+        val e = parser_expr(all,true)
+        println(e)
+        assert(e is Expr.Nat && e.tk_.str=="x" && e.type is Type.Nat)
     }
 
     // PARENS, TUPLE

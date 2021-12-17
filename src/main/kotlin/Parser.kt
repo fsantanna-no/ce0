@@ -71,7 +71,13 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
         return when {
             all.accept(TK.UNIT) -> Expr.Unit(all.tk0 as Tk.Sym)
             all.accept(TK.XVAR) -> Expr.Var(all.tk0 as Tk.Str)
-            all.accept(TK.XNAT) -> Expr.Nat(all.tk0 as Tk.Str)
+            all.accept(TK.XNAT) -> {
+                val tk0 = all.tk0 as Tk.Str
+                val tp = if (!all.accept(TK.CHAR, ':')) null else {
+                    parser_type(all)
+                }
+                Expr.Nat(tk0, tp)
+            }
             all.accept(TK.CHAR,'/') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val e = parser_expr(all,false)
@@ -150,7 +156,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                                     Stmt.Set(
                                         Tk.Chr(TK.XVAR,lin,col,'='),
                                         Expr.Var(Tk.Str(TK.XVAR,lin,col,"arg")),
-                                        Expr.Nat(Tk.Str(TK.XNAT,lin,col,"_arg_"))
+                                        Expr.Nat(Tk.Str(TK.XNAT,lin,col,"_arg_"),null)
                                     ),
                                     block
                                 )
