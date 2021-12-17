@@ -1586,7 +1586,7 @@ class TEnv {
     fun j10_rec_tup () {
         val out = inp2env("""
             var x: /<(),[/^ @local]> @local
-            set x = new <.2 [new <.1> @local]> @local
+            set x = new <.2 [new <.1>:<(),[/^ @local]> @local]>:<(),[/^ @local]> @local
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1602,7 +1602,11 @@ class TEnv {
     fun j11_rec_xepr_double_rec () {
         val out = inp2env("""
             var x: /</<[/^^ @local,/^ @local]> @local> @local
-            set x = new <.1 new <.1 [<.0>,<.0>]> @local> @local
+            var z1: /</<[/^^ @local,/^ @local]> @local> @local
+            var z2: /<[/</<[/^^ @local,/^ @local]> @local> @local,/^ @local]> @local
+            set z1 = <.0>: /</<[/^^ @local,/^ @local]> @local> @local
+            set z2 = <.0>: /<[/</<[/^^ @local,/^ @local]> @local> @local,/^ @local]> @local
+            set x = new <.1 new <.1 [z1,z2]>:<[/</<[/^^ @local,/^ @local]> @local> @local,/^ @local]> @local>:</<[/^^ @local,/^ @local]> @local> @local
         """.trimIndent())
         assert(out == "OK") { out }
     }

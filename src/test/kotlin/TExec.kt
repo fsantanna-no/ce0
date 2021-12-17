@@ -815,7 +815,11 @@ class TExec {
     fun j03_list () {
         val out = all("""
             var l: /</^ @local> @local
-            set l = new <.1 new <.1 <.0>> @local> @local
+            var z: /</^ @local> @local
+            set z = <.0>: /</^ @local> @local
+            var one: /</^ @local> @local
+            set one = new <.1 z>:</^ @local> @local
+            set l = new <.1 one>:</^ @local> @local
             output std l\!1
         """.trimIndent())
         assert(out == "<.1 <.0>>\n") { out }
@@ -833,7 +837,11 @@ class TExec {
     fun j06_list_1 () {
         val out = all("""
             var l: /</^ @local> @local
-            set l = new <.1 new <.1 <.0>> @local> @local
+            var z: /</^ @local> @local
+            set z = <.0>: /</^ @local> @local
+            var one: /</^ @local> @local
+            set one = new <.1 z>:</^ @local> @local
+            set l = new <.1 one>:</^ @local> @local
             var p: //</^ @local> @local @local
             {
                 set p = /l --!1
@@ -846,7 +854,11 @@ class TExec {
     fun j06_list_2 () {
         val out = all("""
             var l: /</^ @local> @local
-            set l = new <.1 new <.1 <.0>> @local> @local
+            var z: /</^ @local> @local
+            set z = <.0>: /</^ @local> @local
+            var one: /</^ @local> @local
+            set one = new <.1 z>:</^ @local> @local
+            set l = new <.1 one>:</^ @local> @local
             var p: /</^ @local> @local
             {
                 set p = l --!1
@@ -859,7 +871,11 @@ class TExec {
     fun j06_list_ptr () {
         val out = all("""
             var l: /</^ @local> @local
-            set l = new <.1 new <.1 <.0>> @local> @local
+            var z: /</^ @local> @local
+            set z = <.0>: /</^ @local> @local
+            var one: /</^ @local> @local
+            set one = new <.1 z>:</^ @local> @local
+            set l = new <.1 one>:</^ @local> @local
             var p: //</^ @local> @local @local
             {
                 set p = /l --!1
@@ -920,8 +936,13 @@ class TExec {
     @Test
     fun j10_rec () {
         val out = all("""
+            var z: /</^ @local> @local
+            set z = <.0>: /</^ @local> @local
+            var one: /</^ @local> @local
+            set one = new <.1 z>:</^ @local> @local
+
             var n: </</^ @local> @local>
-            set n = <.1 new <.1 <.0>> @local>
+            set n = <.1 one>:</</^ @local> @local>
             output std /n
         """.trimIndent())
         assert(out == "<.1 <.1 <.0>>>\n") { out }
@@ -929,8 +950,13 @@ class TExec {
     @Test
     fun j11_borrow_1 () {
         val out = all("""
+            var z: /</^ @local> @local
+            set z = <.0>: /</^ @local> @local
+            var one: /</^ @local> @local
+            set one = new <.1 z>:</^ @local> @local
+
             var x: /</^ @local> @local
-            set x = new <.1 new <.1 <.0>> @local> @local
+            set x = new <.1 one>:</^ @local> @local
             var y: //</^ @local> @local @local
             set y = /x
             output std y\
@@ -940,8 +966,13 @@ class TExec {
     @Test
     fun j11_borrow_2 () {
         val out = all("""
+            var z: /</^ @local> @local
+            set z = <.0>: /</^ @local> @local
+            var one: /</^ @local> @local
+            set one = new <.1 z>:</^ @local> @local
+
             var x: /</^ @local> @local
-            set x = new <.1 new <.1 <.0>> @local> @local
+            set x = new <.1 one>:</^ @local> @local
             var y: //</^ @local> @local @local
             set y = /x --!1
             output std y\
@@ -1495,7 +1526,7 @@ class TExec {
             var f: ()->()
             set f = func ()->() {
                 var s1: /<[_int,/^ @local]> @local
-                set s1 = new <.1 [_1,<.0>]> @local
+                set s1 = new <.1 [_1,<.0>: /<[_int,/^ @local]> @local]>:<[_int,/^ @local]> @local
                 output std s1
             }
             call f
@@ -1529,7 +1560,7 @@ class TExec {
     fun z12_union_tuple () {
         val out = all("""
             var tk2: <(),_int,/<[_int,/^ @local]> @local>
-            set tk2 = <.3 <.0>>
+            set tk2 = <.3 <.0>:/<[_int,/^ @local]> @local>: <(),_int,/<[_int,/^ @local]> @local>
             var s21: /<(),_int,/<[_int,/^ @local]> @local> @local
             set s21 = /tk2
             output std s21\!3
@@ -1561,7 +1592,7 @@ class TExec {
     fun z15_acc_move_sub () {
         val out = all("""
             var x: /<(),/^ @local> @local
-            set x = new <.2 new <.1> @local> @local
+            set x = new <.2 new <.1>:<(),/^ @local> @local>:<(),/^ @local> @local
             var y: /<(),/^ @local> @local
             set y = x\!2
             output std x
