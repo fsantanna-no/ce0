@@ -1,4 +1,4 @@
-fun check_01_no_scp_tps_xps (s: Stmt) {
+fun check_01_before_tps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
             is Type.Rec -> {
@@ -72,52 +72,6 @@ fun check_01_no_scp_tps_xps (s: Stmt) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-fun check_02_no_xps (s: Stmt) {
-    fun fe (e: Expr) {
-        when (e) {
-            is Expr.UCons -> {
-                val tp1 = Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e)
-                val tp2 = if (e.tk_.num != 0) tp1 else {
-                    Type.Ptr (
-                        Tk.Chr(TK.CHAR, e.tk.lin, e.tk.col, '\\'),
-                        Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col,"@global"), // NULL is global
-                        tp1
-                    ).up(e)
-                }
-                All_assert_tk(e.tk, e.type.isSupOf(tp2)) {
-                    "invalid constructor : type mismatch"
-                }
-            }
-        }
-    }
-    fun fs (s: Stmt) {
-        when (s) {
-            is Stmt.If -> {
-                All_assert_tk(s.tk, AUX.tps[s.tst] is Type.Nat) {
-                    "invalid condition : type mismatch"
-                }
-            }
-            is Stmt.Set -> {
-                val dst = AUX.tps[s.dst]!!
-                val src = AUX.tps[s.src]!!
-                //print("SET ") ; println(s.dst) ; println(s.src)
-                //val scp = (dst as Type.Ptr).scope()
-                //print("scope ") ; print(scp)
-                All_assert_tk(s.tk, dst.isSupOf(src)) {
-                    //println("SET (${s.tk.lin}): ${dst.tostr()} = ${src.tostr()}")
-                    //println(dst)
-                    //println(src)
-                    val str = if (s.dst is Expr.Var && s.dst.tk_.str == "_ret_") "return" else "assignment"
-                    "invalid $str : type mismatch"
-                }
-            }
-        }
-    }
-    s.visit(::fs, ::fe, null)
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
 fun Type.map2 (f: (Type)->Type): Type {
     return when (this) {
         is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> f(this)
@@ -135,9 +89,22 @@ fun Type.map2 (f: (Type)->Type): Type {
     }
 }
 
-fun check_03 (s: Stmt) {
+fun check_02_after_tps (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
+            is Expr.UCons -> {
+                val tp1 = Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e)
+                val tp2 = if (e.tk_.num != 0) tp1 else {
+                    Type.Ptr (
+                        Tk.Chr(TK.CHAR, e.tk.lin, e.tk.col, '\\'),
+                        Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col,"@global"), // NULL is global
+                        tp1
+                    ).up(e)
+                }
+                All_assert_tk(e.tk, e.type.isSupOf(tp2)) {
+                    "invalid constructor : type mismatch"
+                }
+            }
             is Expr.New -> {
                 All_assert_tk(e.tk, AUX.tps[e.arg] is Type.Union && e.arg.tk_.num>0) {
                     "invalid `new` : expected constructor" // TODO: remove?
@@ -152,7 +119,7 @@ fun check_03 (s: Stmt) {
                 val (xp2,arg2) = if (tp_f !is Type.Func) Pair(tp_ret,tp_arg) else {
                     // all = expected return + arguments
                     val all = (AUX.tps[e]!!.flatten() + AUX.tps[e.arg]!!.flatten())
-                        //.filter { it !is Type.Func } // (ignore pointers in function types)
+                    //.filter { it !is Type.Func } // (ignore pointers in function types)
                     // ptrs = all ptrs+depths inside args
                     val ptrs = all.filter { it is Type.Ptr }.map { (it as Type.Ptr).let { Pair(it.scope(),it) } }
                     // sorted = ptrs sorted by grouped depths, substitute depth by increasing index
@@ -162,7 +129,7 @@ fun check_03 (s: Stmt) {
                         .sortedBy { it.first }
                         .mapIndexed { i,(_,l) -> l.map { Pair((i+1),it.second) } }
                         .flatten()
-                        //.let { it } // List<Pair<Int, Type.Ptr>>
+                    //.let { it } // List<Pair<Int, Type.Ptr>>
                     //println("SORTED") ; sorted.forEach { println(it.first.toString() + ": " + it.second.tostr()) }
 
                     // arg2 = scope in ptrs inside args are now increasing numbers (@1,@2,...)
@@ -198,5 +165,28 @@ fun check_03 (s: Stmt) {
             }
         }
     }
-    s.visit(null, ::fe, null)
+    fun fs (s: Stmt) {
+        when (s) {
+            is Stmt.If -> {
+                All_assert_tk(s.tk, AUX.tps[s.tst] is Type.Nat) {
+                    "invalid condition : type mismatch"
+                }
+            }
+            is Stmt.Set -> {
+                val dst = AUX.tps[s.dst]!!
+                val src = AUX.tps[s.src]!!
+                //print("SET ") ; println(s.dst) ; println(s.src)
+                //val scp = (dst as Type.Ptr).scope()
+                //print("scope ") ; print(scp)
+                All_assert_tk(s.tk, dst.isSupOf(src)) {
+                    //println("SET (${s.tk.lin}): ${dst.tostr()} = ${src.tostr()}")
+                    //println(dst)
+                    //println(src)
+                    val str = if (s.dst is Expr.Var && s.dst.tk_.str == "_ret_") "return" else "assignment"
+                    "invalid $str : type mismatch"
+                }
+            }
+        }
+    }
+    s.visit(::fs, ::fe, null)
 }

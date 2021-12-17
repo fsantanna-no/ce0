@@ -15,11 +15,9 @@ class TEnv {
             s = env_prelude(s)
             aux_clear()
             s.aux_01_upsenvs(null, null)
-            check_01_no_scp_tps_xps(s)
+            check_01_before_tps(s)
             Aux_02_tps(s)
-            check_02_no_xps(s)
-            s.aux_03_xps()
-            check_03(s)
+            check_02_after_tps(s)
             return "OK"
         } catch (e: Throwable) {
             //throw e
