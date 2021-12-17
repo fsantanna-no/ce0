@@ -52,7 +52,9 @@ fun deps (tps: Set<Type>): Set<String> {
 
 fun Type.Func.news (isproto: Boolean): String {
     val ats = mutableSetOf<String>()
-    this.visit { if (it is Type.Ptr) ats.add(it.scope!!.scp) }
+    XPD = false
+    this.visit { if (it is Type.Ptr) { ats.add(it.scope!!.scp) } }
+    XPD = true
     return ats.sorted().map {
         "__News**" + (if (isproto) "" else " __news__${it.drop(1)}")
     }.joinToString(", ")
@@ -68,8 +70,6 @@ fun code_ft (tp: Type) {
 
     when (tp) {
         is Type.Func -> {
-            val ats = mutableSetOf<String>()
-            tp.visit { if (it is Type.Ptr) ats.add(it.scope!!.scp) }
             val news = tp.news(true)
             val inp  = tp.inp.pos()
             val news_inp = when {
@@ -318,17 +318,20 @@ fun code_fe (e: Expr) {
                     .filter { it is Type.Ptr }
                     .let { it as List<Type.Ptr> }
                 //assert(tf.size == ta.size)
-                val news = tfs.zip(tas)             // [ (ptr,ptr), ... ]
-                    .groupBy { it.first.scope }     // [ @1=[(ptr,ptr),...], ... ]
-                    .toList()                       // [ (@1,[(ptr,ptr),...]), ... ]
-                    .sortedBy { it.first!!.scp }    // [ (@1,[(ptr,ptr),...]), ... ]
-                    .map { it.second }              // [ [(ptr,ptr),...], ... ]
-                    .map { it.map { it.second } }   // [ [ptr,...], ... ]
-                    .map { it.map { Pair(it.scope(), it) } }   // [ [(scp(),ptr),...], ... ]
-                    .map { it.sortedBy { it.first.depth } }   // [ [(scp(),ptr),...], ... ]
-                    .map { it.first() }             // [ (scp(),ptr), ... ]
-                    .map { it.second }              // [ ptr, ... ]
-                    .map { it.topool() }            // [ __news_xxx, ... ]
+                val news = tfs.zip(tas)                     // [ (ptr,ptr), ... ]
+                    .groupBy { it.first.scope!!.scp }       // [ @1=[(ptr,ptr),...], ... ]
+                    .toList()                               // [ (@1,[(ptr,ptr),...]), ... ]
+                    .sortedBy { it.first }                  // [ (@1,[(ptr,ptr),...]), ... ]
+                    //.let { println(it.size) ; println(it) ; it }
+                    .map { it.second }                      // [ [(ptr,ptr),...], ... ]
+                    .map { it.map { it.second } }           // [ [ptr,...], ... ]
+                    .map { it.map { Pair(it.scope(), it) } }// [ [(scp(),ptr),...], ... ]
+                    .map { it.sortedBy { it.first.depth } } // [ [(scp(),ptr),...], ... ]
+                    .map { it.first() }                     // [ (scp(),ptr), ... ]
+                    .map { it.second }                      // [ ptr, ... ]
+                    .let { println(it) ; it }
+                    .map { it.topool() }                    // [ __news_xxx, ... ]
+                    //.toSet().toList().sorted()
                     .joinToString(", ")
                 //print("TFs: "); println(tfs)
                 //print("TAs: "); println(tas)

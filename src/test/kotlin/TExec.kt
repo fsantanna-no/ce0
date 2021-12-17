@@ -727,6 +727,21 @@ class TExec {
         assert(out == "10\n") { out }
     }
     @Test
+    fun f11_ptr_func () {
+        val out = all("""
+            var f: (/_int@1 -> /_int@1)
+            set f = func (/_int@1 -> /_int@1) {
+                return arg
+            }
+            var v: _int
+            set v = _10
+            var p: /_int @local
+            set p = f /v @local
+            output std p\
+        """.trimIndent())
+        assert(out == "10\n") { out }
+    }
+    @Test
     fun i20_ptr_uni_ok () {
         val out = all("""
             var uni: <_(char*),_int>
