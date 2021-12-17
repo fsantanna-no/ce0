@@ -229,7 +229,10 @@ fun Expr.UPred.deref (str: String): String {
 }
 
 fun code_fe (e: Expr) {
-    val xp = AUX.xps[e]!!
+    //println(e)
+    //println(AUX.tps[e])
+    //println(AUX.xps[e])
+    val xp = AUX.tps[e]!!
     val isunit = AUX.tps[e] is Type.Unit
     EXPRS.addFirst(when (e) {
         is Expr.Unit -> Pair("", "")
@@ -327,9 +330,9 @@ fun code_fe (e: Expr) {
                     .map { it.second }              // [ ptr, ... ]
                     .map { it.topool() }            // [ __news_xxx, ... ]
                     .joinToString(", ")
-                print("TFs: "); println(tfs)
-                print("TAs: "); println(tas)
-                println(news)
+                //print("TFs: "); println(tfs)
+                //print("TAs: "); println(tas)
+                //println(news)
                 news
             }
             val news_arg = when {

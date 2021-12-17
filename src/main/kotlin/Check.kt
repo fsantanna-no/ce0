@@ -142,11 +142,6 @@ fun check_03 (s: Stmt) {
                 All_assert_tk(e.tk, AUX.tps[e.arg] is Type.Union && e.arg.tk_.num>0) {
                     "invalid `new` : expected constructor" // TODO: remove?
                 }
-                /*
-                All_assert_tk(e.tk, AUX.xps[e.arg]!!.isrec()) {
-                    "unexpected `new` : expected recursive type"
-                }
-                 */
             }
             is Expr.Call -> {
                 val tp_ret = AUX.tps[e]!!

@@ -26,9 +26,9 @@ class TCode {
     @Test
     fun b01_expr_unit () {
         val e = Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
-        AUX.xps[e] = tp_unit
+        AUX.tps[e] = tp_unit
         code_fe(e)
-        assert(EXPRS.removeFirst().second == "")
+        assert(EXPRS.removeFirst().second == "") { EXPRS.removeFirst() }
     }
     @Test
     fun b02_expr_var () {
@@ -40,9 +40,9 @@ class TCode {
             ),
             null
         )
-        AUX.xps[e] = tp_unit
+        AUX.tps[e] = Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))
         code_fe(e)
-        assert(EXPRS.removeFirst().second == "xxx")
+        EXPRS.removeFirst().let { assert(it.second == "xxx") { it.second } }
     }
     @Test
     fun b03_expr_nat () {
@@ -54,7 +54,7 @@ class TCode {
             ),
             null
         )
-        AUX.xps[e] = tp_unit
+        AUX.tps[e] = Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))
         code_fe(e)
         assert(EXPRS.removeFirst().second == "xxx")
     }
@@ -67,7 +67,7 @@ class TCode {
                 Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()")),
             )
         )
-        AUX.xps[e] = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray())
+        AUX.tps[e] = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray())
         e.visit(null, ::code_fe, null)
         EXPRS.removeFirst().second.let {
             //println(it)
@@ -87,8 +87,8 @@ class TCode {
             ),
             null
         )
-        AUX.xps[e] = tp_unit
-        AUX.xps[e.tup] = tp_unit
+        AUX.tps[e] = Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))
+        AUX.tps[e.tup] = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))))
         e.visit(null, ::code_fe, null)
         EXPRS.removeFirst().second.let {
             assert(it == "x._1")

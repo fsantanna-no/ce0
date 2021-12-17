@@ -257,7 +257,7 @@ class TExec {
             --var n: _int = _10
             output std g [f,_10]
         """.trimIndent())
-        assert(out == "10\n")
+        assert(out == "10\n") { out }
     }
     @Test
     fun d08_func_unit () {
@@ -596,12 +596,14 @@ class TExec {
     @Test
     fun i13_ptr_tup () {
         val out = all("""
-            var v: [_int,_int]; set v = [_10,_20]
-            var p: /_int @local; set p = /v.1
+            var v: [_int,_int]
+            set v = [_10,_20]
+            var p: /_int @local
+            set p = /v.1
             set p\ = _20
             output std /v
         """.trimIndent())
-        assert(out == "[20,20]\n")
+        assert(out == "[20,20]\n") { out }
     }
     @Test
     fun i14_ptr_type_err () {
@@ -645,7 +647,7 @@ class TExec {
             set p = [_10,/v]
             output std p.2\
         """.trimIndent())
-        assert(out == "20\n")
+        assert(out == "20\n") { out }
     }
     @Test
     fun i17_ptr_type () {
@@ -684,7 +686,7 @@ class TExec {
             set x1 = x2
             output std x1.2\
         """.trimIndent())
-        assert(out == "20\n")
+        assert(out == "20\n") { out }
     }
     @Test
     fun f09_ptr_type_err () {
@@ -1168,7 +1170,7 @@ class TExec {
             var v: _int; set v = _(x+y)
             output std v
         """.trimIndent())
-        assert(out == "30\n")
+        assert(out == "30\n") { out }
     }
     @Test
     fun k02_var_union () {
