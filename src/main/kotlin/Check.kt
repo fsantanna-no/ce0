@@ -76,15 +76,17 @@ fun check_02_no_xps (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.UCons -> {
-                val tp = Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e.arg)
-                All_assert_tk(e.tk, e.type.isSupOf(tp)) {
+                val tp1 = Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e)
+                val tp2 = if (e.tk_.num != 0) tp1 else {
+                    Type.Ptr (
+                        Tk.Chr(TK.CHAR, e.tk.lin, e.tk.col, '\\'),
+                        Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col,"@global"), // NULL is global
+                        tp1
+                    ).up(e)
+                }
+                All_assert_tk(e.tk, e.type.isSupOf(tp2)) {
                     "invalid constructor : type mismatch"
                 }
-                /*
-                All_assert_tk(e.tk, e.tk_.num != 0 || AUX.tps[e.arg]!!.isSupOf(Type_Unit(e.tk))) {
-                    "invalid constructor : type mismatch"
-                }
-                 */
             }
         }
     }
@@ -140,16 +142,11 @@ fun check_03 (s: Stmt) {
                 All_assert_tk(e.tk, AUX.tps[e.arg] is Type.Union && e.arg.tk_.num>0) {
                     "invalid `new` : expected constructor" // TODO: remove?
                 }
+                /*
                 All_assert_tk(e.tk, AUX.xps[e.arg]!!.isrec()) {
                     "unexpected `new` : expected recursive type"
                 }
-            }
-            is Expr.UCons -> {
-                if (e.tk_.num == 0) {
-                    All_assert_tk(e.tk, AUX.xps[e] is Type.Ptr || AUX.ups[e] is Expr.UCons) {
-                        "unexpected <.0> : not a pointer"
-                    }
-                }
+                 */
             }
             is Expr.Call -> {
                 val tp_ret = AUX.tps[e]!!

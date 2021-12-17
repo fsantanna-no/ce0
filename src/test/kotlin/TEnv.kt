@@ -1466,7 +1466,8 @@ class TEnv {
             var ret: <[_int,</^ @local>]>
             set ret = <.0>:</^ @local>
         """.trimIndent())
-        assert(out == "(ln 2, col 9): invalid assignment : type mismatch") { out }
+        //assert(out == "(ln 2, col 9): invalid assignment : type mismatch") { out }
+        assert(out == "(ln 2, col 13): invalid constructor : type mismatch") { out }
     }
     @Test
     fun i08_mutual () {
@@ -2220,7 +2221,8 @@ class TEnv {
             set l = <.0>:</^ @local>    -- ERR: l is not a pointer, cannot accept NULL
             output std /l
         """.trimIndent())
-        assert(out == "(ln 2, col 11): unexpected <.0> : not a pointer") { out }
+        //assert(out == "(ln 2, col 11): unexpected <.0> : not a pointer") { out }
+        assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
     }
     @Test
     fun m06_pred_notunion () {
