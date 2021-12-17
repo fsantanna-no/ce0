@@ -119,8 +119,9 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
             all.accept(TK.NEW) -> {
                 val tk0 = all.tk0
                 val e = parser_expr(all,false)
-                all.assert_tk(tk0, e !is Expr.UCons || e.tk_.num!=0) {
-                    "invalid `new` : unexpected <.0>"
+                all.assert_tk(tk0, e is Expr.UCons && e.tk_.num!=0) {
+                    //"invalid `new` : unexpected <.0>"
+                    "invalid `new` : expected constructor"
                 }
                 all.accept_err(TK.XSCOPE)
                 Expr.New(tk0 as Tk.Key, all.tk0 as Tk.Scope, e as Expr.UCons)

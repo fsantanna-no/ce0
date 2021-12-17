@@ -1684,8 +1684,8 @@ class TEnv {
             var l: /</^ @local> @local
             set l = new <.0>:/</^ @local> @local
         """.trimIndent())
-        //assert(out == "(ln 2, col 9): invalid `new` : expected constructor") { out }
-        assert(out == "(ln 2, col 9): invalid `new` : unexpected <.0>") { out }
+        assert(out == "(ln 2, col 9): invalid `new` : expected constructor") { out }
+        //assert(out == "(ln 2, col 9): invalid `new` : unexpected <.0>") { out }
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
     @Test
@@ -2170,7 +2170,7 @@ class TEnv {
             var string_c2ce: _(char*)->/<[_int,/^ @local]> @local
             set string_c2ce = func _(char*)->/<[_int,/^ @local]> @local {
                 var ret: /</^ @local> @local
-                set ret = <.0>
+                set ret = <.0>:/</^ @local> @local
                 loop {
                     set ret = ret
                 }
@@ -2198,10 +2198,10 @@ class TEnv {
     fun m02_borrow_err () {
         val out = inp2env("""
             var x: <()>
-            set x = <.1>
+            set x = <.1>:<()>
             var y: /<()> @local
             set y = /x --!1
-            set x = <.1>
+            set x = <.1>:<()>
         """.trimIndent())
         assert(out == "OK") { out }
         //assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2") { out }
@@ -2211,7 +2211,7 @@ class TEnv {
     fun m03 () {
         val out = inp2env("""
             var l: </^ @local>
-            set l = <.0>    -- ERR: l is not a pointer, cannot accept NULL
+            set l = <.0>:</^ @local>    -- ERR: l is not a pointer, cannot accept NULL
             output std /l
         """.trimIndent())
         assert(out == "(ln 2, col 11): unexpected <.0> : not a pointer") { out }
@@ -2425,7 +2425,7 @@ class TEnv {
     fun o04_pointer_union_err () {
         val out = inp2env("""
             var x: <(),[()]>
-            set x = <.2 [()]>
+            set x = <.2 [()]>:<(),[()]>
             var y: /() @local
             set y = /x!2.1  -- crossing udisc
             output std y
