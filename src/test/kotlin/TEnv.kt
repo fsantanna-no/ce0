@@ -692,11 +692,11 @@ class TEnv {
         val out = inp2env("""
             var f: /()@1->/()@1
             set f = func /()@1->/()@1 {}
-            {
+            { @aaa
                 var x: /() @local
                 {
                     var y: /() @local
-                    set x = call f x  -- ok
+                    set x = call f x @aaa -- ok
                 }
             }
         """.trimIndent())
@@ -707,11 +707,11 @@ class TEnv {
         val out = inp2env("""
             var f: /()@1->/()@1
             set f = func /()@1->/()@1 {}
-            {
+            { @aaa
                 var x: /() @local
                 {
                     var y: /() @local
-                    set x = call f y  -- err
+                    set x = call f y @aaa -- err
                 }
             }
         """.trimIndent())
@@ -722,11 +722,11 @@ class TEnv {
         val out = inp2env("""
             var f: /()@1->/()@2
             set f = func /()@1->/()@2 {}
-            {
+            { @aaa
                 var x: /() @local
                 {
                     var y: /() @local
-                    set x = call f y  -- err
+                    set x = call f y @aaa  -- err
                 }
             }
         """.trimIndent())
@@ -738,11 +738,11 @@ class TEnv {
         val out = inp2env("""
             var f: /()@2->/()@1
             set f = func /()@2->/()@1 {}
-            {
+            { @aaa
                 var x: /() @local
                 {
                     var y: /() @local
-                    set x = call f y  -- ok
+                    set x = call f y @aaa  -- ok
                 }
             }
         """.trimIndent())
@@ -773,9 +773,19 @@ class TEnv {
                 var x: /() @local
                 {
                     var y: /() @local
-                    set y = call f y  -- ok
+                    set y = call f y @local  -- ok
                 }
             }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun e19_call_ok2 () {
+        val out = inp2env("""
+            var f: /()@1->/()@1
+            set f = func /()@1->/()@1 {}
+            var y: /() @local
+            set y = call f y @local  -- ok
         """.trimIndent())
         assert(out == "OK") { out }
     }

@@ -151,7 +151,7 @@ fun check_03 (s: Stmt) {
                 // check scopes
                 val (xp2,arg2) = if (tp_f !is Type.Func) Pair(tp_ret,tp_arg) else {
                     // all = expected return + arguments
-                    val all = (AUX.xps[e]!!.flatten() + AUX.tps[e.arg]!!.flatten())
+                    val all = (AUX.tps[e]!!.flatten() + AUX.tps[e.arg]!!.flatten())
                         //.filter { it !is Type.Func } // (ignore pointers in function types)
                     // ptrs = all ptrs+depths inside args
                     val ptrs = all.filter { it is Type.Ptr }.map { (it as Type.Ptr).let { Pair(it.scope(),it) } }
@@ -173,7 +173,7 @@ fun check_03 (s: Stmt) {
                         }
                     }
                     // xp2 = scope in ptrs inside xp are now increasing numbers (@1,@2,...)
-                    val xp2 = AUX.xps[e]!!.map2 { ptr ->
+                    val xp2 = AUX.tps[e]!!.map2 { ptr ->
                         if (ptr !is Type.Ptr) ptr else {
                             val idx = sorted.find { it.second == ptr }!!.first
                             Type.Ptr(ptr.tk_, Tk.Scope(TK.XSCOPE,ptr.tk.lin,ptr.tk.col,"@"+idx), ptr.pln)

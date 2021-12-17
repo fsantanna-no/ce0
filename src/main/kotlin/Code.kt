@@ -318,7 +318,7 @@ fun code_fe (e: Expr) {
                     .filter { it is Type.Ptr }
                     .let { it as List<Type.Ptr> }
                 //assert(tf.size == ta.size)
-                val news = tfs.zip(tas)                // [ (ptr,ptr), ... ]
+                val news = tfs.zip(tas)             // [ (ptr,ptr), ... ]
                     .groupBy { it.first.scope }     // [ @1=[(ptr,ptr),...], ... ]
                     .toList()                       // [ (@1,[(ptr,ptr),...]), ... ]
                     .sortedBy { it.first!!.scp }    // [ (@1,[(ptr,ptr),...]), ... ]

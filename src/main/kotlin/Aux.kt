@@ -177,10 +177,8 @@ fun Aux_02_tps (s: Stmt) {
             is Expr.Call -> {
                 AUX.tps[e.f].let {
                     when (it) {
-                        // scope of output is tested in the call through XP
-                        // here, just returns the "top" scope to succeed
                         is Type.Func -> it.out.map { if (it !is Type.Ptr) it else {
-                            Type.Ptr(it.tk_, null, it.pln).up(it)
+                            Type.Ptr(it.tk_, e.scope, it.pln).up(e)
                         } }
                         is Type.Nat  -> it //Type.Nat(it.tk_).ups(e)
                         else -> {

@@ -224,7 +224,8 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 Tk.Str(TK.XVAR,e1.tk.lin,e1.tk.col,"output_"+(e1.tk as Tk.Str).str)
             )
         }
-        return Expr.Call(tk_pre2, e1, e2)
+        val scp = if (!all.accept(TK.XSCOPE)) null else all.tk0 as Tk.Scope
+        return Expr.Call(tk_pre2, scp, e1, e2)
     }
 
     val ispre = (canpre && (all.accept(TK.CALL) || all.accept(TK.OUTPUT)))
