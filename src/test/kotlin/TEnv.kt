@@ -1492,9 +1492,11 @@ class TEnv {
     fun i10_mutual () {
         val out = inp2env("""
             var e: /<</^^ @local,()>, ()> @local
-            set e = new <.1 new <.2> @local> @local   -- err: ~new~ <.2>
+            set e = new <.1 new <.2>:</<</^^ @local,()>, ()> @local,()> @local>:<</^^ @local,()>, ()> @local
+               -- err: ~new~ <.2>
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out == "(ln 2, col 15): invalid constructor : type mismatch") { out }
     }
 
     // XEXPR
@@ -1864,7 +1866,7 @@ class TEnv {
     fun j30_rec_mutual_err () {
         val out = inp2env("""
             var e: <(),/<(),/^ @local> @local>
-            set e = new <.2 new <.1> @local> @local
+            set e = new <.2 new <.1>:<(),/^ @local> @local>:<(),/<(),/^ @local> @local> @local
         """.trimIndent())
         //assert(out == "(ln 1, col 29): unexpected `new` : expected recursive type") { out }
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
@@ -2407,7 +2409,7 @@ class TEnv {
     fun o02_pointer_union_err () {
         val out = inp2env("""
             var x: /</^ @local> @local
-            set x = new <.1 new <.1 <.0>> @local> @local
+            set x = new <.1 new <.1 <.0>: /</^ @local> @local>:</^@local> @local>:</^@local> @local
             var y: //</^ @local> @local @local
             set y = /x!1 @local    -- udisc
             output std y
@@ -2418,7 +2420,7 @@ class TEnv {
     fun o03_pointer_union_err () {
         val out = inp2env("""
             var x: /<[/^ @local]> @local
-            set x = new <.1 [new <.1 [<.0>]> @local]> @local
+            set x = new <.1 [new <.1 [<.0>:/<[/^ @local]> @local]>:<[/^ @local]> @local]>:<[/^ @local]> @local
             var y: //<[/^ @local]> @local @local
             set y = /x\!1.1  -- crossing udisc
             output std y

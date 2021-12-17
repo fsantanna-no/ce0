@@ -1197,23 +1197,29 @@ class TExec {
     fun l02_hold_ok () {
         val out = all("""
             var x: /< [<(),//^^ @local @local>,_int,/^ @local]> @local
-            set x = new <.1 [<.0>,_1,new <.1 [<.0>,_2,<.0>]> @local]> @local
-            set x!1.3!1.1 = <.1 /x>
-            set x!1.1 = <.1 /x!1.3> -- err: address of field inside union
+            var z: /< [<(),//^^ @local @local>,_int,/^ @local]> @local
+            set z = <.0>: /< [<(),//^^ @local @local>,_int,/^ @local]> @local
+            set x = new <.1 [z,_1,new <.1 [z,_2,z]>:< [<(),//^^ @local @local>,_int,/^ @local]> @local]>:< [<(),//^^ @local @local>,_int,/^ @local]> @local
+            set x!1.3!1.1 = <.1 /x>: <(),//< [<(),//^^ @local @local>,_int,/^ @local]> @local @local>
+            set x!1.1 = <.1 /x!1.3>: <(),//< [<(),//^^ @local @local>,_int,/^ @local]> @local @local> -- err: address of field inside union
             output std x!1.3!1.2
             output std x!1.1!1\!1.1!1\!1.2
         """.trimIndent())
         //assert(out == "2\n1\n") { out }
         //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
-        assert(out == "(ln 4, col 17): invalid operand to `/´ : union discriminator") { out }
+        assert(out == "(ln 6, col 17): invalid operand to `/´ : union discriminator") { out }
     }
     @Test
     fun l02_hold_ok1 () {
         val out = all("""
             var x: /< [<(),/^^ @local>,_int,/^ @local]> @local
-            set x = new <.1 [<.1>,_1,new <.1 [<.1>,_2,<.0>]> @local]> @local
-            set x\!1.3\!1.1 = <.2 x>
-            set x\!1.1 = <.2 x\!1.3>
+            var z: /< [<(),/^^ @local>,_int,/^ @local]> @local
+            set z = <.0>: /< [<(),/^^ @local>,_int,/^ @local]> @local
+            var o: <(),/< [<(),/^^ @local>,_int,/^ @local]> @local>
+            set o = <.1>: <(),/< [<(),/^^ @local>,_int,/^ @local]> @local>
+            set x = new <.1 [o,_1,new <.1 [o,_2,z]>:< [<(),/^^ @local>,_int,/^ @local]> @local]>:< [<(),/^^ @local>,_int,/^ @local]> @local
+            set x\!1.3\!1.1 = <.2 x>: <(),/< [<(),/^^ @local>,_int,/^ @local]> @local>
+            set x\!1.1 = <.2 x\!1.3>: <(),/< [<(),/^^ @local>,_int,/^ @local]> @local>
             output std x\!1.3\!1.2
             output std x\!1.2
         """.trimIndent())
@@ -1224,8 +1230,13 @@ class TExec {
     @Test
     fun l02_hold_ok2 () {
         val out = all("""
+            var z: /< [<(),//^^ @local @local>,_int,/^ @local]> @local
+            set z = <.0>: /< [<(),//^^ @local @local>,_int,/^ @local]> @local
+            var o: <(),//< [<(),//^^ @local @local>,_int,/^ @local]> @local @local>
+            set o = <.1>: <(),//< [<(),//^^ @local @local>,_int,/^ @local]> @local @local>
+
             var x: /< [<(),//^^ @local @local>,_int,/^ @local]> @local
-            set x = new <.1 [<.1>,_2,<.0>]> @local
+            set x = new <.1 [o,_2,z]>:< [<(),//^^ @local @local>,_int,/^ @local]> @local
             output std x
         """.trimIndent())
         assert(out == "<.1 [<.1>,2,<.0>]>\n") { out }
