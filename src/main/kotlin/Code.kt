@@ -274,7 +274,7 @@ fun code_fe (e: Expr) {
         }
         is Expr.New  -> EXPRS.removeFirst().let {
             val ID  = "__tmp_" + e.hashCode().absoluteValue
-            val ptr = AUX.xps[e] as Type.Ptr
+            val ptr = AUX.tps[e] as Type.Ptr
             //println(ptr.scope)
             //println(scp)
             val pre = """
@@ -314,7 +314,7 @@ fun code_fe (e: Expr) {
                 val tfs = (tf.out.flatten() + tf.inp.flatten())
                     .filter { it is Type.Ptr }
                     .let { it as List<Type.Ptr> }
-                val tas = (AUX.xps[e]!!.flatten() + AUX.tps[e.arg]!!.flatten())
+                val tas = (AUX.tps[e]!!.flatten() + AUX.tps[e.arg]!!.flatten())
                     .filter { it is Type.Ptr }
                     .let { it as List<Type.Ptr> }
                 //assert(tf.size == ta.size)
