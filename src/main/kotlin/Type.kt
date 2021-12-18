@@ -10,6 +10,7 @@ sealed class Type (val tk: Tk) {
     data class Func  (val tk_: Tk.Sym, val inp: Type, val out: Type): Type(tk_)
     data class Ptr   (val tk_: Tk.Chr, val scope: Tk.Scope?, val pln: Type): Type(tk_)
     data class Rec   (val tk_: Tk.Up): Type(tk_)
+    data class Pool  (val tk_: Tk.Scope): Type(tk_)
 }
 
 fun Type_Unit (tk: Tk): Type.Unit {
@@ -33,13 +34,14 @@ fun Type.tostr (): String {
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
         is Type.UCons -> "<." + this.tk_.num + " " + this.arg.tostr() + ">"
         is Type.Func  -> this.inp.tostr() + " -> " + this.out.tostr()
+        is Type.Pool  -> this.tk_.scp
     }
 }
 
 fun Type.flatten (): List<Type> {
     // TODO: func/union do not make sense?
     return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> listOf(this)
+        is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec, is Type.Pool -> listOf(this)
         is Type.Tuple -> this.vec.map { it.flatten() }.flatten() + this
         is Type.Union -> this.vec.map { it.flatten() }.flatten() + this
         is Type.UCons -> this.arg.flatten() + this
@@ -59,12 +61,13 @@ fun Type.lincol (lin: Int, col: Int): Type {
         is Type.Func  -> Type.Func(this.tk_.copy(lin_=lin,col_=col), this.inp.lincol(lin,col), this.out.lincol(lin,col))
         is Type.Ptr   -> Type.Ptr(this.tk_.copy(lin_=lin,col_=col), this.scope, this.pln.lincol(lin,col))
         is Type.Rec   -> Type.Rec(this.tk_.copy(lin_=lin,col_=col))
+        is Type.Pool  -> Type.Pool(this.tk_.copy(lin_=lin,col_=col))
     }
 }
 
 fun Type.map (f: (Type)->Type): Type {
     return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> f(this)
+        is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec, is Type.Pool -> f(this)
         is Type.Tuple -> f(Type.Tuple(this.tk_, this.vec.map { it.map(f) }.toTypedArray()))
         is Type.Union -> f(Type.Union(this.tk_, this.isrec, this.vec.map { it.map(f) }.toTypedArray()))
         is Type.UCons -> f(Type.UCons(this.tk_, f(this.arg)))
@@ -101,7 +104,7 @@ fun Type.Union.expand (): Array<Type> {
 
 fun Type.containsRec (): Boolean {
     return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
+        is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func, is Type.Pool -> false
         is Type.Rec   -> true
         is Type.Tuple -> this.vec.any { it.containsRec() }
         is Type.Union -> this.vec.any { it.containsRec() }

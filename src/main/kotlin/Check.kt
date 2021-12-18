@@ -24,7 +24,15 @@ fun check_01_before_tps (s: Stmt) {
                     "undeclared scope \"${tp.scope!!.scp}\""
                 }
             }
-
+            is Type.Func -> {
+                val tps   = tp.flatten()
+                val ptrs  = (tps.filter { it is Type.Ptr  } as List<Type.Ptr>).filter { it.scope != null }
+                val pools = tps.filter { it is Type.Pool } as List<Type.Pool>
+                val ok = ptrs.all { ptr -> pools.any { ptr.scope!!.scp == it.tk_.scp } }
+                All_assert_tk(tp.tk, ok) {
+                    "invalid function type : missing pool argument"
+                }
+            }
         }
     }
     fun fe (e: Expr) {
@@ -74,7 +82,7 @@ fun check_01_before_tps (s: Stmt) {
 
 fun Type.map2 (f: (Type)->Type): Type {
     return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> f(this)
+        is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec, is Type.Pool -> f(this)
         is Type.Tuple -> f(Type.Tuple(this.tk_, this.vec.map { it.map2(f) }.toTypedArray()))
         is Type.Union -> f(Type.Union(this.tk_, this.isrec, this.vec.map { it.map2(f) }.toTypedArray()))
         is Type.UCons -> f(Type.UCons(this.tk_, f(this.arg)))

@@ -3,6 +3,7 @@ import kotlin.math.absoluteValue
 fun Type.toce (): String {
     return when (this) {
         is Type.UCons -> error("bug found")
+        is Type.Pool  -> TODO()
         is Type.Rec   -> "Rec"
         is Type.Any   -> "Any"
         is Type.Unit  -> "Unit"
@@ -20,6 +21,7 @@ val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 fun Type.pos (): String {
     return when (this) {
         is Type.Rec, is Type.UCons -> TODO(this.toString())
+        is Type.Pool  -> TODO()
         is Type.Any, is Type.Unit  -> "void"
         is Type.Ptr   -> this.pln.pos() + "*"
         is Type.Nat   -> this.tk_.str

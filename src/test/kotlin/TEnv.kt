@@ -2476,4 +2476,23 @@ class TEnv {
         """.trimIndent())
         assert(out == "(ln 2, col 15): invalid discriminator : not an union") { out }
     }
+
+    // FUNC / POOL
+
+    @Test
+    fun p01_pool_err () {
+        val out = inp2env("""
+            var f : /()@1 -> /()@1
+        """.trimIndent()
+        )
+        assert(out == "(ln 1, col 15): invalid function type : missing pool argument") { out }
+    }
+    @Test
+    fun p02_pool_ok () {
+        val out = inp2env("""
+            var f : [@1,/()@1] -> /()@1
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
 }

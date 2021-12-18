@@ -1,9 +1,10 @@
 fun parser_type (all: All): Type {
     fun one (): Type { // Unit, Nat, User, Cons
         return when {
-            all.accept(TK.UNIT) -> Type.Unit(all.tk0 as Tk.Sym)
-            all.accept(TK.XNAT) -> Type.Nat(all.tk0 as Tk.Str)
-            all.accept(TK.XUP)  -> Type.Rec(all.tk0 as Tk.Up)
+            all.accept(TK.XSCOPE) -> Type.Pool(all.tk0 as Tk.Scope)
+            all.accept(TK.UNIT)   -> Type.Unit(all.tk0 as Tk.Sym)
+            all.accept(TK.XNAT)   -> Type.Nat(all.tk0 as Tk.Str)
+            all.accept(TK.XUP)    -> Type.Rec(all.tk0 as Tk.Up)
             all.accept(TK.CHAR,'/') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val pln = one()

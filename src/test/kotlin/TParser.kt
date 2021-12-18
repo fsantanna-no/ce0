@@ -191,6 +191,13 @@ class TParser {
         val tp = parser_type(all)
         assert(tp is Type.Ptr && tp.scope!!.scp=="@b" && tp.pln is Type.Ptr && (tp.pln as Type.Ptr).scope!!.scp=="@a")
     }
+    @Test
+    fun a14_parser_type_pool () {
+        val all = All_new(PushbackReader(StringReader("@b"), 2))
+        lexer(all)
+        val tp = parser_type(all)
+        assert(tp is Type.Pool && tp.tk_.scp=="@b")
+    }
 
     // EXPR
 

@@ -260,6 +260,8 @@ class TBook {
             """
             $nums
             $lt
+            var f: [@a,_int] -> (_int->_int) @a {
+            }
             var smallerc: $NumT1 -> ($NumT1->$NumT1)
             set smallerc = func $NumT1 -> ($NumT1->$NumT1) {
                 var x: $NumT1
