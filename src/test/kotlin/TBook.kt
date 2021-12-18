@@ -52,10 +52,30 @@ val mul = """
     }
 """.trimIndent()
 
+val lt = """
+    var lt: [$NumT1,$NumT1] -> _int
+    set lt = func [$NumT1,$NumT1] -> _int {
+        if arg.2\?0 {
+            return _0
+        } else {
+            if arg.1\?0 {
+                return _1
+            } else {
+                return lt [arg.1\!1,arg.2\!1]
+            }
+        }
+    }
+""".trimIndent()
+
 @TestMethodOrder(Alphanumeric::class)
 class TBook {
 
     fun all (inp: String): String {
+        println("nums: ${nums.count { it=='\n' }}")
+        println("add:  ${add.count  { it=='\n' }}")
+        println("mul:  ${mul.count  { it=='\n' }}")
+        println("lt:   ${lt.count   { it=='\n' }}")
+
         val (ok1,out1) = All_inp2c(inp)
         if (!ok1) {
             return out1
@@ -106,9 +126,21 @@ class TBook {
         """.trimIndent())
         assert(out == "<.1 <.1 <.1 <.1 <.1 <.1 <.0>>>>>>>\n") { out }
     }
+    @Test
+    fun pre_05_lt () {
+        val out = all("""
+            $nums
+            $lt
+            output std lt [two, one]
+            output std lt [one, two]
+        """.trimIndent())
+        assert(out == "0\n1\n") { out }
+    }
+
+    // CHAPTER 1.1
 
     @Test
-    fun ch_01_01_square () {
+    fun ch_01_01_square_pg02 () {
         val out = all("""
             $nums
             $add
@@ -121,6 +153,22 @@ class TBook {
         """.trimIndent())
         assert(out == "<.1 <.1 <.1 <.1 <.0>>>>>\n") { out }
     }
-
-
+    @Test
+    fun ch_01_01_smaller_pg02 () {
+        val out = all("""
+            $nums
+            $lt
+            var smaller: [$NumT1,$NumT1] -> $NumT1
+            set smaller = func [$NumT1,$NumT1] -> $NumT1 {
+                if lt arg {
+                    return arg.1
+                } else {
+                    return arg.2
+                }
+            }
+            output std smaller [one,two] @local
+            output std smaller [two,one] @local
+        """.trimIndent())
+        assert(out == "<.1 <.0>>\n<.1 <.0>>\n") { out }
+    }
 }
