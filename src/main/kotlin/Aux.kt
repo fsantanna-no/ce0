@@ -158,6 +158,7 @@ fun Type.up (up: Any): Type {
 fun Aux_02_tps (s: Stmt) {
     fun fe (e: Expr) {
         AUX.tps[e] = when (e) {
+            is Expr.Pool  -> Type.Pool(e.tk_).up(e)
             is Expr.Unit  -> Type.Unit(e.tk_).up(e)
             is Expr.Nat   -> e.type ?: Type.Nat(e.tk_).up(e)
             is Expr.Upref -> AUX.tps[e.pln]!!.let { Type.Ptr(e.tk_, null, it).up(it) }

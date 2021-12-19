@@ -34,6 +34,7 @@ fun Type.isSupOf_ (sub: Type, depth: Boolean, ups1: List<Type.Union>, ups2: List
         (this is Type.Any  || sub is Type.Any) -> true
         (this is Type.Nat  || sub is Type.Nat) -> (sub !is Type.UCons)
         (this is Type.Rec  && sub is Type.Rec)  -> (this.tk_.up == sub.tk_.up)
+        (this is Type.Pool && sub is Type.Pool) -> true // TODO //(this.tk_.scp == sub.tk_.scp)
         (this is Type.Rec) -> ups1[this.tk_.up-1].let { it.isSupOf_(sub, depth, ups1.drop(this.tk_.up),ups2) }
         (sub  is Type.Rec) -> ups2[sub.tk_.up-1].let { this.isSupOf_(it, depth, ups1,ups2.drop(sub.tk_.up)) }
         (this is Type.Ptr && sub is Type.UCons) -> {

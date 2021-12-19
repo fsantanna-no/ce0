@@ -8,11 +8,11 @@ val nums = """
     var zero: /</^ @local> @local
     set zero = <.0>: /</^ @local> @local
     var one: /</^ @local> @local
-    set one = new <.1 zero>:</^ @local> @local
+    set one = new <.1 zero>:</^ @local>: @local
     var two: /</^ @local> @local
-    set two = new <.1 one>:</^ @local> @local
+    set two = new <.1 one>:</^ @local>: @local
     var three: /</^ @local> @local
-    set three = new <.1 two>:</^ @local> @local
+    set three = new <.1 two>:</^ @local>: @local
 """.trimIndent()
 
 fun Num (ptr: Boolean, scope: String): String {
@@ -24,47 +24,47 @@ val NumT1 = Num(true,  "@1")
 val NumF1 = Num(false, "@1")
 
 val add = """
-    var add: [$NumT1,$NumT1] -> $NumT1
-    set add = func ([$NumT1,$NumT1] -> $NumT1) {
+    var add: [@1,$NumT1,$NumT1] -> $NumT1
+    set add = func ([@1,$NumT1,$NumT1] -> $NumT1) {
         var x: $NumT1
-        set x = arg.1
+        set x = arg.2
         var y: $NumT1
-        set y = arg.2
+        set y = arg.3
         if y\?0 {
             return x
         } else {
-            return new <.1 add [x,y\!1] @1>:$NumF1 @1
+            return new <.1 add [@1,x,y\!1]: @1>:$NumF1: @1
         }
     }
 """.trimIndent()
 
 val mul = """
-    var mul: [$NumT1,$NumT1] -> $NumT1
-    set mul = func ([$NumT1,$NumT1] -> $NumT1) {
+    var mul: [@1,$NumT1,$NumT1] -> $NumT1
+    set mul = func ([@1,$NumT1,$NumT1] -> $NumT1) {
         var x: $NumT1
-        set x = arg.1
+        set x = arg.2
         var y: $NumT1
-        set y = arg.2
+        set y = arg.3
         if y\?0 {
             return <.0>: $NumT1
         } else {
             var z: ${NumT1}
-            set z = mul [x, y\!1] @1
-            return add [z,x] @1
+            set z = mul [@1, x, y\!1]: @1
+            return add [@1, z,x]: @1
         }
     }
 """.trimIndent()
 
 val lt = """
-    var lt: [$NumT1,$NumT1] -> _int
-    set lt = func [$NumT1,$NumT1] -> _int {
-        if arg.2\?0 {
+    var lt: [@1,$NumT1,$NumT1] -> _int
+    set lt = func [@1,$NumT1,$NumT1] -> _int {
+        if arg.3\?0 {
             return _0
         } else {
-            if arg.1\?0 {
+            if arg.2\?0 {
                 return _1
             } else {
-                return lt [arg.1\!1,arg.2\!1]
+                return lt [@1,arg.2\!1,arg.3\!1]
             }
         }
     }
@@ -119,7 +119,7 @@ class TBook {
             """
             $nums
             $add
-            output std add [two,one]
+            output std add [@local,two,one]: @local
         """.trimIndent()
         )
         assert(out == "<.1 <.1 <.1 <.0>>>>\n") { out }
@@ -132,7 +132,7 @@ class TBook {
             $nums
             $add
             $mul
-            output std mul [two, add [two,one]]
+            output std mul [@local, two, add [@local, two,one]]
         """.trimIndent()
         )
         assert(out == "<.1 <.1 <.1 <.1 <.1 <.1 <.0>>>>>>>\n") { out }
@@ -144,8 +144,8 @@ class TBook {
             """
             $nums
             $lt
-            output std lt [two, one]
-            output std lt [one, two]
+            output std lt [@local, two, one]
+            output std lt [@local, one, two]
         """.trimIndent()
         )
         assert(out == "0\n1\n") { out }
@@ -160,11 +160,11 @@ class TBook {
             $nums
             $add
             $mul
-            var square: $NumT1 -> $NumT1
-            set square = func $NumT1 -> $NumT1 {
-                return mul [arg,arg] @1
+            var square: [@1,$NumT1] -> $NumT1
+            set square = func [@1,$NumT1] -> $NumT1 {
+                return mul [@1,arg.2,arg.2]: @1
             }
-            output std square two
+            output std square [@local,two]: @local
         """.trimIndent()
         )
         assert(out == "<.1 <.1 <.1 <.1 <.0>>>>>\n") { out }
@@ -176,16 +176,16 @@ class TBook {
             """
             $nums
             $lt
-            var smaller: [$NumT1,$NumT1] -> $NumT1
-            set smaller = func [$NumT1,$NumT1] -> $NumT1 {
+            var smaller: [@1,$NumT1,$NumT1] -> $NumT1
+            set smaller = func [@1,$NumT1,$NumT1] -> $NumT1 {
                 if lt arg {
-                    return arg.1
-                } else {
                     return arg.2
+                } else {
+                    return arg.3
                 }
             }
-            output std smaller [one,two] @local
-            output std smaller [two,one] @local
+            output std smaller [@local,one,two]: @local
+            output std smaller [@local,two,one]: @local
         """.trimIndent()
         )
         assert(out == "<.1 <.0>>\n<.1 <.0>>\n") { out }
@@ -203,11 +203,11 @@ class TBook {
         val out = all(
             """
             $nums
-            var f_three: $NumT1 -> $NumT1
-            set f_three = func $NumT1 -> $NumT1 {
+            var f_three: [@1,$NumT1] -> $NumT1
+            set f_three = func [@1,$NumT1] -> $NumT1 {
                 return three
             }
-            output std f_three one
+            output std f_three [@local,one]
         """.trimIndent()
         )
         assert(out == "<.1 <.1 <.1 <.0>>>>\n") { out }
@@ -237,15 +237,15 @@ class TBook {
             $nums
             $add
             $mul
-            var multiply: [$NumT1,$NumT1] -> $NumT1
-            set multiply = func [$NumT1,$NumT1] -> $NumT1 {
-                if arg.1\?0 {
+            var multiply: [@1,$NumT1,$NumT1] -> $NumT1
+            set multiply = func [@1,$NumT1,$NumT1] -> $NumT1 {
+                if arg.2\?0 {
                     return <.0>:${NumT1}
                 } else {
-                    return mul arg @1
+                    return mul [@1,arg.2,arg.3]: @1
                 }
             }
-            output std multiply [two,three]
+            output std multiply [@local,two,three]: @local
         """.trimIndent()
         )
         assert(out == "<.1 <.1 <.1 <.1 <.1 <.1 <.0>>>>>>>\n") { out }
@@ -285,15 +285,15 @@ class TBook {
             $nums
             $add
             $mul
-            var square: $NumT1 -> $NumT1
-            set square = func $NumT1 -> $NumT1 {
-                return mul [arg,arg] @1
+            var square: [@1,$NumT1] -> $NumT1
+            set square = func [@1,$NumT1] -> $NumT1 {
+                return mul [@1,arg.2,arg.2]: @1
             }
-            var twice: [$NumT1->$NumT1, $NumT1] -> $NumT1
-            set twice = func [$NumT1->$NumT1, $NumT1] -> $NumT1 {
-                return arg.1 arg.1 arg.2 @1 @1
+            var twice: [@1, [@1,$NumT1]->$NumT1, $NumT1] -> $NumT1
+            set twice = func [@1, [@1,$NumT1]->$NumT1, $NumT1] -> $NumT1 {
+                return arg.2 [@1, arg.2 [@1,arg.3]: @1]: @1
             }
-            output std twice [square,two] @local
+            output std twice [@local,square,two]: @local
         """.trimIndent()
         )
         assert(out == "<.1 <.0>>\n<.1 <.1 <.0>>>\n") { out }

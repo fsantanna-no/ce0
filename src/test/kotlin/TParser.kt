@@ -430,7 +430,7 @@ class TParser {
 
     @Test
     fun b21_parser_expr_upref () {
-        val all = All_new(PushbackReader(StringReader("/x.1 @a"), 2))
+        val all = All_new(PushbackReader(StringReader("/x.1"), 2))
         lexer(all)
         val e = parser_expr(all,false)
         assert(e is Expr.Upref && e.pln is Expr.TDisc)

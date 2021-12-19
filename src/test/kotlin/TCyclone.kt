@@ -71,20 +71,20 @@ class TCyclone {
     fun fact_03 () {
         val out = all(
             """
-            var fact: [/_int@1,_int] -> ()
-            set fact = func [/_int@1,_int] -> () {
+            var fact: [@1,/_int@1,_int] -> ()
+            set fact = func [@1,/_int@1,_int] -> () { @f
                 var x: _int
                 set x = _1
                 var n: _int
-                set n = arg.2
+                set n = arg.3
                 if _(n > 1) {
-                    call fact [/x,_(n-1):_int]
+                    call fact [@f,/x,_(n-1):_int]
                 }
-                set arg.1\ = _(x*n)
+                set arg.2\ = _(x*n)
             }
             var x: _int
             set x = _0
-            call fact [/x, _6:_int]
+            call fact [@local, /x, _6:_int]
             output std x
         """.trimIndent()
         )

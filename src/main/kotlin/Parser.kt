@@ -70,9 +70,10 @@ fun parser_type (all: All): Type {
 fun parser_expr (all: All, canpre: Boolean): Expr {
     fun one (): Expr {
         return when {
-            all.accept(TK.UNIT) -> Expr.Unit(all.tk0 as Tk.Sym)
-            all.accept(TK.XVAR) -> Expr.Var(all.tk0 as Tk.Str)
-            all.accept(TK.XNAT) -> {
+            all.accept(TK.XSCOPE) -> Expr.Pool(all.tk0 as Tk.Scope)
+            all.accept(TK.UNIT)   -> Expr.Unit(all.tk0 as Tk.Sym)
+            all.accept(TK.XVAR)   -> Expr.Var(all.tk0 as Tk.Str)
+            all.accept(TK.XNAT)   -> {
                 val tk0 = all.tk0 as Tk.Str
                 val tp = if (!all.accept(TK.CHAR, ':')) null else {
                     parser_type(all)
@@ -130,6 +131,7 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                     //"invalid `new` : unexpected <.0>"
                     "invalid `new` : expected constructor"
                 }
+                all.accept_err(TK.CHAR, ':')
                 all.accept_err(TK.XSCOPE)
                 Expr.New(tk0 as Tk.Key, all.tk0 as Tk.Scope, e as Expr.UCons)
             }
@@ -231,7 +233,10 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 Tk.Str(TK.XVAR,e1.tk.lin,e1.tk.col,"output_"+(e1.tk as Tk.Str).str)
             )
         }
-        val scp = if (!all.accept(TK.XSCOPE)) null else all.tk0 as Tk.Scope
+        val scp = if (!all.accept(TK.CHAR, ':')) null else {
+            all.accept_err(TK.XSCOPE)
+            all.tk0 as Tk.Scope
+        }
         return Expr.Call(tk_pre2, scp, e1, e2)
     }
 

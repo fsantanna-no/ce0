@@ -3,7 +3,7 @@ import kotlin.math.absoluteValue
 fun Type.toce (): String {
     return when (this) {
         is Type.UCons -> error("bug found")
-        is Type.Pool  -> TODO()
+        is Type.Pool  -> "Pool" //+this.tk_.scp.drop(1)
         is Type.Rec   -> "Rec"
         is Type.Any   -> "Any"
         is Type.Unit  -> "Unit"
@@ -21,7 +21,7 @@ val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 fun Type.pos (): String {
     return when (this) {
         is Type.Rec, is Type.UCons -> TODO(this.toString())
-        is Type.Pool  -> TODO()
+        is Type.Pool  -> "Pool**"
         is Type.Any, is Type.Unit  -> "void"
         is Type.Ptr   -> this.pln.pos() + "*"
         is Type.Nat   -> this.tk_.str
@@ -52,16 +52,6 @@ fun deps (tps: Set<Type>): Set<String> {
         .toSet()
 }
 
-fun Type.Func.news (isproto: Boolean): String {
-    val ats = mutableSetOf<String>()
-    XPD = false
-    this.visit { if (it is Type.Ptr) { ats.add(it.scope!!.scp) } }
-    XPD = true
-    return ats.sorted().map {
-        "__News**" + (if (isproto) "" else " __news__${it.drop(1)}")
-    }.joinToString(", ")
-}
-
 fun code_ft (tp: Type) {
     tp.toce().let {
         if (TYPEX.contains(it)) {
@@ -71,17 +61,31 @@ fun code_ft (tp: Type) {
     }
 
     when (tp) {
+        is Type.Pool -> {
+            val ce = tp.toce()
+            TYPES.add(Triple(
+                //Pair(ce, deps(tp.vec.toSet()).let { println(ce);println(it);it }),
+                Pair(ce, emptySet()),
+                """
+                void output_std_${ce}_ (${tp.pos()} v);
+                void output_std_${ce} (${tp.pos()} v);
+                
+            ""","""
+                void output_std_${ce}_ (${tp.pos()} v) {
+                    printf("${tp.tk_.scp}");
+                    puts("");
+                }
+                void output_std_${ce} (${tp.pos()} v) {
+                    output_std_${ce}_(v);
+                    puts("");
+                }
+                
+            """))
+        }
         is Type.Func -> {
-            val news = tp.news(true)
-            val inp  = tp.inp.pos()
-            val news_inp = when {
-                news.isEmpty()  -> inp
-                (inp == "void") -> news
-                else            -> "$news, $inp"
-            }
             TYPES.add(Triple(
                 Pair(tp.toce(), deps(setOf(tp.inp,tp.out))),
-                "typedef ${tp.out.pos()} ${tp.toce()} ($news_inp);\n",
+                "typedef ${tp.out.pos()} ${tp.toce()} (${tp.inp.pos()});\n",
                 ""
             ))
         }
@@ -237,6 +241,7 @@ fun code_fe (e: Expr) {
     val xp = AUX.tps[e]!!
     val isunit = AUX.tps[e] is Type.Unit
     EXPRS.addFirst(when (e) {
+        is Expr.Pool -> Pair("", "pool_"+e.tk_.scp.drop(1))
         is Expr.Unit -> Pair("", "")
         is Expr.Nat -> Pair("", e.tk_.str)
         is Expr.Var -> Pair("", if (isunit) "" else e.tk_.str)
@@ -279,16 +284,17 @@ fun code_fe (e: Expr) {
             val ptr = AUX.tps[e] as Type.Ptr
             //println(ptr.scope)
             //println(scp)
+            val pool = "pool_${ptr.scope!!.scp.drop(1)}"
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
                 *$ID = ${it.second};
                 {
-                    __News* __new = malloc(sizeof(__News));
-                    assert(__new!=NULL && "not enough memory");
-                    __new->val = $ID;
-                    __new->nxt = *${ptr.topool()};
-                    *${ptr.topool()} = __new;
+                    Pool* pool = malloc(sizeof(Pool));
+                    assert(pool!=NULL && "not enough memory");
+                    pool->val = $ID;
+                    pool->nxt = *$pool;
+                    *$pool = pool;
                 }
 
             """.trimIndent()
@@ -312,45 +318,12 @@ fun code_fe (e: Expr) {
             val arg = EXPRS.removeFirst()
             val f   = EXPRS.removeFirst()
             val tf  = AUX.tps[e.f]
-            val news = if (tf !is Type.Func) "" else {
-                val tfs = (tf.out.flatten() + tf.inp.flatten())
-                    .filter { it is Type.Ptr }
-                    .let { it as List<Type.Ptr> }
-                val tas = (AUX.tps[e]!!.flatten() + AUX.tps[e.arg]!!.flatten())
-                    .filter { it is Type.Ptr }
-                    .let { it as List<Type.Ptr> }
-                //assert(tf.size == ta.size)
-                val news = tfs.zip(tas)                     // [ (ptr,ptr), ... ]
-                    .groupBy { it.first.scope!!.scp }       // [ @1=[(ptr,ptr),...], ... ]
-                    .toList()                               // [ (@1,[(ptr,ptr),...]), ... ]
-                    .sortedBy { it.first }                  // [ (@1,[(ptr,ptr),...]), ... ]
-                    //.let { println(it.size) ; println(it) ; it }
-                    .map { it.second }                      // [ [(ptr,ptr),...], ... ]
-                    .map { it.map { it.second } }           // [ [ptr,...], ... ]
-                    .map { it.map { Pair(it.scope(), it) } }// [ [(scp(),ptr),...], ... ]
-                    .map { it.sortedBy { it.first.depth } } // [ [(scp(),ptr),...], ... ]
-                    .map { it.first() }                     // [ (scp(),ptr), ... ]
-                    .map { it.second }                      // [ ptr, ... ]
-                    //.let { println(it) ; it }
-                    .map { it.topool() }                    // [ __news_xxx, ... ]
-                    //.toSet().toList().sorted()
-                    .joinToString(", ")
-                //print("TFs: "); println(tfs)
-                //print("TAs: "); println(tas)
-                //println(news)
-                news
-            }
-            val news_arg = when {
-                news.isEmpty() -> arg.second
-                arg.second.isEmpty() -> news
-                else -> "$news, ${arg.second}"
-            }
 
             val snd =
                 if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
                     AUX.tps[e.arg]!!.output("", arg.second)
                 } else {
-                    f.second + "(" + news_arg + ")"
+                    f.second + "(" + arg.second + ")"
                 }
             if (AUX.tps[e] is Type.Unit) {
                 Pair(f.first + arg.first + snd+";\n", "")
@@ -360,16 +333,22 @@ fun code_fe (e: Expr) {
         }
         is Expr.Func  -> {
             val ID  = "_func_" + e.hashCode().absoluteValue
-            val news = e.type.news(false)
             val (inp,dcl) = e.type.inp.let { if (it is Type.Unit) Pair("void","int _arg_;") else Pair(it.pos()+" _arg_","") }
-            val news_inp = when {
-                news.isEmpty()  -> inp
-                (inp == "void") -> news
-                else            -> "$news, $inp"
+            val pools = e.type.inp.let {
+                when (it) {
+                    is Type.Pool  -> "Pool** pool_${it.tk_.scp.drop(1)} = _arg_;\n"
+                    is Type.Tuple -> it.vec.mapIndexed { i, tp ->
+                        if (tp !is Type.Pool) "" else {
+                            "Pool** pool_${tp.tk_.scp.drop(1)} = _arg_._${i+1};\n"
+                        }
+                    }.joinToString("")
+                    else -> ""
+                }
             }
             val pre = """
-                auto ${e.type.out.pos()} $ID ($news_inp) {
+                auto ${e.type.out.pos()} $ID ($inp) {
                     $dcl
+                    $pools
                     ${CODE.removeFirst()}
                 }
 
@@ -426,8 +405,9 @@ fun code_fs (s: Stmt) {
         }
         is Stmt.Block -> """
             {
-                __News* __news  __attribute__((__cleanup__(__news_free))) = NULL;
-                __News** __news_${1 + s.ups_tolist().count{ it is Stmt.Block }} = &__news;
+                Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
+                Pool** pool_local = &pool;
+                ${ if (s.scope==null) "" else "Pool** pool_${s.scope.scp.drop(1)} = &pool;" }
                 ${CODE.removeFirst()}
             }
             
@@ -495,27 +475,29 @@ fun Stmt.code (): String {
         #define output_std_Ptr_(x)   printf("%p",x)
         #define output_std_Ptr(x)    (output_std_Ptr_(x), puts(""))
         
-        typedef struct __News {
+        typedef struct Pool {
             void* val;
-            struct __News* nxt;
-        } __News;
+            struct Pool* nxt;
+        } Pool;
         
-        void __news_free (__News** news) {
-            while (*news != NULL) {
-                __News* cur = *news;
-                *news = cur->nxt;
+        void pool_free (Pool** pool) {
+            while (*pool != NULL) {
+                Pool* cur = *pool;
+                *pool = cur->nxt;
                 free(cur->val);
                 free(cur);
             }
-            *news = NULL;
+            *pool = NULL;
         }
         
         ${TPS.map { it.second }.joinToString("")}
         ${TPS.map { it.third }.joinToString("")}
 
         int main (void) {
-            __News* __news  __attribute__((__cleanup__(__news_free))) = NULL;
-            __News** __news_0   = &__news;
+            Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
+            Pool** pool_0      = &pool;
+            Pool** pool_global = &pool;
+            Pool** pool_local  = &pool;
             ${CODE.removeFirst()}
         }
 

@@ -114,15 +114,6 @@ fun Type.containsRec (): Boolean {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-fun Type.Ptr.topool (): String {
-    return this.scope().let {
-        when {
-            !it.isabs -> "__news__${it.depth}"
-            else -> "__news_${it.depth}"
-        }
-    }
-}
-
 fun Type.Ptr.scope (): Scope {
 
     // Offset of @N (max) of all crossing functions:

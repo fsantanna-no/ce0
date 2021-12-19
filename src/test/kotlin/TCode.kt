@@ -125,27 +125,29 @@ class TCode {
             #define output_std_Ptr_(x)   printf("%p",x)
             #define output_std_Ptr(x)    (output_std_Ptr_(x), puts(""))
 
-            typedef struct __News {
+            typedef struct Pool {
                 void* val;
-                struct __News* nxt;
-            } __News;
+                struct Pool* nxt;
+            } Pool;
             
-            void __news_free (__News** news) {
-                while (*news != NULL) {
-                    __News* cur = *news;
-                    *news = cur->nxt;
+            void pool_free (Pool** pool) {
+                while (*pool != NULL) {
+                    Pool* cur = *pool;
+                    *pool = cur->nxt;
                     free(cur->val);
                     free(cur);
                 }
-                *news = NULL;
+                *pool = NULL;
             }
 
 
 
 
             int main (void) {
-                __News* __news  __attribute__((__cleanup__(__news_free))) = NULL;
-                __News** __news_0   = &__news;
+                Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
+                Pool** pool_0      = &pool;
+                Pool** pool_global = &pool;
+                Pool** pool_local  = &pool;
                 
             }
 
