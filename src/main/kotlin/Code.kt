@@ -22,7 +22,7 @@ fun Type.pos (): String {
     return when (this) {
         is Type.Rec, is Type.UCons -> TODO(this.toString())
         is Type.Pool  -> "Pool**"
-        is Type.Any   -> "void"
+        is Type.Any   -> "void"     // TODO: remove output_std prototype?
         is Type.Unit  -> "int"
         is Type.Ptr   -> this.pln.pos() + "*"
         is Type.Nat   -> this.tk_.str
@@ -73,7 +73,7 @@ fun code_ft (tp: Type) {
                 
             ""","""
                 void output_std_${ce}_ (${tp.pos()} v) {
-                    printf("${tp.tk_.scp}");
+                    printf("@${tp.tk_.lbl}");
                     puts("");
                 }
                 void output_std_${ce} (${tp.pos()} v) {
@@ -232,7 +232,7 @@ fun code_fe (e: Expr) {
     //println(e)
     val xp = AUX.tps[e]!!
     EXPRS.addFirst(when (e) {
-        is Expr.Pool -> Pair("", "pool_"+e.tk_.scp.drop(1))
+        is Expr.Pool -> Pair("", "pool_"+e.tk_.lbl)
         is Expr.Unit -> Pair("", "0")
         is Expr.Nat -> Pair("", e.tk_.str)
         is Expr.Var -> Pair("", e.tk_.str)
@@ -275,7 +275,7 @@ fun code_fe (e: Expr) {
             val ptr = AUX.tps[e] as Type.Ptr
             //println(ptr.scope)
             //println(scp)
-            val pool = "pool_${ptr.scope!!.scp.drop(1)}"
+            val pool = "pool_${ptr.scope!!.lbl}"
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
@@ -320,14 +320,12 @@ fun code_fe (e: Expr) {
         is Expr.Func  -> {
             val ID  = "_func_" + e.hashCode().absoluteValue
             val inp = e.type.inp
-            val pools = when (inp) {
-                is Type.Pool  -> "Pool** pool_${inp.tk_.scp.drop(1)} = _arg_;\n"
-                is Type.Tuple -> inp.vec.mapIndexed { i, tp ->
-                    if (tp !is Type.Pool) "" else {
-                        "Pool** pool_${tp.tk_.scp.drop(1)} = _arg_._${i+1};\n"
-                    }
-                }.joinToString("")
-                else -> ""
+            val pools = e.pools().let {
+                if (it.size == 1) {
+                    "Pool** pool_${it[0]} = _arg_;\n"
+                } else {
+                    it.mapIndexed { i, lbl -> "Pool** pool_$lbl = _arg_._${i+1};\n" }.joinToString("")
+                }
             }
             val pre = """
                 auto ${e.type.out.pos()} $ID (${inp.pos()} _arg_) {
@@ -384,7 +382,7 @@ fun code_fs (s: Stmt) {
             {
                 Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
                 Pool** pool_local = &pool;
-                ${ if (s.scope==null) "" else "Pool** pool_${s.scope.scp.drop(1)} = &pool;" }
+                ${ if (s.scope==null) "" else "Pool** pool_${s.scope.lbl} = &pool;" }
                 ${CODE.removeFirst()}
             }
             

@@ -34,7 +34,7 @@ sealed class Tk (
     data class Str (val enu_: TK, val lin_: Int, val col_: Int, val str: String): Tk(enu_,lin_,col_)
     data class Num (val enu_: TK, val lin_: Int, val col_: Int, val num: Int):    Tk(enu_,lin_,col_)
     data class Up  (val enu_: TK, val lin_: Int, val col_: Int, val up:  Int):    Tk(enu_,lin_,col_)
-    data class Scope (val enu_: TK, val lin_: Int, val col_: Int, val scp: String):Tk(enu_,lin_,col_)
+    data class Scope (val enu_: TK, val lin_: Int, val col_: Int, val lbl: String, val num: Int?):Tk(enu_,lin_,col_)
 }
 
 fun TK.toErr (chr: Char?): String {
@@ -112,15 +112,26 @@ fun token (all: All) {
             all.tk1 = Tk.Up(TK.XUP, LIN, COL, n)
         }
         (x1 == '@') -> {
+            var lbl = ""
             all.read().let { c1=it.first ; x1=it.second }
-            when {
-                x1.isLowerCase() -> {
-                    var pay = lowers()
-                    all.tk1 = Tk.Scope(TK.XSCOPE, LIN, COL, "@"+pay)
-                }
-                x1.isDigit() -> all.tk1 = Tk.Scope(TK.XSCOPE, LIN, COL, "@"+x1)
-                else -> all.tk1 = Tk.Err(TK.ERR, LIN, COL, "@")
+            while (x1.isLowerCase()) {
+                lbl += x1
+                all.read().let { c1=it.first ; x1=it.second }
             }
+
+            var num: Int? = null
+            if (x1 == '_') {
+                var num_ = ""
+                all.read().let { c1=it.first ; x1=it.second }
+                while (x1.isDigit()) {
+                    num_ += x1
+                    all.read().let { c1=it.first ; x1=it.second }
+                }
+                num = num_.toInt()
+            }
+
+            all.unread(c1)
+            all.tk1 = Tk.Scope(TK.XSCOPE, LIN, COL, lbl, num)
         }
         (x1 == '(') -> {
             val (c2,x2) = all.read()

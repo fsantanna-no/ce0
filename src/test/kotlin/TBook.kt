@@ -20,12 +20,12 @@ fun Num (ptr: Boolean, scope: String): String {
     return if (!ptr) ret else "/"+ret+scope
 }
 val NumTL = Num(true,  "@local")
-val NumT1 = Num(true,  "@1")
-val NumF1 = Num(false, "@1")
+val NumT1 = Num(true,  "@")
+val NumF1 = Num(false, "@")
 
 val add = """
-    var add: [@1,$NumT1,$NumT1] -> $NumT1
-    set add = func ([@1,$NumT1,$NumT1] -> $NumT1) {
+    var add: [@,$NumT1,$NumT1] -> $NumT1
+    set add = func ([@,$NumT1,$NumT1] -> $NumT1) {
         var x: $NumT1
         set x = arg.2
         var y: $NumT1
@@ -33,14 +33,14 @@ val add = """
         if y\?0 {
             return x
         } else {
-            return new <.1 add [@1,x,y\!1]: @1>:$NumF1: @1
+            return new <.1 add [@,x,y\!1]: @>:$NumF1: @
         }
     }
 """.trimIndent()
 
 val mul = """
-    var mul: [@1,$NumT1,$NumT1] -> $NumT1
-    set mul = func ([@1,$NumT1,$NumT1] -> $NumT1) {
+    var mul: [@,$NumT1,$NumT1] -> $NumT1
+    set mul = func ([@,$NumT1,$NumT1] -> $NumT1) {
         var x: $NumT1
         set x = arg.2
         var y: $NumT1
@@ -49,22 +49,22 @@ val mul = """
             return <.0>: $NumT1
         } else {
             var z: ${NumT1}
-            set z = mul [@1, x, y\!1]: @1
-            return add [@1, z,x]: @1
+            set z = mul [@, x, y\!1]: @
+            return add [@, z,x]: @
         }
     }
 """.trimIndent()
 
 val lt = """
-    var lt: [@1,$NumT1,$NumT1] -> _int
-    set lt = func [@1,$NumT1,$NumT1] -> _int {
+    var lt: [@,$NumT1,$NumT1] -> _int
+    set lt = func [@,$NumT1,$NumT1] -> _int {
         if arg.3\?0 {
             return _0
         } else {
             if arg.2\?0 {
                 return _1
             } else {
-                return lt [@1,arg.2\!1,arg.3\!1]
+                return lt [@,arg.2\!1,arg.3\!1]
             }
         }
     }
@@ -160,9 +160,9 @@ class TBook {
             $nums
             $add
             $mul
-            var square: [@1,$NumT1] -> $NumT1
-            set square = func [@1,$NumT1] -> $NumT1 {
-                return mul [@1,arg.2,arg.2]: @1
+            var square: [@,$NumT1] -> $NumT1
+            set square = func [@,$NumT1] -> $NumT1 {
+                return mul [@,arg.2,arg.2]: @
             }
             output std square [@local,two]: @local
         """.trimIndent()
@@ -176,8 +176,8 @@ class TBook {
             """
             $nums
             $lt
-            var smaller: [@1,$NumT1,$NumT1] -> $NumT1
-            set smaller = func [@1,$NumT1,$NumT1] -> $NumT1 {
+            var smaller: [@,$NumT1,$NumT1] -> $NumT1
+            set smaller = func [@,$NumT1,$NumT1] -> $NumT1 {
                 if lt arg {
                     return arg.2
                 } else {
@@ -203,8 +203,8 @@ class TBook {
         val out = all(
             """
             $nums
-            var f_three: [@1,$NumT1] -> $NumT1
-            set f_three = func [@1,$NumT1] -> $NumT1 {
+            var f_three: [@,$NumT1] -> $NumT1
+            set f_three = func [@,$NumT1] -> $NumT1 {
                 return three
             }
             output std f_three [@local,one]
@@ -220,7 +220,7 @@ class TBook {
             var infinity: () -> $NumT1
             set infinity = func () -> $NumT1 {
                 output std _10:_int
-                return new <.1 infinity() @1>:$NumF1 @1
+                return new <.1 infinity() @>:$NumF1 @
             }
             output std infinity ()
         """.trimIndent()
@@ -237,12 +237,12 @@ class TBook {
             $nums
             $add
             $mul
-            var multiply: [@1,$NumT1,$NumT1] -> $NumT1
-            set multiply = func [@1,$NumT1,$NumT1] -> $NumT1 {
+            var multiply: [@,$NumT1,$NumT1] -> $NumT1
+            set multiply = func [@,$NumT1,$NumT1] -> $NumT1 {
                 if arg.2\?0 {
                     return <.0>:${NumT1}
                 } else {
-                    return mul [@1,arg.2,arg.3]: @1
+                    return mul [@,arg.2,arg.3]: @
                 }
             }
             output std multiply [@local,two,three]: @local
@@ -285,13 +285,13 @@ class TBook {
             $nums
             $add
             $mul
-            var square: [@1,$NumT1] -> $NumT1
-            set square = func [@1,$NumT1] -> $NumT1 {
-                return mul [@1,arg.2,arg.2]: @1
+            var square: [@,$NumT1] -> $NumT1
+            set square = func [@,$NumT1] -> $NumT1 {
+                return mul [@,arg.2,arg.2]: @
             }
-            var twice: [@1, [@1,$NumT1]->$NumT1, $NumT1] -> $NumT1
-            set twice = func [@1, [@1,$NumT1]->$NumT1, $NumT1] -> $NumT1 {
-                return arg.2 [@1, arg.2 [@1,arg.3]: @1]: @1
+            var twice: [@, [@,$NumT1]->$NumT1, $NumT1] -> $NumT1
+            set twice = func [@, [@,$NumT1]->$NumT1, $NumT1] -> $NumT1 {
+                --return arg.2 [@, arg.2 [@,arg.3]: @]: @
             }
             output std twice [@local,square,two]: @local
         """.trimIndent()

@@ -98,7 +98,7 @@ fun All.err_expected (str: String) {
             (this is Tk.Str)     -> '"' + this.str + '"'
             (this is Tk.Num)     -> "" + this.num
             (this is Tk.Key)     -> this.key
-            (this is Tk.Scope)   -> "`" + this.scp + '´'
+            (this is Tk.Scope)   -> "`@" + this.lbl + '´'
             else -> TODO(this.toString())
         }
     }

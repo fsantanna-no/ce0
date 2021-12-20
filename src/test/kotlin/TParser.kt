@@ -111,13 +111,17 @@ class TParser {
     fun a09_parser_type_ptr_err2 () {
         val all = All_new(PushbackReader(StringReader("/()@"), 2))
         lexer(all)
-        //val tp = parser_type(all)
+        val tp = parser_type(all)
+        println(tp)
+        assert(tp is Type.Ptr && tp.scope!!.lbl=="")      // error on check
+        /*
         try {
             parser_type(all)
             error("impossible case")
         } catch (e: Throwable) {
             assert(e.message == "(ln 1, col 4): expected `@´ : have \"@\"") { e.message!! }
         }
+         */
     }
     @Test
     fun a10_parser_type_ptr0 () {
@@ -189,14 +193,14 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("//() @a @b"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Ptr && tp.scope!!.scp=="@b" && tp.pln is Type.Ptr && (tp.pln as Type.Ptr).scope!!.scp=="@a")
+        assert(tp is Type.Ptr && tp.scope!!.lbl=="b" && tp.pln is Type.Ptr && (tp.pln as Type.Ptr).scope!!.lbl=="a")
     }
     @Test
     fun a14_parser_type_pool () {
         val all = All_new(PushbackReader(StringReader("@b"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Pool && tp.tk_.scp=="@b")
+        assert(tp is Type.Pool && tp.tk_.lbl=="b")
     }
 
     // EXPR
@@ -542,7 +546,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("{ @a }"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Block && s.scope!!.scp=="@a")
+        assert(s is Stmt.Block && s.scope!!.lbl=="a")
     }
 
     // STMT_CALL

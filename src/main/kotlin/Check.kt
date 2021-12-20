@@ -1,3 +1,12 @@
+fun Expr.Func.pools (): List<String> {
+    val inp = this.type.inp
+    return when (inp) {
+        is Type.Pool -> listOf(inp.tk_.lbl)
+        is Type.Tuple -> inp.vec.filter { it is Type.Pool }.map { (it as Type.Pool).tk_.lbl }
+        else -> emptyList()
+    }
+}
+
 fun check_01_before_tps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
@@ -13,24 +22,43 @@ fun check_01_before_tps (s: Stmt) {
 
             }
             is Type.Ptr -> {
+                val lbl = tp.scope!!.lbl
                 val ok = when {
-                    (tp.scope!!.scp == "@global") -> true
-                    (tp.scope!!.scp == "@local")  -> true
-                    (tp.scope!!.scp.drop(1).toIntOrNull() != null) -> true
-                    (tp.ups_first { it is Stmt.Block && it.scope!=null && it.scope.scp==tp.scope.scp } != null) -> true
+                    (lbl == "global") -> true
+                    (lbl == "local")  -> true
+                    (tp.ups_first { it is Type.Func } != null) -> true
+                    (tp.ups_first { it is Stmt.Block && it.scope!=null && it.scope.lbl==lbl } != null) -> true
+                    (tp.ups_first { it is Expr.Func && it.pools().any { it==lbl } } != null) -> true
                     else -> false
                 }
                 All_assert_tk(tp.tk, ok) {
-                    "undeclared scope \"${tp.scope!!.scp}\""
+                    "undeclared scope \"@$lbl\""
                 }
             }
             is Type.Func -> {
                 val tps   = tp.flatten()
                 val ptrs  = (tps.filter { it is Type.Ptr  } as List<Type.Ptr>).filter { it.scope != null }
                 val pools = tps.filter { it is Type.Pool } as List<Type.Pool>
-                val ok = ptrs.all { ptr -> pools.any { ptr.scope!!.scp == it.tk_.scp } }
-                All_assert_tk(tp.tk, ok) {
+                val ok1 = ptrs.all { ptr -> pools.any { ptr.scope!!.lbl==it.tk_.lbl && ptr.scope!!.num==it.tk_.num } }
+                All_assert_tk(tp.tk, ok1) {
                     "invalid function type : missing pool argument"
+                }
+                val ok2 = pools
+                    .groupBy { it.tk_.lbl }             // { "a"=[...], "b"=[...]
+                    .all {
+                        it.value                        // [...]
+                            .map { it.tk_.num ?: 0 }    // [1,0,3,1,...]
+                            .toSet()                    // [1,0,3,...]
+                            .let {
+                                when (it.size) {
+                                    0 -> error("bug found")
+                                    1 -> (it.elementAt(0) == 0)
+                                    else -> (it.minOrNull() == 1) && (it.maxOrNull() == it.size)
+                                }
+                            }
+                    }
+                All_assert_tk(tp.tk, ok2) {
+                    "invalid function type : pool arguments are not continuous"
                 }
             }
         }
@@ -105,7 +133,7 @@ fun check_02_after_tps (s: Stmt) {
                 val tp2 = if (e.tk_.num != 0) tp1 else {
                     Type.Ptr (
                         Tk.Chr(TK.CHAR, e.tk.lin, e.tk.col, '\\'),
-                        Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col,"@global"), // NULL is global
+                        Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col,"global", null), // NULL is global
                         tp1
                     ).up(e)
                 }
@@ -138,20 +166,20 @@ fun check_02_after_tps (s: Stmt) {
                         .mapIndexed { i,(_,l) -> l.map { Pair((i+1),it.second) } }
                         .flatten()
                     //.let { it } // List<Pair<Int, Type.Ptr>>
-                    //println("SORTED") ; sorted.forEach { println(it.first.toString() + ": " + it.second.tostr()) }
+                    println("SORTED") ; sorted.forEach { println(it.first.toString() + ": " + it.second.tostr()) }
 
                     // arg2 = scope in ptrs inside args are now increasing numbers (@1,@2,...)
                     val arg2 = AUX.tps[e.arg]!!.map2 { ptr ->
                         if (ptr !is Type.Ptr) ptr else {
                             val idx = sorted.find { it.second == ptr }!!.first
-                            Type.Ptr(ptr.tk_, Tk.Scope(TK.XSCOPE,ptr.tk.lin,ptr.tk.col,"@"+idx), ptr.pln)
+                            Type.Ptr(ptr.tk_, Tk.Scope(TK.XSCOPE,ptr.tk.lin,ptr.tk.col,"a",idx), ptr.pln)
                         }
                     }
                     // xp2 = scope in ptrs inside xp are now increasing numbers (@1,@2,...)
                     val xp2 = AUX.tps[e]!!.map2 { ptr ->
                         if (ptr !is Type.Ptr) ptr else {
                             val idx = sorted.find { it.second == ptr }!!.first
-                            Type.Ptr(ptr.tk_, Tk.Scope(TK.XSCOPE,ptr.tk.lin,ptr.tk.col,"@"+idx), ptr.pln)
+                            Type.Ptr(ptr.tk_, Tk.Scope(TK.XSCOPE,ptr.tk.lin,ptr.tk.col,"a",idx), ptr.pln)
                         }
                     }
                     Pair(xp2,arg2)
@@ -161,12 +189,12 @@ fun check_02_after_tps (s: Stmt) {
                     is Type.Nat  -> Pair(tp_f,tp_f)
                     else -> error("impossible case")
                 }
-                //println("INP, ARG2")
-                //println(inp.tostr())
-                //println(arg2.tostr())
-                //println("XP2, OUT")
-                //println(xp2.tostr())
-                //println(out.tostr())
+                println("INP, ARG2")
+                println(inp.tostr())
+                println(arg2.tostr())
+                println("XP2, OUT")
+                println(xp2.tostr())
+                println(out.tostr())
                 All_assert_tk(e.f.tk, inp.isSupOf(arg2) && xp2.isSupOf(out)) {
                     "invalid call : type mismatch"
                 }

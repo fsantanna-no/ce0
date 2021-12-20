@@ -30,8 +30,8 @@ class TCyclone {
     fun strcpy_01() {
         val out = all(
             """
-            var strcpy: [/_char@1,/_char@2] -> /_char@1
-            set strcpy = func [/_char@1,/_char@2] -> /_char@1 {
+            var strcpy: [/_char@a_1,/_char@a_2] -> /_char@a_1
+            set strcpy = func [/_char@a_1,/_char@a_2] -> /_char@a_1 {
                 return arg.1
             }
             var s1: /_char@local
@@ -50,8 +50,8 @@ class TCyclone {
     fun strdup_02() {
         val out = all(
             """
-            var strdup: [/_char@1] -> /_char@global
-            set strdup = func [/_char@1] -> /_char@global {
+            var strdup: [/_char@] -> /_char@global
+            set strdup = func [/_char@] -> /_char@global {
                 var ret: /_char @global
                 return ret
             }
@@ -71,8 +71,8 @@ class TCyclone {
     fun fact_03 () {
         val out = all(
             """
-            var fact: [@1,/_int@1,_int] -> ()
-            set fact = func [@1,/_int@1,_int] -> () { @f
+            var fact: [@,/_int@,_int] -> ()
+            set fact = func [@,/_int@,_int] -> () { @f
                 var x: _int
                 set x = _1
                 var n: _int
