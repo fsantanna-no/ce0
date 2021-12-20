@@ -28,7 +28,7 @@ class TCode {
         val e = Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
         AUX.tps[e] = tp_unit
         code_fe(e)
-        assert(EXPRS.removeFirst().second == "") { EXPRS.removeFirst() }
+        assert(EXPRS.removeFirst().second == "0")
     }
     @Test
     fun b02_expr_var () {
@@ -68,10 +68,11 @@ class TCode {
             )
         )
         AUX.tps[e] = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray())
+        AUX.tps[e.arg[0]] = tp_unit
+        AUX.tps[e.arg[1]] = tp_unit
         e.visit(null, ::code_fe, null)
         EXPRS.removeFirst().second.let {
-            //println(it)
-            assert(it == "((struct T_Unit_Unit_T) {  })")
+            assert(it == "((struct T_Unit_Unit_T) { 0, 0 })")
         }
     }
     @Test
@@ -116,8 +117,8 @@ class TCode {
             #include <stdio.h>
             #include <stdlib.h>
             
-            #define output_std_Unit_()   printf("()")
-            #define output_std_Unit()    (output_std_Unit_(), puts(""))
+            #define output_std_Unit_(x)  printf("()")
+            #define output_std_Unit(x)   (output_std_Unit_(x), puts(""))
             #define output_std_int_(x)   printf("%d",x)
             #define output_std_int(x)    (output_std_int_(x), puts(""))
             #define output_std_char__(x) printf("\"%s\"",x)

@@ -22,7 +22,8 @@ fun Type.pos (): String {
     return when (this) {
         is Type.Rec, is Type.UCons -> TODO(this.toString())
         is Type.Pool  -> "Pool**"
-        is Type.Any, is Type.Unit  -> "void"
+        is Type.Any   -> "void"
+        is Type.Unit  -> "int"
         is Type.Ptr   -> this.pln.pos() + "*"
         is Type.Nat   -> this.tk_.str
         is Type.Tuple -> "struct " + this.toce()
@@ -98,7 +99,7 @@ fun code_ft (tp: Type) {
             """.trimIndent(), """
                 struct $ce {
                     ${tp.vec  // do not filter to keep correct i
-                        .mapIndexed { i,sub -> if (sub is Type.Unit) "" else { sub.pos() + " _" + (i+1).toString() + ";\n" } }
+                        .mapIndexed { i,sub -> (sub.pos() + " _" + (i+1).toString() + ";\n") }
                         .joinToString("")
                     }
                 };
@@ -120,7 +121,6 @@ fun code_ft (tp: Type) {
                     ${tp.vec
                         .mapIndexed { i,sub ->
                             val s = when (sub) {
-                                is Type.Unit -> ""
                                 is Type.Union, is Type.Tuple -> "&v->_${i + 1}"
                                 else -> "v->_${i + 1}"
                             }
@@ -150,13 +150,7 @@ fun code_ft (tp: Type) {
                     int tag;
                     union {
                         ${tpexp  // do not filter to keep correct i
-                            .mapIndexed { i,sub ->
-                                when {
-                                    sub is Type.Unit -> ""
-                                    sub is Type.Rec -> error("bug found") //"struct $ce* _${i+1};\n"
-                                    else -> "${sub.pos()} _${i+1};\n"
-                                }
-                            }
+                            .mapIndexed { i,sub -> "${sub.pos()} _${i+1};\n" }
                             .joinToString("")
                         }
                     };
@@ -236,15 +230,12 @@ fun Expr.UPred.deref (str: String): String {
 
 fun code_fe (e: Expr) {
     //println(e)
-    //println(AUX.tps[e])
-    //println(AUX.xps[e])
     val xp = AUX.tps[e]!!
-    val isunit = AUX.tps[e] is Type.Unit
     EXPRS.addFirst(when (e) {
         is Expr.Pool -> Pair("", "pool_"+e.tk_.scp.drop(1))
-        is Expr.Unit -> Pair("", "")
+        is Expr.Unit -> Pair("", "0")
         is Expr.Nat -> Pair("", e.tk_.str)
-        is Expr.Var -> Pair("", if (isunit) "" else e.tk_.str)
+        is Expr.Var -> Pair("", e.tk_.str)
         is Expr.Upref -> EXPRS.removeFirst().let {
             Pair(it.first, "(&" + it.second + ")")
         }
@@ -309,45 +300,37 @@ fun code_fe (e: Expr) {
         }
         is Expr.UCons -> EXPRS.removeFirst().let {
             val ID  = "_tmp_" + e.hashCode().absoluteValue
-            val arg = if (AUX.tps[e.arg] is Type.Unit) "" else (", ._${e.tk_.num} = " + it.second)
             val sup = "struct " + xp.toce()
-            val pre = "$sup $ID = (($sup) { ${e.tk_.num} $arg });\n"
+            val pre = "$sup $ID = (($sup) { ${e.tk_.num} , ._${e.tk_.num} = ${it.second} });\n"
             if (e.tk_.num == 0) Pair("","NULL") else Pair(it.first + pre, ID)
         }
         is Expr.Call  -> {
             val arg = EXPRS.removeFirst()
             val f   = EXPRS.removeFirst()
-            val tf  = AUX.tps[e.f]
 
             val snd =
                 if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
                     AUX.tps[e.arg]!!.output("", arg.second)
                 } else {
-                    f.second + "(" + arg.second + ")"
+                    val arg = if (AUX.tps[e.f] is Type.Nat && e.arg is Expr.Unit) "" else arg.second
+                    f.second + "(" + arg + ")"
                 }
-            if (AUX.tps[e] is Type.Unit) {
-                Pair(f.first + arg.first + snd+";\n", "")
-            } else {
-                Pair(f.first + arg.first, snd)
-            }
+            Pair(f.first + arg.first, snd)
         }
         is Expr.Func  -> {
             val ID  = "_func_" + e.hashCode().absoluteValue
-            val (inp,dcl) = e.type.inp.let { if (it is Type.Unit) Pair("void","int _arg_;") else Pair(it.pos()+" _arg_","") }
-            val pools = e.type.inp.let {
-                when (it) {
-                    is Type.Pool  -> "Pool** pool_${it.tk_.scp.drop(1)} = _arg_;\n"
-                    is Type.Tuple -> it.vec.mapIndexed { i, tp ->
-                        if (tp !is Type.Pool) "" else {
-                            "Pool** pool_${tp.tk_.scp.drop(1)} = _arg_._${i+1};\n"
-                        }
-                    }.joinToString("")
-                    else -> ""
-                }
+            val inp = e.type.inp
+            val pools = when (inp) {
+                is Type.Pool  -> "Pool** pool_${inp.tk_.scp.drop(1)} = _arg_;\n"
+                is Type.Tuple -> inp.vec.mapIndexed { i, tp ->
+                    if (tp !is Type.Pool) "" else {
+                        "Pool** pool_${tp.tk_.scp.drop(1)} = _arg_._${i+1};\n"
+                    }
+                }.joinToString("")
+                else -> ""
             }
             val pre = """
-                auto ${e.type.out.pos()} $ID ($inp) {
-                    $dcl
+                auto ${e.type.out.pos()} $ID (${inp.pos()} _arg_) {
                     $pools
                     ${CODE.removeFirst()}
                 }
@@ -355,11 +338,6 @@ fun code_fe (e: Expr) {
             """.trimIndent()
             Pair(pre, ID)
         }
-    }.let {
-        Pair (
-            it.first,
-            if (isunit && (e !is Expr.Call)) "" else it.second
-        )
     })
 }
 
@@ -376,8 +354,7 @@ fun code_fs (s: Stmt) {
             //print("XXX ") ; println(AUX.tps[s.dst])
             //println(s)
             val tp = AUX.tps[s.dst]
-            dst.first + src.first +
-                (if (tp is Type.Unit) "" else (dst.second + " = ")) + src.second + ";\n"
+            dst.first + src.first + dst.second + " = " + src.second + ";\n"
         }
         is Stmt.If -> {
             val tst = EXPRS.removeFirst()
@@ -415,13 +392,12 @@ fun code_fs (s: Stmt) {
         is Stmt.Ret   -> {
             //EXPRS.removeFirst()
             val f = s.ups_first { it is Expr.Func } as Expr.Func
-            "return" + if (f.type.out is Type.Unit) ";\n" else " _ret_;\n"
+            "return _ret_;\n"
             //"return" + if (s.e.e.toType() is Type.Unit) ";\n" else " _ret_;\n"
         }
         is Stmt.Var   -> {
             when {
                 s.tk_.str == "_arg_" -> "int ${s.tk_.str};\n"
-                (s.type is Type.Unit) -> ""
                 else -> "${s.type.pos()} ${s.tk_.str};\n"
             }
         }
@@ -466,8 +442,8 @@ fun Stmt.code (): String {
         #include <stdio.h>
         #include <stdlib.h>
         
-        #define output_std_Unit_()   printf("()")
-        #define output_std_Unit()    (output_std_Unit_(), puts(""))
+        #define output_std_Unit_(x)  printf("()")
+        #define output_std_Unit(x)   (output_std_Unit_(x), puts(""))
         #define output_std_int_(x)   printf("%d",x)
         #define output_std_int(x)    (output_std_int_(x), puts(""))
         #define output_std_char__(x) printf("\"%s\"",x)
