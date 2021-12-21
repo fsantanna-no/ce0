@@ -1,15 +1,20 @@
-fun Expr.Func.pools (): List<String> {
-    val inp = this.type.inp
-    return when (inp) {
-        is Type.Pool -> listOf(inp.tk_.lbl)
-        is Type.Tuple -> inp.vec.filter { it is Type.Pool }.map { (it as Type.Pool).tk_.lbl }
-        else -> emptyList()
-    }
-}
-
 fun check_01_before_tps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
+            is Type.Pool -> {
+                val isfunc = (tp.ups_first { it is Type.Func } != null)
+                val isarg  = (tp.ups_first { it is Stmt.Var && it.tk_.str=="arg" } != null)
+                if (isfunc || isarg) {
+                    All_assert_tk(tp.tk, tp.tk_.num != null) {
+                        "invalid pool : expected `_N´ depth"
+                    }
+                } else {
+                    println(AUX.ups[AUX.ups[tp]!!])
+                    All_assert_tk(tp.tk, tp.tk_.num == null) {
+                        "invalid pool : unexpected `_${tp.tk_.num}´ depth"
+                    }
+                }
+            }
             is Type.Rec -> {
                 val str = "^".repeat(tp.tk_.up)
                 All_assert_tk(tp.tk, AUX.ups[tp] is Type.Ptr) {
@@ -22,13 +27,13 @@ fun check_01_before_tps (s: Stmt) {
 
             }
             is Type.Ptr -> {
-                val lbl = tp.scope!!.lbl
+                val (lbl,num) = tp.scope!!.let { Pair(it.lbl,it.num) }
                 val ok = when {
                     (lbl == "global") -> true
                     (lbl == "local")  -> true
                     (tp.ups_first { it is Type.Func } != null) -> true
-                    (tp.ups_first { it is Stmt.Block && it.scope!=null && it.scope.lbl==lbl } != null) -> true
-                    (tp.ups_first { it is Expr.Func && it.pools().any { it==lbl } } != null) -> true
+                    (tp.ups_first { it is Stmt.Block && it.scope!=null && it.scope.lbl==lbl && it.scope.num==num } != null) -> true
+                    (tp.ups_first { it is Expr.Func && it.type.inp.pools().any { it.tk_.lbl==lbl && it.tk_.num==num } } != null) -> true
                     else -> false
                 }
                 All_assert_tk(tp.tk, ok) {
@@ -47,15 +52,9 @@ fun check_01_before_tps (s: Stmt) {
                     .groupBy { it.tk_.lbl }             // { "a"=[...], "b"=[...]
                     .all {
                         it.value                        // [...]
-                            .map { it.tk_.num ?: 0 }    // [1,0,3,1,...]
-                            .toSet()                    // [1,0,3,...]
-                            .let {
-                                when (it.size) {
-                                    0 -> error("bug found")
-                                    1 -> (it.elementAt(0) == 0)
-                                    else -> (it.minOrNull() == 1) && (it.maxOrNull() == it.size)
-                                }
-                            }
+                            .map { it.tk_.num!! }       // [1,2,3,1,...]
+                            .toSet()                    // [1,2,3,...]
+                            .let { (it.minOrNull() == 1) && (it.maxOrNull() == it.size) }
                     }
                 All_assert_tk(tp.tk, ok2) {
                     "invalid function type : pool arguments are not continuous"
@@ -133,7 +132,7 @@ fun check_02_after_tps (s: Stmt) {
                 val tp2 = if (e.tk_.num != 0) tp1 else {
                     Type.Ptr (
                         Tk.Chr(TK.CHAR, e.tk.lin, e.tk.col, '\\'),
-                        Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col,"global", null), // NULL is global
+                        Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col,"global",null),
                         tp1
                     ).up(e)
                 }
@@ -154,36 +153,48 @@ fun check_02_after_tps (s: Stmt) {
                 // check scopes
                 val (xp2,arg2) = if (tp_f !is Type.Func) Pair(tp_ret,tp_arg) else {
                     // all = expected return + arguments
-                    val all = (AUX.tps[e]!!.flatten() + AUX.tps[e.arg]!!.flatten())
+                    //val all = (AUX.tps[e]!!.flatten() + AUX.tps[e.arg]!!.flatten())
                     //.filter { it !is Type.Func } // (ignore pointers in function types)
                     // ptrs = all ptrs+depths inside args
-                    val ptrs = all.filter { it is Type.Ptr }.map { (it as Type.Ptr).let { Pair(it.scope(),it) } }
+                    //val ptrs = all.filter { it is Type.Ptr }.map { (it as Type.Ptr).let { Pair(it.scope(),it) } }
                     // sorted = ptrs sorted by grouped depths, substitute depth by increasing index
-                    val sorted = ptrs
-                        .groupBy  { it.first.depth }
-                        .toList()
-                        .sortedBy { it.first }
-                        .mapIndexed { i,(_,l) -> l.map { Pair((i+1),it.second) } }
-                        .flatten()
+                    // call f [args] -> ret
+                    val sorted = (AUX.tps[e]!!.flatten() + AUX.tps[e.arg]!!.flatten())  // [ret,arg1,...,argN]
+                        .filter { it is Type.Pool || it is Type.Ptr }                   // [ptr1, ..., ptrN]
+                        .map { Pair(it.scope().depth,it) }                              // [(d1,ptr1), ..., (dN,ptrN)]
+                        .groupBy  { it.first }                                          // { [2]=[(d1,ptr1),...], ..., [K]=[(dJ,ptrJ),...] }
+                        .mapValues { it.value.map { it.second } }                       // { [2]=[ptr1,...], ..., [K]=[ptrJ,...] }
+                        .toList()                                                       // [ (K,[ptrJ,...]), ..., (2,[ptr1,...]) ]
+                        .sortedBy { it.first }                                          // [ (2,[ptr1,...]), ..., (K,[ptrJ,...]) ]
+                        .mapIndexed { i,(_,l) -> l.map { Pair((i+1),it) } }             // [ [(1,ptr1),...], [((K-1),ptrJ),...]
+                        .flatten()                                                      // [ (1,ptr1),..., ((K-1),ptrJ),... ]
                     //.let { it } // List<Pair<Int, Type.Ptr>>
                     println("SORTED") ; sorted.forEach { println(it.first.toString() + ": " + it.second.tostr()) }
 
                     // arg2 = scope in ptrs inside args are now increasing numbers (@1,@2,...)
-                    val arg2 = AUX.tps[e.arg]!!.map2 { ptr ->
-                        if (ptr !is Type.Ptr) ptr else {
-                            val idx = sorted.find { it.second == ptr }!!.first
-                            Type.Ptr(ptr.tk_, Tk.Scope(TK.XSCOPE,ptr.tk.lin,ptr.tk.col,"a",idx), ptr.pln)
+                    val LBL = tp_f.inp.pools().let { if (it.size == 0) "" else it[0].tk_.lbl }
+                    val arg2 = AUX.tps[e.arg]!!.map2 { tp ->
+                        val idx = sorted.find { it.second == tp }?.first
+                        when (tp) {
+                            is Type.Pool -> Type.Pool(Tk.Scope(TK.XSCOPE, tp.tk.lin, tp.tk.col, LBL, idx))
+                            is Type.Ptr -> {
+                                Type.Ptr(tp.tk_, Tk.Scope(TK.XSCOPE, tp.tk.lin, tp.tk.col, LBL, idx), tp.pln)
+                            }
+                            else -> tp
                         }
                     }
                     // xp2 = scope in ptrs inside xp are now increasing numbers (@1,@2,...)
                     val xp2 = AUX.tps[e]!!.map2 { ptr ->
-                        if (ptr !is Type.Ptr) ptr else {
-                            val idx = sorted.find { it.second == ptr }!!.first
-                            Type.Ptr(ptr.tk_, Tk.Scope(TK.XSCOPE,ptr.tk.lin,ptr.tk.col,"a",idx), ptr.pln)
+                        val idx = sorted.find { it.second == ptr }?.first
+                        when (ptr) {
+                            is Type.Pool -> Type.Pool(Tk.Scope(TK.XSCOPE, ptr.tk.lin, ptr.tk.col, LBL, idx))
+                            is Type.Ptr -> Type.Ptr(ptr.tk_, Tk.Scope(TK.XSCOPE,ptr.tk.lin,ptr.tk.col,LBL,idx), ptr.pln)
+                            else -> ptr
                         }
                     }
                     Pair(xp2,arg2)
                 }
+
                 val (inp,out) = when (tp_f) {
                     is Type.Func -> Pair(tp_f.inp,tp_f.out)
                     is Type.Nat  -> Pair(tp_f,tp_f)
@@ -195,6 +206,7 @@ fun check_02_after_tps (s: Stmt) {
                 println("XP2, OUT")
                 println(xp2.tostr())
                 println(out.tostr())
+                println(">>>") ; println(inp) ; println(arg2)
                 All_assert_tk(e.f.tk, inp.isSupOf(arg2) && xp2.isSupOf(out)) {
                     "invalid call : type mismatch"
                 }
@@ -211,13 +223,8 @@ fun check_02_after_tps (s: Stmt) {
             is Stmt.Set -> {
                 val dst = AUX.tps[s.dst]!!
                 val src = AUX.tps[s.src]!!
-                //print("SET ") ; println(s.dst) ; println(s.src)
-                //val scp = (dst as Type.Ptr).scope()
-                //print("scope ") ; print(scp)
+                println(">>> SET") ; println(s.dst) ; println(s.src)
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
-                    //println("SET (${s.tk.lin}): ${dst.tostr()} = ${src.tostr()}")
-                    //println(dst)
-                    //println(src)
                     val str = if (s.dst is Expr.Var && s.dst.tk_.str == "_ret_") "return" else "assignment"
                     "invalid $str : type mismatch"
                 }

@@ -29,12 +29,12 @@ fun Type.tostr (): String {
         is Type.Unit  -> "()"
         is Type.Nat   -> this.tk_.str
         is Type.Rec   -> "^".repeat(this.tk_.up)
-        is Type.Ptr   -> "/" + this.pln.tostr() + (if (this.scope==null) "" else "@"+this.scope.lbl+this.scope.num.let { if (it == null) "" else "_$it" })
+        is Type.Ptr   -> "/" + this.pln.tostr() + this.scope.let { if (it==null) "" else "@"+it.lbl+(if(it.num==null) "" else "_"+it.num) }
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
         is Type.UCons -> "<." + this.tk_.num + " " + this.arg.tostr() + ">"
         is Type.Func  -> this.inp.tostr() + " -> " + this.out.tostr()
-        is Type.Pool  -> "@"+this.tk_.lbl
+        is Type.Pool  -> "@"+this.tk_.lbl + this.tk_.num.let { (if(it==null) "" else "_"+it) }
     }
 }
 
@@ -114,7 +114,15 @@ fun Type.containsRec (): Boolean {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-fun Type.Ptr.scope (): Scope {
+fun Type.pools (): List<Type.Pool> {
+    return when (this) {
+        is Type.Pool -> listOf(this)
+        is Type.Tuple -> this.vec.filter { it is Type.Pool } as List<Type.Pool>
+        else -> emptyList()
+    }
+}
+
+fun Type.scope (): Scope {
 
     // Offset of @N (max) of all crossing functions:
     //  func /()->() {              // +1
@@ -142,18 +150,22 @@ fun Type.Ptr.scope (): Scope {
     // dropWhile(Type).drop(1) so that prototype skips up func
     //val lvl = this.ups_tolist().dropWhile { it is Type }.drop(1).filter { it is Expr.Func }.count()
 
-    val lbl = this.scope?.lbl
-    return when (lbl) {
+    val tk = when (this) {
+        is Type.Pool -> this.tk_
+        is Type.Ptr  -> this.scope
+        else -> error("bug found")
+    }
+    return when (tk?.lbl) {
         null     -> Scope(lvl, null, this.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
         "global" -> Scope(lvl, null, 0)
         "local"  -> Scope(lvl, null, this.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
         else -> {
-            val blk = this.ups_first { it is Stmt.Block && it.scope!=null && it.scope.lbl==lbl }
+            val blk = this.ups_first { it is Stmt.Block && it.scope!=null && it.scope.lbl==tk?.lbl }
             if (blk != null) {
                 Scope(lvl, null, 1 + blk.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
             } else {    // false = relative to function block
                 val n = this.ups_first { it is Expr.Func }.let { if (it == null) 0 else off(it.ups_tolist()) }
-                Scope(lvl, this.scope!!.lbl, n + (this.scope!!.num ?: 0))
+                Scope(lvl, tk?.lbl, n + (tk?.num ?: 0))
             }
         }
     }

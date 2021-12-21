@@ -469,8 +469,8 @@ class TExec {
     @Test
     fun i02_ptr_func () {
         val out = all("""
-        var f : [@,/_int@] -> ()
-        set f = func [@,/_int@] -> () {
+        var f : [@_1,/_int@_1] -> ()
+        set f = func [@_1,/_int@_1] -> () {
            set arg.2\ = _(*arg._2+1)
            return
         }
@@ -484,9 +484,9 @@ class TExec {
     @Test
     fun i03_ptr_func () {
         val out = all("""
-            var f: [@,/_int@]->_int
-            set f = func [@,/_int@]->_int { return arg.2\ }
-            var g: [@,/_int@]->_int
+            var f: [@_1,/_int@_1]->_int
+            set f = func [@_1,/_int@_1]->_int { return arg.2\ }
+            var g: [@_1,/_int@_1]->_int
             set g = f
             var x: _int
             set x = _10
@@ -527,8 +527,8 @@ class TExec {
     @Test
     fun i07_ptr_func_ok () {
         val out = all("""
-            var f : [@,/_int@] -> /_int@
-            set f = func [@,/_int@] -> /_int@ {
+            var f : [@_1,/_int@_1] -> /_int@_1
+            set f = func [@_1,/_int@_1] -> /_int@_1 {
                 return arg.2
             }
             var v: _int
@@ -544,8 +544,8 @@ class TExec {
         val out = all("""
             var v: _int
             set v = _10
-            var f : @ -> /_int@
-            set f = func (@) -> /_int@ {
+            var f : @_1 -> /_int@_1
+            set f = func (@_1) -> /_int@_1 {
                 return /v
             }
             var p: /_int @local
@@ -557,7 +557,7 @@ class TExec {
     @Test
     fun i09_ptr_func_err () {
         val out = all("""
-            var f : (@) -> /_int@; set f = func (@) -> /_int@ {
+            var f : (@_1) -> /_int@_1; set f = func (@_1) -> /_int@_1 {
                 var v: _int; set v = _10
                 return /v   -- err
             }
@@ -567,8 +567,8 @@ class TExec {
     @Test
     fun i10_ptr_func_err () {
         val out = all("""
-            var f : [@,/_int@] -> /_int@
-            set f = func [@,/_int@] -> /_int@ {
+            var f : [@_1,/_int@_1] -> /_int@_1
+            set f = func [@_1,/_int@_1] -> /_int@_1 {
                 var ptr: /_int@local
                 set ptr = arg.2
                 return ptr  -- err
@@ -579,9 +579,9 @@ class TExec {
     @Test
     fun i11_ptr_func_ok () {
         val out = all("""
-            var f : [@,/_int@] -> /_int@
-            set f = func [@,/_int@] -> /_int@ {
-                var ptr: /_int@
+            var f : [@_1,/_int@_1] -> /_int@_1
+            set f = func [@_1,/_int@_1] -> /_int@_1 {
+                var ptr: /_int@_1
                 set ptr = arg.2
                 return ptr
             }
@@ -717,8 +717,8 @@ class TExec {
         val out = all("""
             var v: _int
             set v = _10
-            var f : [@,/_int@] -> /_int@
-            set f = func ([@,/_int@] -> /_int@) {
+            var f : [@_1,/_int@_1] -> /_int@_1
+            set f = func ([@_1,/_int@_1] -> /_int@_1) {
                 return /v
             }
             {
@@ -732,8 +732,8 @@ class TExec {
     @Test
     fun f11_ptr_func () {
         val out = all("""
-            var f: ([@,/_int@] -> /_int@)
-            set f = func ([@,/_int@] -> /_int@) {
+            var f: ([@_1,/_int@_1] -> /_int@_1)
+            set f = func ([@_1,/_int@_1] -> /_int@_1) {
                 return arg.2
             }
             var v: _int
@@ -1316,9 +1316,9 @@ class TExec {
     @Test
     fun m01_scope_f () {
         val out = all("""
-            var f: [@,/</^@>@]->()
-            set f = func [@,/</^@>@]->() {
-                var pf: /</^@> @
+            var f: [@_1,/</^@_1>@_1]->()
+            set f = func [@_1,/</^@_1>@_1]->() {
+                var pf: /</^@_1> @_1
                 set pf = arg.2
                 output std pf
             }
@@ -1333,9 +1333,9 @@ class TExec {
     @Test
     fun m02_scope_f () {
         val out = all("""
-            var f: [@,/</^@>@]->()
-            set f = func [@,/</^@>@]->() {
-                set arg.2\!1 = new <.1 <.0>:/</^@>@>:</^@>: @
+            var f: [@_1,/</^@_1>@_1]->()
+            set f = func [@_1,/</^@_1>@_1]->() {
+                set arg.2\!1 = new <.1 <.0>:/</^@_1>@_1>:</^@_1>: @_1
             }
             {
                 var x: /</^ @local> @local
@@ -1366,9 +1366,9 @@ class TExec {
     @Test
     fun m04_scope_f () {
         val out = all("""
-            var f: [@,/</^@>@]->()
-            set f = func [@,/</^@>@]->() {
-                set arg.2\!1 = new <.1 <.0>:/</^@>@>:</^@>: @
+            var f: [@_1,/</^@_1>@_1]->()
+            set f = func [@_1,/</^@_1>@_1]->() {
+                set arg.2\!1 = new <.1 <.0>:/</^@_1>@_1>:</^@_1>: @_1
             }
             {
                 var x: /</^ @local> @local
@@ -1385,7 +1385,7 @@ class TExec {
     @Test
     fun n01_pool () {
         val out = all("""
-            var f : [@a,/()@a] -> /()@a
+            var f : [@a_1,/()@a_1] -> /()@a_1
             output std ()
         """.trimIndent()
         )
@@ -1406,8 +1406,8 @@ class TExec {
     @Test
     fun n03_pool () {
         val out = all("""
-            var f : [@,/_int@] -> /()@
-            set f = func [@,/_int@] -> /()@ {
+            var f : [@_1,/_int@_1] -> /()@_1
+            set f = func [@_1,/_int@_1] -> /()@_1 {
                 return arg.2
             }
             var x: _int
@@ -1420,13 +1420,13 @@ class TExec {
     @Test
     fun n04_pool () {
         val out = all("""
-            var f : [@,/_int@] -> /()@
-            set f = func [@,/_int@] -> /()@ {
+            var f : [@_1,/_int@_1] -> /()@_1
+            set f = func [@_1,/_int@_1] -> /()@_1 {
                 return arg.2
             }
-            var g : [@,/_int@] -> /()@
-            set g = func [@,/_int@] -> /()@ {
-                return f [@,arg.2]: @
+            var g : [@_1,/_int@_1] -> /()@_1
+            set g = func [@_1,/_int@_1] -> /()@_1 {
+                return f [@_1,arg.2]: @_1
             }
             var x: _int
             var px: /_int@local
@@ -1457,13 +1457,13 @@ class TExec {
     fun n06_pool_ff() {
         val out = all(
             """
-            var f: [@,/()@] -> /()@
-            set f = func [@,/()@] -> /()@ {
+            var f: [@_1,/()@_1] -> /()@_1
+            set f = func [@_1,/()@_1] -> /()@_1 {
                 return arg.2
             }
-            var g: [@, [@,/()@]->/()@, /()@] -> /()@
-            set g = func [@, [@,/()@]->/()@, /()@] -> /()@ {
-                return arg.2 [@,arg.3]: @
+            var g: [@_1, [@_1,/()@_1]->/()@_1, /()@_1] -> /()@_1
+            set g = func [@_1, [@_1,/()@_1]->/()@_1, /()@_1] -> /()@_1 {
+                return arg.2 [@_1,arg.3]: @_1
             }
             var x: ()
             output std g [@local,f,/_x]: @local
@@ -1667,11 +1667,11 @@ class TExec {
     @Test
     fun z10_return_move () {
         val out = all("""
-            var f: (@)-><(),_int,/<[_int,/^@]>@>
-            set f = func (@)-><(),_int,/<[_int,/^@]>@> {
-                var str: /<[_int,/^@]> @
-                set str = <.0>: /<[_int,/^@]> @
-                return <.3 str>:<(),_int,/<[_int,/^@]>@>
+            var f: (@_1)-><(),_int,/<[_int,/^@_1]>@_1>
+            set f = func (@_1)-><(),_int,/<[_int,/^@_1]>@_1> {
+                var str: /<[_int,/^@_1]> @_1
+                set str = <.0>: /<[_int,/^@_1]> @_1
+                return <.3 str>:<(),_int,/<[_int,/^@_1]>@_1>
             }
             var x: <(),_int,/<[_int,/^@]>@>
             set x = call f (@local)

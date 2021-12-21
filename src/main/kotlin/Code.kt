@@ -320,7 +320,7 @@ fun code_fe (e: Expr) {
         is Expr.Func  -> {
             val ID  = "_func_" + e.hashCode().absoluteValue
             val inp = e.type.inp
-            val pools = e.pools().let {
+            val pools = inp.pools().map { it.tk_.lbl }.let {
                 if (it.size == 1) {
                     "Pool** pool_${it[0]} = _arg_;\n"
                 } else {
