@@ -2583,4 +2583,54 @@ class TEnv {
         )
         assert(out == "(ln 1, col 8): invalid pool : unexpected `_1´ depth") { out }
     }
+    @Test
+    fun p12_pool_ff() {
+        val out = inp2env(
+            """
+            var f: @_1 -> ()
+            set f = func @_1 -> () {}
+            var g: [@_1, @_1->()] -> ()
+            set g = func [@_1, @_1->()] -> () {}
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun p13_pool_ff() {
+        val out = inp2env(
+            """
+            var f: @_1 -> /()@_1
+            set f = func @_1 -> /()@_1 {}
+            var g: [@_1, @_1->/()@_1] -> ()
+            set g = func [@_1, @_1->/()@_1] -> () {}
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun p14_pool_ff() {
+        val out = inp2env(
+            """
+            var f: @_1 -> ()
+            set f = func @_1 -> () {}
+            var g: [@_1, @_1->()] -> ()
+            set g = func [@_1, @_1->()] -> () {}
+            call g [@local,f]
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun p15_pool_ff() {
+        val out = inp2env(
+            """
+            var f: @_1 -> /()@_1
+            set f = func @_1 -> /()@_1 {}
+            var g: [@_1, @_1->/()@_1] -> ()
+            set g = func [@_1, @_1->/()@_1] -> () {}
+            call g [@local,f]
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
 }
