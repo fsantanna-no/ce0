@@ -34,7 +34,7 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
         (this is Type.Any  || sub is Type.Any) -> true
         (this is Type.Nat  || sub is Type.Nat) -> (sub !is Type.UCons)
         (this is Type.Rec  && sub is Type.Rec)  -> (this.tk_.up == sub.tk_.up)
-        (this is Type.Pool && sub is Type.Pool) -> (this.tk_.lbl==sub.tk_.lbl && this.tk_.num==sub.tk_.num)
+        (this is Type.Pool && sub is Type.Pool) -> (this.tk_.lbl==sub.tk_.lbl && (this.tk_.num==null && sub.tk_.num==null || this.tk_.num!!>=sub.tk_.num!!))
         (this is Type.Rec) -> ups1[this.tk_.up-1].let { it.isSupOf_(sub, isproto, ups1.drop(this.tk_.up),ups2) }
         (sub  is Type.Rec) -> ups2[sub.tk_.up-1].let { this.isSupOf_(it, isproto, ups1,ups2.drop(sub.tk_.up)) }
         (this is Type.Ptr && sub is Type.UCons) -> {
@@ -78,7 +78,7 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
                 // (dthis.rel==dsub.rel):     abs vs abs || rel vs rel // (no @aaa vs @1)
                 // (dthis.level==dsub.level): unless @aaa=@1 are in the same function (then always @1<=@aaa)
                 // (dsub.depth == 0):         globals as source are always ok
-                ((dthis.rel==dsub.rel || /*dthis.lvl==dsub.lvl ||*/ dsub.depth==0) && dthis.depth>=dsub.depth)
+                ((dthis.rel==dsub.rel || dthis.lvl==dsub.lvl || dsub.depth==0) && dthis.depth>=dsub.depth)
             }
             println(ok)
             ok && this.pln.isSupOf_(sub.pln,isproto,ups1,ups2)

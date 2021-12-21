@@ -228,11 +228,15 @@ fun Expr.UPred.deref (str: String): String {
     }
 }
 
+fun Tk.Scope.toce (): String {
+    return "pool_" + this.lbl + (if (this.num==null) "" else ("_"+this.num!!))
+}
+
 fun code_fe (e: Expr) {
     //println(e)
     val xp = AUX.tps[e]!!
     EXPRS.addFirst(when (e) {
-        is Expr.Pool -> Pair("", "pool_"+e.tk_.lbl)
+        is Expr.Pool -> Pair("", e.tk_.toce())
         is Expr.Unit -> Pair("", "0")
         is Expr.Nat -> Pair("", e.tk_.str)
         is Expr.Var -> Pair("", e.tk_.str)
@@ -275,7 +279,7 @@ fun code_fe (e: Expr) {
             val ptr = AUX.tps[e] as Type.Ptr
             //println(ptr.scope)
             //println(scp)
-            val pool = "pool_${ptr.scope!!.lbl}"
+            val pool = ptr.scope!!.toce()
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
@@ -320,11 +324,11 @@ fun code_fe (e: Expr) {
         is Expr.Func  -> {
             val ID  = "_func_" + e.hashCode().absoluteValue
             val inp = e.type.inp
-            val pools = inp.pools().map { it.tk_.lbl }.let {
-                if (it.size == 1) {
-                    "Pool** pool_${it[0]} = _arg_;\n"
+            val pools = inp.pools().map { it.tk_ }.let {
+                if (inp is Type.Pool) {
+                    "Pool** ${it[0].toce()} = _arg_;\n"
                 } else {
-                    it.mapIndexed { i, lbl -> "Pool** pool_$lbl = _arg_._${i+1};\n" }.joinToString("")
+                    it.mapIndexed { i,tk -> "Pool** ${tk.toce()} = _arg_._${i+1};\n" }.joinToString("")
                 }
             }
             val pre = """
@@ -382,7 +386,7 @@ fun code_fs (s: Stmt) {
             {
                 Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
                 Pool** pool_local = &pool;
-                ${ if (s.scope==null) "" else "Pool** pool_${s.scope.lbl} = &pool;" }
+                ${ if (s.scope==null) "" else "Pool** ${s.scope.toce()} = &pool;" }
                 ${CODE.removeFirst()}
             }
             
@@ -469,7 +473,6 @@ fun Stmt.code (): String {
 
         int main (void) {
             Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
-            Pool** pool_0      = &pool;
             Pool** pool_global = &pool;
             Pool** pool_local  = &pool;
             ${CODE.removeFirst()}

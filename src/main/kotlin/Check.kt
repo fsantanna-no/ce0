@@ -9,7 +9,6 @@ fun check_01_before_tps (s: Stmt) {
                         "invalid pool : expected `_N´ depth"
                     }
                 } else {
-                    println(AUX.ups[AUX.ups[tp]!!])
                     All_assert_tk(tp.tk, tp.tk_.num == null) {
                         "invalid pool : unexpected `_${tp.tk_.num}´ depth"
                     }
@@ -99,6 +98,14 @@ fun check_01_before_tps (s: Stmt) {
                 All_assert_tk(s.tk, ok) {
                     "invalid return : no enclosing function"
                 }
+            }
+            is Stmt.Block -> {
+                if (s.scope != null) {
+                    All_assert_tk(s.scope, s.scope.num == null) {
+                        "invalid pool : unexpected `_${s.scope!!.num}´ depth"
+                    }
+                }
+
             }
         }
     }

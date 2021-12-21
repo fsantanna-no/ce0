@@ -383,7 +383,7 @@ class TExec {
             set z = <.2>: <(),()>
             output std z!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:73: main: Assertion `z.tag == 1' failed.\n") { out }
+        assert(out == "out.exe: out.c:72: main: Assertion `z.tag == 1' failed.\n") { out }
     }
     @Test
     fun f12_user_disc_pred_idx () {
@@ -859,7 +859,7 @@ class TExec {
             set l = <.0>: /</^ @local> @local
             output std l\!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:73: main: Assertion `&(*l) != NULL' failed.\n") { out }
+        assert(out == "out.exe: out.c:72: main: Assertion `&(*l) != NULL' failed.\n") { out }
     }
     @Test
     fun j06_list_1 () {
@@ -1349,10 +1349,10 @@ class TExec {
     @Test
     fun m03_scope_f () {
         val out = all("""
-            var f: [@a_1,@a_3,/</^@a_1>@a_1,/</^@a_3>@a_3]->()
-            set f = func [@a_1,@a_3,/</^@a_1>@a_1,/</^@a_3>@a_3]->() {
+            var f: [@a_1,@a_2,/</^@a_1>@a_1,/</^@a_2>@a_2]->()
+            set f = func [@a_1,@a_2,/</^@a_1>@a_1,/</^@a_2>@a_2]->() {
                 set arg.3\!1 = new <.1 <.0>:/</^@a_1>@a_1>:</^@a_1>: @a_1
-                set arg.4\!1 = new <.1 <.0>:/</^@a_3>@a_3>:</^@a_3>: @a_3
+                set arg.4\!1 = new <.1 <.0>:/</^@a_2>@a_2>:</^@a_2>: @a_2
             }
             {
                 var x: /</^ @local> @local
@@ -1613,8 +1613,8 @@ class TExec {
             var y2: _int
             set y2 = x2\\?1
             set x2\ = new <.1 <.0>: /</^ @local> @local>:</^ @local>: @local
-            var f: [@,//</^@>@@1]->_int
-            set f = func [@,//</^@>@@1]->_int {
+            var f: [@_1,//</^@_1>@_1@_1]->_int
+            set f = func [@_1,//</^@_1>@_1@_1]->_int {
                 return arg.2\\?1
             }
             var y3: _int
@@ -1644,7 +1644,7 @@ class TExec {
             var f: ()->()
             set f = func ()->() {
                 var s1: /<[_int,/^ @local]> @local
-                set s1 = new <.1 [_1,<.0>: /<[_int,/^ @local]> @local]>:<[_int,/^ @local]>: @local
+                set s1 = new <.1 [_1:_int,<.0>: /<[_int,/^ @local]> @local]>:<[_int,/^ @local]>: @local
                 output std s1
             }
             call f
@@ -1673,7 +1673,7 @@ class TExec {
                 set str = <.0>: /<[_int,/^@_1]> @_1
                 return <.3 str>:<(),_int,/<[_int,/^@_1]>@_1>
             }
-            var x: <(),_int,/<[_int,/^@]>@>
+            var x: <(),_int,/<[_int,/^@local]>@local>
             set x = call f (@local)
             output std x!3
         """.trimIndent())
