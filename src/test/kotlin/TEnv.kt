@@ -2655,7 +2655,7 @@ class TEnv {
         assert(out == "OK") { out }
     }
     @Test
-    fun strcpy_01() {
+    fun p16_strcpy() {
         val out = inp2env(
             """
             var f:       [@a_1,@b_1,/()@a_1,/()@b_1] -> /()@a_1
@@ -2665,4 +2665,24 @@ class TEnv {
         """.trimIndent()
         )
         assert(out == "OK") { out }
-    }}
+    }
+    @Test
+    fun p17_pool_closure() {
+        val out = inp2env(
+            """
+            var g: @_1 -> (@_1->())
+            set g = func @_1 -> (@_1->()) {
+                var f: @_1 -> ()
+                set f = func @_1 -> () {
+                    output std ()
+                }           
+               return f
+            }
+            var f: @_1 -> ()
+            set f = call g @local
+            call f @local
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
+}

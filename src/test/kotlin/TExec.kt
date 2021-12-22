@@ -1471,6 +1471,84 @@ class TExec {
         )
         assert(out == "_\n") { out }
     }
+    @Test
+    fun n07_pool_closure() {
+        val out = all(
+            """
+            var g: @_1 -> (@_1->())
+            set g = func @_1 -> (@_1->()) {
+                var f: @_1 -> ()
+                set f = func @_1 -> () {
+                    output std ()
+                }
+               return f
+            }
+            var f: @_1 -> ()
+            set f = call g @local
+            call f @local
+        """.trimIndent()
+        )
+        assert(out == "()\n") { out }
+    }
+    @Test
+    fun n08_pool_closure() {
+        val out = all(
+            """
+            var g: @_1 -> (@_1->())
+            set g = func @_1 -> (@_1->()) {
+                var f: @_1 -> ()
+                var x: /</^@_1>@_1
+                set x = new <.1 <.0>:/</^@_1>@_1>: </^@_1>: @_1
+                set f = func @_1 -> () {
+                    output std x
+                }
+               return f
+            }
+            var f: @_1 -> ()
+            set f = call g @local
+            call f @local
+        """.trimIndent()
+        )
+        assert(out == "<.1 <.0>>\n") { out }
+    }
+    @Test
+    fun n09_pool_closure_err() {
+        val out = all(
+            """
+            var g: @_1 -> (@_1->())
+            set g = func @_1 -> (@_1->()) {
+                var f: @_1 -> ()
+                var x: /</^@local>@local
+                set x = new <.1 <.0>:/</^@local>@local>: </^@local>: @local
+                set f = func @_1 -> () {
+                    output std x    -- f uses x in @local
+                }
+               return f             -- cannot return f which uses x in @local
+            }
+            var f: @_1 -> ()
+            set f = call g @local
+            call f @local
+        """.trimIndent()
+        )
+        assert(out == "<.1 <.0>>\n") { out }
+    }
+    @Test
+    fun n010_pool_closure_err() {
+        val out = all(
+            """
+            var f: () -> ()
+            {
+                var x: /</^@local>@local
+                set x = new <.1 <.0>:/</^@local>@local>: </^@local>: @local
+                set f = func () -> () [@local] { -- cannot set f which uses x in @local
+                    output std x
+                }
+            }
+            call f
+        """.trimIndent()
+        )
+        assert(out == "<.1 <.0>>\n") { out }
+    }
 
     // ALL
 
