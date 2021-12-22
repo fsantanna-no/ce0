@@ -723,7 +723,7 @@ class TExec {
             }
             {
                 var p: /_int @local
-                set p = f [@global,/v]
+                set p = f [@global,/v]: @global
                 output std p\
             }
         """.trimIndent())
@@ -1469,7 +1469,7 @@ class TExec {
             output std g [@local,f,/_x]: @local
         """.trimIndent()
         )
-        assert(out == "()\n") { out }
+        assert(out == "_\n") { out }
     }
 
     // ALL

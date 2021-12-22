@@ -1167,7 +1167,7 @@ class TEnv {
             var p: /() @local
             {
                 var x: /() @local
-                set x = f [@global,p] -- ok: call p/x have diff scopes (@ will be x which is greater)
+                set x = f [@global,p]: @global -- ok: call p/x have diff scopes (@ will be x which is greater)
             }
         """.trimIndent())
         assert(out == "OK") { out }

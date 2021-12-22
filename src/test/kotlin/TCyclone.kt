@@ -30,7 +30,7 @@ class TCyclone {
     fun strcpy_01() {
         val out = all(
             """
-            var strcpy: [@a_1,@b_1,/_char@a_1,/_char@b_1] -> /_char@a_1
+            var strcpy:       [@a_1,@b_1,/_char@a_1,/_char@b_1] -> /_char@a_1
             set strcpy = func [@a_1,@b_1,/_char@a_1,/_char@b_1] -> /_char@a_1 {
                 return arg.3
             }
@@ -38,8 +38,8 @@ class TCyclone {
             set s1 = call strcpy [@local,@local,s1,s1]: @local
             {
                 var s2: /_char@local
-                set s1 = call strcpy [@local,@local,s1,s2]: @global
-                set s2 = call strcpy [@local,@local,s2,s1]: @local   -- TODO: should be ok @a1/@b1
+                set s1 = call strcpy [@global,@local,s1,s2]: @global
+                set s2 = call strcpy [@local,@global,s2,s1]: @local   -- TODO: should be ok @a1/@b1
             }
             output std ()
         """.trimIndent()
@@ -50,7 +50,7 @@ class TCyclone {
     fun strdup_02() {
         val out = all(
             """
-            var strdup: [@_1,/_char@_1] -> /_char@global    -- TODO: @global/@xxx no need to pass
+            var strdup:       [@_1,/_char@_1] -> /_char@global    -- TODO: @global/@xxx no need to pass
             set strdup = func [@_1,/_char@_1] -> /_char@global {
                 var ret: /_char @global
                 return ret

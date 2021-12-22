@@ -164,22 +164,33 @@ fun check_02_after_tps (s: Stmt) {
                 }
 
                 fun map (inp:Type,out:Type, arg:Type,ret:Type): Pair<Type,Type> {
-                    val acc = mutableMapOf<String,Int>()
+                    val acc = mutableMapOf<String,MutableMap<Int,Int>>()
 
                     fun aux (func:Type, call:Type): Type {
 
                         fun lbl_num (tk: Tk.Scope): Pair<String,Int> {
-                            val d = call.scope().depth
-                            val first = d - tk.num!! + 1
+                            val key = tk.num!!
+                            val new = call.scope().depth
+                            println("===")
+                            println(key)
+                            println(new)
+                            println(acc)
                             acc[tk.lbl].let {
                                 if (it == null) {
-                                    acc[tk.lbl] = first
+                                    acc[tk.lbl] = mutableMapOf(Pair(key,new))
                                 } else {
-                                    println(func)
-                                    println(call)
-                                    All_assert_tk(call.tk, it == first) {
+                                    val ok = it.all {
+                                        when {
+                                            (it.key == key) -> (it.value == new)
+                                            (it.key > key)  -> (it.value >= new)
+                                            (it.key < key)  -> (it.value <= new)
+                                            else -> error("bug found")
+                                        }
+                                    }
+                                    All_assert_tk(call.tk, ok) {
                                         "invalid call : incompatible scopes"
                                     }
+                                    it[key] = new
                                 }
                             }
                             return Pair(tk.lbl,tk.num)
