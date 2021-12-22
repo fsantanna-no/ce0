@@ -654,11 +654,13 @@ class TEnv {
                 var x: ()
                 {
                     var y: ()
-                    call f [/y,/x]  -- err
+                    call f [@local,@a,/y,/x]  -- err
                 }
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 14): invalid call : type mismatch") { out }
+        //assert(out == "(ln 7, col 14): invalid call : type mismatch") { out }
+        assert(out == "(ln 7, col 24): invalid call : incompatible scopes") { out }
+
     }
     @Test
     fun e13_tuple_ok () {
@@ -716,7 +718,8 @@ class TEnv {
                 }
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 22): invalid call : type mismatch") { out }
+        //assert(out == "(ln 7, col 22): invalid call : type mismatch") { out }
+        assert(out == "(ln 7, col 17): invalid call : incompatible scopes") { out }
     }
     @Test
     fun e15_call_err () {
@@ -727,12 +730,13 @@ class TEnv {
                 var x: /() @local
                 {
                     var y: /() @local
-                    set x = call f [@local,y]: @aaa  -- err
+                    set x = call f [@local,@aaa,y]: @aaa  -- err
                 }
             }
         """.trimIndent())
         //assert(out == "(ln 7, col 15): invalid assignment : type mismatch") { out }
-        assert(out == "(ln 7, col 22): invalid call : type mismatch") { out }
+        //assert(out == "(ln 7, col 22): invalid call : type mismatch") { out }
+        assert(out == "(ln 7, col 32): invalid call : incompatible scopes") { out }
     }
     @Test
     fun e16_call_ok () {
@@ -774,7 +778,7 @@ class TEnv {
                 var x: /() @local
                 {
                     var y: /() @local
-                    set y = call f [@local,@a,y]: @local  -- ok
+                    set y = call f [@local,@a,y]: @a  -- ok
                 }
             }
         """.trimIndent())
@@ -782,6 +786,21 @@ class TEnv {
     }
     @Test
     fun e19_call_err () {
+        val out = inp2env("""
+            var f: [@a_2,@a_1,/()@a_2]->/()@a_1
+            set f = func [@a_2,@a_1,/()@a_2]->/()@a_1 {}
+            { @a
+                var x: /() @local
+                {
+                    var y: /() @local
+                    set y = call f [@local,@a,y]: @local -- no @local=@2
+                }
+            }
+        """.trimIndent())
+        assert(out == "(ln 7, col 17): invalid call : incompatible scopes") { out }
+    }
+    @Test
+    fun e19_call_err2 () {
         val out = inp2env("""
             var f: [@a_2,@a_1,/()@a_2]->/()@a_1
             set f = func [@a_2,@a_1,/()@a_2]->/()@a_1 {}
@@ -1134,7 +1153,8 @@ class TEnv {
                 set p = f [@local,x]: @global    -- err: call p/x have diff scopes (@ will be x which is greater)
             }
         """.trimIndent())
-        assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }
+        assert(out == "(ln 8, col 11): invalid call : incompatible scopes") { out }
+        //assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }
         //assert(out == "(ln 8, col 11): invalid assignment : type mismatch") { out }
     }
     @Test
@@ -1147,7 +1167,7 @@ class TEnv {
             var p: /() @local
             {
                 var x: /() @local
-                set x = f [@global,p]     -- ok: call p/x have diff scopes (@ will be x which is greater)
+                set x = f [@global,p] -- ok: call p/x have diff scopes (@ will be x which is greater)
             }
         """.trimIndent())
         assert(out == "OK") { out }
@@ -1195,7 +1215,8 @@ class TEnv {
                 set p = f [@local,@global,x]     -- err: @2=p <= @1=x (false) 
             }
         """.trimIndent())
-        assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }
+        assert(out == "(ln 8, col 23): invalid call : incompatible scopes") { out }
+        //assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }
         //assert(out == "(ln 8, col 11): invalid assignment : type mismatch") { out }
     }
 
@@ -2633,4 +2654,15 @@ class TEnv {
         )
         assert(out == "OK") { out }
     }
-}
+    @Test
+    fun strcpy_01() {
+        val out = inp2env(
+            """
+            var f:       [@a_1,@b_1,/()@a_1,/()@b_1] -> /()@a_1
+            set f = func [@a_1,@b_1,/()@a_1,/()@b_1] -> /()@a_1 {}
+            var s1: ()
+            call f [@local,@local,/s1,/s1]: @local
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }}

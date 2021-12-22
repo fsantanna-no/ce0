@@ -157,64 +157,74 @@ fun check_02_after_tps (s: Stmt) {
                 val tp_f   = AUX.tps[e.f]
                 val tp_arg = AUX.tps[e.arg]!!
 
-                // check scopes
-                val (xp2,arg2) = if (tp_f !is Type.Func) Pair(tp_ret,tp_arg) else {
-                    // all = expected return + arguments
-                    //val all = (AUX.tps[e]!!.flatten() + AUX.tps[e.arg]!!.flatten())
-                    //.filter { it !is Type.Func } // (ignore pointers in function types)
-                    // ptrs = all ptrs+depths inside args
-                    //val ptrs = all.filter { it is Type.Ptr }.map { (it as Type.Ptr).let { Pair(it.scope(),it) } }
-                    // sorted = ptrs sorted by grouped depths, substitute depth by increasing index
-                    // call f [args] -> ret
-                    val sorted = (AUX.tps[e]!!.flatten() + AUX.tps[e.arg]!!.flatten())  // [ret,arg1,...,argN]
-                        .filter { it is Type.Pool || it is Type.Ptr }                   // [ptr1, ..., ptrN]
-                        .map { Pair(it.scope().depth,it) }                              // [(d1,ptr1), ..., (dN,ptrN)]
-                        .groupBy  { it.first }                                          // { [2]=[(d1,ptr1),...], ..., [K]=[(dJ,ptrJ),...] }
-                        .mapValues { it.value.map { it.second } }                       // { [2]=[ptr1,...], ..., [K]=[ptrJ,...] }
-                        .toList()                                                       // [ (K,[ptrJ,...]), ..., (2,[ptr1,...]) ]
-                        .sortedBy { it.first }                                          // [ (2,[ptr1,...]), ..., (K,[ptrJ,...]) ]
-                        .mapIndexed { i,(_,l) -> l.map { Pair((i+1),it) } }             // [ [(1,ptr1),...], [((K-1),ptrJ),...]
-                        .flatten()                                                      // [ (1,ptr1),..., ((K-1),ptrJ),... ]
-                    //.let { it } // List<Pair<Int, Type.Ptr>>
-                    println("SORTED") ; sorted.forEach { println(it.first.toString() + ": " + it.second.tostr()) }
-
-                    // arg2 = scope in ptrs inside args are now increasing numbers (@1,@2,...)
-                    val LBL = tp_f.inp.pools().let { if (it.size == 0) "" else it[0].tk_.lbl }
-                    val arg2 = AUX.tps[e.arg]!!.map2 { tp ->
-                        val idx = sorted.find { it.second == tp }?.first
-                        when (tp) {
-                            is Type.Pool -> Type.Pool(Tk.Scope(TK.XSCOPE, tp.tk.lin, tp.tk.col, LBL, idx))
-                            is Type.Ptr -> {
-                                Type.Ptr(tp.tk_, Tk.Scope(TK.XSCOPE, tp.tk.lin, tp.tk.col, LBL, idx), tp.pln)
-                            }
-                            else -> tp
-                        }
-                    }
-                    // xp2 = scope in ptrs inside xp are now increasing numbers (@1,@2,...)
-                    val xp2 = AUX.tps[e]!!.map2 { ptr ->
-                        val idx = sorted.find { it.second == ptr }?.first
-                        when (ptr) {
-                            is Type.Pool -> Type.Pool(Tk.Scope(TK.XSCOPE, ptr.tk.lin, ptr.tk.col, LBL, idx))
-                            is Type.Ptr -> Type.Ptr(ptr.tk_, Tk.Scope(TK.XSCOPE,ptr.tk.lin,ptr.tk.col,LBL,idx), ptr.pln)
-                            else -> ptr
-                        }
-                    }
-                    Pair(xp2,arg2)
-                }
-
                 val (inp,out) = when (tp_f) {
                     is Type.Func -> Pair(tp_f.inp,tp_f.out)
                     is Type.Nat  -> Pair(tp_f,tp_f)
                     else -> error("impossible case")
                 }
+
+                fun map (inp:Type,out:Type, arg:Type,ret:Type): Pair<Type,Type> {
+                    val acc = mutableMapOf<String,Int>()
+
+                    fun aux (func:Type, call:Type): Type {
+
+                        fun lbl_num (tk: Tk.Scope): Pair<String,Int> {
+                            val d = call.scope().depth
+                            val first = d - tk.num!! + 1
+                            acc[tk.lbl].let {
+                                if (it == null) {
+                                    acc[tk.lbl] = first
+                                } else {
+                                    println(func)
+                                    println(call)
+                                    All_assert_tk(call.tk, it == first) {
+                                        "invalid call : incompatible scopes"
+                                    }
+                                }
+                            }
+                            return Pair(tk.lbl,tk.num)
+                        }
+
+                        return when (call) {
+                            is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec, is Type.Func -> call
+                            is Type.UCons -> error("bug found")
+                            is Type.Tuple -> if (func !is Type.Tuple) call else {
+                                Type.Tuple(call.tk_, /*********/ call.vec.mapIndexed { i,tp -> aux(func.vec[i], tp) }.toTypedArray())
+                            }
+                            is Type.Union -> if (func !is Type.Union) call else {
+                                Type.Union(call.tk_, call.isrec, call.vec.mapIndexed { i,tp -> aux(func.vec[i], tp) }.toTypedArray())
+                            }
+                            is Type.Pool -> {
+                                if (func !is Type.Pool) call else {
+                                    val (lbl, num) = lbl_num(func.tk_)
+                                    Type.Pool(Tk.Scope(TK.XSCOPE, call.tk.lin, call.tk.col, lbl, num))
+                                }
+                            }
+                            is Type.Ptr -> {
+                                if (func !is Type.Ptr) call else {
+                                    val (lbl, num) = lbl_num(func.scope!!)
+                                    val pln = aux(func.pln, call.pln)
+                                    //println(call)
+                                    Type.Ptr(call.tk_, Tk.Scope(TK.XSCOPE, call.tk.lin, call.tk.col, lbl, num), pln)
+                                }
+                            }
+                        }
+                    }
+
+                    val arg2 = aux(inp,arg)
+                    val ret2 = aux(out,ret)
+                    return Pair(arg2, ret2)
+                }
+
+                val (arg2,ret2) = if (tp_f !is Type.Func) Pair(tp_arg,tp_ret) else map(inp,out, tp_arg,tp_ret)
                 println("INP, ARG2")
                 println(inp.tostr())
                 println(arg2.tostr())
                 println("XP2, OUT")
-                println(xp2.tostr())
+                println(ret2.tostr())
                 println(out.tostr())
                 println(">>>") ; println(inp) ; println(arg2)
-                All_assert_tk(e.f.tk, inp.isSupOf(arg2) && xp2.isSupOf(out)) {
+                All_assert_tk(e.f.tk, inp.isSupOf(arg2) && ret2.isSupOf(out)) {
                     "invalid call : type mismatch"
                 }
             }
