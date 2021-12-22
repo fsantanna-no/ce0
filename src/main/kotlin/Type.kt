@@ -7,7 +7,7 @@ sealed class Type (val tk: Tk) {
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_)
     data class Union (val tk_: Tk.Chr, val isrec: Boolean, val vec: Array<Type>): Type(tk_)
     data class UCons (val tk_: Tk.Num, val arg: Type): Type(tk_)
-    data class Func  (val tk_: Tk.Sym, val inp: Type, val out: Type): Type(tk_)
+    data class Func  (val tk_: Tk.Sym, val clo: Tk.Scope, val inp: Type, val out: Type): Type(tk_)
     data class Ptr   (val tk_: Tk.Chr, val scope: Tk.Scope?, val pln: Type): Type(tk_)
     data class Rec   (val tk_: Tk.Up): Type(tk_)
     data class Pool  (val tk_: Tk.Scope): Type(tk_)
@@ -58,7 +58,7 @@ fun Type.lincol (lin: Int, col: Int): Type {
         is Type.Tuple -> Type.Tuple(this.tk_.copy(lin_=lin,col_=col), this.vec.map { it.lincol(lin,col) }.toTypedArray())
         is Type.Union -> Type.Union(this.tk_.copy(lin_=lin,col_=col), this.isrec, this.vec.map { it.lincol(lin,col) }.toTypedArray())
         is Type.UCons -> Type.UCons(this.tk_.copy(lin_=lin,col_=col), this.arg.lincol(lin,col))
-        is Type.Func  -> Type.Func(this.tk_.copy(lin_=lin,col_=col), this.inp.lincol(lin,col), this.out.lincol(lin,col))
+        is Type.Func  -> Type.Func(this.tk_.copy(lin_=lin,col_=col), this.clo?.copy(lin_=lin,col_=col), this.inp.lincol(lin,col), this.out.lincol(lin,col))
         is Type.Ptr   -> Type.Ptr(this.tk_.copy(lin_=lin,col_=col), this.scope, this.pln.lincol(lin,col))
         is Type.Rec   -> Type.Rec(this.tk_.copy(lin_=lin,col_=col))
         is Type.Pool  -> Type.Pool(this.tk_.copy(lin_=lin,col_=col))
@@ -71,7 +71,7 @@ fun Type.map (f: (Type)->Type): Type {
         is Type.Tuple -> f(Type.Tuple(this.tk_, this.vec.map { it.map(f) }.toTypedArray()))
         is Type.Union -> f(Type.Union(this.tk_, this.isrec, this.vec.map { it.map(f) }.toTypedArray()))
         is Type.UCons -> f(Type.UCons(this.tk_, f(this.arg)))
-        is Type.Func  -> f(Type.Func(this.tk_, this.inp.map(f), this.out.map(f)))
+        is Type.Func  -> f(Type.Func(this.tk_, this.clo, this.inp.map(f), this.out.map(f)))
         is Type.Ptr   -> f(Type.Ptr(this.tk_, this.scope, this.pln.map(f)))
     }
 }
@@ -94,7 +94,7 @@ fun Type.Union.expand (): Array<Type> {
             is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray()) .up(AUX.ups[cur]!!)
             is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray()) .up(AUX.ups[cur]!!)
             is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scope, aux(cur.pln,up)) .up(AUX.ups[cur]!!)
-            is Type.Func  -> Type.Func(cur.tk_, aux(cur.inp,up), aux(cur.out,up)) .up(AUX.ups[cur]!!)
+            is Type.Func  -> Type.Func(cur.tk_, cur.clo, aux(cur.inp,up), aux(cur.out,up)) .up(AUX.ups[cur]!!)
             is Type.UCons -> error("bug found")
             else -> cur
         }
@@ -122,8 +122,7 @@ fun Type.pools (): List<Type.Pool> {
     }
 }
 
-fun Type.scope (): Scope {
-
+fun Tk.Scope?.scope (up: Any): Scope {
     // Offset of @N (max) of all crossing functions:
     //  func /()->() {              // +1
     //      func [/()@1,/()@2] {    // +2
@@ -146,27 +145,31 @@ fun Type.scope (): Scope {
     //      ...             // lvl=1
     //      func ... {
     //          ...         // lvl=1
-    val lvl = this.ups_tolist().filter { it is Expr.Func }.count()
+    val lvl = up.ups_tolist().filter { it is Expr.Func }.count()
     // dropWhile(Type).drop(1) so that prototype skips up func
-    //val lvl = this.ups_tolist().dropWhile { it is Type }.drop(1).filter { it is Expr.Func }.count()
+    //val lvl = up.ups_tolist().dropWhile { it is Type }.drop(1).filter { it is Expr.Func }.count()
 
+    return when (this?.lbl) {
+        null     -> Scope(lvl, null, up.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
+        "global" -> Scope(lvl, null, 0)
+        "local"  -> Scope(lvl, null, up.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
+        else -> {
+            val blk = up.ups_first { it is Stmt.Block && it.scope!=null && it.scope.lbl==this?.lbl }
+            if (blk != null) {
+                Scope(lvl, null, 1 + blk.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
+            } else {    // false = relative to function block
+                val n = up.ups_first { it is Expr.Func }.let { if (it == null) 0 else off(it.ups_tolist()) }
+                Scope(lvl, this?.lbl, n + (this?.num ?: 0))
+            }
+        }
+    }
+}
+
+fun Type.scope (): Scope {
     val tk = when (this) {
         is Type.Pool -> this.tk_
         is Type.Ptr  -> this.scope
         else -> error("bug found")
     }
-    return when (tk?.lbl) {
-        null     -> Scope(lvl, null, this.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
-        "global" -> Scope(lvl, null, 0)
-        "local"  -> Scope(lvl, null, this.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
-        else -> {
-            val blk = this.ups_first { it is Stmt.Block && it.scope!=null && it.scope.lbl==tk?.lbl }
-            if (blk != null) {
-                Scope(lvl, null, 1 + blk.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
-            } else {    // false = relative to function block
-                val n = this.ups_first { it is Expr.Func }.let { if (it == null) 0 else off(it.ups_tolist()) }
-                Scope(lvl, tk?.lbl, n + (tk?.num ?: 0))
-            }
-        }
-    }
+    return tk.scope(this)
 }

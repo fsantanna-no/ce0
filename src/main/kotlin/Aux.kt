@@ -50,6 +50,7 @@ fun env_prelude (s: Stmt): Stmt {
         Tk.Str(TK.XVAR,1,1,"output_std"),
         Type.Func (
             Tk.Sym(TK.ARROW, 1, 1, "->"),
+            Tk.Scope(TK.XSCOPE, 1, 1, "@global", null),
             Type.Any(Tk.Chr(TK.CHAR,1,1,'?')),
             Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
         )
