@@ -1530,7 +1530,7 @@ class TExec {
             call f @local
         """.trimIndent()
         )
-        assert(out == "<.1 <.0>>\n") { out }
+        assert(out == "(ln 7, col 20): invalid access to \"x\" : missing closure declaration") { out }
     }
 
     // ALL

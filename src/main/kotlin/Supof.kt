@@ -63,7 +63,8 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
             sub.inp.isSupOf_(this.inp,true,ups1,ups2) &&
             this.out.isSupOf_(sub.out,true,ups1,ups2) &&
             sub.out.isSupOf_(this.out,true,ups1,ups2)
-        ) //.let { println(">>> FUNC") ; println(this.clo.scope(this)) ; println(sub.clo.scope(sub)) ; it } }
+        )//.let { println(">>> FUNC") ; println(this.clo.scope(this)) ; println(sub.clo.scope(sub)) ; it }
+        }
         (this is Type.Ptr && sub is Type.Ptr) -> {
             /*
             println("===")

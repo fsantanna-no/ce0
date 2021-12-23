@@ -2707,13 +2707,13 @@ class TEnv {
             var f: () -> ()
             {
                 var x: /</^@local>@local
-                set f = func () -> () { -- cannot set f which uses x in @local
+                set f = func () -> () { -- OK: x escapes but no enclosing func
                     output std x
                 }
             }
         """.trimIndent()
         )
-        assert(out == "err") { out }
+        assert(out == "OK") { out }
     }
     @Test
     fun p20_pool_closure_err() {
@@ -2729,6 +2729,6 @@ class TEnv {
             }
         """.trimIndent()
         )
-        assert(out == "(ln 6, col 20): invalid access to \"x\" : variable cannot escape function") { out }
+        assert(out == "(ln 6, col 20): invalid access to \"x\" : missing closure declaration") { out }
     }
 }
