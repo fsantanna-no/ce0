@@ -62,12 +62,12 @@ fun parser_type (all: All): Type {
             val tk = all.tk0 as Tk.Sym
             val oth = parser_type(all) // right associative
             val clo = if (!all.accept(TK.CHAR, '[')) {
-                Tk.Scope(TK.XSCOPE, tk.lin, tk.col, "@global", null)
+                Tk.Scope(TK.XSCOPE, tk.lin, tk.col, "global", null)
             } else {
                 all.accept_err(TK.XSCOPE)
-                val scope = all.tk0
+                val scope = all.tk0 as Tk.Scope
                 all.accept_err(TK.CHAR, ']')
-                scope as Tk.Scope
+                scope
             }
             Type.Func(tk, clo, ret, oth)
         }

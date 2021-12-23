@@ -58,19 +58,21 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
         (this::class != sub::class) -> false
         (this is Type.Unit && sub is Type.Unit) -> true
         (this is Type.Func && sub is Type.Func) -> { (
-            this.clo.scope(this).depth == sub.clo.scope(this).depth &&
+            this.clo.scope(this).depth == sub.clo.scope(sub).depth &&
             this.inp.isSupOf_(sub.inp,true,ups1,ups2) &&
             sub.inp.isSupOf_(this.inp,true,ups1,ups2) &&
             this.out.isSupOf_(sub.out,true,ups1,ups2) &&
             sub.out.isSupOf_(this.out,true,ups1,ups2)
-        ) }
+        ) //.let { println(">>> FUNC") ; println(this.clo.scope(this)) ; println(sub.clo.scope(sub)) ; it } }
         (this is Type.Ptr && sub is Type.Ptr) -> {
+            /*
             println("===")
             println(this)
             println(sub)
             println(this.tostr())
             println(sub.tostr())
             println("SUPOF [$isproto] ${this.tk.lin}: ${this.scope()} = ${sub.scope()} /// ${this.scope}")
+             */
             val ok = if (isproto) { // comparing func prototypes does not depend on scope calculation
                 (this.scope!!.lbl == sub.scope!!.lbl) && (this.scope!!.num == sub.scope!!.num)
             } else {
@@ -83,7 +85,7 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
                 // (dsub.depth == 0):         globals as source are always ok
                 ((dthis.rel==dsub.rel || dthis.lvl==dsub.lvl || dsub.depth==0) && dthis.depth>=dsub.depth)
             }
-            println(ok)
+            //println(ok)
             ok && this.pln.isSupOf_(sub.pln,isproto,ups1,ups2)
         }
         (this is Type.Tuple && sub is Type.Tuple) ->

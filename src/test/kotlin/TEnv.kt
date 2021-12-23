@@ -576,8 +576,8 @@ class TEnv {
         val out = inp2env("""
             { @a
                 var pa: /_int @local
-                var f: ()->()
-                set f = func ()->() {
+                var f: ()->() [@a]
+                set f = func ()->() [@a] {
                     var pf: /_int @a
                     set pa = pf
                 }
@@ -2684,5 +2684,51 @@ class TEnv {
         """.trimIndent()
         )
         assert(out == "OK") { out }
+    }
+    @Test
+    fun p18_pool_closure_err() {
+        val out = inp2env(
+            """
+            var f: () -> () [@local]
+            {
+                var x: /</^@local>@local
+                set f = func () -> () [@local] {
+                    output std x
+                }
+            }
+        """.trimIndent()
+        )
+        assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
+    }
+    @Test
+    fun p19_pool_closure_err() {
+        val out = inp2env(
+            """
+            var f: () -> ()
+            {
+                var x: /</^@local>@local
+                set f = func () -> () { -- cannot set f which uses x in @local
+                    output std x
+                }
+            }
+        """.trimIndent()
+        )
+        assert(out == "err") { out }
+    }
+    @Test
+    fun p20_pool_closure_err() {
+        val out = inp2env(
+            """
+            var g: () -> ()
+            set g = func () -> () {
+                var x: ()
+                var f: () -> ()
+                set f = func () -> () {
+                    output std x    -- x escapes f
+                }
+            }
+        """.trimIndent()
+        )
+        assert(out == "(ln 6, col 20): invalid access to \"x\" : variable cannot escape function") { out }
     }
 }

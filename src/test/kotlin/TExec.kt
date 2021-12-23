@@ -1532,23 +1532,6 @@ class TExec {
         )
         assert(out == "<.1 <.0>>\n") { out }
     }
-    @Test
-    fun n010_pool_closure_err() {
-        val out = all(
-            """
-            var f: () -> ()
-            {
-                var x: /</^@local>@local
-                set x = new <.1 <.0>:/</^@local>@local>: </^@local>: @local
-                set f = func () -> () [@local] { -- cannot set f which uses x in @local
-                    output std x
-                }
-            }
-            call f
-        """.trimIndent()
-        )
-        assert(out == "<.1 <.0>>\n") { out }
-    }
 
     // ALL
 

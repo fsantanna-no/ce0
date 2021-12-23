@@ -130,9 +130,41 @@ fun Type.map2 (f: (Type)->Type): Type {
         }
     }
 }
-
 fun check_02_after_tps (s: Stmt) {
     fun fe (e: Expr) {
+        val ptrs = AUX.tps[e]!!.flatten().filter { it is Type.Ptr } // TODO: Type.Func
+        for (tp in ptrs) {
+            val lvl_exp = e.ups_tolist().filter { it is Expr.Func }.count()
+            val (lvl_ptr, depth) = tp.scope().let { Pair(it.lvl,it.depth) }
+            if (lvl_exp>lvl_ptr && depth>0) {
+                // expression is inside function, pointer is outside
+                val func = e.ups_first { it is Expr.Func } as Expr.Func
+                val clo = func.type.clo.scope(func.type).depth
+                println("$clo <= $depth")
+                All_assert_tk(e.tk, clo >= depth) {
+                    "invalid access to pointer : missing closure declaration"
+                }
+            }
+        }
+
+        val tp = AUX.tps[e]!!
+        if (e is Expr.Var) {
+            if (tp is Type.Ptr || tp is Type.Func || e.tk_.str=="arg" || e.tk_.str=="_ret_") {
+                // ok
+            } else {
+                val var_depth = e.env(e.tk_.str)!!.ups_tolist().filter { it is Expr.Func }.count()
+                val exp_depth = e.ups_tolist().filter { it is Expr.Func }.count()
+                println(e)
+                println("$exp_depth > $var_depth")
+                if (var_depth>0 && var_depth<exp_depth) {
+                    // expression is inside function, plain is outside
+                    All_assert_tk(e.tk, false) {
+                        "invalid access to \"${e.tk_.str}\" : variable cannot escape function"
+                    }
+                }
+            }
+        }
+
         when (e) {
             is Expr.UCons -> {
                 val tp1 = Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e)
@@ -171,10 +203,12 @@ fun check_02_after_tps (s: Stmt) {
                         fun lbl_num (tk: Tk.Scope): Pair<String,Int> {
                             val key = tk.num!!
                             val new = call.scope().depth
+                            /*
                             println("===")
                             println(key)
                             println(new)
                             println(acc)
+                             */
                             acc[tk.lbl].let {
                                 if (it == null) {
                                     acc[tk.lbl] = mutableMapOf(Pair(key,new))
@@ -228,6 +262,7 @@ fun check_02_after_tps (s: Stmt) {
                 }
 
                 val (arg2,ret2) = if (tp_f !is Type.Func) Pair(tp_arg,tp_ret) else map(inp,out, tp_arg,tp_ret)
+                /*
                 println("INP, ARG2")
                 println(inp.tostr())
                 println(arg2.tostr())
@@ -235,6 +270,7 @@ fun check_02_after_tps (s: Stmt) {
                 println(ret2.tostr())
                 println(out.tostr())
                 println(">>>") ; println(inp) ; println(arg2)
+                 */
                 All_assert_tk(e.f.tk, inp.isSupOf(arg2) && ret2.isSupOf(out)) {
                     "invalid call : type mismatch"
                 }
@@ -251,7 +287,7 @@ fun check_02_after_tps (s: Stmt) {
             is Stmt.Set -> {
                 val dst = AUX.tps[s.dst]!!
                 val src = AUX.tps[s.src]!!
-                println(">>> SET") ; println(s.dst) ; println(s.src)
+                //println(">>> SET") ; println(s.dst) ; println(s.src)
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
                     val str = if (s.dst is Expr.Var && s.dst.tk_.str == "_ret_") "return" else "assignment"
                     "invalid $str : type mismatch"
