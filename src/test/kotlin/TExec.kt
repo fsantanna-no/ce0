@@ -460,7 +460,7 @@ class TExec {
         val out = all("""
             var y: _int
             set y = _10
-            var x: /_int @local
+            var x: /_int
             set x = /y
             output std x\
         """.trimIndent())
@@ -515,7 +515,7 @@ class TExec {
     fun i06_ptr_block_err () {
         val out = all("""
             var x: _int; set x = _10
-            var p: /_int @local
+            var p: /_int
             {
                 var y: _int; set y = _10
                 set p = /x
@@ -569,7 +569,7 @@ class TExec {
         val out = all("""
             var f : [@_1,/_int@_1] -> /_int@_1
             set f = func [@_1,/_int@_1] -> /_int@_1 {
-                var ptr: /_int@local
+                var ptr: /_int
                 set ptr = arg.2
                 return ptr  -- err
             }
@@ -598,7 +598,7 @@ class TExec {
         val out = all("""
             var p: //_int @local @local
             var z: _int; set z = _10
-            var y: /_int @local; set y = /z
+            var y: /_int; set y = /z
             set p = /y
             output std p\\
         """.trimIndent())
@@ -632,7 +632,7 @@ class TExec {
     fun i14_ptr_type () {
         val out = all("""
             var v: [_int]; set v = [_10:_int]
-            var p: /_int @local; set p = /v.1
+            var p: /_int; set p = /v.1
             set p\ = _20
             output std /v
         """.trimIndent())
@@ -665,7 +665,7 @@ class TExec {
         val out = all("""
             var x: _int
             set x = _10
-            var p: </_int @local>
+            var p: </_int>
             set p = <.1 /x>: </_int @local>
             var v: _int
             set v = _20
@@ -680,7 +680,7 @@ class TExec {
             var x: _int
             set x = _10
             var p: </_int @local>
-            set p = <.1 /x>: </_int @local>
+            set p = <.1 /x>: </_int>
             var v: _int
             set v = _20
             set p = <.1 /v>: </_int @local>
@@ -693,7 +693,7 @@ class TExec {
         val out = all("""
             var x1: [_int,/_int @local]
             var v: _int; set v = _20
-            var x2: [_int,/_int @local]; set x2 = [_10:_int,/v]
+            var x2: [_int,/_int]; set x2 = [_10:_int,/v]
             set x1 = x2
             output std x1.2\
         """.trimIndent())
@@ -706,7 +706,7 @@ class TExec {
             var v: _int
             set v = _20
             var x2: </_int @local>
-            set x2 = <.1 /v>:</_int @local>
+            set x2 = <.1 /v>:</_int>
             set x1 = x2
             output std x1!1\
         """.trimIndent())
@@ -749,7 +749,7 @@ class TExec {
         val out = all("""
             var uni: <_(char*),_int>
                 set uni = <.1 _("oi")>: <_(char*),_int>
-            var ptr: /_(char*) @local
+            var ptr: /_(char*)
                 set ptr = /uni!1
             call _puts ptr\
         """.trimIndent())
@@ -775,7 +775,7 @@ class TExec {
     fun j00_list_err () {
         val out = all("""
             var l: /</^ @local> @local
-            set l = <.0>: /</^ @local> @local
+            set l = <.0>: /</^ @local>
             output std l
         """.trimIndent())
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
@@ -785,7 +785,7 @@ class TExec {
     fun j01_list () {
         val out = all("""
             var l: /</^ @local> @local
-            set l = <.0>: /</^ @local> @local
+            set l = <.0>: /</^ @local>
             output std l
         """.trimIndent())
         //assert(out == "(ln 1, col 5): invalid assignment : type mismatch") { out }
@@ -795,7 +795,7 @@ class TExec {
     fun j02_list_new_err_dst () {
         val out = all("""
             var l: /</^ @local> @local
-            set l = new <.1 <.0>: /</^ @local> @local>:</^ @local>: @local
+            set l = new <.1 <.0>: /</^>>:</^>
             output std l
         """.trimIndent())
         //assert(out == "(ln 1, col 21): invalid assignment : type mismatch") { out }
@@ -824,7 +824,7 @@ class TExec {
     fun j02_list_new_ok () {
         val out = all("""
             var l: /</^ @local> @local
-            set l = new <.1 <.0>: /</^ @local> @local>:</^ @local>: @local
+            set l = new <.1 <.0>: /</^ @local>>:</^ @local>
             output std l
         """.trimIndent())
         assert(out == "<.1 <.0>>\n") { out }

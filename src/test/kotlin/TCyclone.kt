@@ -34,7 +34,7 @@ class TCyclone {
             set strcpy = func [@a_1,@b_1,/_char@a_1,/_char@b_1] -> /_char@a_1 {
                 return arg.3
             }
-            var s1: /_char@local
+            var s1: /_char
             set s1 = call strcpy [@local,@local,s1,s1]: @local
             {
                 var s2: /_char@local
@@ -55,7 +55,7 @@ class TCyclone {
                 var ret: /_char @global -- new ...
                 return ret
             }
-            var s1: /_char@local
+            var s1: /_char
             --set s1 = call strdup s1 @local
             {
                 var s2: /_char@local

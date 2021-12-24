@@ -5,14 +5,14 @@ import org.junit.jupiter.api.TestMethodOrder
 import java.io.File
 
 val nums = """
-    var zero: /</^ @local> @local
+    var zero: /</^ @local>
     set zero = <.0>: /</^ @local> @local
-    var one: /</^ @local> @local
+    var one: /</^ @local>
     set one = new <.1 zero>:</^ @local>
-    var two: /</^ @local> @local
+    var two: /</^>
     set two = new <.1 one>:</^ @local>
-    var three: /</^ @local> @local
-    set three = new <.1 two>:</^ @local>
+    var three: /</^ @local>
+    set three = new <.1 two>:</^>
 """.trimIndent()
 
 fun Num (ptr: Boolean, scope: String): String {
@@ -101,12 +101,12 @@ class TBook {
     fun pre_01_nums() {
         val out = all(
             """
-            var zero: /</^ @local> @local
-            set zero = <.0>: /</^ @local> @local
-            var one: </^ @local>
+            var zero: /</^ @local>
+            set zero = <.0>: /</^> @local
+            var one: </^>
             set one = <.1 zero>: </^ @local>
-            var two: </^ @local>
-            set two = <.1 /one>: </^ @local>
+            var two: </^>
+            set two = <.1 /one>: </^>
             output std /two
         """.trimIndent()
         )
