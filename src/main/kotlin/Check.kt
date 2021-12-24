@@ -127,7 +127,7 @@ fun check_02_after_tps (s: Stmt) {
         when (e) {
             is Expr.Var -> {    // check closures
                 val tp = AUX.tps[e]!!
-                if (tp is Type.Func || e.tk_.str=="arg" || e.tk_.str=="_ret_") {
+                if (e.tk_.str=="arg" || e.tk_.str=="_ret_") {
                     // ok
                 } else {
                     val (var_bdepth, var_fdepth) = e.env(e.tk_.str)!!.ups_tolist().let {

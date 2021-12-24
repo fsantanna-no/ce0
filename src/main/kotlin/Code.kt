@@ -36,7 +36,7 @@ fun Type.output (c: String, arg: String): String {
     val tupuni = this is Type.Ptr && (this.pln is Type.Tuple || this.pln is Type.Union)
     return when {
         tupuni -> "output_std_${(this as Type.Ptr).pln.toce()}$c($arg);\n"
-        this is Type.Ptr || this is Type.Func -> {
+        this is Type.Ptr -> {
             if (c == "_") "putchar('_');\n" else "puts(\"_\");\n"
         }
         else -> "output_std_${this.toce()}$c($arg);\n"
