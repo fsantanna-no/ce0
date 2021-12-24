@@ -114,23 +114,8 @@ fun check_01_before_tps (s: Stmt) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-fun Type.map2 (f: (Type)->Type): Type {
-    return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec, is Type.Pool, is Type.Func -> f(this)
-        is Type.Tuple -> f(Type.Tuple(this.tk_, this.vec.map { it.map2(f) }.toTypedArray()))
-        is Type.Union -> f(Type.Union(this.tk_, this.isrec, this.vec.map { it.map2(f) }.toTypedArray()))
-        is Type.UCons -> f(Type.UCons(this.tk_, f(this.arg)))
-        //is Type.Func  -> f(Type.Func(this.tk_, this.inp.map2(f), this.out.map2(f)))
-        is Type.Ptr   -> {
-            // cannot map pln before
-            //   - that would change identity of original Ptr
-            //   - test relies on identity
-            val ret1 = f(this) as Type.Ptr
-            Type.Ptr(ret1.tk_, ret1.scope, this.pln.map2(f))
-        }
-    }
-}
 fun check_02_after_tps (s: Stmt) {
+    val funcs = mutableSetOf<Expr.Func>()   // funcs with checked [@] closure
     fun fe (e: Expr) {
         when (e) {
             is Expr.Var -> {    // check closures
@@ -151,13 +136,13 @@ fun check_02_after_tps (s: Stmt) {
                         All_assert_tk(e.tk, clo >= exp) {
                             "invalid access to \"${e.tk_.str}\" : missing closure declaration"
                         }
-                    } else {
-                        // TODO
-                        val func = e.ups_first { it is Expr.Func }
-                        if (func is Expr.Func) {
-                            All_assert_tk(func.tk, func.type.clo.lbl == "global")
-                        }
+                        funcs.add(func)
                     }
+                }
+            }
+            is Expr.Func -> {
+                All_assert_tk(e.tk, funcs.contains(e) || e.type.clo.lbl == "global") {
+                    "invalid function : unexpected closure declaration"
                 }
             }
 

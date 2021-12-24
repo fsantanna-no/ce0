@@ -2731,4 +2731,17 @@ class TEnv {
         )
         assert(out == "(ln 6, col 20): invalid access to \"x\" : missing closure declaration") { out }
     }
+    @Test
+    fun p21_pool_closure_err() {
+        val out = inp2env(
+            """
+            var f: () -> () [@local]
+            set f = func () -> () [@local] {
+                var x: ()
+                output std x
+            }
+        """.trimIndent()
+        )
+        assert(out == "(ln 2, col 9): invalid function : unexpected closure declaration") { out }
+    }
 }
