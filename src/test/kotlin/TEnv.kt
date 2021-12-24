@@ -2696,8 +2696,8 @@ class TEnv {
             """
             var f:/( @_1 -> ())
             set f = func @_1 -> () {}
-            var g: /([@_1, /(@_1->())] -> ())
-            set g = func [@_1, @_1->()] -> () {}
+            var g: /  ([@_1, /(@_1->())@_1] -> ())
+            set g = func [@_1, /(@_1->())@_1] -> () {}
             call g\ [@local,f]
         """.trimIndent()
         )
@@ -2709,8 +2709,8 @@ class TEnv {
             """
             var f:/( @_1 -> /()@_1)
             set f = func @_1 -> /()@_1 {}
-            var g: /([@_1, @_1->/()@_1] -> ())
-            set g = func [@_1, /(@_1->/()@_1)] -> () {}
+            var g: /([@_1, /(@_1->/()@_1)@_1] -> ())
+            set g = func [@_1, /(@_1->/()@_1)@_1] -> () {}
             call g\ [@local,f]
         """.trimIndent()
         )
@@ -2729,18 +2729,37 @@ class TEnv {
         assert(out == "OK") { out }
     }
     @Test
-    fun p17_pool_closure() {
+    fun p17_pool_closure_err() {
         val out = inp2env(
             """
-            var g: /(@_1 -> (@_1->()))
-            set g = func @_1 -> /(@_1->()) {
-                var f:/( @_1 -> ())
+            var g: /(@_1 -> /(@_1->())@_1)
+            set g = func @_1 -> /(@_1->())@_1 {
+                var f:/( @_1 -> ())     -- this is @local, cant return it
                 set f = func @_1 -> () {
                     output std ()
                 }           
-               return f\
+               return f                 -- can't return pointer @local
             }
-            var f: @_1 -> ()
+            var f: /(@_1 -> ())
+            set f = call g\ @local
+            call f\ @local
+        """.trimIndent()
+        )
+        assert(out == "(ln 7, col 4): invalid return : type mismatch") { out }
+    }
+    @Test
+    fun p17_pool_closure_ok() {
+        val out = inp2env(
+            """
+            var g: /(@_1 -> /(@_1->())@_1)
+            set g = func @_1 -> /(@_1->())@_1 {
+                var f:/( @_1 -> ())@_1
+                set f = func @_1 -> () {
+                    output std ()
+                }           
+               return f
+            }
+            var f: /(@_1 -> ())
             set f = call g\ @local
             call f\ @local
         """.trimIndent()

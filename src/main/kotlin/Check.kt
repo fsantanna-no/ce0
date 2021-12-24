@@ -48,6 +48,7 @@ fun check_01_before_tps (s: Stmt) {
                 val ptrs  = (tps.filter { it is Type.Ptr  } as List<Type.Ptr>).filter { it.scope != null }
                 val pools = tps.filter { it is Type.Pool } as List<Type.Pool>
                 val ok1 = ptrs.all { ptr -> pools.any { ptr.scope!!.lbl==it.tk_.lbl && ptr.scope!!.num==it.tk_.num } }
+                //println(tp.tostr())
                 All_assert_tk(tp.tk, ok1) {
                     "invalid function type : missing pool argument"
                 }
@@ -274,7 +275,7 @@ fun check_02_after_tps (s: Stmt) {
             is Stmt.Set -> {
                 val dst = AUX.tps[s.dst]!!
                 val src = AUX.tps[s.src]!!
-                //println(">>> SET") ; println(s.dst) ; println(s.src)
+                //println(">>> SET") ; println(s.dst) ; println(s.src) ; println(dst.tostr()) ; println(src.tostr())
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
                     val str = if (s.dst is Expr.Var && s.dst.tk_.str == "_ret_") "return" else "assignment"
                     "invalid $str : type mismatch"

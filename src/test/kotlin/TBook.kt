@@ -285,11 +285,11 @@ class TBook {
             $mul
             var square: /([@_1,$NumT1] -> $NumT1)
             set square = func [@_1,$NumT1] -> $NumT1 {
-                return mul [@_1,arg.2,arg.2]: @_1
+                return mul\ [@_1,arg.2,arg.2]: @_1
             }
-            var twice: /([@_1, /([@_1,$NumT1]->$NumT1), $NumT1] -> $NumT1)
-            set twice = func [@_1, /([@_1,$NumT1]->$NumT1), $NumT1] -> $NumT1 {
-                return arg.2\ [@_1, arg.2 [@_1,arg.3]: @_1]: @_1
+            var twice: /([@_1, /([@_1,$NumT1]->$NumT1)@_1, $NumT1] -> $NumT1)
+            set twice = func [@_1, /([@_1,$NumT1]->$NumT1)@_1, $NumT1] -> $NumT1 {
+                return arg.2\ [@_1, arg.2\ [@_1,arg.3]: @_1]: @_1
             }
             output std twice\ [@local,square,two]: @local
         """.trimIndent()
