@@ -190,7 +190,7 @@ fun Aux_02_tps (s: Stmt) {
                     }
                 }
             }
-            is Expr.Func -> e.type
+            is Expr.Func -> Type.Ptr(Tk.Chr(TK.CHAR, e.tk.lin, e.tk.col, '\\'), null, e.type).up(e)
             is Expr.TDisc -> AUX.tps[e.tup].let {
                 All_assert_tk(e.tk, it is Type.Tuple) {
                     "invalid discriminator : type mismatch"

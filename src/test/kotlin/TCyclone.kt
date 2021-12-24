@@ -30,16 +30,16 @@ class TCyclone {
     fun strcpy_01() {
         val out = all(
             """
-            var strcpy:       [@a_1,@b_1,/_char@a_1,/_char@b_1] -> /_char@a_1
+            var strcpy:     /([@a_1,@b_1,/_char@a_1,/_char@b_1] -> /_char@a_1)
             set strcpy = func [@a_1,@b_1,/_char@a_1,/_char@b_1] -> /_char@a_1 {
                 return arg.3
             }
             var s1: /_char
-            set s1 = call strcpy [@local,@local,s1,s1]: @local
+            set s1 = call strcpy\ [@local,@local,s1,s1]
             {
                 var s2: /_char@local
-                set s1 = call strcpy [@global,@local,s1,s2]: @global
-                set s2 = call strcpy [@local,@global,s2,s1]: @local   -- TODO: should be ok @a1/@b1
+                set s1 = call strcpy\ [@global,@local,s1,s2]: @global
+                set s2 = call strcpy\ [@local,@global,s2,s1]   -- TODO: should be ok @a1/@b1
             }
             output std ()
         """.trimIndent()
@@ -50,7 +50,7 @@ class TCyclone {
     fun strdup_02() {
         val out = all(
             """
-            var strdup:       [@_1,/_char@_1] -> /_char@global    -- TODO: @global/@xxx no need to pass
+            var strdup:     /([@_1,/_char@_1] -> /_char@global)    -- TODO: @global/@xxx no need to pass
             set strdup = func [@_1,/_char@_1] -> /_char@global {
                 var ret: /_char @global -- new ...
                 return ret
@@ -71,20 +71,20 @@ class TCyclone {
     fun fact_03 () {
         val out = all(
             """
-            var fact: [@_1,/_int@_1,_int] -> ()
+            var fact: /([@_1,/_int@_1,_int] -> ())
             set fact = func [@_1,/_int@_1,_int] -> () { @f
                 var x: _int
                 set x = _1
                 var n: _int
                 set n = arg.3
                 if _(n > 1) {
-                    call fact [@f,/x,_(n-1):_int]
+                    call fact\ [@f,/x,_(n-1):_int]
                 }
                 set arg.2\ = _(x*n)
             }
             var x: _int
             set x = _0
-            call fact [@local, /x, _6:_int]
+            call fact\ [@local, /x, _6:_int]
             output std x
         """.trimIndent()
         )

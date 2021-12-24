@@ -28,7 +28,7 @@ fun Type.pos (): String {
         is Type.Nat   -> this.tk_.str
         is Type.Tuple -> "struct " + this.toce()
         is Type.Union -> "struct " + this.toce()
-        is Type.Func  -> this.toce() + "*"
+        is Type.Func  -> this.toce() //+ "*"
     }
 }
 
