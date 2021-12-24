@@ -48,12 +48,15 @@ fun Expr.Var.env (): Stmt.Var? {
 fun env_prelude (s: Stmt): Stmt {
     val stdo = Stmt.Var (
         Tk.Str(TK.XVAR,1,1,"output_std"),
-        Type.Func (
-            Tk.Sym(TK.ARROW, 1, 1, "->"),
+        Type.Ptr (
+            Tk.Chr(TK.CHAR, 1, 1, '/'),
             Tk.Scope(TK.XSCOPE, 1, 1, "global", null),
-            Type.Any(Tk.Chr(TK.CHAR,1,1,'?')),
-            Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
-        )
+            Type.Func (
+                Tk.Sym(TK.ARROW, 1, 1, "->"),
+                Tk.Scope(TK.XSCOPE, 1, 1, "global", null),
+                Type.Any(Tk.Chr(TK.CHAR,1,1,'?')),
+                Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
+        ))
     )
     return Stmt.Seq(stdo.tk, stdo, s)
 }

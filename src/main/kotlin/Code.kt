@@ -311,9 +311,9 @@ fun code_fe (e: Expr) {
         is Expr.Call  -> {
             val arg = EXPRS.removeFirst()
             val f   = EXPRS.removeFirst()
-
+            val ff  = e.f as? Expr.Dnref
             val snd =
-                if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
+                if (ff!=null && ff.ptr is Expr.Var && ff.ptr.tk_.str=="output_std") {
                     AUX.tps[e.arg]!!.output("", arg.second)
                 } else {
                     val arg = if (AUX.tps[e.f] is Type.Nat && e.arg is Expr.Unit) "" else arg.second

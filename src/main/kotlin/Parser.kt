@@ -241,9 +241,11 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
         val tk_pre2 = if (ispre) tk_pre as Tk.Key else Tk.Key(TK.CALL,tk_pre.lin,tk_pre.col,"call")
         if (ispre && tk_pre2.enu==TK.OUTPUT) {
             all.assert_tk(e1.tk, e1 is Expr.Var) { "invalid `output` : expected identifier" }
-            e1 = Expr.Var (
-                Tk.Str(TK.XVAR,e1.tk.lin,e1.tk.col,"output_"+(e1.tk as Tk.Str).str)
-            )
+            e1 = Expr.Dnref (
+                Tk.Chr(TK.CHAR, e1.tk.lin, e1.tk.col, '\\'),
+                Expr.Var (
+                    Tk.Str(TK.XVAR,e1.tk.lin,e1.tk.col,"output_"+(e1.tk as Tk.Str).str)
+            ))
         }
         val scp = if (!all.accept(TK.CHAR, ':')) null else {
             all.accept_err(TK.XSCOPE)

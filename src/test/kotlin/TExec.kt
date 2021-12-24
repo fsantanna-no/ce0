@@ -323,7 +323,7 @@ class TExec {
     @Test
     fun e03_out () {
         val out = all("""
-            var output_f: (_int -> ())
+            var output_f: /(_int -> ())
             set output_f = func _int -> () { output std arg }
             output f _10
         """.trimIndent())

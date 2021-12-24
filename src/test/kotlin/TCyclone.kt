@@ -47,10 +47,10 @@ class TCyclone {
         assert(out == "()\n") { out }
     }
     @Test
-    fun strdup_02() {
+    fun strdup_02() { // TODO: @global/@xxx no need to pass
         val out = all(
             """
-            var strdup:     /([@_1,/_char@_1] -> /_char@global)    -- TODO: @global/@xxx no need to pass
+            var strdup:     /([@_1,/_char@_1] -> /_char@global)
             set strdup = func [@_1,/_char@_1] -> /_char@global {
                 var ret: /_char @global -- new ...
                 return ret
