@@ -1,16 +1,32 @@
+fun Tk.Scope.check (up: Any) {
+    val (lbl, num) = this.let { Pair(it.lbl, it.num) }
+    val ok = when {
+        (lbl == "global") -> true
+        (lbl == "local") -> true
+        //(up is Type.Func) -> true                             // ... -> ... [@_1]
+        (up.ups_first { it is Type.Func } != null) -> true      // @_1 -> ...
+        (up.ups_first { it is Stmt.Block && it.scope != null && it.scope.lbl == lbl && it.scope.num == num } != null) -> true
+        (up.ups_first {
+            it is Expr.Func && it.type.inp.pools().any { it.tk_.lbl == lbl && it.tk_.num == num }
+        } != null) -> true
+        else -> false
+    }
+    All_assert_tk(this, ok) {
+        val n = if (num == null) "" else "_$num"
+        "undeclared scope \"@$lbl$n\""
+    }
+}
+
 fun check_01_before_tps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
             is Type.Pool -> {
+                tp.tk_.check(tp)
                 val isfunc = (tp.ups_first { it is Type.Func } != null)
                 val isarg  = (tp.ups_first { it is Stmt.Var && it.tk_.str=="arg" } != null)
                 if (isfunc || isarg) {
                     All_assert_tk(tp.tk, tp.tk_.num != null) {
                         "invalid pool : expected `_N´ depth"
-                    }
-                } else {
-                    All_assert_tk(tp.tk, tp.tk_.num == null) {
-                        "invalid pool : unexpected `_${tp.tk_.num}´ depth"
                     }
                 }
             }
@@ -25,21 +41,9 @@ fun check_01_before_tps (s: Stmt) {
                 }
 
             }
-            is Type.Ptr -> {
-                val (lbl,num) = tp.scope!!.let { Pair(it.lbl,it.num) }
-                val ok = when {
-                    (lbl == "global") -> true
-                    (lbl == "local")  -> true
-                    (tp.ups_first { it is Type.Func } != null) -> true
-                    (tp.ups_first { it is Stmt.Block && it.scope!=null && it.scope.lbl==lbl && it.scope.num==num } != null) -> true
-                    (tp.ups_first { it is Expr.Func && it.type.inp.pools().any { it.tk_.lbl==lbl && it.tk_.num==num } } != null) -> true
-                    else -> false
-                }
-                All_assert_tk(tp.tk, ok) {
-                    "undeclared scope \"@$lbl\""
-                }
-            }
+            is Type.Ptr -> tp.scope!!.check(tp)
             is Type.Func -> {
+                tp.clo.check(tp)
                 val tps   = tp.flatten()
                 val ptrs  = (tps.filter { it is Type.Ptr  } as List<Type.Ptr>).filter { it.scope != null }
                 val pools = tps.filter { it is Type.Pool } as List<Type.Pool>
@@ -83,6 +87,9 @@ fun check_01_before_tps (s: Stmt) {
                     "invalid operand to `/´ : union discriminator"
                 }
             }
+            is Expr.Pool -> e.tk_.check(e)
+            is Expr.New  -> e.scope.check(e)
+            is Expr.Call -> e.scope.let { if (it != null) it.check(e) }
         }
     }
     fun fs (s: Stmt) {
@@ -123,18 +130,19 @@ fun check_02_after_tps (s: Stmt) {
                 if (tp is Type.Func || e.tk_.str=="arg" || e.tk_.str=="_ret_") {
                     // ok
                 } else {
-                    val var_depth = e.env(e.tk_.str)!!.ups_tolist().filter { it is Expr.Func }.count()
-                    val exp_depth = e.ups_tolist().filter { it is Expr.Func }.count()
-                    println(e)
-                    println("$exp_depth > $var_depth")
-                    if (var_depth>0 && var_depth<exp_depth) {
+                    val (var_bdepth, var_fdepth) = e.env(e.tk_.str)!!.ups_tolist().let {
+                        Pair(it.filter { it is Stmt.Block }.count(), it.filter { it is Expr.Func }.count())
+                    }
+                    val (exp_bdepth, exp_fdepth) = e.ups_tolist().let {
+                        Pair(it.filter { it is Stmt.Block }.count(), it.filter { it is Expr.Func }.count())
+                    }
+                    if (var_bdepth>0 && var_fdepth<exp_fdepth) {
                         // access is inside function, declaration is outside
                         val func = e.ups_first { it is Expr.Func } as Expr.Func
                         val clo = func.type.clo.scope(func.type).depth
-                        val exp = e.ups_tolist().filter { it is Stmt.Block }.count()
-                        println("$clo <= $exp")
-                        All_assert_tk(e.tk, clo >= exp) {
-                            "invalid access to \"${e.tk_.str}\" : missing closure declaration"
+                        println("$clo >= $var_bdepth")
+                        All_assert_tk(e.tk, clo >= var_bdepth) {
+                            "invalid access to \"${e.tk_.str}\" : invalid closure declaration (ln ${func.tk.lin})"
                         }
                         funcs.add(func)
                     }

@@ -52,7 +52,7 @@ class TCyclone {
             """
             var strdup:       [@_1,/_char@_1] -> /_char@global    -- TODO: @global/@xxx no need to pass
             set strdup = func [@_1,/_char@_1] -> /_char@global {
-                var ret: /_char @global
+                var ret: /_char @global -- new ...
                 return ret
             }
             var s1: /_char@local

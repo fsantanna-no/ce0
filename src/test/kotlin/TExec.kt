@@ -1301,8 +1301,8 @@ class TExec {
         val out = all("""
             { @a
                 var pa: /</^ @local> @local
-                var f: ()->()
-                set f = func ()->() {
+                var f: ()->() [@a]
+                set f = func ()->() [@a] {
                     var pf: /</^ @a> @a
                     set pf = new <.1 <.0>: /</^ @a> @a>:</^ @a>: @a
                     set pa = pf
@@ -1496,10 +1496,10 @@ class TExec {
             """
             var g: @_1 -> (@_1->())
             set g = func @_1 -> (@_1->()) {
-                var f: @_1 -> ()
+                var f: @_1 -> () [@_1]
                 var x: /</^@_1>@_1
                 set x = new <.1 <.0>:/</^@_1>@_1>: </^@_1>: @_1
-                set f = func @_1 -> () {
+                set f = func @_1 -> () [@_1] {
                     output std x
                 }
                return f
@@ -1530,7 +1530,7 @@ class TExec {
             call f @local
         """.trimIndent()
         )
-        assert(out == "(ln 7, col 20): invalid access to \"x\" : missing closure declaration") { out }
+        assert(out == "(ln 7, col 20): invalid access to \"x\" : invalid closure declaration (ln 6)") { out }
     }
 
     // ALL
