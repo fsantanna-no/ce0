@@ -163,7 +163,7 @@ class TEnv {
     fun b13_user_empty_ok () {
         val out = inp2env("""
             var l: </^ @local>
-            set l = new <.1 <.0>:/</^ @local>@local>:</^ @local>: @local
+            set l = new <.1 <.0>:/</^ @local>@local>:</^ @local>
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
@@ -239,11 +239,11 @@ class TEnv {
     @Test
     fun c04_type_func_arg () {
         val out = inp2env("""
-            var f : [(),()] -> ()
+            var f : / ([(),()] -> ()) @local
             set f = func ([(),()] -> ()) { }
-            call f()
+            call f\ ()
         """.trimIndent())
-        assert(out == "(ln 3, col 6): invalid call : type mismatch") { out }
+        assert(out == "(ln 3, col 7): invalid call : type mismatch") { out }
     }
     @Test
     fun c05_type_idx () {
@@ -473,52 +473,6 @@ class TEnv {
         assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
     }
 
-    // DEPTH
-/*
-    @Test
-    fun d01_block () {
-        val s = pre("var x: ()->() ; { call x }")
-        fun fe (e: Expr) {
-            if (e is Expr.Var && e.tk_.str=="x") {
-                assert(0 == e.getDepth(0,true).first)
-            }
-        }
-        fun fs (s: Stmt) {
-            if (s is Stmt.Block) {
-                assert(s.getDepth() == 0)
-            }
-        }
-        s.visit(::fs, null, ::fe, null)
-    }
-    @Test
-    fun d02_func () {
-        val s = pre("var x: ()->() ; var f: ()->() = func ()->() { var y: ()->() = x ; call y ; set x }")
-        fun fe (e: Expr) {
-            if (e is Expr.Var) {
-                if (e.tk_.str == "x") {
-                    assert(0 == e.getDepth(0, true).first)
-                }
-                if (e.tk_.str == "y") {
-                    //assert(2 == s.getDepth(false))
-                }
-            }
-        }
-        fun fs (s: Stmt) {
-            if (s is Stmt.Var) {
-                if (s.tk_.str == "x") {
-                    assert(0 == s.getDepth())
-                }
-                if (s.tk_.str == "y") {
-                    assert(2 == s.getDepth())
-                }
-            }
-            if (s is Stmt.Set) {
-                assert(0 == s.dst.getDepth(s.getDepth(), true).first)
-            }
-        }
-        s.visit(::fs, null, ::fe, null)
-    }
-*/
     // POINTERS / SCOPE / @global
 
     @Test
@@ -608,7 +562,7 @@ class TEnv {
         val out = inp2env("""
             { @a
                 var pa: /_int @local
-                var f: ()->() [@a]
+                var f: / (()->() [@a]) @local
                 set f = func ()->() [@a] {
                     var pf: /_int @a
                     set pa = pf
@@ -656,14 +610,14 @@ class TEnv {
     @Test
     fun e08_ptr_ok () {
         val out = inp2env("""
-            var f: [@a_1,/()@a_1]->()
+            var f: / ([@a_1,/()@a_1]->()) @local
             set f = func [@a_1,/()@a_1]->() {
                 var pf: /_int @a_1
                 set pf = arg.2
             }
             {
                 var x: ()
-                call f [@local,/x]
+                call f\ [@local,/x]
             }
         """.trimIndent())
         assert(out == "OK") { out }
@@ -708,7 +662,7 @@ class TEnv {
     @Test
     fun e12_func_ok () {
         val out = inp2env("""
-            var f: [@a_1,@a_2,/()@a_1,/()@a_2]->()
+            var f: / ([@a_1,@a_2,/()@a_1,/()@a_2]->())
             set f = func [@a_1,@a_2,/()@a_1,/()@a_2]->() {}
         """.trimIndent())
         assert(out == "OK") { out }
@@ -1457,7 +1411,7 @@ class TEnv {
             var p: /</^ @local> @local
             {
                 var l: /</^ @local> @local
-                set l = new <.1 (new <.1 <.0>:/</^@local> @local>:</^@local>: @local)>:</^@local>: @local
+                set l = new <.1 (new <.1 <.0>:/</^@local> @local>:</^@local>)>:</^@local>
                 set p = l   -- err: p<l
             }
             output std p
@@ -1483,7 +1437,7 @@ class TEnv {
             var p: /</^ @local> @local
             {
                 var l: [/</^ @local> @local]
-                set l = [new <.1 (new <.1 <.0>:/</^@local>@local>:</^@local>: @local)>:</^@local>: @local]
+                set l = [new <.1 (new <.1 <.0>:/</^@local>@local>:</^@local>)>:</^@local>: @local]
                 set p = l.1     -- err: p<l
             }
             output std p
@@ -1519,7 +1473,7 @@ class TEnv {
     fun i06_uni_rec_ok1 () {
         val out = inp2env("""
             var ret: /<(),/</^^ @local,/^ @local> @local> @local
-            set ret = new <.1>:<(),/</^^ @local,/^ @local> @local>: @local
+            set ret = new <.1>:<(),/</^^ @local,/^ @local> @local>
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1531,9 +1485,9 @@ class TEnv {
             set ret =
                 new <.2
                     new <.1
-                        new <.1>: @local
-                    >: @local
-                >: @local
+                        new <.1>
+                    >
+                >
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1542,7 +1496,7 @@ class TEnv {
     fun i06_uni_rec_ok3 () {
         val out = inp2env("""
             var ret: /<(),/</^^ @local,/^ @local> @local> @local
-            set ret = new <.2 new <.2 new <.2 <.0>>: @local>: @local>: @local
+            set ret = new <.2 new <.2 new <.2 <.0>>: @local>>
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1551,7 +1505,7 @@ class TEnv {
     fun i06_uni_rec_ok4 () {
         val out = inp2env("""
             var ret: /<(),/</^^ @local,/^ @local> @local> @local
-            set ret = new <.2 new <.1 new <.1>: @local>: @local>: @local
+            set ret = new <.2 new <.1 new <.1>: @local>: @local>
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1560,7 +1514,7 @@ class TEnv {
     fun i06_uni_rec_ok5 () {
         val out = inp2env("""
             var ret: /<(),/</^^ @local,/^ @local> @local> @local
-            set ret = new <.2 new <.2 new <.1 new <.1>: @local>: @local> :@local>: @local
+            set ret = new <.2 new <.2 new <.1 new <.1>>>>
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1595,7 +1549,7 @@ class TEnv {
     fun i08_mutual () {
         val out = inp2env("""
             var e: /<(), <(),/^^ @local>> @local
-            set e = new <.2 <.1>:<(),/<(), <(),/^^ @local>> @local>>:<(), <(),/^^ @local>>: @local
+            set e = new <.2 <.1>:<(),/<(), <(),/^^ @local>> @local>>:<(), <(),/^^ @local>>
             var s: /<(), <(),/^^ @local>> @local
             set s = e\!2!2
         """.trimIndent())
@@ -1615,7 +1569,7 @@ class TEnv {
     fun i10_mutual () {
         val out = inp2env("""
             var e: /<</^^ @local,()>, ()> @local
-            set e = new <.1 new <.2>:</<</^^ @local,()>, ()> @local,()>: @local>:<</^^ @local,()>, ()>: @local
+            set e = new <.1 new <.2>:</<</^^ @local,()>, ()> @local,()>>:<</^^ @local,()>, ()>
                -- err: ~new~ <.2>
         """.trimIndent())
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
@@ -1711,7 +1665,7 @@ class TEnv {
     fun j10_rec_tup () {
         val out = inp2env("""
             var x: /<(),[/^ @local]> @local
-            set x = new <.2 [new <.1>:<(),[/^ @local]>: @local]>:<(),[/^ @local]>: @local
+            set x = new <.2 [new <.1>:<(),[/^ @local]> ]>:<(),[/^ @local]>
         """.trimIndent())
         assert(out == "OK") { out }
     }

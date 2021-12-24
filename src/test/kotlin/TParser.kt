@@ -99,29 +99,15 @@ class TParser {
     fun a09_parser_type_ptr_err () {
         val all = All_new(PushbackReader(StringReader("/()"), 2))
         lexer(all)
-        //val tp = parser_type(all)
-        try {
-            parser_type(all)
-            error("impossible case")
-        } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 4): expected `@´ : have end of file") { e.message!! }
-        }
+        val tp = parser_type(all)
+        assert(tp is Type.Ptr && tp.scope!!.lbl=="local")      // error on check
     }
     @Test
     fun a09_parser_type_ptr_err2 () {
         val all = All_new(PushbackReader(StringReader("/()@"), 2))
         lexer(all)
         val tp = parser_type(all)
-        println(tp)
-        assert(tp is Type.Ptr && tp.scope!!.lbl=="")      // error on check
-        /*
-        try {
-            parser_type(all)
-            error("impossible case")
-        } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 4): expected `@´ : have \"@\"") { e.message!! }
-        }
-         */
+        assert(tp is Type.Ptr && tp.scope!!.lbl=="")
     }
     @Test
     fun a10_parser_type_ptr0 () {

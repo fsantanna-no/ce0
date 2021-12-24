@@ -8,8 +8,8 @@ fun parser_type (all: All): Type {
             all.accept(TK.CHAR,'/') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val pln = one()
-                all.accept_err(TK.XSCOPE)
-                Type.Ptr(tk0, all.tk0 as Tk.Scope, pln)
+                val scp = if (all.accept(TK.XSCOPE)) (all.tk0 as Tk.Scope) else Tk.Scope(TK.XSCOPE,all.tk0.lin,all.tk0.col,"local",null)
+                Type.Ptr(tk0, scp, pln)
             }
             all.accept(TK.CHAR,'(') -> {
                 val tp = parser_type(all)
@@ -139,9 +139,13 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                     //"invalid `new` : unexpected <.0>"
                     "invalid `new` : expected constructor"
                 }
-                all.accept_err(TK.CHAR, ':')
-                all.accept_err(TK.XSCOPE)
-                Expr.New(tk0 as Tk.Key, all.tk0 as Tk.Scope, e as Expr.UCons)
+                val scp = if (all.accept(TK.CHAR, ':')) {
+                    all.accept_err(TK.XSCOPE)
+                    all.tk0 as Tk.Scope
+                } else {
+                    Tk.Scope(TK.XSCOPE, all.tk0.lin, all.tk0.col, "local", null)
+                }
+                Expr.New(tk0 as Tk.Key, scp, e as Expr.UCons)
             }
             all.accept(TK.FUNC) -> {
                 val tk0 = all.tk0 as Tk.Key
