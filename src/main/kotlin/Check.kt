@@ -1,13 +1,15 @@
 fun Tk.Scope.check (up: Any) {
     val (lbl, num) = this.let { Pair(it.lbl, it.num) }
     val ok = when {
-        (lbl == "global") -> true
-        (lbl == "local") -> true
+        (lbl == "global") -> true                               // @global
+        (lbl == "local") -> true                                // @local
         //(up is Type.Func) -> true                             // ... -> ... [@_1]
-        (up.ups_first { it is Type.Func } != null) -> true      // @_1 -> ...
-        (up.ups_first { it is Stmt.Block && it.scope != null && it.scope.lbl == lbl && it.scope.num == num } != null) -> true
-        (up.ups_first {
-            it is Expr.Func && it.type.inp.pools().any { it.tk_.lbl == lbl && it.tk_.num == num }
+        (up.ups_first { it is Type.Func } != null) -> true      // (@_1 -> ...)
+        (up.ups_first {                                         // { @aaa ... @aaa }
+            it is Stmt.Block && it.scope!=null && it.scope.lbl==lbl && it.scope.num==num
+        } != null) -> true
+        (up.ups_first {                                         // [@_1, ...] { @_1 }
+            it is Expr.Func && it.type.inp.pools().any { it.tk_.lbl==lbl && it.tk_.num==num }
         } != null) -> true
         else -> false
     }
@@ -47,7 +49,20 @@ fun check_01_before_tps (s: Stmt) {
                 val tps   = tp.flatten()
                 val ptrs  = (tps.filter { it is Type.Ptr  } as List<Type.Ptr>).filter { it.scope != null }
                 val pools = tps.filter { it is Type.Pool } as List<Type.Pool>
-                val ok1 = ptrs.all { ptr -> pools.any { ptr.scope!!.lbl==it.tk_.lbl && ptr.scope!!.num==it.tk_.num } }
+                val ok1 = ptrs.all {
+                    val ptr = it.scope!!
+                    when {
+                        (ptr.lbl == "global") -> true       // @global
+                        //(ptr.lbl == "local")  -> true       // @local
+                        pools.any {                         // (@_1 -> ...@_1...)
+                            ptr.lbl==it.tk_.lbl && ptr.num==it.tk_.num
+                        } -> true
+                        (tp.ups_first {                     // { @aaa \n ...@aaa... }
+                            it is Stmt.Block && it.scope!=null && it.scope.lbl==ptr.lbl && it.scope.num==ptr.num
+                        } != null) -> true
+                        else -> false
+                    }
+                }
                 //println(tp.tostr())
                 All_assert_tk(tp.tk, ok1) {
                     "invalid function type : missing pool argument"

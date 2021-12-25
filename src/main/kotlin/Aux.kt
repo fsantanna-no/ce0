@@ -8,6 +8,24 @@ object AUX {
 
 //////////////////////////////////////////////////////////////////////////////
 
+// TODO: use these variations?
+/*
+fun Any?.ups_tolist2(): List<Any> {
+    return when {
+        (this == null) -> emptyList()
+        else -> { listOf(this) + AUX.ups[this].ups_tolist2() }
+    }
+}
+
+fun Any?.ups_first2 (f: (Any)->Boolean): Any? {
+    return when {
+        (this == null) -> null
+        f(this) -> this
+        else -> AUX.ups[this]?.ups_first(f)
+    }
+}
+ */
+
 fun Any.ups_tolist(): List<Any> {
     return when {
         (AUX.ups[this] == null) -> emptyList()

@@ -2894,4 +2894,13 @@ class TEnv {
         )
         assert(out == "ERR") { out }
     }
+    @Test
+    fun p25_pool_closure_err() {
+        val out = inp2env(
+            """
+            var f: () -> /()@global
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
 }
