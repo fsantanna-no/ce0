@@ -60,7 +60,7 @@ class TCyclone {
             {
                 var s2: /_char@local
                 --set s1 = call strdup\ [@local,s2]: @global
-                set s2 = call strdup\ [@global,s1]: @local
+                set s2 = call strdup\ [@global,s1]: @global
             }
             output std ()
         """.trimIndent()

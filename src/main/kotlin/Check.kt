@@ -213,8 +213,11 @@ fun check_02_after_tps (s: Stmt) {
 
                     fun aux (func:Type, call:Type): Type {
 
-                        fun lbl_num (tk: Tk.Scope): Pair<String,Int> {
-                            val key = tk.num!!
+                        fun lbl_num (tk: Tk.Scope): Pair<String,Int?> {
+                            if (tk.num == null) {
+                                return Pair(tk.lbl,null)
+                            }
+
                             val new = call.scope().depth
                             /*
                             println("===")
@@ -224,20 +227,20 @@ fun check_02_after_tps (s: Stmt) {
                              */
                             acc[tk.lbl].let {
                                 if (it == null) {
-                                    acc[tk.lbl] = mutableMapOf(Pair(key,new))
+                                    acc[tk.lbl] = mutableMapOf(Pair(tk.num,new))
                                 } else {
                                     val ok = it.all {
                                         when {
-                                            (it.key == key) -> (it.value == new)
-                                            (it.key > key)  -> (it.value >= new)
-                                            (it.key < key)  -> (it.value <= new)
+                                            (it.key == tk.num) -> (it.value == new)
+                                            (it.key > tk.num)  -> (it.value >= new)
+                                            (it.key < tk.num)  -> (it.value <= new)
                                             else -> error("bug found")
                                         }
                                     }
                                     All_assert_tk(call.tk, ok) {
                                         "invalid call : incompatible scopes"
                                     }
-                                    it[key] = new
+                                    it[tk.num] = new
                                 }
                             }
                             return Pair(tk.lbl,tk.num)
@@ -260,6 +263,7 @@ fun check_02_after_tps (s: Stmt) {
                             }
                             is Type.Ptr -> {
                                 if (func !is Type.Ptr) call else {
+                                    println(func)
                                     val (lbl, num) = lbl_num(func.scope!!)
                                     val pln = aux(func.pln, call.pln)
                                     //println(call)
