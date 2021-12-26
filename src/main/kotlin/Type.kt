@@ -166,10 +166,12 @@ fun Tk.Scope?.scope (up: Any): Scope {
 }
 
 fun Type.scope (): Scope {
-    val tk = when (this) {
-        is Type.Pool -> this.tk_
-        is Type.Ptr  -> this.scope
-        else -> error("bug found")
+    return when (this) {
+        is Type.Pool -> this.tk_.scope(this)
+        is Type.Ptr  -> this.scope.scope(this)
+        else -> {
+            val lvl = this.ups_tolist().filter { it is Expr.Func }.count()
+            Scope(lvl, null, this.ups_tolist().let { it.count { it is Stmt.Block } })
+        }
     }
-    return tk.scope(this)
 }

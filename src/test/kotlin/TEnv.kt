@@ -207,6 +207,13 @@ class TEnv {
         """.trimIndent())
         assert(out == "(ln 2, col 9): undeclared scope \"@aaa\"") { out }
     }
+    @Test
+    fun b18_pool_err () {
+        val out = inp2env("""
+            var g: / {} () -> /_int   -- pointer in func proto must have @x
+        """.trimIndent())
+        assert(out == "(ln 1, col 19): invalid pointer : missing pool label") { out }
+    }
 
     // TYPE
 
@@ -2572,10 +2579,10 @@ class TEnv {
     @Test
     fun p01_pool_err () {
         val out = inp2env("""
-            var f : {}/()@local -> /()@local
+            var f : {}/()@_1 -> /()@_1
         """.trimIndent()
         )
-        assert(out == "(ln 1, col 21): invalid function type : missing pool argument") { out }
+        assert(out == "(ln 1, col 18): invalid function type : missing pool argument") { out }
     }
     @Test
     fun p02_pool_ok () {

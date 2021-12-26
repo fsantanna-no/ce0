@@ -45,6 +45,9 @@ fun check_01_before_tps (s: Stmt) {
                 }
                 val ok1 = ptrs.all {
                     val ptr = it.scope!!
+                    All_assert_tk(it.tk, ptr.lbl != "local") {
+                        "invalid pointer : missing pool label"
+                    }
                     when {
                         (ptr.lbl == "global") -> true       // @global
                         //(ptr.lbl == "local")  -> true       // @local
@@ -157,17 +160,16 @@ fun check_02_after_tps (s: Stmt) {
                 if (e.tk_.str=="arg" || e.tk_.str=="_ret_") {
                     // ok
                 } else {
-                    val (var_bdepth, var_fdepth) = e.env(e.tk_.str)!!.ups_tolist().let {
-                        Pair(it.filter { it is Stmt.Block }.count(), it.filter { it is Expr.Func }.count())
-                    }
+                    val var_scope = e.env(e.tk_.str)!!.type.scope()
                     val (exp_bdepth, exp_fdepth) = e.ups_tolist().let {
                         Pair(it.filter { it is Stmt.Block }.count(), it.filter { it is Expr.Func }.count())
                     }
-                    if (var_bdepth>0 && var_fdepth<exp_fdepth) {
+                    if (var_scope.depth>0 && var_scope.lvl<exp_fdepth) {
                         // access is inside function, declaration is outside
                         val func = e.ups_first { it is Expr.Func } as Expr.Func
                         val clo = func.type.clo.scope(func.type).depth
-                        All_assert_tk(e.tk, clo >= var_bdepth) {
+                        //println("$clo >= ${var_scope.depth}")
+                        All_assert_tk(e.tk, clo >= var_scope.depth) {
                             "invalid access to \"${e.tk_.str}\" : invalid closure declaration (ln ${func.tk.lin})"
                         }
                         funcs.add(func)
