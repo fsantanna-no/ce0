@@ -1560,9 +1560,9 @@ class TExec {
     fun n10_pool_closure_err() {
         val out = all(
             """
-            var const:       {} [@_1,\_int@_1] -> ({@_1} -> () -> /_int@_1)
-            set const = func {} [@_1,\_int@_1] -> ({@_1} -> () -> /_int@_1) {
-                var x: \_int@_1
+            var const:       {} [@_1,/_int@_1] -> ({@_1} () -> /_int@_1)
+            set const = func {} [@_1,/_int@_1] -> ({@_1} () -> /_int@_1) {
+                var x: /_int@_1
                 set x = arg.2
                 return func {@_1} () -> /_int@_1 {
                     return x
@@ -1570,9 +1570,9 @@ class TExec {
             }
             var five: _int
             set five = _5
-            var f: /([@local] () -> /_int@local)@local
+            var f: / ({@local} () -> /_int)
             set f = const [@local,/five]
-            output std f\
+            output std f\ @local
         """.trimIndent()
         )
         assert(out == "<.1 <.0>>\n<.1 <.1 <.0>>>\n") { out }

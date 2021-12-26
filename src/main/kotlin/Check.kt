@@ -38,7 +38,7 @@ fun check_01_before_tps (s: Stmt) {
             is Type.Func -> {
                 tp.clo.check(tp)
                 val tps   = tp.flatten()
-                val ptrs  = (tps.filter { it is Type.Ptr  } as List<Type.Ptr>).filter { it.scope != null }
+                val ptrs  = (tps.filter { it is Type.Ptr } as List<Type.Ptr>).filter { it.scope != null }
                 val pools = tps.filter { it is Type.Pool } as List<Type.Pool>
                 All_assert_tk(tp.tk, pools.all { it.tk_.num != null }) {
                     "invalid pool : expected `_N´ depth"
@@ -48,6 +48,7 @@ fun check_01_before_tps (s: Stmt) {
                     when {
                         (ptr.lbl == "global") -> true       // @global
                         //(ptr.lbl == "local")  -> true       // @local
+                        tp.clo.let { ptr.lbl==it.lbl && ptr.num==it.num } -> true   // {@a} ...@a
                         pools.any {                         // (@_1 -> ...@_1...)
                             ptr.lbl==it.tk_.lbl && ptr.num==it.tk_.num
                         } -> true
