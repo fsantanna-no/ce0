@@ -22,16 +22,7 @@ fun Tk.Scope.check (up: Any) {
 fun check_01_before_tps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
-            is Type.Pool -> {
-                tp.tk_.check(tp)
-                val isfunc = (tp.ups_first { it is Type.Func } != null)
-                val isarg  = (tp.ups_first { it is Stmt.Var && it.tk_.str=="arg" } != null)
-                if (isfunc || isarg) {
-                    All_assert_tk(tp.tk, tp.tk_.num != null) {
-                        "invalid pool : expected `_N´ depth"
-                    }
-                }
-            }
+            is Type.Pool -> tp.tk_.check(tp)
             is Type.Rec -> {
                 val str = "^".repeat(tp.tk_.up)
                 All_assert_tk(tp.tk, AUX.ups[tp] is Type.Ptr) {
@@ -49,6 +40,9 @@ fun check_01_before_tps (s: Stmt) {
                 val tps   = tp.flatten()
                 val ptrs  = (tps.filter { it is Type.Ptr  } as List<Type.Ptr>).filter { it.scope != null }
                 val pools = tps.filter { it is Type.Pool } as List<Type.Pool>
+                All_assert_tk(tp.tk, pools.all { it.tk_.num != null }) {
+                    "invalid pool : expected `_N´ depth"
+                }
                 val ok1 = ptrs.all {
                     val ptr = it.scope!!
                     when {
@@ -103,6 +97,19 @@ fun check_01_before_tps (s: Stmt) {
                     "invalid operand to `/´ : union discriminator"
                 }
             }
+            is Expr.Func -> {
+                val pools = e.type.flatten().filter { it is Type.Pool } as List<Type.Pool>
+                val funcs = e.ups_tolist().filter { it is Expr.Func } as List<Expr.Func>
+                for (f in funcs) {
+                    val pools2 = f.type.flatten().filter { it is Type.Pool } as List<Type.Pool>
+                    println(pools2)
+                    val err = pools2.find { pool2 -> pools.any { pool -> pool.tk_.lbl==pool2.tk_.lbl } }
+                    All_assert_tk(e.tk, err==null) {
+                        "invalid pool : \"@${err!!.tk_.lbl}\" is already declared (ln ${err!!.tk.lin})"
+                    }
+                }
+            }
+
             is Expr.Pool -> e.tk_.check(e)
             is Expr.New  -> e.scope.check(e)
             is Expr.Call -> e.scope.let { if (it != null) it.check(e) }
@@ -127,8 +134,11 @@ fun check_01_before_tps (s: Stmt) {
                     All_assert_tk(s.scope, s.scope.num == null) {
                         "invalid pool : unexpected `_${s.scope!!.num}´ depth"
                     }
+                    val ok = s.ups_first { it is Stmt.Block && it.scope?.lbl==s.scope.lbl } as Stmt.Block?
+                    All_assert_tk(s.scope, ok==null) {
+                        "invalid pool : \"@${s.scope.lbl}\" is already declared (ln ${ok!!.tk.lin})"
+                    }
                 }
-
             }
         }
     }

@@ -1499,15 +1499,15 @@ class TExec {
     fun n07_pool_closure() {
         val out = all(
             """
-            var g: /(@_1 -> /(@_1->())@_1)
-            set g = func @_1 -> /(@_1->())@_1 {
-                var f: /(@_1 -> ())@_1
-                set f = func @_1 -> () {
+            var g: /(@a_1 -> /(@a_1->())@a_1)
+            set g = func @a_1 -> /(@a_1->())@a_1 {
+                var f: /(@a_1 -> ())@a_1
+                set f = func @a_1 -> () {
                     output std ()
                 }
                return f
             }
-            var f: /(@_1 -> ())
+            var f: /(@a_1 -> ())
             set f = call g\ @local
             call f\ @local
         """.trimIndent()
@@ -1520,10 +1520,10 @@ class TExec {
             """
             var g: /(@_1 -> /(@_1->())@_1)
             set g = func @_1 -> /(@_1->())@_1 {
-                var f: /(@_1 -> () [@_1])
+                var f: /(@b_1 -> () [@b_1])
                 var x: /</^@_1>@_1
                 set x = new <.1 <.0>:/</^@_1>@_1>: </^@_1>: @_1
-                set f = func @_1 -> () [@_1] {
+                set f = func @b_1 -> () [@b_1] {
                     output std x
                 }
                return f
@@ -1541,10 +1541,10 @@ class TExec {
             """
             var g: /(@_1 -> (@_1->()))
             set g = func @_1 -> (@_1->()) {
-                var f: /(@_1 -> ())
+                var f: /(@a_1 -> ())
                 var x: /</^@local>@local
                 set x = new <.1 <.0>:/</^@local>@local>: </^@local>
-                set f = func @_1 -> () {
+                set f = func @a_1 -> () {
                     output std x    -- f uses x in @local
                 }
                return f             -- cannot return f which uses x in @local

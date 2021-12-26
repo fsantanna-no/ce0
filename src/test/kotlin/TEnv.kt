@@ -576,7 +576,7 @@ class TEnv {
         val out = inp2env("""
             { @a
                 var pa: /_int @local
-                var f: ()->()
+                var f: /(()->())
                 set f = func ()->() {
                     var pf: /_int @a
                     set pa = pf
@@ -2600,7 +2600,7 @@ class TEnv {
         """.trimIndent()
         )
         //assert(out == "(ln 1, col 22): invalid function type : missing pool argument") { out }
-        assert(out == "(ln 1, col 10): invalid pool : expected `_N´ depth") { out }
+        assert(out == "(ln 1, col 22): invalid pool : expected `_N´ depth") { out }
     }
     @Test
     fun p06_pool_ok () {
@@ -2624,7 +2624,7 @@ class TEnv {
             var f : [@a,/()@a] -> /()@a
         """.trimIndent()
         )
-        assert(out == "(ln 1, col 10): invalid pool : expected `_N´ depth") { out }
+        assert(out == "(ln 1, col 20): invalid pool : expected `_N´ depth") { out }
     }
     @Test
     fun p09_pool_err () {
@@ -2732,15 +2732,15 @@ class TEnv {
     fun p17_pool_closure_err() {
         val out = inp2env(
             """
-            var g: /(@_1 -> /(@_1->())@_1)
-            set g = func @_1 -> /(@_1->())@_1 {
-                var f:/( @_1 -> ())     -- this is @local, cant return it
-                set f = func @_1 -> () {
+            var g: /(@a_1 -> /(@a_1->())@a_1)
+            set g = func @a_1 -> /(@a_1->())@a_1 {
+                var f:/( @b_1 -> ())     -- this is @local, cant return it
+                set f = func @b_1 -> () {
                     output std ()
                 }           
                return f                 -- can't return pointer @local
             }
-            var f: /(@_1 -> ())
+            var f: /(@a_1 -> ())
             set f = call g\ @local
             call f\ @local
         """.trimIndent()
@@ -2751,15 +2751,15 @@ class TEnv {
     fun p17_pool_closure_ok() {
         val out = inp2env(
             """
-            var g: /(@_1 -> /(@_1->())@_1)
-            set g = func @_1 -> /(@_1->())@_1 {
-                var f:/( @_1 -> ())@_1
-                set f = func @_1 -> () {
+            var g: /(@a_1 -> /(@a_1->())@a_1)
+            set g = func @a_1 -> /(@a_1->())@a_1 {
+                var f:/( @b_1 -> ())@b_1
+                set f = func @b_1 -> () {
                     output std ()
                 }           
                return f
             }
-            var f: /(@_1 -> ())
+            var f: /(@a_1 -> ())
             set f = call g\ @local
             call f\ @local
         """.trimIndent()
@@ -2830,17 +2830,17 @@ class TEnv {
     fun p22_pool_closure_err() {
         val out = inp2env(
             """
-            var g: @_1 -> (@_1->())
-            set g = func @_1 -> (@_1->()) {
-                var f: @_1 -> ()
-                var x: /</^@_1>@_1
-                set x = new <.1 <.0>:/</^@_1>@_1>: </^@_1>: @_1
-                set f = func @_1 -> () {
+            var g: @a_1 -> (@a_1->())
+            set g = func @a_1 -> (@a_1->()) {
+                var f: @b_1 -> ()
+                var x: /</^@a_1>@a_1
+                set x = new <.1 <.0>:/</^@a_1>@a_1>: </^@a_1>: @a_1
+                set f = func @b_1 -> () {
                     output std x
                 }
                 return f
             }
-            var f: @_1 -> ()
+            var f: @a_1 -> ()
             set f = call g @local
             call f @local
         """.trimIndent()
@@ -2851,17 +2851,17 @@ class TEnv {
     fun p23_pool_closure_err() {
         val out = inp2env(
             """
-            var g: @_1 -> (@_1->())
-            set g = func @_1 -> (@_1->()) {
-                var f: @_1 -> () [@_1]
-                var x: /</^@_1>@_1
-                set x = new <.1 <.0>:/</^@_1>@_1>: </^@_1>: @_1
-                set f = func @_1 -> () [@_1] {
+            var g: @a_1 -> (@a_1->())
+            set g = func @a_1 -> (@a_1->()) {
+                var f: @b_1 -> () [@b_1]
+                var x: /</^@a_1>@a_1
+                set x = new <.1 <.0>:/</^@a_1>@a_1>: </^@a_1>: @a_1
+                set f = func @b_1 -> () [@b_1] {
                     output std x
                 }
                return f
             }
-            var f: @_1 -> ()        -- still requires [@_1]
+            var f: @a_1 -> ()        -- still requires [@a_1]
             set f = call g @local
             call f @local
         """.trimIndent()
@@ -2872,19 +2872,19 @@ class TEnv {
     fun p24_pool_closure_err() {
         val out = inp2env(
             """
-            var h: @_1 -> () [@_1]
+            var h: @a_1 -> () [@a_1]
             {
-                var g: @_1 -> (@_1->())
-                set g = func @_1 -> (@_1->()) {
-                    var f: @_1 -> () [@_1]
-                    var x: /</^@_1>@_1
-                    set x = new <.1 <.0>:/</^@_1>@_1>: </^@_1>: @_1
-                    set f = func @_1 -> () [@_1] {
+                var g: @a_1 -> (@a_1->())
+                set g = func @a_1 -> (@a_1->()) {
+                    var f: @b_1 -> () [@b_1]
+                    var x: /</^@a_1>@a_1
+                    set x = new <.1 <.0>:/</^@a_1>@a_1>: </^@a_1>: @a_1
+                    set f = func @b_1 -> () [@b_1] {
                         output std x
                     }
                    return f
                 }
-                var f: @_1 -> () [@_1]
+                var f: @a_1 -> () [@a_1]
                 set f = call g @local
                 set h = f
                 set h = call g @local
@@ -2902,5 +2902,32 @@ class TEnv {
         """.trimIndent()
         )
         assert(out == "OK") { out }
+    }
+    @Test
+    fun p26_pool_err() {
+        val out = inp2env(
+            """
+            { @a
+                var x:()
+                { @a
+                }
+            }
+        """.trimIndent()
+        )
+        assert(out == "(ln 3, col 7): invalid pool : \"@a\" is already declared (ln 1)") { out }
+    }
+    @Test
+    fun p27_pool_err() {
+        val out = inp2env(
+            """
+            var f: /(@a_1->())
+            set f = func @a_1 -> () {
+                var g: /(@a_1->())
+                set g = func @a_1 -> () {
+                }
+            }
+        """.trimIndent()
+        )
+        assert(out == "(ln 4, col 13): invalid pool : \"@a\" is already declared (ln 2)") { out }
     }
 }
