@@ -30,8 +30,8 @@ class TCyclone {
     fun strcpy_01() {
         val out = all(
             """
-            var strcpy:     /([@a_1,@b_1,/_char@a_1,/_char@b_1] -> /_char@a_1)
-            set strcpy = func [@a_1,@b_1,/_char@a_1,/_char@b_1] -> /_char@a_1 {
+            var strcpy:     /({} [@a_1,@b_1,/_char@a_1,/_char@b_1] -> /_char@a_1)
+            set strcpy = func {} [@a_1,@b_1,/_char@a_1,/_char@b_1] -> /_char@a_1 {
                 return arg.3
             }
             var s1: /_char
@@ -50,8 +50,8 @@ class TCyclone {
     fun strdup_02() { // TODO: @global/@xxx no need to pass
         val out = all(
             """
-            var strdup:     /([@_1,/_char@_1] -> /_char@global)
-            set strdup = func [@_1,/_char@_1] -> /_char@global {
+            var strdup:     /({} [@_1,/_char@_1] -> /_char@global)
+            set strdup = func {} [@_1,/_char@_1] -> /_char@global {
                 var ret: /_char @global -- new ...
                 return ret
             }
@@ -59,8 +59,8 @@ class TCyclone {
             --set s1 = call strdup s1 @local
             {
                 var s2: /_char@local
-                --set s1 = call strdup s2 @global
-                set s2 = call strdup s1 @local
+                --set s1 = call strdup\ [@local,s2]: @global
+                set s2 = call strdup\ [@global,s1]: @local
             }
             output std ()
         """.trimIndent()
@@ -71,8 +71,8 @@ class TCyclone {
     fun fact_03 () {
         val out = all(
             """
-            var fact: /([@_1,/_int@_1,_int] -> ())
-            set fact = func [@_1,/_int@_1,_int] -> () { @f
+            var fact: /({} [@_1,/_int@_1,_int] -> ())
+            set fact = func {} [@_1,/_int@_1,_int] -> () { @f
                 var x: _int
                 set x = _1
                 var n: _int

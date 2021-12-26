@@ -54,7 +54,7 @@ class TParser {
     }
     @Test
     fun a06_parser_type_func () {
-        val all = All_new(PushbackReader(StringReader("() -> ()"), 2))
+        val all = All_new(PushbackReader(StringReader("{} () -> ()"), 2))
         lexer(all)
         val tp = parser_type(all)
         assert(tp is Type.Func && tp.inp is Type.Unit && tp.out is Type.Unit)
@@ -645,7 +645,7 @@ class TParser {
     }
     @Test
     fun c13_parser_func () {
-        val all = All_new(PushbackReader(StringReader("set f = func () -> () { return }"), 2))
+        val all = All_new(PushbackReader(StringReader("set f = func {} () -> () { return }"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert (

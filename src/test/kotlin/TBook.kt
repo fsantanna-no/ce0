@@ -24,8 +24,8 @@ val NumT1 = Num(true,  "@_1")
 val NumF1 = Num(false, "@_1")
 
 val add = """
-    var add: /([@_1,$NumT1,$NumT1] -> $NumT1)
-    set add = func ([@_1,$NumT1,$NumT1] -> $NumT1) {
+    var add: /({} [@_1,$NumT1,$NumT1] -> $NumT1)
+    set add = func ({} [@_1,$NumT1,$NumT1] -> $NumT1) {
         var x: $NumT1
         set x = arg.2
         var y: $NumT1
@@ -39,8 +39,8 @@ val add = """
 """.trimIndent()
 
 val mul = """
-    var mul: /([@_1,$NumT1,$NumT1] -> $NumT1)
-    set mul = func ([@_1,$NumT1,$NumT1] -> $NumT1) {
+    var mul: /({} [@_1,$NumT1,$NumT1] -> $NumT1)
+    set mul = func ({} [@_1,$NumT1,$NumT1] -> $NumT1) {
         var x: $NumT1
         set x = arg.2
         var y: $NumT1
@@ -56,8 +56,8 @@ val mul = """
 """.trimIndent()
 
 val lt = """
-    var lt: /([@_1,$NumT1,$NumT1] -> _int)
-    set lt = func [@_1,$NumT1,$NumT1] -> _int {
+    var lt: /({} [@_1,$NumT1,$NumT1] -> _int)
+    set lt = func {} [@_1,$NumT1,$NumT1] -> _int {
         if arg.3\?0 {
             return _0
         } else {
@@ -160,8 +160,8 @@ class TBook {
             $nums
             $add
             $mul
-            var square: /([@_1,$NumT1] -> $NumT1)
-            set square = func [@_1,$NumT1] -> $NumT1 {
+            var square: /({} [@_1,$NumT1] -> $NumT1)
+            set square = func {} [@_1,$NumT1] -> $NumT1 {
                 return mul\ [@_1,arg.2,arg.2]: @_1
             }
             output std square\ [@local,two]
@@ -176,8 +176,8 @@ class TBook {
             """
             $nums
             $lt
-            var smaller: /([@_1,$NumT1,$NumT1] -> $NumT1)
-            set smaller = func [@_1,$NumT1,$NumT1] -> $NumT1 {
+            var smaller: /({} [@_1,$NumT1,$NumT1] -> $NumT1)
+            set smaller = func {} [@_1,$NumT1,$NumT1] -> $NumT1 {
                 if lt\ arg {
                     return arg.2
                 } else {
@@ -203,8 +203,8 @@ class TBook {
         val out = all(
             """
             $nums
-            var f_three: /([@_1,$NumT1] -> $NumT1)
-            set f_three = func [@_1,$NumT1] -> $NumT1 {
+            var f_three: /({} [@_1,$NumT1] -> $NumT1)
+            set f_three = func {} [@_1,$NumT1] -> $NumT1 {
                 return three
             }
             output std f_three\ [@local,one]
@@ -217,8 +217,8 @@ class TBook {
     fun ch_01_02_infinity_pg05() {
         val out = all(
             """
-            var infinity: () -> $NumT1
-            set infinity = func (@_1) -> $NumT1 {
+            var infinity: {} () -> $NumT1
+            set infinity = func {} (@_1) -> $NumT1 {
                 output std _10:_int
                 return new <.1 infinity() @_1>:$NumF1 @_1
             }
@@ -237,8 +237,8 @@ class TBook {
             $nums
             $add
             $mul
-            var multiply: /([@_1,$NumT1,$NumT1] -> $NumT1)
-            set multiply = func [@_1,$NumT1,$NumT1] -> $NumT1 {
+            var multiply: /({} [@_1,$NumT1,$NumT1] -> $NumT1)
+            set multiply = func {} [@_1,$NumT1,$NumT1] -> $NumT1 {
                 if arg.2\?0 {
                     return <.0>:${NumT1}
                 } else {
@@ -260,15 +260,15 @@ class TBook {
             """
             $nums
             $lt
-            var smallerc:       [@_1,$NumT1] -> ([@_1,$NumT1]->$NumT1)
-            set smallerc = func [@_1,$NumT1] -> ([@_1,$NumT1]->$NumT1) {
+            var smallerc:       {} [@_1,$NumT1] -> ({} [@_1,$NumT1]->$NumT1)
+            set smallerc = func {} [@_1,$NumT1] -> ({} [@_1,$NumT1]->$NumT1) {
                 var x: $NumT1
                 set x = arg.2
-                return func [@_1,$NumT1] -> $NumT1 {  -- would require annotation to hold x (func [x] ...)
+                return func {} [@_1,$NumT1] -> $NumT1 {  -- would require annotation to hold x (func [x] ...)
                     return lt\ [@_1,x,arg.2]
                 }
             }
-            var f: /([@_1,$NumT1] -> $NumT1)
+            var f: /({} [@_1,$NumT1] -> $NumT1)
             set f = smallerc [@local,two]: @local   -- smallerc could keep two in memory as long as smallerc does not live longer than two
             output std f\ one
             output std f\ three
@@ -283,12 +283,12 @@ class TBook {
             $nums
             $add
             $mul
-            var square: /([@_1,$NumT1] -> $NumT1)
-            set square = func [@_1,$NumT1] -> $NumT1 {
+            var square: /({} [@_1,$NumT1] -> $NumT1)
+            set square = func {} [@_1,$NumT1] -> $NumT1 {
                 return mul\ [@_1,arg.2,arg.2]: @_1
             }
-            var twice: /([@_1, /([@_1,$NumT1]->$NumT1)@_1, $NumT1] -> $NumT1)
-            set twice = func [@_1, /([@_1,$NumT1]->$NumT1)@_1, $NumT1] -> $NumT1 {
+            var twice: /({} [@_1, /({} [@_1,$NumT1]->$NumT1)@_1, $NumT1] -> $NumT1)
+            set twice = func {} [@_1, /({} [@_1,$NumT1]->$NumT1)@_1, $NumT1] -> $NumT1 {
                 return arg.2\ [@_1, arg.2\ [@_1,arg.3]: @_1]: @_1
             }
             output std twice\ [@local,square,two]: @local

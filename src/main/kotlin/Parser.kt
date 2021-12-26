@@ -1,77 +1,72 @@
 fun parser_type (all: All): Type {
-    fun one (): Type { // Unit, Nat, User, Cons
-        return when {
-            all.accept(TK.XSCOPE) -> Type.Pool(all.tk0 as Tk.Scope)
-            all.accept(TK.UNIT)   -> Type.Unit(all.tk0 as Tk.Sym)
-            all.accept(TK.XNAT)   -> Type.Nat(all.tk0 as Tk.Str)
-            all.accept(TK.XUP)    -> Type.Rec(all.tk0 as Tk.Up)
-            all.accept(TK.CHAR,'/') -> {
-                val tk0 = all.tk0 as Tk.Chr
-                val pln = one()
-                val scp = if (all.accept(TK.XSCOPE)) (all.tk0 as Tk.Scope) else Tk.Scope(TK.XSCOPE,all.tk0.lin,all.tk0.col,"local",null)
-                Type.Ptr(tk0, scp, pln)
-            }
-            all.accept(TK.CHAR,'(') -> {
-                val tp = parser_type(all)
-                all.accept_err(TK.CHAR,')')
-                return tp
-            }
-            all.accept(TK.CHAR,'[') || all.accept(TK.CHAR,'<') -> {
-                val tk0 = all.tk0 as Tk.Chr
-                val tp = parser_type(all)
-                val tps = arrayListOf(tp)
-                while (true) {
-                    if (!all.accept(TK.CHAR,',')) {
-                        break
-                    }
-                    val tp2 = parser_type(all)
-                    tps.add(tp2)
-                }
-                if (tk0.chr == '[') {
-                    all.accept_err(TK.CHAR, ']')
-                    Type.Tuple(tk0, tps.toTypedArray())
-                } else {
-                    all.accept_err(TK.CHAR, '>')
-                    fun f (tp: Type, n: Int): Boolean {
-                        return when (tp) {
-                            is Type.Ptr   -> tp.pln.let {
-                                f(it,n) || (it is Type.Rec && n==it.tk_.up)
-                            }
-                            //is Type.Rec   -> return n <= tp.tk_.up
-                            is Type.Tuple -> tp.vec.any { f(it, n) }
-                            is Type.Union -> tp.vec.any { f(it, n+1) }
-                            else -> false
-                        }
-                    }
-                    val vec   = tps.toTypedArray()
-                    val isrec = vec.any { f(it, 1) }
-                    Type.Union(tk0, isrec, vec)
-                }
-            }
-            else -> {
-                all.err_expected("type")
-                error("unreachable")
-            }
-        }
-    }
-
-    // Func: right associative
-    val ret = one()
     return when {
-        all.accept(TK.ARROW) -> {
-            val tk = all.tk0 as Tk.Sym
-            val oth = parser_type(all) // right associative
-            val clo = if (!all.accept(TK.CHAR, '[')) {
-                Tk.Scope(TK.XSCOPE, tk.lin, tk.col, "global", null)
-            } else {
-                all.accept_err(TK.XSCOPE)
-                val scope = all.tk0 as Tk.Scope
-                all.accept_err(TK.CHAR, ']')
-                scope
+        all.accept(TK.XSCOPE) -> Type.Pool(all.tk0 as Tk.Scope)
+        all.accept(TK.UNIT) -> Type.Unit(all.tk0 as Tk.Sym)
+        all.accept(TK.XNAT) -> Type.Nat(all.tk0 as Tk.Str)
+        all.accept(TK.XUP) -> Type.Rec(all.tk0 as Tk.Up)
+        all.accept(TK.CHAR, '/') -> {
+            val tk0 = all.tk0 as Tk.Chr
+            val pln = parser_type(all)
+            val scp = if (all.accept(TK.XSCOPE)) (all.tk0 as Tk.Scope) else {
+                Tk.Scope(TK.XSCOPE, all.tk0.lin, all.tk0.col, "local", null)
             }
-            Type.Func(tk, clo, ret, oth)
+            Type.Ptr(tk0, scp, pln)
         }
-        else -> ret
+        all.accept(TK.CHAR, '(') -> {
+            val tp = parser_type(all)
+            all.accept_err(TK.CHAR, ')')
+            return tp
+        }
+        all.accept(TK.CHAR, '[') || all.accept(TK.CHAR, '<') -> {
+            val tk0 = all.tk0 as Tk.Chr
+            val tp = parser_type(all)
+            val tps = arrayListOf(tp)
+            while (true) {
+                if (!all.accept(TK.CHAR, ',')) {
+                    break
+                }
+                val tp2 = parser_type(all)
+                tps.add(tp2)
+            }
+            if (tk0.chr == '[') {
+                all.accept_err(TK.CHAR, ']')
+                Type.Tuple(tk0, tps.toTypedArray())
+            } else {
+                all.accept_err(TK.CHAR, '>')
+                fun f(tp: Type, n: Int): Boolean {
+                    return when (tp) {
+                        is Type.Ptr -> tp.pln.let {
+                            f(it, n) || (it is Type.Rec && n == it.tk_.up)
+                        }
+                        //is Type.Rec   -> return n <= tp.tk_.up
+                        is Type.Tuple -> tp.vec.any { f(it, n) }
+                        is Type.Union -> tp.vec.any { f(it, n + 1) }
+                        else -> false
+                    }
+                }
+
+                val vec = tps.toTypedArray()
+                val isrec = vec.any { f(it, 1) }
+                Type.Union(tk0, isrec, vec)
+            }
+        }
+        all.accept(TK.CHAR, '{') -> {
+            val clo = if (all.accept(TK.XSCOPE)) {
+                all.tk0 as Tk.Scope
+            } else {
+                Tk.Scope(TK.XSCOPE, all.tk0.lin, all.tk0.col, "global", null)
+            }
+            all.accept_err(TK.CHAR, '}')
+            val inp = parser_type(all)
+            all.accept_err(TK.ARROW)
+            val tk = all.tk0 as Tk.Sym
+            val out = parser_type(all) // right associative
+            Type.Func(tk, clo, inp, out)
+        }
+        else -> {
+            all.err_expected("type")
+            error("unreachable")
+        }
     }
 }
 
