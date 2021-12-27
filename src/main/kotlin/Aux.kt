@@ -189,19 +189,26 @@ fun Aux_02_tps (s: Stmt) {
                     All_assert_tk(e.tk, it is Type.Ptr) {
                         "invalid operand to `\\´ : not a pointer"
                     }
-                    (it as Type.Ptr).pln //.let { print("dnref ");println(AUX.tps[e.ptr]) ; it }
+                    (it as Type.Ptr).pln
                 }
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { AUX.tps[it]!! }.toTypedArray()).up(e)
             is Expr.UCons -> e.type //Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e)
             is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scope, AUX.tps[e.arg]!!).up(e)
             is Expr.Call -> {
+                fun map (tp: Type): Type {
+                    return when (tp) {
+                        is Type.Ptr   -> Type.Ptr(tp.tk_, e.scope, map(tp.pln))
+                        is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray())
+                        is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray())
+                        //is Type.Func  -> Type.Func(tp.tk_, tp.clo, map(tp.inp), map(tp.out))
+                        else -> tp
+                    }
+                }
                 AUX.tps[e.f].let {
                     when (it) {
-                        is Type.Func -> it.out.map { if (it !is Type.Ptr) it else {
-                            Type.Ptr(Tk.Chr(TK.CHAR, e.tk.lin, e.tk.col, '\\'), e.scope, it.pln).up(e)
-                        } }
-                        is Type.Nat  -> it //Type.Nat(it.tk_).ups(e)
+                        is Type.Func -> map(it.out)
+                        is Type.Nat  -> it
                         else -> {
                             All_assert_tk(e.f.tk, false) {
                                 "invalid call : not a function"
@@ -209,6 +216,9 @@ fun Aux_02_tps (s: Stmt) {
                             error("impossible case")
                         }
                     }
+                }.lincol(e.tk.lin,e.tk.col).let {
+                    it.aux_01_upsenvs(e)
+                    it
                 }
             }
             is Expr.Func -> Type.Ptr(
@@ -248,15 +258,14 @@ fun Aux_02_tps (s: Stmt) {
                     is Expr.UDisc -> if (e.tk_.num == 0) {
                         Type_Unit(e.tk).up(e)
                     } else {
-                        tp.expand()[e.tk_.num - 1] //.let { print("udisc ");println(tp) ; it }
+                        tp.expand()[e.tk_.num - 1]
                     }
                     is Expr.UPred -> Type.Nat(Tk.Str(TK.XNAT, e.tk.lin, e.tk.col, "int")).up(e)
                     else -> error("bug found")
                 }
             }
-            is Expr.Var -> e.env()!!.type //.let { print(">>> [${e.tk_.str}] ");println(it);it }
+            is Expr.Var -> e.env()!!.type
         }
     }
     s.visit(null, ::fe, null)
-    //println(s)
 }

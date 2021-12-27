@@ -24,16 +24,21 @@ fun Type_Nat (tk: Tk, str: String): Type.Nat {
 }
 
 fun Type.tostr (): String {
+    fun Tk.Scope?.tostr (): String {
+        return if (this == null) "" else {
+            "@" + this.lbl + (if (this.num == null) "" else ("_" + this.num)) + ")"
+        }
+    }
     return when (this) {
         is Type.Any   -> "?"
         is Type.Unit  -> "()"
         is Type.Nat   -> this.tk_.str
         is Type.Rec   -> "^".repeat(this.tk_.up)
-        is Type.Ptr   -> "/" + this.pln.tostr() + this.scope.let { if (it==null) "" else "@"+it.lbl+(if(it.num==null) "" else "_"+it.num) }
+        is Type.Ptr   -> this.scope.let { (if (it==null) "" else "(") + "/" + this.pln.tostr() + it.tostr() }
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
         is Type.UCons -> "<." + this.tk_.num + " " + this.arg.tostr() + ">"
-        is Type.Func  -> this.inp.tostr() + " -> " + this.out.tostr()
+        is Type.Func  -> "{" + this.clo.tostr() + "} " + this.inp.tostr() + " -> " + this.out.tostr()
         is Type.Pool  -> "@"+this.tk_.lbl + this.tk_.num.let { (if(it==null) "" else "_"+it) }
     }
 }
@@ -62,24 +67,6 @@ fun Type.lincol (lin: Int, col: Int): Type {
         is Type.Ptr   -> Type.Ptr(this.tk_.copy(lin_=lin,col_=col), this.scope, this.pln.lincol(lin,col))
         is Type.Rec   -> Type.Rec(this.tk_.copy(lin_=lin,col_=col))
         is Type.Pool  -> Type.Pool(this.tk_.copy(lin_=lin,col_=col))
-    }
-}
-
-fun Type.map (f: (Type)->Type): Type {
-    return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec, is Type.Pool -> f(this)
-        is Type.Tuple -> f(Type.Tuple(this.tk_, this.vec.map { it.map(f) }.toTypedArray()))
-        is Type.Union -> f(Type.Union(this.tk_, this.isrec, this.vec.map { it.map(f) }.toTypedArray()))
-        is Type.UCons -> f(Type.UCons(this.tk_, f(this.arg)))
-        is Type.Func  -> f(Type.Func(this.tk_, this.clo, this.inp.map(f), this.out.map(f)))
-        is Type.Ptr   -> f(Type.Ptr(this.tk_, this.scope, this.pln.map(f)))
-    }
-}
-
-fun Type.keepAnyNat (other: ()->Type): Type {
-    return when (this) {
-        is Type.Any, is Type.Nat -> this
-        else -> other()
     }
 }
 
