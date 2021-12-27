@@ -233,7 +233,6 @@ fun Tk.Scope.toce (): String {
 }
 
 fun code_fe (e: Expr) {
-    //println(e)
     val xp = AUX.tps[e]!!
     EXPRS.addFirst(when (e) {
         is Expr.Pool -> Pair("", e.tk_.toce())
@@ -277,8 +276,6 @@ fun code_fe (e: Expr) {
         is Expr.New  -> EXPRS.removeFirst().let {
             val ID  = "__tmp_" + e.hashCode().absoluteValue
             val ptr = AUX.tps[e] as Type.Ptr
-            //println(ptr.scope)
-            //println(scp)
             val pool = ptr.scope!!.toce()
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
@@ -353,9 +350,6 @@ fun code_fs (s: Stmt) {
         is Stmt.Set  -> {
             val src = EXPRS.removeFirst()
             val dst = EXPRS.removeFirst()
-            //print("XXX ") ; println(AUX.tps[s.dst])
-            //println(s)
-            val tp = AUX.tps[s.dst]
             dst.first + src.first + dst.second + " = " + src.second + ";\n"
         }
         is Stmt.If -> {

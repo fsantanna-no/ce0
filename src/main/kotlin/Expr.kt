@@ -35,13 +35,15 @@ fun Attr.toExpr (): Expr {
 
 fun Expr.flatten (): List<Expr> {
     return when (this) {
-        is Expr.Unit, is Expr.Var, is Expr.Nat, is Expr.Func -> listOf(this)
+        is Expr.Unit, is Expr.Var, is Expr.Nat, is Expr.Func, is Expr.Pool -> listOf(this)
+        is Expr.TCons -> this.arg.map { it.flatten() }.flatten() + this
+        is Expr.Call  -> this.f.flatten() + this.arg.flatten() + this
         is Expr.TDisc -> this.tup.flatten() + this
         is Expr.UDisc -> this.uni.flatten() + this
         is Expr.UPred -> this.uni.flatten() + this
         is Expr.New   -> this.arg.flatten() + this
         is Expr.Dnref -> this.ptr.flatten() + this
         is Expr.Upref -> this.pln.flatten() + this
-        else -> { println(this) ; TODO() }
+        is Expr.UCons -> TODO(this.toString())
     }
 }

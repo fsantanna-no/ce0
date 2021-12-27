@@ -212,7 +212,8 @@ class TEnv {
         val out = inp2env("""
             var g: / {} () -> /_int   -- pointer in func proto must have @x
         """.trimIndent())
-        assert(out == "(ln 1, col 19): invalid pointer : missing pool label") { out }
+        //assert(out == "(ln 1, col 19): invalid pointer : missing pool label") { out }
+        assert(out == "(ln 1, col 16): invalid function type : missing pool argument") { out }
     }
 
     // TYPE

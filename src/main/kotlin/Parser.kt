@@ -154,14 +154,13 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                 val block = parser_block(all)
                 val lin = block.tk.lin
                 val col = block.tk.col
-                //println(tpf.inp)
 
                 val xblock = Stmt.Block(block.tk_, null,
                     Stmt.Seq(block.tk,
                         Stmt.Var(Tk.Str(TK.XVAR,lin,col,"_ret_"), tpf.out.lincol(lin,col)),
                         Stmt.Block(block.tk_, null,
                             Stmt.Seq(block.tk,
-                                Stmt.Var(Tk.Str(TK.XVAR,lin,col,"arg"), tpf.inp.lincol(lin,col)), //.let{println(it);it}),
+                                Stmt.Var(Tk.Str(TK.XVAR,lin,col,"arg"), tpf.inp.lincol(lin,col)),
                                 Stmt.Seq(block.tk,
                                     Stmt.Set(
                                         Tk.Chr(TK.XVAR,lin,col,'='),
@@ -242,9 +241,11 @@ fun parser_expr (all: All, canpre: Boolean): Expr {
                     Tk.Str(TK.XVAR,e1.tk.lin,e1.tk.col,"output_"+(e1.tk as Tk.Str).str)
             ))
         }
-        val scp = if (!all.accept(TK.CHAR, ':')) null else {
+        val scp = if (all.accept(TK.CHAR, ':')) {
             all.accept_err(TK.XSCOPE)
             all.tk0 as Tk.Scope
+        } else {
+            Tk.Scope(TK.XSCOPE, all.tk0.lin,all.tk0.col, "local", null)
         }
         return Expr.Call(tk_pre2, scp, e1, e2)
     }

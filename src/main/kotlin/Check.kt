@@ -45,9 +45,6 @@ fun check_01_before_tps (s: Stmt) {
                 }
                 val ok1 = ptrs.all {
                     val ptr = it.scope!!
-                    All_assert_tk(it.tk, ptr.lbl != "local") {
-                        "invalid pointer : missing pool label"
-                    }
                     when {
                         (ptr.lbl == "global") -> true       // @global
                         //(ptr.lbl == "local")  -> true       // @local
@@ -61,7 +58,6 @@ fun check_01_before_tps (s: Stmt) {
                         else -> false
                     }
                 }
-                //println(tp.tostr())
                 All_assert_tk(tp.tk, ok1) {
                     "invalid function type : missing pool argument"
                 }
@@ -106,7 +102,6 @@ fun check_01_before_tps (s: Stmt) {
                 val funcs = e.ups_tolist().filter { it is Expr.Func } as List<Expr.Func>
                 for (f in funcs) {
                     val pools2 = f.type.flatten().filter { it is Type.Pool } as List<Type.Pool>
-                    println(pools2)
                     val err = pools2.find { pool2 -> pools.any { pool -> pool.tk_.lbl==pool2.tk_.lbl } }
                     All_assert_tk(e.tk, err==null) {
                         "invalid pool : \"@${err!!.tk_.lbl}\" is already declared (ln ${err!!.tk.lin})"
@@ -168,7 +163,6 @@ fun check_02_after_tps (s: Stmt) {
                         // access is inside function, declaration is outside
                         val func = e.ups_first { it is Expr.Func } as Expr.Func
                         val clo = func.type.clo.scope(func.type).depth
-                        //println("$clo >= ${var_scope.depth}")
                         All_assert_tk(e.tk, clo >= var_scope.depth) {
                             "invalid access to \"${e.tk_.str}\" : invalid closure declaration (ln ${func.tk.lin})"
                         }
@@ -201,9 +195,9 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
             is Expr.Call -> {
-                val tp_ret = AUX.tps[e]!!
-                val tp_f   = AUX.tps[e.f]
-                val tp_arg = AUX.tps[e.arg]!!
+                val ret1 = AUX.tps[e]!!
+                val tp_f = AUX.tps[e.f]
+                val arg1 = AUX.tps[e.arg]!!
 
                 val (inp,out) = when (tp_f) {
                     is Type.Func -> Pair(tp_f.inp,tp_f.out)
@@ -215,6 +209,9 @@ fun check_02_after_tps (s: Stmt) {
                     val acc = mutableMapOf<String,MutableMap<Int,Int>>()
 
                     fun aux (func:Type, call:Type): Type {
+                        println("-=-=-")
+                        println(func.tostr())
+                        println(call.tostr())
 
                         fun lbl_num (tk: Tk.Scope): Pair<String,Int?> {
                             if (tk.num == null) {
@@ -222,17 +219,13 @@ fun check_02_after_tps (s: Stmt) {
                             }
 
                             val new = call.scope().depth
-                            /*
-                            println("===")
-                            println(key)
-                            println(new)
-                            println(acc)
-                             */
+                            println(call.scope())
                             acc[tk.lbl].let {
                                 if (it == null) {
                                     acc[tk.lbl] = mutableMapOf(Pair(tk.num,new))
                                 } else {
                                     val ok = it.all {
+                                        println("[${tk.lbl}] ${it.key} vs ${tk.num} // ${it.value} vs $new")
                                         when {
                                             (it.key == tk.num) -> (it.value == new)
                                             (it.key > tk.num)  -> (it.value >= new)
@@ -266,13 +259,25 @@ fun check_02_after_tps (s: Stmt) {
                             }
                             is Type.Ptr -> {
                                 if (func !is Type.Ptr) call else {
-                                    println(func)
                                     val (lbl, num) = lbl_num(func.scope!!)
+                                    val scp = Tk.Scope(TK.XSCOPE, call.tk.lin, call.tk.col, lbl, num)
                                     val pln = aux(func.pln, call.pln)
-                                    //println(call)
-                                    Type.Ptr(call.tk_, Tk.Scope(TK.XSCOPE, call.tk.lin, call.tk.col, lbl, num), pln)
+                                    Type.Ptr(call.tk_, scp, pln)
                                 }
                             }
+                            /*
+                            is Type.Func -> {
+                                if (func !is Type.Func) call else {
+                                    println(">>>: ${func.clo}")
+                                    val (lbl, num) = lbl_num(func.clo)
+                                    println("<<<")
+                                    val clo = Tk.Scope(TK.XSCOPE, call.tk.lin, call.tk.col, lbl, num)
+                                    val inp = aux(func.inp, call.inp)
+                                    val out = aux(func.out, call.out)
+                                    Type.Func(call.tk_, clo, inp, out)
+                                }
+                            }
+                             */
                         }
                     }
 
@@ -281,16 +286,18 @@ fun check_02_after_tps (s: Stmt) {
                     return Pair(arg2, ret2)
                 }
 
-                val (arg2,ret2) = if (tp_f !is Type.Func) Pair(tp_arg,tp_ret) else map(inp,out, tp_arg,tp_ret)
-                /*
-                println("INP, ARG2")
+                ///*
+                println("INP, ARG1, ARG2")
                 println(inp.tostr())
-                println(arg2.tostr())
-                println("XP2, OUT")
-                println(ret2.tostr())
+                println(arg1.tostr())
+                //println(arg2.tostr())
+                println("OUT, RET1, RET2")
                 println(out.tostr())
-                println(">>>") ; println(inp) ; println(arg2)
-                 */
+                println(ret1.tostr())
+                //println(ret2.tostr())
+                //println(">>>") ; println(inp) ; println(arg2)
+                //*/
+                val (arg2,ret2) = if (tp_f !is Type.Func) Pair(arg1,ret1) else map(inp,out, arg1,ret1)
                 All_assert_tk(e.f.tk, inp.isSupOf(arg2) && ret2.isSupOf(out)) {
                     "invalid call : type mismatch"
                 }

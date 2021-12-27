@@ -196,18 +196,31 @@ fun Aux_02_tps (s: Stmt) {
             is Expr.UCons -> e.type //Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e)
             is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scope, AUX.tps[e.arg]!!).up(e)
             is Expr.Call -> {
-                fun map (tp: Type): Type {
-                    return when (tp) {
-                        is Type.Ptr   -> Type.Ptr(tp.tk_, e.scope, map(tp.pln))
-                        is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray())
-                        is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray())
-                        //is Type.Func  -> Type.Func(tp.tk_, tp.clo, map(tp.inp), map(tp.out))
-                        else -> tp
-                    }
-                }
                 AUX.tps[e.f].let {
                     when (it) {
-                        is Type.Func -> map(it.out)
+                        is Type.Func -> {
+                            val pars = it.inp.flatten().filter { it is Type.Pool }.let{ it as List<Type.Pool> }.map { Pair(it.tk_.lbl,it.tk_.num) }
+                            val args =  e.arg.flatten().filter { it is Expr.Pool }.let{ it as List<Expr.Pool> }.map { Pair(it.tk_.lbl,it.tk_.num) }
+                            println(pars)
+                            println(args)
+                            val MAP = pars.zip(args).toMap()
+                            fun f (tk: Tk.Scope): Tk.Scope {
+                                return MAP[Pair(tk.lbl,tk.num)].let { if (it == null) tk else
+                                    Tk.Scope(TK.XSCOPE, tk.lin, tk.col, it.first, it.second)
+                                }
+                            }
+                            fun map (tp: Type): Type {
+                                return when (tp) {
+                                    is Type.Pool  -> Type.Pool(f(tp.tk_))
+                                    is Type.Ptr   -> Type.Ptr(tp.tk_, e.scope, map(tp.pln))
+                                    is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray())
+                                    is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray())
+                                    is Type.Func  -> Type.Func(tp.tk_, f(tp.clo), map(tp.inp), map(tp.out))
+                                    else -> tp
+                                }
+                            }
+                            map(it.out)
+                        }
                         is Type.Nat  -> it
                         else -> {
                             All_assert_tk(e.f.tk, false) {

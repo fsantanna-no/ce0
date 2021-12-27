@@ -1557,7 +1557,7 @@ class TExec {
         assert(out == "(ln 7, col 20): invalid access to \"x\" : invalid closure declaration (ln 6)") { out }
     }
     @Test
-    fun n10_pool_closure_err() {
+    fun n10_pool_closure_todo() {
         val out = all(
             """
             var const:     /({} [@_1,/_int@_1] -> /({@_1} () -> /_int@_1)@_1)@local
@@ -1568,11 +1568,13 @@ class TExec {
                     return x
                 }
             }
+            { @aaa
             var five: _int
             set five = _5
-            var f: / ({@local} () -> /_int)
+            var f: / ({@local} () -> /_int@local) @local
             set f = const\ [@local,/five]
             output std f\ @local
+            }
         """.trimIndent()
         )
         assert(out == "<.1 <.0>>\n<.1 <.1 <.0>>>\n") { out }
