@@ -207,6 +207,7 @@ fun check_02_after_tps (s: Stmt) {
 
                 val (arg2,ret2) = if (tp_f !is Type.Func) Pair(arg1,ret1) else
                 {
+                    // { [rel]={1=depth,2=depth} }
                     val acc = mutableMapOf<String,MutableMap<Int,Int>>()
 
                     fun aux (func:Type, call:Type): Type {
@@ -214,9 +215,9 @@ fun check_02_after_tps (s: Stmt) {
                         println(func.tostr())
                         println(call.tostr())
 
-                        fun lbl_num (tk: Tk.Scope): Pair<String,Int?> {
+                        fun lbl_num (tk: Tk.Scope) {
                             if (tk.num == null) {
-                                return Pair(tk.lbl,null)
+                                return
                             }
 
                             val new = call.scope().depth
@@ -240,7 +241,6 @@ fun check_02_after_tps (s: Stmt) {
                                     it[tk.num] = new
                                 }
                             }
-                            return Pair(tk.lbl,tk.num)
                         }
 
                         return when (call) {
@@ -254,13 +254,13 @@ fun check_02_after_tps (s: Stmt) {
                             }
                             is Type.Pool -> {
                                 if (func !is Type.Pool) call else {
-                                    val (lbl, num) = lbl_num(func.tk_)
+                                    val (lbl, num) = func.tk_.let { lbl_num(it) ; Pair(it.lbl,it.num) }
                                     Type.Pool(Tk.Scope(TK.XSCOPE, call.tk.lin, call.tk.col, lbl, num))
                                 }
                             }
                             is Type.Ptr -> {
                                 if (func !is Type.Ptr) call else {
-                                    val (lbl, num) = lbl_num(func.scope!!)
+                                    val (lbl, num) = func.scope!!.let { lbl_num(it) ; Pair(it.lbl,it.num) }
                                     val scp = Tk.Scope(TK.XSCOPE, call.tk.lin, call.tk.col, lbl, num)
                                     val pln = aux(func.pln, call.pln)
                                     Type.Ptr(call.tk_, scp, pln)
@@ -287,10 +287,9 @@ fun check_02_after_tps (s: Stmt) {
                 }
 
                 ///*
-                println("INP, ARG1, ARG2")
-                println(inp1.tostr())
-                println(arg1.tostr())
-                println(arg2.tostr())
+                print("INP1: ") ; println(inp1.tostr())
+                print("ARG1: ") ; println(arg1.tostr())
+                print("ARG2: ") ; println(arg2.tostr())
                 //println("OUT, RET1, RET2")
                 //println(out1.tostr())
                 //println(ret1.tostr())
