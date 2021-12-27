@@ -1573,7 +1573,7 @@ class TExec {
             set five = _5
             var f: / ({@local} () -> /_int@local) @local
             set f = const\ [@local,/five]
-            output std f\ @local
+            output std f\ --@local
             }
         """.trimIndent()
         )

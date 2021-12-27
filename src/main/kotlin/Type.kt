@@ -26,7 +26,7 @@ fun Type_Nat (tk: Tk, str: String): Type.Nat {
 fun Type.tostr (): String {
     fun Tk.Scope?.tostr (): String {
         return if (this == null) "" else {
-            "@" + this.lbl + (if (this.num == null) "" else ("_" + this.num)) + ")"
+            "@" + this.lbl + (if (this.num == null) "" else ("_" + this.num))
         }
     }
     return when (this) {

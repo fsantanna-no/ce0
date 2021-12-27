@@ -199,13 +199,14 @@ fun check_02_after_tps (s: Stmt) {
                 val tp_f = AUX.tps[e.f]
                 val arg1 = AUX.tps[e.arg]!!
 
-                val (inp,out) = when (tp_f) {
+                val (inp1,out1) = when (tp_f) {
                     is Type.Func -> Pair(tp_f.inp,tp_f.out)
                     is Type.Nat  -> Pair(tp_f,tp_f)
                     else -> error("impossible case")
                 }
 
-                fun map (inp:Type,out:Type, arg:Type,ret:Type): Pair<Type,Type> {
+                val (arg2,ret2) = if (tp_f !is Type.Func) Pair(arg1,ret1) else
+                {
                     val acc = mutableMapOf<String,MutableMap<Int,Int>>()
 
                     fun aux (func:Type, call:Type): Type {
@@ -243,7 +244,7 @@ fun check_02_after_tps (s: Stmt) {
                         }
 
                         return when (call) {
-                            is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec, is Type.Func -> call
+                            is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> call
                             is Type.UCons -> error("bug found")
                             is Type.Tuple -> if (func !is Type.Tuple) call else {
                                 Type.Tuple(call.tk_, /*********/ call.vec.mapIndexed { i,tp -> aux(func.vec[i], tp) }.toTypedArray())
@@ -265,6 +266,7 @@ fun check_02_after_tps (s: Stmt) {
                                     Type.Ptr(call.tk_, scp, pln)
                                 }
                             }
+                            is Type.Func -> call
                             /*
                             is Type.Func -> {
                                 if (func !is Type.Func) call else {
@@ -277,28 +279,26 @@ fun check_02_after_tps (s: Stmt) {
                                     Type.Func(call.tk_, clo, inp, out)
                                 }
                             }
-                             */
+                            */
                         }
                     }
 
-                    val arg2 = aux(inp,arg)
-                    val ret2 = aux(out,ret)
-                    return Pair(arg2, ret2)
+                    Pair(aux(inp1,arg1), aux(out1,ret1))
                 }
 
                 ///*
                 println("INP, ARG1, ARG2")
-                println(inp.tostr())
+                println(inp1.tostr())
                 println(arg1.tostr())
-                //println(arg2.tostr())
-                println("OUT, RET1, RET2")
-                println(out.tostr())
-                println(ret1.tostr())
+                println(arg2.tostr())
+                //println("OUT, RET1, RET2")
+                //println(out1.tostr())
+                //println(ret1.tostr())
                 //println(ret2.tostr())
                 //println(">>>") ; println(inp) ; println(arg2)
                 //*/
-                val (arg2,ret2) = if (tp_f !is Type.Func) Pair(arg1,ret1) else map(inp,out, arg1,ret1)
-                All_assert_tk(e.f.tk, inp.isSupOf(arg2) && ret2.isSupOf(out)) {
+
+                All_assert_tk(e.f.tk, inp1.isSupOf(arg2) && ret2.isSupOf(out1)) {
                     "invalid call : type mismatch"
                 }
             }
