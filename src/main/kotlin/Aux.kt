@@ -102,70 +102,70 @@ fun aux_clear () {
 }
 
 private
-fun Type.aux_01_upsenvs (up: Any) {
+fun Type.aux_upsenvs (up: Any) {
     ups_add(this, up)
 
     when (this) {
-        is Type.Tuple -> this.vec.forEach { it.aux_01_upsenvs(this) }
-        is Type.Union -> this.vec.forEach { it.aux_01_upsenvs(this) }
-        is Type.UCons -> this.arg.aux_01_upsenvs(this)
-        is Type.Func  -> { this.inp.aux_01_upsenvs(this) ; this.out.aux_01_upsenvs(this) }
-        is Type.Ptr   -> this.pln.aux_01_upsenvs(this)
+        is Type.Tuple -> this.vec.forEach { it.aux_upsenvs(this) }
+        is Type.Union -> this.vec.forEach { it.aux_upsenvs(this) }
+        is Type.UCons -> this.arg.aux_upsenvs(this)
+        is Type.Func  -> { this.inp.aux_upsenvs(this) ; this.out.aux_upsenvs(this) }
+        is Type.Ptr   -> this.pln.aux_upsenvs(this)
     }
 }
 
 private
-fun Expr.aux_01_upsenvs (up: Any, env: Env?) {
+fun Expr.aux_upsenvs (up: Any, env: Env?) {
     ups_add(this, up)
     env_add(this, env)
     when (this) {
-        is Expr.TCons -> this.arg.forEachIndexed { _,e -> e.aux_01_upsenvs(this, env) }
-        is Expr.UCons -> { this.type.aux_01_upsenvs(this) ; this.arg.aux_01_upsenvs(this, env) }
-        is Expr.New   -> this.arg.aux_01_upsenvs(this, env)
-        is Expr.Dnref -> this.ptr.aux_01_upsenvs(this, env)
-        is Expr.Upref -> this.pln.aux_01_upsenvs(this, env)
-        is Expr.TDisc -> this.tup.aux_01_upsenvs(this, env)
-        is Expr.UDisc -> this.uni.aux_01_upsenvs(this, env)
-        is Expr.UPred -> this.uni.aux_01_upsenvs(this, env)
+        is Expr.TCons -> this.arg.forEachIndexed { _,e -> e.aux_upsenvs(this, env) }
+        is Expr.UCons -> { this.type.aux_upsenvs(this) ; this.arg.aux_upsenvs(this, env) }
+        is Expr.New   -> this.arg.aux_upsenvs(this, env)
+        is Expr.Dnref -> this.ptr.aux_upsenvs(this, env)
+        is Expr.Upref -> this.pln.aux_upsenvs(this, env)
+        is Expr.TDisc -> this.tup.aux_upsenvs(this, env)
+        is Expr.UDisc -> this.uni.aux_upsenvs(this, env)
+        is Expr.UPred -> this.uni.aux_upsenvs(this, env)
         is Expr.Call  -> {
-            this.f.aux_01_upsenvs(this, env)
-            this.arg.aux_01_upsenvs(this, env)
+            this.f.aux_upsenvs(this, env)
+            this.arg.aux_upsenvs(this, env)
         }
         is Expr.Func  -> {
-            this.type.aux_01_upsenvs(this)
-            this.block.aux_01_upsenvs(this, env)
+            this.type.aux_upsenvs(this)
+            this.block.aux_upsenvs(this, env)
         }
     }
 }
 
-fun Stmt.aux_01_upsenvs (up: Any?, env: Env?): Env? {
+fun Stmt.aux_upsenvs (up: Any?, env: Env?): Env? {
     ups_add(this, up)
     env_add(this, env)
     return when (this) {
         is Stmt.Pass, is Stmt.Nat, is Stmt.Ret, is Stmt.Break -> env
         is Stmt.Var -> {
-            this.type.aux_01_upsenvs(this)
+            this.type.aux_upsenvs(this)
             Env(this,env)
         }
         is Stmt.Set -> {
-            this.dst.aux_01_upsenvs(this, env)
-            this.src.aux_01_upsenvs(this, env)
+            this.dst.aux_upsenvs(this, env)
+            this.src.aux_upsenvs(this, env)
             env
         }
-        is Stmt.Call -> { this.call.aux_01_upsenvs(this, env) ; env }
+        is Stmt.Call -> { this.call.aux_upsenvs(this, env) ; env }
         is Stmt.Seq -> {
-            val e1 = this.s1.aux_01_upsenvs(this, env)
-            val e2 = this.s2.aux_01_upsenvs(this, e1)
+            val e1 = this.s1.aux_upsenvs(this, env)
+            val e2 = this.s2.aux_upsenvs(this, e1)
             e2
         }
         is Stmt.If -> {
-            this.tst.aux_01_upsenvs(this,env)
-            this.true_.aux_01_upsenvs(this, env)
-            this.false_.aux_01_upsenvs(this, env)
+            this.tst.aux_upsenvs(this,env)
+            this.true_.aux_upsenvs(this, env)
+            this.false_.aux_upsenvs(this, env)
             env
         }
-        is Stmt.Loop  -> { this.block.aux_01_upsenvs(this,env) ; env }
-        is Stmt.Block -> { this.body.aux_01_upsenvs(this,env) ; env }
+        is Stmt.Loop  -> { this.block.aux_upsenvs(this,env) ; env }
+        is Stmt.Block -> { this.body.aux_upsenvs(this,env) ; env }
     }
 }
 
@@ -177,7 +177,7 @@ fun Type.up (up: Any): Type {
     return this
 }
 
-fun Aux_02_tps (s: Stmt) {
+fun Aux_tps (s: Stmt) {
     fun fe (e: Expr) {
         AUX.tps[e] = when (e) {
             is Expr.Pool  -> Type.Pool(e.tk_).up(e)
@@ -201,8 +201,6 @@ fun Aux_02_tps (s: Stmt) {
                         is Type.Func -> {
                             val pars = it.inp.flatten().filter { it is Type.Pool }.let{ it as List<Type.Pool> }.map { Pair(it.tk_.lbl,it.tk_.num) }
                             val args =  e.arg.flatten().filter { it is Expr.Pool }.let{ it as List<Expr.Pool> }.map { Pair(it.tk_.lbl,it.tk_.num) }
-                            println(pars)
-                            println(args)
                             val MAP = pars.zip(args).toMap()
                             fun f (tk: Tk.Scope): Tk.Scope {
                                 return MAP[Pair(tk.lbl,tk.num)].let { if (it == null) tk else
@@ -230,7 +228,7 @@ fun Aux_02_tps (s: Stmt) {
                         }
                     }
                 }.lincol(e.tk.lin,e.tk.col).let {
-                    it.aux_01_upsenvs(e)
+                    it.aux_upsenvs(e)
                     it
                 }
             }
