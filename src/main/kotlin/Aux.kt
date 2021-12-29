@@ -70,7 +70,7 @@ fun env_prelude (s: Stmt): Stmt {
             Tk.Chr(TK.CHAR, 1, 1, '/'),
             Tk.Scope(TK.XSCOPE, 1, 1, "global", null),
             Type.Func (
-                Tk.Sym(TK.ARROW, 1, 1, "->"),
+                Tk.Chr(TK.CHAR, 1, 1, '{'),
                 Tk.Scope(TK.XSCOPE, 1, 1, "global", null),
                 emptyArray(),
                 Type.Any(Tk.Chr(TK.CHAR,1,1,'?')),
@@ -197,10 +197,11 @@ fun Aux_tps (s: Stmt) {
             is Expr.Call -> {
                 AUX.tps[e.f].let {
                     when (it) {
+                        is Type.Nat -> it
+                        //is Type.Func -> it.out
+                        ///*
                         is Type.Func -> {
-                            val pars = it.inp.flatten().filter { it is Type.Pool }.let{ it as List<Type.Pool> }.map { Pair(it.tk_.lbl,it.tk_.num) }
-                            val args =  e.arg.flatten().filter { it is Expr.Pool }.let{ it as List<Expr.Pool> }.map { Pair(it.tk_.lbl,it.tk_.num) }
-                            val MAP = pars.zip(args).toMap()
+                            val MAP = it.scps.map { Pair(it.lbl,it.num) }.zip(e.scps.map { Pair(it.lbl,it.num) }).toMap()
                             fun f (tk: Tk.Scope): Tk.Scope {
                                 return MAP[Pair(tk.lbl,tk.num)].let { if (it == null) tk else
                                     Tk.Scope(TK.XSCOPE, tk.lin, tk.col, it.first, it.second)
@@ -208,17 +209,16 @@ fun Aux_tps (s: Stmt) {
                             }
                             fun map (tp: Type): Type {
                                 return when (tp) {
-                                    is Type.Pool  -> Type.Pool(f(tp.tk_))
                                     is Type.Ptr   -> Type.Ptr(tp.tk_, e.scope, map(tp.pln))
                                     is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray())
                                     is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray())
-                                    is Type.Func  -> Type.Func(tp.tk_, f(tp.clo), map(tp.inp), map(tp.out))
+                                    is Type.Func  -> Type.Func(tp.tk_, f(tp.clo), tp.scps.map { f(it) }.toTypedArray(), map(tp.inp), map(tp.out))
                                     else -> tp
                                 }
                             }
                             map(it.out)
                         }
-                        is Type.Nat  -> it
+                        //*/
                         else -> {
                             All_assert_tk(e.f.tk, false) {
                                 "invalid call : not a function"

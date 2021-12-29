@@ -50,6 +50,7 @@ fun parser_type (all: All): Type {
             }
         }
         all.accept(TK.CHAR, '{') -> {
+            val tk = all.tk0 as Tk.Chr
             val clo = if (all.accept(TK.XSCOPE)) {
                 all.tk0 as Tk.Scope
             } else {
@@ -57,7 +58,7 @@ fun parser_type (all: All): Type {
             }
             all.accept_err(TK.CHAR, '}')
             all.accept_err(TK.ARROW)
-            all.accept_err(TK.CHAR, '[')
+            all.accept_err(TK.CHAR, '{')
             val scps = mutableListOf<Tk.Scope>()
             while (all.accept(TK.XSCOPE)) {
                 val tk = all.tk0 as Tk.Scope
@@ -69,11 +70,10 @@ fun parser_type (all: All): Type {
                     break
                 }
             }
-            all.accept_err(TK.CHAR, ']')
+            all.accept_err(TK.CHAR, '}')
             all.accept_err(TK.ARROW)
             val inp = parser_type(all)
             all.accept_err(TK.ARROW)
-            val tk = all.tk0 as Tk.Sym
             val out = parser_type(all) // right associative
             Type.Func(tk, clo, scps.toTypedArray(), inp, out)
         }
@@ -159,15 +159,28 @@ fun parser_expr (all: All): Expr {
         }
         all.accept(TK.CALL) || all.accept(TK.OUTPUT) -> {
             val tk_pre = all.tk0 as Tk.Key
-            var e1 = parser_expr(all)
-            val e2 = parser_expr(all)
+            var f = parser_expr(all)
+
+            val scps = mutableListOf<Tk.Scope>()
+            if (all.accept(TK.CHAR, '{')) {
+                while (all.accept(TK.XSCOPE)) {
+                    val tk = all.tk0 as Tk.Scope
+                    scps.add(tk)
+                    if (!all.accept(TK.CHAR, ',')) {
+                        break
+                    }
+                }
+                all.accept_err(TK.CHAR, '}')
+            }
+
+            val arg = parser_expr(all)
 
             if (tk_pre.enu == TK.OUTPUT) {
-                all.assert_tk(e1.tk, e1 is Expr.Var) { "invalid `output` : expected identifier" }
-                e1 = Expr.Dnref(
-                    Tk.Chr(TK.CHAR, e1.tk.lin, e1.tk.col, '\\'),
+                all.assert_tk(f.tk, f is Expr.Var) { "invalid `output` : expected identifier" }
+                f = Expr.Dnref(
+                    Tk.Chr(TK.CHAR, f.tk.lin, f.tk.col, '\\'),
                     Expr.Var(
-                        Tk.Str(TK.XVAR, e1.tk.lin, e1.tk.col, "output_" + (e1.tk as Tk.Str).str)
+                        Tk.Str(TK.XVAR, f.tk.lin, f.tk.col, "output_" + (f.tk as Tk.Str).str)
                     )
                 )
             }
@@ -177,7 +190,7 @@ fun parser_expr (all: All): Expr {
             } else {
                 Tk.Scope(TK.XSCOPE, all.tk0.lin, all.tk0.col, "local", null)
             }
-            return Expr.Call(tk_pre, scp, e1, emptyArray(), e2)
+            return Expr.Call(tk_pre, scp, f, scps.toTypedArray(), arg)
         }
         all.accept(TK.FUNC) -> {
             val tk0 = all.tk0 as Tk.Key

@@ -36,6 +36,7 @@ fun check_01_before_tps (s: Stmt) {
             is Type.Ptr -> tp.scope!!.check(tp)
             is Type.Func -> {
                 tp.clo.check(tp)
+                //tp.scps.forEach { it.check(tp) }
                 val ptrs  = tp.flatten()
                     .filter { it is Type.Ptr }
                     .let    { it as List<Type.Ptr>}
@@ -105,7 +106,10 @@ fun check_01_before_tps (s: Stmt) {
             }
 
             is Expr.New  -> e.scope.check(e)
-            is Expr.Call -> e.scope.let { if (it != null) it.check(e) }
+            is Expr.Call -> {
+                e.scope.let { if (it != null) it.check(e) }
+                e.scps.forEach { it.check(e) }
+            }
         }
     }
     fun fs (s: Stmt) {

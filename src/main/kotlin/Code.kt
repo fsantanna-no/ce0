@@ -60,9 +60,12 @@ fun code_ft (tp: Type) {
 
     when (tp) {
         is Type.Func -> {
+            val pools = tp.scps.let { if (it.size == 0) "" else
+                it.mapIndexed { i,tk -> "Pool**" }.joinToString(",") + ","
+            }
             TYPES.add(Triple(
                 Pair(tp.toce(), deps(setOf(tp.inp,tp.out))),
-                "typedef ${tp.out.pos()} ${tp.toce()} (${tp.inp.pos()});\n",
+                "typedef ${tp.out.pos()} ${tp.toce()} ($pools ${tp.inp.pos()});\n",
                 ""
             ))
         }
@@ -284,12 +287,13 @@ fun code_fe (e: Expr) {
             val arg = EXPRS.removeFirst()
             val f   = EXPRS.removeFirst()
             val ff  = e.f as? Expr.Dnref
+            val pools = e.scps.let { if (it.size == 0) "" else (it.map { it.toce() }.joinToString(",") + ",") }
             val snd =
                 if (ff!=null && ff.ptr is Expr.Var && ff.ptr.tk_.str=="output_std") {
                     AUX.tps[e.arg]!!.output("", arg.second)
                 } else {
                     val arg = if (AUX.tps[e.f] is Type.Nat && e.arg is Expr.Unit) "" else arg.second
-                    f.second + "(" + arg + ")"
+                    f.second + "(" + pools + arg + ")"
                 }
             Pair(f.first + arg.first, snd)
         }
@@ -297,7 +301,7 @@ fun code_fe (e: Expr) {
             val ID  = "_func_" + e.hashCode().absoluteValue
             val inp = e.type.inp
             val pools = e.type.scps.let { if (it.size == 0) "" else
-                it.mapIndexed { i,tk -> "Pool** ${tk.toce()}\n" }.joinToString(",") + ","
+                it.mapIndexed { i,tk -> "Pool** ${tk.toce()}" }.joinToString(",") + ","
             }
             val pre = """
                 auto ${e.type.out.pos()} $ID ($pools ${inp.pos()} _arg_) {

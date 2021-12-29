@@ -124,6 +124,11 @@ fun token (all: All) {
             if (x1 == '_') {
                 var num_ = ""
                 all.read().let { c1=it.first ; x1=it.second }
+                if (!x1.isDigit()) {
+                    all.unread(c1)
+                    all.tk1 = Tk.Err(TK.ERR, LIN, COL, "@${lbl}_$x1")
+                    return
+                }
                 while (x1.isDigit()) {
                     num_ += x1
                     all.read().let { c1=it.first ; x1=it.second }
