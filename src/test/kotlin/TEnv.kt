@@ -55,7 +55,7 @@ class TEnv {
     }
     @Test
     fun a04_redeclared_func () {
-        val out = inp2env("var x:() ; var x:{}()->()")
+        val out = inp2env("var x:() ; var x:{}->[]->()->()")
         assert(out == "(ln 1, col 16): invalid declaration : \"x\" is already declared (ln 1)") { out }
     }
     @Test
@@ -63,6 +63,11 @@ class TEnv {
         val out = inp2env("return ()")
         //assert(out == "(ln 1, col 1): invalid return : no enclosing function") { out }
         assert(out == "(ln 1, col 1): undeclared variable \"_ret_\"") { out }
+    }
+    @Test
+    fun a04_err_func () {
+        val out = inp2env("var x:() ; var x:{}()->()")
+        assert(out == "(ln 1, col 20): expected `->´ : have `()´") { out }
     }
 
     // CONS
@@ -190,7 +195,8 @@ class TEnv {
         val out = inp2env("""
             var l: @aaa
         """.trimIndent())
-        assert(out == "(ln 1, col 8): undeclared scope \"@aaa\"") { out }
+        //assert(out == "(ln 1, col 8): undeclared scope \"@aaa\"") { out }
+        assert(out == "(ln 1, col 8): expected type : have `@aaa´") { out }
     }
     @Test
     fun b16_pool_err () {
@@ -928,6 +934,16 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK") { out }
     }
+    @Test
+    fun e25_err () {
+        val out = inp2env("""
+            var x: @local
+            var y: @global
+            set x = y
+            set y = x
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
 
     // POINTERS - DOUBLE
 
@@ -1130,7 +1146,7 @@ class TEnv {
             var p: /() @global
             { @a
                 var v: ()
-                var f : {@a}(@_1) -> /()@_1
+                var f : -> {@a} -> [@_1] -> () -> /()@_1
                 set f = func {@a}(@_1) -> /()@_1 {
                     return /v      -- err: /v may not be at expected @
                 }
@@ -1163,7 +1179,7 @@ class TEnv {
     fun g13_ptr_func () {
         val out = inp2env("""
             var v: /_int @local
-            var f : {}[@_1,/_int@_1] -> ()
+            var f : {} -> @_1 -> /_int@_1 -> ()
             set f = func{} [@_1,/_int@_1] -> () {
                 set v = arg.2
             }

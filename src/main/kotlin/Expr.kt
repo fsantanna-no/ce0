@@ -10,9 +10,8 @@ sealed class Expr (val tk: Tk) {
     data class New   (val tk_: Tk.Key, val scope: Tk.Scope, val arg: Expr.UCons): Expr(tk_)
     data class Dnref (val tk_: Tk,     val ptr: Expr): Expr(tk_)
     data class Upref (val tk_: Tk.Chr, val pln: Expr): Expr(tk_)
-    data class Call  (val tk_: Tk.Key, val scope: Tk.Scope?, val f: Expr, val arg: Expr): Expr(tk_)
+    data class Call  (val tk_: Tk.Key, val scope: Tk.Scope?, val f: Expr, val scps: Array<Tk.Scope>, val arg: Expr): Expr(tk_)
     data class Func  (val tk_: Tk.Key, val type: Type.Func, val block: Stmt.Block) : Expr(tk_)
-    data class Pool  (val tk_: Tk.Scope): Expr(tk_)
 }
 
 sealed class Attr (val tk: Tk) {
@@ -35,7 +34,7 @@ fun Attr.toExpr (): Expr {
 
 fun Expr.flatten (): List<Expr> {
     return when (this) {
-        is Expr.Unit, is Expr.Var, is Expr.Nat, is Expr.Func, is Expr.Pool -> listOf(this)
+        is Expr.Unit, is Expr.Var, is Expr.Nat, is Expr.Func -> listOf(this)
         is Expr.TCons -> this.arg.map { it.flatten() }.flatten() + this
         is Expr.Call  -> this.f.flatten() + this.arg.flatten() + this
         is Expr.TDisc -> this.tup.flatten() + this

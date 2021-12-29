@@ -7,10 +7,10 @@ sealed class Type (val tk: Tk) {
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_)
     data class Union (val tk_: Tk.Chr, val isrec: Boolean, val vec: Array<Type>): Type(tk_)
     //data class UCons (val tk_: Tk.Num, val arg: Type): Type(tk_)
-    data class Func  (val tk_: Tk.Sym, val clo: Tk.Scope, val inp: Type, val out: Type): Type(tk_)
+    data class Func  (val tk_: Tk.Sym, val clo: Tk.Scope, val scps: Array<Tk.Scope>, val inp: Type, val out: Type): Type(tk_)
     data class Ptr   (val tk_: Tk.Chr, val scope: Tk.Scope?, val pln: Type): Type(tk_)
     data class Rec   (val tk_: Tk.Up): Type(tk_)
-    data class Pool  (val tk_: Tk.Scope): Type(tk_)
+    //data class Pool  (val tk_: Tk.Scope): Type(tk_)
 }
 
 fun Type_Unit (tk: Tk): Type.Unit {
@@ -38,14 +38,13 @@ fun Type.tostr (): String {
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
         is Type.Func  -> "{" + this.clo.tostr() + "} " + this.inp.tostr() + " -> " + this.out.tostr()
-        is Type.Pool  -> "@"+this.tk_.lbl + this.tk_.num.let { (if(it==null) "" else "_"+it) }
     }
 }
 
 fun Type.flatten (): List<Type> {
     // TODO: func/union do not make sense?
     return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec, is Type.Pool -> listOf(this)
+        is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> listOf(this)
         is Type.Tuple -> this.vec.map { it.flatten() }.flatten() + this
         is Type.Union -> this.vec.map { it.flatten() }.flatten() + this
         is Type.Func  -> this.inp.flatten() + this.out.flatten() + this
@@ -60,10 +59,9 @@ fun Type.lincol (lin: Int, col: Int): Type {
         is Type.Nat   -> Type.Nat(this.tk_.copy(lin_=lin,col_=col))
         is Type.Tuple -> Type.Tuple(this.tk_.copy(lin_=lin,col_=col), this.vec.map { it.lincol(lin,col) }.toTypedArray())
         is Type.Union -> Type.Union(this.tk_.copy(lin_=lin,col_=col), this.isrec, this.vec.map { it.lincol(lin,col) }.toTypedArray())
-        is Type.Func  -> Type.Func(this.tk_.copy(lin_=lin,col_=col), this.clo?.copy(lin_=lin,col_=col), this.inp.lincol(lin,col), this.out.lincol(lin,col))
+        is Type.Func  -> Type.Func(this.tk_.copy(lin_=lin,col_=col), this.clo?.copy(lin_=lin,col_=col), this.scps.map { it.copy(lin_=lin,col_=col) }.toTypedArray(), this.inp.lincol(lin,col), this.out.lincol(lin,col))
         is Type.Ptr   -> Type.Ptr(this.tk_.copy(lin_=lin,col_=col), this.scope, this.pln.lincol(lin,col))
         is Type.Rec   -> Type.Rec(this.tk_.copy(lin_=lin,col_=col))
-        is Type.Pool  -> Type.Pool(this.tk_.copy(lin_=lin,col_=col))
     }
 }
 
@@ -78,7 +76,7 @@ fun Type.Union.expand (): Array<Type> {
             is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray()) .up(AUX.ups[cur]!!)
             is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray()) .up(AUX.ups[cur]!!)
             is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scope, aux(cur.pln,up)) .up(AUX.ups[cur]!!)
-            is Type.Func  -> Type.Func(cur.tk_, cur.clo, aux(cur.inp,up), aux(cur.out,up)) .up(AUX.ups[cur]!!)
+            is Type.Func  -> Type.Func(cur.tk_, cur.clo, cur.scps, aux(cur.inp,up), aux(cur.out,up)) .up(AUX.ups[cur]!!)
             else -> cur
         }
     }
@@ -87,7 +85,7 @@ fun Type.Union.expand (): Array<Type> {
 
 fun Type.containsRec (): Boolean {
     return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func, is Type.Pool -> false
+        is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
         is Type.Rec   -> true
         is Type.Tuple -> this.vec.any { it.containsRec() }
         is Type.Union -> this.vec.any { it.containsRec() }
@@ -95,14 +93,6 @@ fun Type.containsRec (): Boolean {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-
-fun Type.pools (): List<Type.Pool> {
-    return when (this) {
-        is Type.Pool -> listOf(this)
-        is Type.Tuple -> this.vec.filter { it is Type.Pool } as List<Type.Pool>
-        else -> emptyList()
-    }
-}
 
 fun Tk.Scope?.scope (up: Any): Scope {
     // Offset of @N (max) of all crossing functions:
@@ -149,8 +139,7 @@ fun Tk.Scope?.scope (up: Any): Scope {
 
 fun Type.scope (): Scope {
     return when (this) {
-        is Type.Pool -> this.tk_.scope(this)
-        is Type.Ptr  -> this.scope.scope(this)
+        is Type.Ptr -> this.scope.scope(this)
         else -> {
             val lvl = this.ups_tolist().filter { it is Expr.Func }.count()
             Scope(lvl, null, this.ups_tolist().let { it.count { it is Stmt.Block } })

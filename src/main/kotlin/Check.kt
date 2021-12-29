@@ -9,7 +9,7 @@ fun Tk.Scope.check (up: Any) {
             it is Stmt.Block && it.scope!=null && it.scope.lbl==lbl && it.scope.num==num
         } != null) -> true
         (up.ups_first {                                         // [@_1, ...] { @_1 }
-            it is Expr.Func && it.type.inp.pools().any { it.tk_.lbl==lbl && it.tk_.num==num }
+            it is Expr.Func && it.type.scps.any { it.lbl==lbl && it.num==num }
         } != null) -> true
         else -> false
     }
@@ -22,7 +22,6 @@ fun Tk.Scope.check (up: Any) {
 fun check_01_before_tps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
-            is Type.Pool -> tp.tk_.check(tp)
             is Type.Rec -> {
                 val str = "^".repeat(tp.tk_.up)
                 All_assert_tk(tp.tk, AUX.ups[tp] is Type.Ptr) {
@@ -37,20 +36,18 @@ fun check_01_before_tps (s: Stmt) {
             is Type.Ptr -> tp.scope!!.check(tp)
             is Type.Func -> {
                 tp.clo.check(tp)
-                val tps   = tp.flatten()
-                val ptrs  = (tps.filter { it is Type.Ptr } as List<Type.Ptr>).filter { it.scope != null }
-                val pools = tps.filter { it is Type.Pool } as List<Type.Pool>
-                All_assert_tk(tp.tk, pools.all { it.tk_.num != null }) {
-                    "invalid pool : expected `_N´ depth"
-                }
+                val ptrs  = tp.flatten()
+                    .filter { it is Type.Ptr }
+                    .let    { it as List<Type.Ptr>}
+                    .filter { it.scope != null }
                 val ok1 = ptrs.all {
                     val ptr = it.scope!!
                     when {
                         (ptr.lbl == "global") -> true       // @global
                         //(ptr.lbl == "local")  -> true       // @local
                         tp.clo.let { ptr.lbl==it.lbl && ptr.num==it.num } -> true   // {@a} ...@a
-                        pools.any {                         // (@_1 -> ...@_1...)
-                            ptr.lbl==it.tk_.lbl && ptr.num==it.tk_.num
+                        tp.scps.any {                         // (@_1 -> ...@_1...)
+                            ptr.lbl==it.lbl && ptr.num==it.num
                         } -> true
                         (tp.ups_first {                     // { @aaa \n ...@aaa... }
                             it is Stmt.Block && it.scope!=null && it.scope.lbl==ptr.lbl && it.scope.num==ptr.num
@@ -61,11 +58,11 @@ fun check_01_before_tps (s: Stmt) {
                 All_assert_tk(tp.tk, ok1) {
                     "invalid function type : missing pool argument"
                 }
-                val ok2 = pools
-                    .groupBy { it.tk_.lbl }             // { "a"=[...], "b"=[...]
+                val ok2 = tp.scps
+                    .groupBy { it.lbl }             // { "a"=[...], "b"=[...]
                     .all {
                         it.value                        // [...]
-                            .map { it.tk_.num!! }       // [1,2,3,1,...]
+                            .map { it.num!! }       // [1,2,3,1,...]
                             .toSet()                    // [1,2,3,...]
                             .let { (it.minOrNull() == 1) && (it.maxOrNull() == it.size) }
                     }
@@ -98,18 +95,15 @@ fun check_01_before_tps (s: Stmt) {
                 }
             }
             is Expr.Func -> {
-                val pools = e.type.flatten().filter { it is Type.Pool } as List<Type.Pool>
                 val funcs = e.ups_tolist().filter { it is Expr.Func } as List<Expr.Func>
                 for (f in funcs) {
-                    val pools2 = f.type.flatten().filter { it is Type.Pool } as List<Type.Pool>
-                    val err = pools2.find { pool2 -> pools.any { pool -> pool.tk_.lbl==pool2.tk_.lbl } }
+                    val err = f.type.scps.find { tk2 -> e.type.scps.any { tk1 -> tk1.lbl==tk2.lbl } }
                     All_assert_tk(e.tk, err==null) {
-                        "invalid pool : \"@${err!!.tk_.lbl}\" is already declared (ln ${err!!.tk.lin})"
+                        "invalid pool : \"@${err!!.lbl}\" is already declared (ln ${err!!.lin})"
                     }
                 }
             }
 
-            is Expr.Pool -> e.tk_.check(e)
             is Expr.New  -> e.scope.check(e)
             is Expr.Call -> e.scope.let { if (it != null) it.check(e) }
         }
@@ -251,12 +245,6 @@ fun check_02_after_tps (s: Stmt) {
                             }
                             is Type.Union -> if (func !is Type.Union) call else {
                                 Type.Union(call.tk_, call.isrec, call.vec.mapIndexed { i,tp -> aux(func.vec[i], tp) }.toTypedArray())
-                            }
-                            is Type.Pool -> {
-                                if (func !is Type.Pool) call else {
-                                    val (lbl, num) = func.tk_.let { lbl_num(it) ; Pair(it.lbl,it.num) }
-                                    Type.Pool(Tk.Scope(TK.XSCOPE, call.tk.lin, call.tk.col, lbl, num))
-                                }
                             }
                             is Type.Ptr -> {
                                 if (func !is Type.Ptr) call else {

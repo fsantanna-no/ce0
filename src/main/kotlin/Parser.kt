@@ -1,6 +1,5 @@
 fun parser_type (all: All): Type {
     return when {
-        all.accept(TK.XSCOPE) -> Type.Pool(all.tk0 as Tk.Scope)
         all.accept(TK.UNIT) -> Type.Unit(all.tk0 as Tk.Sym)
         all.accept(TK.XNAT) -> Type.Nat(all.tk0 as Tk.Str)
         all.accept(TK.XUP) -> Type.Rec(all.tk0 as Tk.Up)
@@ -57,11 +56,26 @@ fun parser_type (all: All): Type {
                 Tk.Scope(TK.XSCOPE, all.tk0.lin, all.tk0.col, "global", null)
             }
             all.accept_err(TK.CHAR, '}')
+            all.accept_err(TK.ARROW)
+            all.accept_err(TK.CHAR, '[')
+            val scps = mutableListOf<Tk.Scope>()
+            while (all.accept(TK.XSCOPE)) {
+                val tk = all.tk0 as Tk.Scope
+                All_assert_tk(tk, tk.num != null) {
+                    "invalid pool : expected `_N´ depth"
+                }
+                scps.add(tk)
+                if (!all.accept(TK.CHAR, ',')) {
+                    break
+                }
+            }
+            all.accept_err(TK.CHAR, ']')
+            all.accept_err(TK.ARROW)
             val inp = parser_type(all)
             all.accept_err(TK.ARROW)
             val tk = all.tk0 as Tk.Sym
             val out = parser_type(all) // right associative
-            Type.Func(tk, clo, inp, out)
+            Type.Func(tk, clo, scps.toTypedArray(), inp, out)
         }
         else -> {
             all.err_expected("type")
@@ -70,188 +84,174 @@ fun parser_type (all: All): Type {
     }
 }
 
-fun parser_expr (all: All, canpre: Boolean): Expr {
-    fun one (): Expr {
-        return when {
-            all.accept(TK.XSCOPE) -> Expr.Pool(all.tk0 as Tk.Scope)
-            all.accept(TK.UNIT)   -> Expr.Unit(all.tk0 as Tk.Sym)
-            all.accept(TK.XVAR)   -> Expr.Var(all.tk0 as Tk.Str)
-            all.accept(TK.XNAT)   -> {
-                val tk0 = all.tk0 as Tk.Str
-                val tp = if (!all.accept(TK.CHAR, ':')) null else {
-                    parser_type(all)
-                }
-                Expr.Nat(tk0, tp)
+fun parser_expr (all: All): Expr {
+    var e = when {
+        all.accept(TK.UNIT) -> Expr.Unit(all.tk0 as Tk.Sym)
+        all.accept(TK.XVAR) -> Expr.Var(all.tk0 as Tk.Str)
+        all.accept(TK.XNAT) -> {
+            val tk0 = all.tk0 as Tk.Str
+            val tp = if (!all.accept(TK.CHAR, ':')) null else {
+                parser_type(all)
             }
-            all.accept(TK.CHAR,'/') -> {
-                val tk0 = all.tk0 as Tk.Chr
-                val e = parser_expr(all,false)
-                all.assert_tk(all.tk0, e is Expr.Nat || e is Expr.Var || e is Expr.TDisc || e is Expr.Dnref || e is Expr.Upref) {
-                    "unexpected operand to `/´"
-                }
-                Expr.Upref(tk0, e)
+            Expr.Nat(tk0, tp)
+        }
+        all.accept(TK.CHAR, '/') -> {
+            val tk0 = all.tk0 as Tk.Chr
+            val e = parser_expr(all)
+            all.assert_tk(
+                all.tk0,
+                e is Expr.Nat || e is Expr.Var || e is Expr.TDisc || e is Expr.Dnref || e is Expr.Upref
+            ) {
+                "unexpected operand to `/´"
             }
-            all.accept(TK.CHAR,'(') -> {
-                val e = parser_expr(all, false)
-                all.accept_err(TK.CHAR,')')
-                e
-            }
-            all.accept(TK.CHAR,'[') -> {
-                val tk0 = all.tk0 as Tk.Chr
-                val e = parser_expr(all, false)
-                val es = arrayListOf(e)
-                while (true) {
-                    if (!all.accept(TK.CHAR,',')) {
-                        break
-                    }
-                    val e2 = parser_expr(all, false)
-                    es.add(e2)
+            Expr.Upref(tk0, e)
+        }
+        all.accept(TK.CHAR, '(') -> {
+            val e = parser_expr(all)
+            all.accept_err(TK.CHAR, ')')
+            e
+        }
+        all.accept(TK.CHAR, '[') -> {
+            val tk0 = all.tk0 as Tk.Chr
+            val e = parser_expr(all)
+            val es = arrayListOf(e)
+            while (true) {
+                if (!all.accept(TK.CHAR, ',')) {
+                    break
                 }
-                all.accept_err(TK.CHAR, ']')
-                Expr.TCons(tk0, es.toTypedArray())
+                val e2 = parser_expr(all)
+                es.add(e2)
             }
-            all.accept(TK.CHAR,'<') -> {
-                all.accept_err(TK.CHAR,'.')
-                all.accept_err(TK.XNUM)
-                val tk0 = all.tk0 as Tk.Num
-                val cons = try {
-                    parser_expr(all, false)
-                } catch (e: Throwable) {
-                    assert(!all.consumed(tk0)) {
-                        e.message!!
-                    }
-                    Expr.Unit(Tk.Sym(TK.UNIT, all.tk1.lin, all.tk1.col, "()"))
+            all.accept_err(TK.CHAR, ']')
+            Expr.TCons(tk0, es.toTypedArray())
+        }
+        all.accept(TK.CHAR, '<') -> {
+            all.accept_err(TK.CHAR, '.')
+            all.accept_err(TK.XNUM)
+            val tk0 = all.tk0 as Tk.Num
+            val cons = try {
+                parser_expr(all)
+            } catch (e: Throwable) {
+                assert(!all.consumed(tk0)) {
+                    e.message!!
                 }
-                all.accept_err(TK.CHAR, '>')
-                all.accept_err(TK.CHAR, ':')
-                val tp = parser_type(all)
-                Expr.UCons(tk0, tp, cons)
+                Expr.Unit(Tk.Sym(TK.UNIT, all.tk1.lin, all.tk1.col, "()"))
             }
-            all.accept(TK.NEW) -> {
-                val tk0 = all.tk0
-                val e = parser_expr(all,false)
-                all.assert_tk(tk0, e is Expr.UCons && e.tk_.num!=0) {
-                    //"invalid `new` : unexpected <.0>"
-                    "invalid `new` : expected constructor"
-                }
-                val scp = if (all.accept(TK.CHAR, ':')) {
-                    all.accept_err(TK.XSCOPE)
-                    all.tk0 as Tk.Scope
-                } else {
-                    Tk.Scope(TK.XSCOPE, all.tk0.lin, all.tk0.col, "local", null)
-                }
-                Expr.New(tk0 as Tk.Key, scp, e as Expr.UCons)
+            all.accept_err(TK.CHAR, '>')
+            all.accept_err(TK.CHAR, ':')
+            val tp = parser_type(all)
+            Expr.UCons(tk0, tp, cons)
+        }
+        all.accept(TK.NEW) -> {
+            val tk0 = all.tk0
+            val e = parser_expr(all)
+            all.assert_tk(tk0, e is Expr.UCons && e.tk_.num != 0) {
+                //"invalid `new` : unexpected <.0>"
+                "invalid `new` : expected constructor"
             }
-            all.accept(TK.FUNC) -> {
-                val tk0 = all.tk0 as Tk.Key
+            val scp = if (all.accept(TK.CHAR, ':')) {
+                all.accept_err(TK.XSCOPE)
+                all.tk0 as Tk.Scope
+            } else {
+                Tk.Scope(TK.XSCOPE, all.tk0.lin, all.tk0.col, "local", null)
+            }
+            Expr.New(tk0 as Tk.Key, scp, e as Expr.UCons)
+        }
+        all.accept(TK.CALL) || all.accept(TK.OUTPUT) -> {
+            val tk_pre = all.tk0 as Tk.Key
+            var e1 = parser_expr(all)
+            val e2 = parser_expr(all)
 
-                val tp = parser_type(all)
-                all.assert_tk(all.tk0, tp is Type.Func) {
-                    "expected function type"
-                }
-                val tpf = tp as Type.Func
+            if (tk_pre.enu == TK.OUTPUT) {
+                all.assert_tk(e1.tk, e1 is Expr.Var) { "invalid `output` : expected identifier" }
+                e1 = Expr.Dnref(
+                    Tk.Chr(TK.CHAR, e1.tk.lin, e1.tk.col, '\\'),
+                    Expr.Var(
+                        Tk.Str(TK.XVAR, e1.tk.lin, e1.tk.col, "output_" + (e1.tk as Tk.Str).str)
+                    )
+                )
+            }
+            val scp = if (all.accept(TK.CHAR, ':')) {
+                all.accept_err(TK.XSCOPE)
+                all.tk0 as Tk.Scope
+            } else {
+                Tk.Scope(TK.XSCOPE, all.tk0.lin, all.tk0.col, "local", null)
+            }
+            return Expr.Call(tk_pre, scp, e1, emptyArray(), e2)
+        }
+        all.accept(TK.FUNC) -> {
+            val tk0 = all.tk0 as Tk.Key
 
-                val block = parser_block(all)
-                val lin = block.tk.lin
-                val col = block.tk.col
+            val tp = parser_type(all)
+            all.assert_tk(all.tk0, tp is Type.Func) {
+                "expected function type"
+            }
+            val tpf = tp as Type.Func
 
-                val xblock = Stmt.Block(block.tk_, null,
-                    Stmt.Seq(block.tk,
-                        Stmt.Var(Tk.Str(TK.XVAR,lin,col,"_ret_"), tpf.out.lincol(lin,col)),
-                        Stmt.Block(block.tk_, null,
-                            Stmt.Seq(block.tk,
-                                Stmt.Var(Tk.Str(TK.XVAR,lin,col,"arg"), tpf.inp.lincol(lin,col)),
-                                Stmt.Seq(block.tk,
-                                    Stmt.Set(
-                                        Tk.Chr(TK.XVAR,lin,col,'='),
-                                        Expr.Var(Tk.Str(TK.XVAR,lin,col,"arg")),
-                                        Expr.Nat(Tk.Str(TK.XNAT,lin,col,"_arg_"),null)
-                                    ),
-                                    block
-                                )
+            val block = parser_block(all)
+            val lin = block.tk.lin
+            val col = block.tk.col
+
+            val xblock = Stmt.Block(
+                block.tk_, null,
+                Stmt.Seq(
+                    block.tk,
+                    Stmt.Var(Tk.Str(TK.XVAR, lin, col, "_ret_"), tpf.out.lincol(lin, col)),
+                    Stmt.Block(
+                        block.tk_, null,
+                        Stmt.Seq(
+                            block.tk,
+                            Stmt.Var(Tk.Str(TK.XVAR, lin, col, "arg"), tpf.inp.lincol(lin, col)),
+                            Stmt.Seq(
+                                block.tk,
+                                Stmt.Set(
+                                    Tk.Chr(TK.XVAR, lin, col, '='),
+                                    Expr.Var(Tk.Str(TK.XVAR, lin, col, "arg")),
+                                    Expr.Nat(Tk.Str(TK.XNAT, lin, col, "_arg_"), null)
+                                ),
+                                block
                             )
                         )
                     )
                 )
-                Expr.Func(tk0, tp, xblock)
-            }
-            else -> {
-                all.err_expected("expression")
-                error("unreachable")
-            }
+            )
+            Expr.Func(tk0, tp, xblock)
+        }
+        else -> {
+            all.err_expected("expression")
+            error("unreachable")
         }
     }
 
-    fun call (ispre: Boolean): Expr {
-        val tk_pre = all.tk0
-
-        // one!1\.2?1
-        var e1 = one()
-        while (all.accept(TK.CHAR,'\\') || all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!') || all.accept(TK.CHAR, '?')) {
-            val chr = all.tk0 as Tk.Chr
-            if (chr.chr == '\\') {
-                all.assert_tk(all.tk0, e1 is Expr.Nat || e1 is Expr.Var || e1 is Expr.TDisc || e1 is Expr.UDisc || e1 is Expr.Dnref || e1 is Expr.Upref || e1 is Expr.Call) {
-                    "unexpected operand to `\\´"
-                }
-                e1 = Expr.Dnref(chr, e1)
-            } else {
-                all.accept_err(TK.XNUM)
-                val num = all.tk0 as Tk.Num
-                all.assert_tk(all.tk0, e1 !is Expr.TCons && e1 !is Expr.UCons) {
-                    "invalid discriminator : unexpected constructor"
-                }
-                if (chr.chr=='?' || chr.chr=='!') {
-                    All_assert_tk(all.tk0, num.num!=0 || e1 is Expr.Dnref) {
-                        "invalid discriminator : union cannot be <.0>"
-                    }
-                }
-                e1 = when {
-                    (chr.chr == '?') -> Expr.UPred(num, e1)
-                    (chr.chr == '!') -> Expr.UDisc(num, e1)
-                    (chr.chr == '.') -> Expr.TDisc(num, e1)
-                    else -> error("impossible case")
-                }
+    // one!1\.2?1
+    while (all.accept(TK.CHAR,'\\') || all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!') || all.accept(TK.CHAR, '?')) {
+        val chr = all.tk0 as Tk.Chr
+        if (chr.chr == '\\') {
+            all.assert_tk(all.tk0, e is Expr.Nat || e is Expr.Var || e is Expr.TDisc || e is Expr.UDisc || e is Expr.Dnref || e is Expr.Upref || e is Expr.Call) {
+                "unexpected operand to `\\´"
             }
-        }
-
-        val tk_bef = all.tk0
-        val e2 = try {
-            parser_expr(all, false)
-        } catch (e: Throwable) {
-            //throw e
-            assert(!all.consumed(tk_bef)) {
-                e.message!! // failed parser_expr and consumed input: error)
-            }
-            if (!ispre) {
-                return e1
-            }
-            // call f -> call f ()
-            Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()"))
-        }
-
-        //all.assert_tk(e1.tk, e1 is Expr.Var || (e1 is Expr.Nat && (!ispre || tk_pre.enu==TK.CALL))) {
-        //    "expected function"
-        //}
-        val tk_pre2 = if (ispre) tk_pre as Tk.Key else Tk.Key(TK.CALL,tk_pre.lin,tk_pre.col,"call")
-        if (ispre && tk_pre2.enu==TK.OUTPUT) {
-            all.assert_tk(e1.tk, e1 is Expr.Var) { "invalid `output` : expected identifier" }
-            e1 = Expr.Dnref (
-                Tk.Chr(TK.CHAR, e1.tk.lin, e1.tk.col, '\\'),
-                Expr.Var (
-                    Tk.Str(TK.XVAR,e1.tk.lin,e1.tk.col,"output_"+(e1.tk as Tk.Str).str)
-            ))
-        }
-        val scp = if (all.accept(TK.CHAR, ':')) {
-            all.accept_err(TK.XSCOPE)
-            all.tk0 as Tk.Scope
+            e = Expr.Dnref(chr, e)
         } else {
-            Tk.Scope(TK.XSCOPE, all.tk0.lin,all.tk0.col, "local", null)
+            all.accept_err(TK.XNUM)
+            val num = all.tk0 as Tk.Num
+            all.assert_tk(all.tk0, e !is Expr.TCons && e !is Expr.UCons) {
+                "invalid discriminator : unexpected constructor"
+            }
+            if (chr.chr=='?' || chr.chr=='!') {
+                All_assert_tk(all.tk0, num.num!=0 || e is Expr.Dnref) {
+                    "invalid discriminator : union cannot be <.0>"
+                }
+            }
+            e = when {
+                (chr.chr == '?') -> Expr.UPred(num, e)
+                (chr.chr == '!') -> Expr.UDisc(num, e)
+                (chr.chr == '.') -> Expr.TDisc(num, e)
+                else -> error("impossible case")
+            }
         }
-        return Expr.Call(tk_pre2, scp, e1, e2)
     }
 
-    val ispre = (canpre && (all.accept(TK.CALL) || all.accept(TK.OUTPUT)))
-    return call(ispre)
+    return e
 }
 
 fun parser_attr (all: All): Attr {
@@ -321,7 +321,7 @@ fun parser_stmt (all: All): Stmt {
             val dst = parser_attr(all)
             all.accept_err(TK.CHAR,'=')
             val tk0 = all.tk0 as Tk.Chr
-            val src = parser_expr(all, true)
+            val src = parser_expr(all)
             Stmt.Set(tk0, dst.toExpr(), src)
         }
         all.accept(TK.NATIVE) -> {
@@ -330,12 +330,12 @@ fun parser_stmt (all: All): Stmt {
         }
         all.check(TK.CALL) || all.check(TK.OUTPUT) -> {
             val tk0 = all.tk1 as Tk.Key
-            val e = parser_expr(all, true)
+            val e = parser_expr(all)
             Stmt.Call(tk0, e as Expr.Call)
         }
         all.accept(TK.IF) -> {
             val tk0 = all.tk0 as Tk.Key
-            val tst = parser_expr(all, false)
+            val tst = parser_expr(all)
             val true_ = parser_block(all)
             if (!all.accept(TK.ELSE)) {
                 return Stmt.If(tk0, tst, true_, Stmt.Block(Tk.Chr(TK.CHAR,all.tk1.lin,all.tk1.col,'{'),null,Stmt.Pass(all.tk0)))
@@ -346,7 +346,7 @@ fun parser_stmt (all: All): Stmt {
         all.accept(TK.RETURN) -> {
             val tk0 = all.tk0 as Tk.Key
             val e = try {
-                parser_expr(all, false)
+                parser_expr(all)
             } catch (e: Throwable) {
                 assert(!all.consumed(tk0)) {
                     e.message!!

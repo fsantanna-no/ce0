@@ -72,6 +72,7 @@ fun env_prelude (s: Stmt): Stmt {
             Type.Func (
                 Tk.Sym(TK.ARROW, 1, 1, "->"),
                 Tk.Scope(TK.XSCOPE, 1, 1, "global", null),
+                emptyArray(),
                 Type.Any(Tk.Chr(TK.CHAR,1,1,'?')),
                 Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
         ))
@@ -179,7 +180,6 @@ fun Type.up (up: Any): Type {
 fun Aux_tps (s: Stmt) {
     fun fe (e: Expr) {
         AUX.tps[e] = when (e) {
-            is Expr.Pool  -> Type.Pool(e.tk_).up(e)
             is Expr.Unit  -> Type.Unit(e.tk_).up(e)
             is Expr.Nat   -> e.type ?: Type.Nat(e.tk_).up(e)
             is Expr.Upref -> AUX.tps[e.pln]!!.let { Type.Ptr(e.tk_, null, it).up(it) }

@@ -2,7 +2,6 @@ import kotlin.math.absoluteValue
 
 fun Type.toce (): String {
     return when (this) {
-        is Type.Pool  -> "Pool" //+this.tk_.scp.drop(1)
         is Type.Rec   -> "Rec"
         is Type.Any   -> "Any"
         is Type.Unit  -> "Unit"
@@ -20,7 +19,6 @@ val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 fun Type.pos (): String {
     return when (this) {
         is Type.Rec -> TODO(this.toString())
-        is Type.Pool  -> "Pool**"
         is Type.Any   -> "void"     // TODO: remove output_std prototype?
         is Type.Unit  -> "int"
         is Type.Ptr   -> this.pln.pos() + "*"
@@ -61,27 +59,6 @@ fun code_ft (tp: Type) {
     }
 
     when (tp) {
-        is Type.Pool -> {
-            val ce = tp.toce()
-            TYPES.add(Triple(
-                //Pair(ce, deps(tp.vec.toSet()).let { println(ce);println(it);it }),
-                Pair(ce, emptySet()),
-                """
-                void output_std_${ce}_ (${tp.pos()} v);
-                void output_std_${ce} (${tp.pos()} v);
-                
-            ""","""
-                void output_std_${ce}_ (${tp.pos()} v) {
-                    printf("@${tp.tk_.lbl}");
-                    puts("");
-                }
-                void output_std_${ce} (${tp.pos()} v) {
-                    output_std_${ce}_(v);
-                    puts("");
-                }
-                
-            """))
-        }
         is Type.Func -> {
             TYPES.add(Triple(
                 Pair(tp.toce(), deps(setOf(tp.inp,tp.out))),
@@ -234,7 +211,6 @@ fun Tk.Scope.toce (): String {
 fun code_fe (e: Expr) {
     val xp = AUX.tps[e]!!
     EXPRS.addFirst(when (e) {
-        is Expr.Pool -> Pair("", e.tk_.toce())
         is Expr.Unit -> Pair("", "0")
         is Expr.Nat -> Pair("", e.tk_.str)
         is Expr.Var -> Pair("", e.tk_.str)
@@ -320,16 +296,11 @@ fun code_fe (e: Expr) {
         is Expr.Func  -> {
             val ID  = "_func_" + e.hashCode().absoluteValue
             val inp = e.type.inp
-            val pools = inp.pools().map { it.tk_ }.let {
-                if (inp is Type.Pool) {
-                    "Pool** ${it[0].toce()} = _arg_;\n"
-                } else {
-                    it.mapIndexed { i,tk -> "Pool** ${tk.toce()} = _arg_._${i+1};\n" }.joinToString("")
-                }
+            val pools = e.type.scps.let { if (it.size == 0) "" else
+                it.mapIndexed { i,tk -> "Pool** ${tk.toce()}\n" }.joinToString(",") + ","
             }
             val pre = """
-                auto ${e.type.out.pos()} $ID (${inp.pos()} _arg_) {
-                    $pools
+                auto ${e.type.out.pos()} $ID ($pools ${inp.pos()} _arg_) {
                     ${CODE.removeFirst()}
                 }
 
