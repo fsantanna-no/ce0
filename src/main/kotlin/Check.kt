@@ -177,15 +177,16 @@ fun check_02_after_tps (s: Stmt) {
             }
 
             is Expr.UCons -> {
-                val tp1 = Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e)
-                val tp2 = if (e.tk_.num != 0) tp1 else {
-                    Type.Ptr (
-                        Tk.Chr(TK.CHAR, e.tk.lin, e.tk.col, '\\'),
-                        Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col,"global",null),
-                        tp1
-                    ).up(e)
+                val ok = when (e.type) {
+                    is Type.Ptr -> {
+                        (e.tk_.num == 0) && e.arg is Expr.Unit && (e.type.pln is Type.Rec || e.type.pln.isrec())
+                    }
+                    is Type.Union -> {
+                        (e.tk_.num > 0) && (e.type.vec.size >= e.tk_.num) && e.type.expand()[e.tk_.num - 1].isSupOf(AUX.tps[e.arg]!!)
+                    }
+                    else -> error("bug found")
                 }
-                All_assert_tk(e.tk, e.type.isSupOf(tp2)) {
+                All_assert_tk(e.tk, ok) {
                     "invalid constructor : type mismatch"
                 }
             }
@@ -245,7 +246,6 @@ fun check_02_after_tps (s: Stmt) {
 
                         return when (call) {
                             is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> call
-                            is Type.UCons -> error("bug found")
                             is Type.Tuple -> if (func !is Type.Tuple) call else {
                                 Type.Tuple(call.tk_, /*********/ call.vec.mapIndexed { i,tp -> aux(func.vec[i], tp) }.toTypedArray())
                             }

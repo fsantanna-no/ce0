@@ -31,7 +31,6 @@ fun Type.visit_ (ft: ((Type)->Unit)?) {
     when (this) {
         is Type.Tuple -> this.vec.forEach { it.visit_(ft) }
         is Type.Union -> (if (XPD) this.expand() else this.vec).forEach { it.visit_(ft) }
-        is Type.UCons -> this.arg.visit_(ft)
         is Type.Func  -> { this.inp.visit_(ft) ; this.out.visit_(ft) }
         is Type.Ptr   -> this.pln.visit_(ft)
     }

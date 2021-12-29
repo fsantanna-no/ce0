@@ -108,7 +108,6 @@ fun Type.aux_upsenvs (up: Any) {
     when (this) {
         is Type.Tuple -> this.vec.forEach { it.aux_upsenvs(this) }
         is Type.Union -> this.vec.forEach { it.aux_upsenvs(this) }
-        is Type.UCons -> this.arg.aux_upsenvs(this)
         is Type.Func  -> { this.inp.aux_upsenvs(this) ; this.out.aux_upsenvs(this) }
         is Type.Ptr   -> this.pln.aux_upsenvs(this)
     }
@@ -193,7 +192,7 @@ fun Aux_tps (s: Stmt) {
                 }
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { AUX.tps[it]!! }.toTypedArray()).up(e)
-            is Expr.UCons -> e.type //Type.UCons(e.tk_, AUX.tps[e.arg]!!).up(e)
+            is Expr.UCons -> e.type
             is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scope, AUX.tps[e.arg]!!).up(e)
             is Expr.Call -> {
                 AUX.tps[e.f].let {
