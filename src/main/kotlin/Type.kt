@@ -34,7 +34,7 @@ fun Type.tostr (): String {
         is Type.Unit  -> "()"
         is Type.Nat   -> this.tk_.str
         is Type.Rec   -> "^".repeat(this.tk_.up)
-        is Type.Ptr   -> this.scope.let { (if (it==null) "" else "(") + "/" + this.pln.tostr() + it.tostr() }
+        is Type.Ptr   -> this.scope.let { "/" + this.pln.tostr() + it.tostr() }
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
         is Type.Func  -> "{" + this.clo.tostr() + "} " + this.inp.tostr() + " -> " + this.out.tostr()

@@ -194,17 +194,77 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
             is Expr.Call -> {
+                val func = AUX.tps[e.f]
                 val ret1 = AUX.tps[e]!!
-                val tp_f = AUX.tps[e.f]
                 val arg1 = AUX.tps[e.arg]!!
 
-                val (inp1,out1) = when (tp_f) {
-                    is Type.Func -> Pair(tp_f.inp,tp_f.out)
-                    is Type.Nat  -> Pair(tp_f,tp_f)
+                val (scps1,inp1,out1) = when (func) {
+                    is Type.Func -> Triple(func.scps,func.inp,func.out)
+                    is Type.Nat  -> Triple(null,func,func)
                     else -> error("impossible case")
                 }
 
-                val (arg2,ret2) = if (tp_f !is Type.Func) Pair(arg1,ret1) else
+                // check scopes
+                // var f: /(... -> {@_1,@_2,...} -> ...)
+                // call f\ {@a,@b,...} ...
+                if (scps1 != null) {
+                    // { [lbl]={1=depth,2=depth} }
+                    // { [""]={[1]=5, [2]=7, ...}
+                    val acc = mutableMapOf<String,MutableMap<Int,Int>>()
+                    All_assert_tk(e.tk, scps1.size == e.scps.size) {
+                        "invalid call : scope mismatch"
+                    }
+                    scps1.zip(e.scps).forEach { (ff,ee) ->
+                        val depth = ee.scope(e).depth
+                        val num   = ff.num!!
+                        acc[ff.lbl].let {
+                            if (it == null) {
+                                acc[ff.lbl] = mutableMapOf(Pair(num,depth))
+                            } else {
+                                val ok = it.all {
+                                    when {
+                                        (it.key == num) -> (it.value == depth)
+                                        (it.key > num)  -> (it.value >= depth)
+                                        (it.key < num)  -> (it.value <= depth)
+                                        else -> error("bug found")
+                                    }
+                                }
+                                All_assert_tk(ee, ok) {
+                                    "invalid call : scope mismatch"
+                                }
+                                it[num] = depth
+                            }
+                        }
+                    }
+                    if (e.scope != null) {
+                        val ff = (inp1.flatten() + out1.flatten())
+                            .filter { it is Type.Ptr }
+                            .let    { it as List<Type.Ptr> }
+                        val ee = (arg1.flatten() + ret1.flatten())
+                            .filter { it is Type.Ptr }
+                            .let    { it as List<Type.Ptr> }
+                        //assert(ff.size == ee.size) { "bug found" }
+                        ff.zip(ee).forEach { (ff,ee) ->
+                            println(ff)
+                            println(ee)
+                            val fscp  = ff.scope!!
+                            val edep = ee.scope().depth
+                            if (fscp.num == null) {
+                                All_assert_tk(ee.tk, ff.scope().depth == edep) {
+                                    "invalid call : scope mismatch"
+                                }
+                            } else {
+                                All_assert_tk(ee.tk, acc[fscp.lbl]!![fscp.num]!! == edep) {
+                                    "invalid call : scope mismatch"
+                                }
+                            }
+                        }
+                    }
+                }
+
+                println("-=-=-=-=-=-=-=-=-")
+
+                val (arg2,ret2) = if (func !is Type.Func) Pair(arg1,ret1) else
                 {
                     // { [rel]={1=depth,2=depth} }
                     val acc = mutableMapOf<String,MutableMap<Int,Int>>()
@@ -235,7 +295,7 @@ fun check_02_after_tps (s: Stmt) {
                                         }
                                     }
                                     All_assert_tk(call.tk, ok) {
-                                        "invalid call : incompatible scopes"
+                                        "invalid call : scope mismatch"
                                     }
                                     it[tk.num] = new
                                 }
@@ -283,10 +343,9 @@ fun check_02_after_tps (s: Stmt) {
                 print("ARG1: ") ; println(arg1.tostr())
                 print("ARG2: ") ; println(arg2.tostr())
                 //println("OUT, RET1, RET2")
-                //println(out1.tostr())
-                //println(ret1.tostr())
-                //println(ret2.tostr())
-                //println(">>>") ; println(inp) ; println(arg2)
+                print("OUT1: ") ; println(out1.tostr())
+                print("RET1: ") ; println(ret1.tostr())
+                print("RET2: ") ; println(ret2.tostr())
                 //*/
 
                 All_assert_tk(e.f.tk, inp1.isSupOf(arg2) && ret2.isSupOf(out1)) {
