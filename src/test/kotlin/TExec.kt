@@ -1563,8 +1563,8 @@ class TExec {
     fun n10_pool_closure_todo() {
         val out = all(
             """
-            var const:     /({}->{@_1}-> /_int@_1 -> /({@_1}->{}-> () -> /_int@_1)@_1)@local
-            set const = func {}->{@_1}-> /_int@_1 -> /({@_1}->{}-> () -> /_int@_1)@_1 {
+            var cnst:     /({}->{@_1}-> /_int@_1 -> /({@_1}->{}-> () -> /_int@_1)@_1)@local
+            set cnst = func {}->{@_1}-> /_int@_1 -> /({@_1}->{}-> () -> /_int@_1)@_1 {
                 var x: /_int@_1
                 set x = arg
                 return func {@_1}->{}-> () -> /_int@_1 {
@@ -1575,8 +1575,10 @@ class TExec {
             var five: _int
             set five = _5
             var f: / ({@local} -> {} -> () -> /_int@local) @local
-            set f = call const\ {@local} /five
-            output std f\ --@local
+            set f = call cnst\ {@local} /five
+            var v: /_int@local
+            set v = call f\ ()
+            output std v\ --@local
             }
         """.trimIndent()
         )

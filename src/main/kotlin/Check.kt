@@ -245,31 +245,17 @@ fun check_02_after_tps (s: Stmt) {
                     fun aux (tp: Type): Type {
                         return when (tp) {
                             is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> tp
-                            is Type.Tuple -> if (tp !is Type.Tuple) tp else {
-                                Type.Tuple(tp.tk_, tp.vec.map { aux(it) }.toTypedArray())
-                            }
-                            is Type.Union -> if (tp !is Type.Union) tp else {
-                                Type.Union(tp.tk_, tp.isrec, tp.vec.map { aux(it) }.toTypedArray())
-                            }
-                            is Type.Ptr -> if (tp !is Type.Ptr) tp else {
-                                val scp = tp.scope!!.let { acc[it.lbl]!![it.num]!! }
-                                print(">>> ") ; println(scp)
-                                Type.Ptr(tp.tk_, scp, aux(tp.pln)).up(e)
-                            }
-                            is Type.Func -> tp
-                            /*
-                            is Type.Func -> {
-                                if (func !is Type.Func) call else {
-                                    println(">>>: ${func.clo}")
-                                    val (lbl, num) = lbl_num(func.clo)
-                                    println("<<<")
-                                    val clo = Tk.Scope(TK.XSCOPE, call.tk.lin, call.tk.col, lbl, num)
-                                    val inp = aux(func.inp, call.inp)
-                                    val out = aux(func.out, call.out)
-                                    Type.Func(call.tk_, clo, inp, out)
+                            is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { aux(it) }.toTypedArray())
+                            is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { aux(it) }.toTypedArray())
+                            is Type.Ptr -> {
+                                val ret = tp.scope!!.let { scp ->
+                                    acc[scp.lbl].let { if (it == null) null else it[scp.num]!! }
+                                }
+                                if (ret == null) tp else {
+                                    Type.Ptr(tp.tk_, ret, aux(tp.pln)).up(e)
                                 }
                             }
-                            */
+                            is Type.Func -> Type.Func(tp.tk_, tp.clo, tp.scps, aux(tp.inp), aux(tp.out)).up(e)
                         }
                     }
                     Pair(aux(inp1), aux(out1))

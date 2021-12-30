@@ -2908,9 +2908,9 @@ class TEnv {
     fun p23_pool_closure_err() {
         val out = inp2env(
             """
-            var g: {}->{@a_1}->() -> ({}->{@a_1}->()->())
-            set g = func {}->{@a_1}->() -> ({}->{@a_1}->()->()) {
-                var f: {@a_1}->{@b_1}->() -> ()
+            var g: / ({}->{@a_1}->() -> /({}->{@a_1}->()->()))
+            set g = func {}->{@a_1}->() -> /({}->{@a_1}->()->()) {
+                var f: / {@a_1}->{@b_1}->() -> ()
                 var x: /</^@a_1>@a_1
                 set x = new <.1 <.0>:/</^@a_1>@a_1>: </^@a_1>: @a_1
                 set f = func {@a_1}->{@b_1}->() -> () {
@@ -2918,7 +2918,7 @@ class TEnv {
                 }
                return f
             }
-            var f: {}->{@a_1}->() -> ()        -- still requires [@a_1]
+            var f: /({}->{@a_1}->() -> ())  -- still requires [@a_1]
             set f = call g {@local} ()
             call f {@local} ()
         """.trimIndent()

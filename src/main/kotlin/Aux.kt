@@ -198,8 +198,6 @@ fun Aux_tps (s: Stmt) {
                 AUX.tps[e.f].let {
                     when (it) {
                         is Type.Nat -> it
-                        //is Type.Func -> it.out
-                        ///*
                         is Type.Func -> {
                             val MAP = it.scps.map { Pair(it.lbl,it.num) }.zip(e.scps.map { Pair(it.lbl,it.num) }).toMap()
                             fun f (tk: Tk.Scope): Tk.Scope {
@@ -218,7 +216,6 @@ fun Aux_tps (s: Stmt) {
                             }
                             map(it.out)
                         }
-                        //*/
                         else -> {
                             All_assert_tk(e.f.tk, false) {
                                 "invalid call : not a function"
