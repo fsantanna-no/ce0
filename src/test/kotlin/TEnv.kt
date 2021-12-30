@@ -2987,4 +2987,26 @@ class TEnv {
         )
         assert(out == "(ln 4, col 13): invalid pool : \"@a\" is already declared (ln 2)") { out }
     }
+    @Test
+    fun p28_pool_ff1() {
+        val out = inp2env(
+            """
+            var f:                  /({} -> {@_1} -> () -> ())
+            var g: /({} -> {@_1} -> /({} -> {@_1} -> () -> ())@_1 -> ())
+            output std call g\ {@local} f
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun p28_pool_ff2() {
+        val out = inp2env(
+            """
+            var f:                  /({} -> {@_1} -> /()@_1 -> ())
+            var g: /({} -> {@_1} -> /({} -> {@_1} -> /()@_1 -> ())@_1 -> ())
+            output std call g\ {@local} f
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
 }

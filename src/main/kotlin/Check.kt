@@ -255,7 +255,7 @@ fun check_02_after_tps (s: Stmt) {
                                     Type.Ptr(tp.tk_, ret, aux(tp.pln)).up(e)
                                 }
                             }
-                            is Type.Func -> Type.Func(tp.tk_, tp.clo, tp.scps, aux(tp.inp), aux(tp.out)).up(e)
+                            is Type.Func -> tp //Type.Func(tp.tk_, tp.clo, tp.scps, aux(tp.inp), aux(tp.out)).up(e)
                         }
                     }
                     Pair(aux(inp1), aux(out1))
