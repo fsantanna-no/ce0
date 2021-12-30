@@ -204,121 +204,59 @@ fun check_02_after_tps (s: Stmt) {
                     else -> error("impossible case")
                 }
 
-                // check scopes
+                // { [lbl]={1=depth,2=depth} }
+                // { [""]={[1]=@local, [2]=@aaa, ...}
+                val acc = mutableMapOf<String,MutableMap<Int,Tk.Scope>>()
+
+                // check scopes, build acc
                 // var f: /(... -> {@_1,@_2,...} -> ...)
                 // call f\ {@a,@b,...} ...
                 if (scps1 != null) {
-                    // { [lbl]={1=depth,2=depth} }
-                    // { [""]={[1]=5, [2]=7, ...}
-                    val acc = mutableMapOf<String,MutableMap<Int,Int>>()
                     All_assert_tk(e.tk, scps1.size == e.scps.size) {
                         "invalid call : scope mismatch"
                     }
                     scps1.zip(e.scps).forEach { (ff,ee) ->
-                        val depth = ee.scope(e).depth
                         val num   = ff.num!!
                         acc[ff.lbl].let {
                             if (it == null) {
-                                acc[ff.lbl] = mutableMapOf(Pair(num,depth))
+                                acc[ff.lbl] = mutableMapOf(Pair(num,ee))
                             } else {
+                                val d1 = ee.scope(e).depth
                                 val ok = it.all {
+                                    val d2 = it.value.scope(e).depth
                                     when {
-                                        (it.key == num) -> (it.value == depth)
-                                        (it.key > num)  -> (it.value >= depth)
-                                        (it.key < num)  -> (it.value <= depth)
+                                        (it.key == num) -> (d2 == d1)
+                                        (it.key > num)  -> (d2 >= d1)
+                                        (it.key < num)  -> (d2 <= d1)
                                         else -> error("bug found")
                                     }
                                 }
                                 All_assert_tk(ee, ok) {
                                     "invalid call : scope mismatch"
                                 }
-                                it[num] = depth
-                            }
-                        }
-                    }
-                    if (e.scope != null) {
-                        val ff = (inp1.flatten() + out1.flatten())
-                            .filter { it is Type.Ptr }
-                            .let    { it as List<Type.Ptr> }
-                        val ee = (arg1.flatten() + ret1.flatten())
-                            .filter { it is Type.Ptr }
-                            .let    { it as List<Type.Ptr> }
-                        //assert(ff.size == ee.size) { "bug found" }
-                        ff.zip(ee).forEach { (ff,ee) ->
-                            println(ff)
-                            println(ee)
-                            val fscp  = ff.scope!!
-                            val edep = ee.scope().depth
-                            if (fscp.num == null) {
-                                All_assert_tk(ee.tk, ff.scope().depth == edep) {
-                                    "invalid call : scope mismatch"
-                                }
-                            } else {
-                                All_assert_tk(ee.tk, acc[fscp.lbl]!![fscp.num]!! == edep) {
-                                    "invalid call : scope mismatch"
-                                }
+                                it[num] = ee
                             }
                         }
                     }
                 }
 
-                println("-=-=-=-=-=-=-=-=-")
-
-                val (arg2,ret2) = if (func !is Type.Func) Pair(arg1,ret1) else
+                val (inp2,out2) = if (func !is Type.Func) Pair(inp1,out1) else
                 {
-                    // { [rel]={1=depth,2=depth} }
-                    val acc = mutableMapOf<String,MutableMap<Int,Int>>()
-
-                    fun aux (func:Type, call:Type): Type {
-                        println("-=-=-")
-                        println(func.tostr())
-                        println(call.tostr())
-
-                        fun lbl_num (tk: Tk.Scope) {
-                            if (tk.num == null) {
-                                return
+                    fun aux (tp: Type): Type {
+                        return when (tp) {
+                            is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> tp
+                            is Type.Tuple -> if (tp !is Type.Tuple) tp else {
+                                Type.Tuple(tp.tk_, tp.vec.map { aux(it) }.toTypedArray())
                             }
-
-                            val new = call.scope().depth
-                            println(call.scope())
-                            acc[tk.lbl].let {
-                                if (it == null) {
-                                    acc[tk.lbl] = mutableMapOf(Pair(tk.num,new))
-                                } else {
-                                    val ok = it.all {
-                                        println("[${tk.lbl}] ${it.key} vs ${tk.num} // ${it.value} vs $new")
-                                        when {
-                                            (it.key == tk.num) -> (it.value == new)
-                                            (it.key > tk.num)  -> (it.value >= new)
-                                            (it.key < tk.num)  -> (it.value <= new)
-                                            else -> error("bug found")
-                                        }
-                                    }
-                                    All_assert_tk(call.tk, ok) {
-                                        "invalid call : scope mismatch"
-                                    }
-                                    it[tk.num] = new
-                                }
+                            is Type.Union -> if (tp !is Type.Union) tp else {
+                                Type.Union(tp.tk_, tp.isrec, tp.vec.map { aux(it) }.toTypedArray())
                             }
-                        }
-
-                        return when (call) {
-                            is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> call
-                            is Type.Tuple -> if (func !is Type.Tuple) call else {
-                                Type.Tuple(call.tk_, /*********/ call.vec.mapIndexed { i,tp -> aux(func.vec[i], tp) }.toTypedArray())
+                            is Type.Ptr -> if (tp !is Type.Ptr) tp else {
+                                val scp = tp.scope!!.let { acc[it.lbl]!![it.num]!! }
+                                print(">>> ") ; println(scp)
+                                Type.Ptr(tp.tk_, scp, aux(tp.pln)).up(e)
                             }
-                            is Type.Union -> if (func !is Type.Union) call else {
-                                Type.Union(call.tk_, call.isrec, call.vec.mapIndexed { i,tp -> aux(func.vec[i], tp) }.toTypedArray())
-                            }
-                            is Type.Ptr -> {
-                                if (func !is Type.Ptr) call else {
-                                    val (lbl, num) = func.scope!!.let { lbl_num(it) ; Pair(it.lbl,it.num) }
-                                    val scp = Tk.Scope(TK.XSCOPE, call.tk.lin, call.tk.col, lbl, num)
-                                    val pln = aux(func.pln, call.pln)
-                                    Type.Ptr(call.tk_, scp, pln)
-                                }
-                            }
-                            is Type.Func -> call
+                            is Type.Func -> tp
                             /*
                             is Type.Func -> {
                                 if (func !is Type.Func) call else {
@@ -334,21 +272,22 @@ fun check_02_after_tps (s: Stmt) {
                             */
                         }
                     }
-
-                    Pair(aux(inp1,arg1), aux(out1,ret1))
+                    Pair(aux(inp1), aux(out1))
                 }
 
                 ///*
                 print("INP1: ") ; println(inp1.tostr())
+                print("INP2: ") ; println(inp2.tostr())
                 print("ARG1: ") ; println(arg1.tostr())
-                print("ARG2: ") ; println(arg2.tostr())
+                //print("ARG2: ") ; println(arg2.tostr())
                 //println("OUT, RET1, RET2")
                 print("OUT1: ") ; println(out1.tostr())
+                print("OUT2: ") ; println(out2.tostr())
                 print("RET1: ") ; println(ret1.tostr())
-                print("RET2: ") ; println(ret2.tostr())
+                //print("RET2: ") ; println(ret2.tostr())
                 //*/
 
-                All_assert_tk(e.f.tk, inp1.isSupOf(arg2) && ret2.isSupOf(out1)) {
+                All_assert_tk(e.f.tk, inp2.isSupOf(arg1) && ret1.isSupOf(out2)) {
                     "invalid call : type mismatch"
                 }
             }

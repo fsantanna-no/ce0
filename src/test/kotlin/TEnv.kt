@@ -763,8 +763,7 @@ class TEnv {
                 }
             }
         """.trimIndent())
-        //assert(out == "(ln 7, col 22): invalid call : type mismatch") { out }
-        assert(out == "(ln 7, col 17): invalid call : scope mismatch") { out }
+        assert(out == "(ln 7, col 23): invalid call : type mismatch") { out }
     }
     @Test
     fun e15_call_err () {
@@ -838,11 +837,12 @@ class TEnv {
                 var x: /() @local
                 {
                     var y: /()
-                    set y = call f\ {@local,@b} y: @local -- no @local=@2
+                    set y = call f\ {@local,@b} y: @local -- ok: can return @b into @local
                 }
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 17): invalid call : scope mismatch") { out }
+        //assert(out == "(ln 7, col 17): invalid call : scope mismatch") { out }
+        assert(out == "OK") { out }
     }
     @Test
     fun e19_call_err2 () {
@@ -1213,7 +1213,7 @@ class TEnv {
                 set p = call f\ {@local} x: @global    -- err: call p/x have diff scopes (@ will be x which is greater)
             }
         """.trimIndent())
-        assert(out == "(ln 8, col 13): invalid call : scope mismatch") { out }
+        assert(out == "(ln 8, col 19): invalid call : type mismatch") { out }
         //assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }
         //assert(out == "(ln 8, col 11): invalid assignment : type mismatch") { out }
     }
