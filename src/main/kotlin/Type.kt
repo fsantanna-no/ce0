@@ -37,7 +37,7 @@ fun Type.tostr (): String {
         is Type.Ptr   -> this.scope.let { "/" + this.pln.tostr() + it.tostr() }
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
-        is Type.Func  -> "{" + this.clo.tostr() + "} " + this.inp.tostr() + " -> " + this.out.tostr()
+        is Type.Func  -> "{" + this.clo.tostr() + "} -> {" + this.scps.map { it.tostr() }.joinToString(",") + "} -> " + this.inp.tostr() + " -> " + this.out.tostr()
     }
 }
 

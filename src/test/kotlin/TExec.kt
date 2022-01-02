@@ -1329,7 +1329,7 @@ class TExec {
             { @a
                 var pa: /</^ @local> @local
                 var f: /({@a}->{}-> ()->())
-                set f = func{@a}-> {}-> ()->() {
+                set f = func[pa]->{@a}-> {}-> ()->() {
                     var pf: /</^ @a> @a
                     set pf = new <.1 <.0>: /</^ @a> @a>:</^ @a>: @a
                     set pa = pf
@@ -1567,7 +1567,7 @@ class TExec {
             set cnst = func {}->{@_1}-> /_int@_1 -> /({@_1}->{}-> () -> /_int@_1)@_1 {
                 var x: /_int@_1
                 set x = arg
-                return func {@_1}->{}-> () -> /_int@_1 {
+                return func [x]->{@_1}->{}-> () -> /_int@_1 {
                     return x
                 }
             }
@@ -1582,7 +1582,30 @@ class TExec {
             }
         """.trimIndent()
         )
-        assert(out == "<.1 <.0>>\n<.1 <.1 <.0>>>\n") { out }
+        assert(out == "five\n") { out }
+    }
+    @Test
+    fun n10_pool_closure_todo2() {
+        val out = all(
+            """
+            var cnst:     /({}->{@_1}-> /_int@_1 -> /({@_1}->{}-> () -> /_int@_1)@_1)@local
+            set cnst = func {}->{@_1}-> /_int@_1 -> /({@_1}->{}-> () -> /_int@_1)@_1 {
+                var x: /_int@_1
+                set x = arg
+                return func [x] {@_1}->{}-> () -> /_int@_1 {
+                    return x
+                }
+            }
+            var five: _int
+            set five = _5
+            var f: / ({@local} -> {} -> () -> /_int@local) @local
+            set f = call cnst\ {@local} /five
+            var v: /_int@local
+            set v = call f\ ()
+            output std v\ --@local
+        """.trimIndent()
+        )
+        assert(out == "five\n") { out }
     }
 
     // ALL

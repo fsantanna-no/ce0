@@ -11,7 +11,7 @@ sealed class Expr (val tk: Tk) {
     data class Dnref (val tk_: Tk,     val ptr: Expr): Expr(tk_)
     data class Upref (val tk_: Tk.Chr, val pln: Expr): Expr(tk_)
     data class Call  (val tk_: Tk.Key, val scope: Tk.Scope?, val f: Expr, val scps: Array<Tk.Scope>, val arg: Expr): Expr(tk_)
-    data class Func  (val tk_: Tk.Key, val type: Type.Func, val block: Stmt.Block) : Expr(tk_)
+    data class Func  (val tk_: Tk.Key, val ups: Array<Tk.Str>, val type: Type.Func, val block: Stmt.Block) : Expr(tk_)
 }
 
 sealed class Attr (val tk: Tk) {

@@ -651,7 +651,7 @@ class TParser {
         )
     }
     @Test
-    fun c13_parser_ret () {
+    fun c14_parser_ret () {
         val all = All_new(PushbackReader(StringReader("return"), 2))
         lexer(all)
         val s = parser_stmt(all)
@@ -659,6 +659,16 @@ class TParser {
             s is Stmt.Seq && s.s1 is Stmt.Set && s.s2.let {
                 it is Stmt.Ret //&& it.e.e is Expr.Unit
             }
+        )
+    }
+    @Test
+    fun c15_parser_func () {
+        val all = All_new(PushbackReader(StringReader("set f = func [a,b] -> {} -> {} -> () -> () { return }"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert (
+            (s is Stmt.Set) && ((s.dst as Expr.Var).tk_.str=="f") &&
+                    s.src.let { (it is Expr.Func) && (it.ups.size==2) }
         )
     }
 

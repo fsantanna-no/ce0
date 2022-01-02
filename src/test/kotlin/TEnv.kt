@@ -586,7 +586,7 @@ class TEnv {
             { @a
                 var pa: /_int
                 var f: / ({@a}->{}->()->()) @local
-                set f = func {@a}->{}->()->() {
+                set f = func [pa]->{@a}->{}->()->() {
                     var pf: /_int @a
                     set pa = pf
                 }
@@ -621,14 +621,44 @@ class TEnv {
             }
             call f()
         """.trimIndent())
-        assert(out == "(ln 5, col 11): invalid assignment : type mismatch") { out }
+        assert(out == "(ln 6, col 20): invalid access to \"pa\" : invalid closure declaration (ln 5)") { out }
     }
     @Test
     fun e07_ptr_err3 () {
         val out = inp2env("""
+            var f: {}->{}->()->()
+            { @a
+                var pa: ()
+                set pa = ()
+                set f = func [pa]-> {@a}->{}->()->() {  -- set [] vs [@a]
+                    output std pa
+                }
+            }
+            call f()
+        """.trimIndent())
+        assert(out == "(ln 5, col 11): invalid assignment : type mismatch") { out }
+    }
+    @Test
+    fun e07_ptr_err4 () {
+        val out = inp2env("""
             var f: {@a}->{}->()->()
         """.trimIndent())
         assert(out == "(ln 1, col 9): undeclared scope \"@a\"") { out }
+    }
+    @Test
+    fun e07_ptr_err5 () {
+        val out = inp2env("""
+            var f: {}->{}->()->()
+            { @a
+                var pa: ()
+                set pa = ()
+                set f = func [xxx]-> {@a}->{}->()->() {  -- set [] vs [@a]
+                    output std pa
+                }
+            }
+            call f()
+        """.trimIndent())
+        assert(out == "(ln 5, col 13): undeclared variable \"xxx\"") { out }
     }
     @Test
     fun e08_ptr_ok () {
@@ -651,7 +681,7 @@ class TEnv {
             { @a
                 var pa: /_int @local
                 var f: {@a}->{@_1}->[/()@_1]->()
-                set f = func {@a}->{@_1}->[/()@_1]->() {
+                set f = func [pa]->{@a}->{@_1}->[/()@_1]->() {
                     var pf: /_int @_1
                     set pa = arg
                 }
@@ -1161,7 +1191,7 @@ class TEnv {
             { @a
                 var v: ()
                 var f : {@a} -> {@_1} -> () -> /()@_1
-                set f = func {@a} -> {@_1} -> () -> /()@_1 {
+                set f = func [v]-> {@a} -> {@_1} -> () -> /()@_1 {
                     return /v      -- err: /v may not be at expected @
                 }
                 {
@@ -1178,7 +1208,7 @@ class TEnv {
                 var v: _int
                 set v = _10
                 var f : / ({@a} -> {@a_1} -> () -> /_int@a_1 )
-                set f = func {@a} -> {@a_1} -> () -> /_int@a_1 {
+                set f = func [v] -> {@a} -> {@a_1} -> () -> /_int@a_1 {
                     return /v
                 }
                 var p: /_int @local
@@ -2821,7 +2851,7 @@ class TEnv {
             var f: {@local}->{}->() -> ()
             {
                 var x: /</^@local>@local
-                set f = func {@local}->{}->() -> () {
+                set f = func [x]-> {@local}->{}->() -> () {
                     output std x
                 }
             }

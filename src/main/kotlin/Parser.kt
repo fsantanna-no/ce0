@@ -195,6 +195,19 @@ fun parser_expr (all: All): Expr {
         all.accept(TK.FUNC) -> {
             val tk0 = all.tk0 as Tk.Key
 
+            val ups: Array<Tk.Str> = if (!all.accept(TK.CHAR,'[')) emptyArray() else {
+                val ret = mutableListOf<Tk.Str>()
+                while (all.accept(TK.XVAR)) {
+                    ret.add(all.tk0 as Tk.Str)
+                    if (!all.accept(TK.CHAR,',')) {
+                        break
+                    }
+                }
+                all.accept_err(TK.CHAR,']')
+                all.accept_err(TK.ARROW)
+                ret.toTypedArray()
+            }
+
             val tp = parser_type(all)
             all.assert_tk(all.tk0, tp is Type.Func) {
                 "expected function type"
@@ -228,7 +241,7 @@ fun parser_expr (all: All): Expr {
                     )
                 )
             )
-            Expr.Func(tk0, tp, xblock)
+            Expr.Func(tk0, ups, tp, xblock)
         }
         else -> {
             all.err_expected("expression")

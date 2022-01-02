@@ -63,9 +63,19 @@ fun code_ft (tp: Type) {
             val pools = tp.scps.let { if (it.size == 0) "" else
                 it.mapIndexed { i,tk -> "Pool**" }.joinToString(",") + ","
             }
+            val ret = if (tp.clo.num == null) {
+                "${tp.out.pos()} ${tp.toce()} ($pools ${tp.inp.pos()})"
+            } else { // only closures that escape (@a_1)
+                """
+                    struct {
+                        ${tp.out.pos()} (*f) (void** ups, $pools ${tp.inp.pos()});
+                        void* env[3];
+                    } ${tp.toce()}
+                """.trimIndent()
+            }
             TYPES.add(Triple(
                 Pair(tp.toce(), deps(setOf(tp.inp,tp.out))),
-                "typedef ${tp.out.pos()} ${tp.toce()} ($pools ${tp.inp.pos()});\n",
+                "typedef $ret;\n",
                 ""
             ))
         }
@@ -292,21 +302,33 @@ fun code_fe (e: Expr) {
                 if (ff!=null && ff.ptr is Expr.Var && ff.ptr.tk_.str=="output_std") {
                     AUX.tps[e.arg]!!.output("", arg.second)
                 } else {
-                    val arg = if (AUX.tps[e.f] is Type.Nat && e.arg is Expr.Unit) "" else arg.second
-                    f.second + "(" + pools + arg + ")"
+                    val tpf = AUX.tps[e.f]
+                    val arg = if (tpf is Type.Nat && e.arg is Expr.Unit) "" else arg.second
+                    if (tpf is Type.Func && tpf.clo.num!=null) {
+                        // only closures that escape (@a_1)
+                        f.second + ".f(" + f.second + ".env, " + pools + arg + ")"
+                    } else {
+                        f.second + "(" + pools + arg + ")"
+                    }
                 }
             Pair(f.first + arg.first, snd)
         }
         is Expr.Func  -> {
             val ID  = "_func_" + e.hashCode().absoluteValue
+            val fid = if (e.type.clo.num == null) ID else ID+"_f"
             val inp = e.type.inp
+            val ups = if (e.type.clo.num == null) "" else "void** ups,"
             val pools = e.type.scps.let { if (it.size == 0) "" else
                 it.mapIndexed { i,tk -> "Pool** ${tk.toce()}" }.joinToString(",") + ","
             }
+            val clo = if (e.type.clo.num == null) "" else """
+                ${e.type.toce()} $ID = { $fid, {} }; 
+            """.trimIndent()
             val pre = """
-                auto ${e.type.out.pos()} $ID ($pools ${inp.pos()} _arg_) {
+                auto ${e.type.out.pos()} $fid ($ups $pools ${inp.pos()} _arg_) {
                     ${CODE.removeFirst()}
                 }
+                $clo
 
             """.trimIndent()
             Pair(pre, ID)
