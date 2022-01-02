@@ -265,7 +265,7 @@ fun Aux_tps (s: Stmt) {
 
                 when (e) {
                     is Expr.UDisc -> if (e.tk_.num == 0) {
-                        Type_Unit(e.tk).up(e)
+                        Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).up(e)
                     } else {
                         tp.expand()[e.tk_.num - 1]
                     }

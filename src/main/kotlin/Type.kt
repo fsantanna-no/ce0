@@ -13,16 +13,6 @@ sealed class Type (val tk: Tk) {
     //data class Pool  (val tk_: Tk.Scope): Type(tk_)
 }
 
-fun Type_Unit (tk: Tk): Type.Unit {
-    return Type.Unit(Tk.Sym(TK.UNIT, tk.lin, tk.col, "()"))
-}
-fun Type_Any (tk: Tk): Type.Any {
-    return Type.Any(Tk.Chr(TK.CHAR,tk.lin,tk.col,'?'))
-}
-fun Type_Nat (tk: Tk, str: String): Type.Nat {
-    return Type.Nat(Tk.Str(TK.XNAT,tk.lin,tk.col,str))
-}
-
 fun Type.tostr (): String {
     fun Tk.Scope?.tostr (): String {
         return if (this == null) "" else {
