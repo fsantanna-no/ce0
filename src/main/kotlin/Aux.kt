@@ -66,16 +66,13 @@ fun Expr.Var.env (): Stmt.Var? {
 fun env_prelude (s: Stmt): Stmt {
     val stdo = Stmt.Var (
         Tk.Str(TK.XVAR,1,1,"output_std"),
-        Type.Ptr (
-            Tk.Chr(TK.CHAR, 1, 1, '/'),
+        Type.Func (
+            Tk.Chr(TK.CHAR, 1, 1, '{'),
             Tk.Scope(TK.XSCOPE, 1, 1, "global", null),
-            Type.Func (
-                Tk.Chr(TK.CHAR, 1, 1, '{'),
-                Tk.Scope(TK.XSCOPE, 1, 1, "global", null),
-                emptyArray(),
-                Type.Any(Tk.Chr(TK.CHAR,1,1,'?')),
-                Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
-        ))
+            emptyArray(),
+            Type.Any(Tk.Chr(TK.CHAR,1,1,'?')),
+            Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
+        )
     )
     return Stmt.Seq(stdo.tk, stdo, s)
 }
@@ -230,11 +227,7 @@ fun Aux_tps (s: Stmt) {
                     it
                 }
             }
-            is Expr.Func -> Type.Ptr(
-                Tk.Chr(TK.CHAR, e.tk.lin, e.tk.col, '\\'),
-                Tk.Scope(TK.XSCOPE, e.tk.lin, e.tk.col, "global", null),
-                e.type
-            ).up(e)
+            is Expr.Func -> e.type
             is Expr.TDisc -> AUX.tps[e.tup].let {
                 All_assert_tk(e.tk, it is Type.Tuple) {
                     "invalid discriminator : type mismatch"

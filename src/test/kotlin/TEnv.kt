@@ -262,11 +262,11 @@ class TEnv {
     @Test
     fun c04_type_func_arg () {
         val out = inp2env("""
-            var f : / ({}->{}->[(),()] -> ()) @local
+            var f : {}->{}->[(),()] -> ()
             set f = func ({}->{}->[(),()] -> ()) { }
-            call f\ {} ()
+            call f {} ()
         """.trimIndent())
-        assert(out == "(ln 3, col 7): invalid call : type mismatch") { out }
+        assert(out == "(ln 3, col 6): invalid call : type mismatch") { out }
     }
     @Test
     fun c05_type_idx () {
@@ -585,7 +585,7 @@ class TEnv {
         val out = inp2env("""
             { @a
                 var pa: /_int
-                var f: / ({@a}->{}->()->()) @local
+                var f: ({@a}->{}->()->())
                 set f = func [pa]->{@a}->{}->()->() {
                     var pf: /_int @a
                     set pf = pa
@@ -637,6 +637,7 @@ class TEnv {
             call f()
         """.trimIndent())
         assert(out == "(ln 5, col 11): invalid assignment : type mismatch") { out }
+        //assert(out == "OK") { out }
     }
     @Test
     fun e07_ptr_err4 () {
@@ -663,14 +664,14 @@ class TEnv {
     @Test
     fun e08_ptr_ok () {
         val out = inp2env("""
-            var f: / ({}->{@a_1}->/()@a_1->())
+            var f: ({}->{@a_1}->/()@a_1->())
             set f = func {}->{@a_1}->/()@a_1->() {
                 var pf: /_int @a_1
                 set pf = arg
             }
             {
                 var x: ()
-                call f\ {@local} /x
+                call f {@local} /x
             }
         """.trimIndent())
         assert(out == "OK") { out }
@@ -715,7 +716,7 @@ class TEnv {
     @Test
     fun e12_func_ok () {
         val out = inp2env("""
-            var f: / ({}->{@a_1,@a_2}->[/()@a_1,/()@a_2]->())
+            var f: ({}->{@a_1,@a_2}->[/()@a_1,/()@a_2]->())
             set f = func {}->{@a_1,@a_2}->[/()@a_1,/()@a_2]->() {}
         """.trimIndent())
         assert(out == "OK") { out }
@@ -723,18 +724,18 @@ class TEnv {
     @Test
     fun e12_call_err () {
         val out = inp2env("""
-            var f: / ({}->{@a_1,@a_2}->[/()@a_1,/()@a_2]->())
+            var f: ({}->{@a_1,@a_2}->[/()@a_1,/()@a_2]->())
             set f = func {}->{@a_1,@a_2}->[/()@a_1,/()@a_2]->() {}
             { @a
                 var x: ()
                 {
                     var y: ()
-                    call f\ {@local,@a} [/y,/x]  -- err
+                    call f {@local,@a} [/y,/x]  -- err
                 }
             }
         """.trimIndent())
         //assert(out == "(ln 7, col 14): invalid call : type mismatch") { out }
-        assert(out == "(ln 7, col 25): invalid call : scope mismatch") { out }
+        assert(out == "(ln 7, col 24): invalid call : scope mismatch") { out }
 
     }
     @Test
@@ -768,13 +769,13 @@ class TEnv {
     @Test
     fun e13_call_ok () {
         val out = inp2env("""
-            var f: / ({}->{@_1}->/()@_1->/()@_1)
+            var f: ({}->{@_1}->/()@_1->/()@_1)
             set f = func {}->{@_1}->/()@_1->/()@_1 {}
             { @aaa
                 var x: /()
                 {
                     var y: /() @local
-                    set x = call f\ {@aaa} x: @aaa -- ok
+                    set x = call f {@aaa} x: @aaa -- ok
                 }
             }
         """.trimIndent())
@@ -783,45 +784,45 @@ class TEnv {
     @Test
     fun e14_call_err () {
         val out = inp2env("""
-            var f: /({}->{@_1}->/()@_1->/()@_1)
+            var f: ({}->{@_1}->/()@_1->/()@_1)
             set f = func {}->{@_1}->/()@_1->/()@_1 {}
             { @aaa
                 var x: /() @local
                 {
                     var y: /()
-                    set x = call f\ {@local} y: @aaa -- err
+                    set x = call f {@local} y: @aaa -- err
                 }
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 23): invalid call : type mismatch") { out }
+        assert(out == "(ln 7, col 22): invalid call : type mismatch") { out }
     }
     @Test
     fun e15_call_err () {
         val out = inp2env("""
-            var f: /({}->{@a_1,@a_2}->/()@a_1->/()@a_2)
+            var f: ({}->{@a_1,@a_2}->/()@a_1->/()@a_2)
             set f = func {}->{@a_1,@a_2}->/()@a_1->/()@a_2 {}
             { @aaa
                 var x: /() @local
                 {
                     var y: /()
-                    set x = call f\ {@local,@aaa} y: @aaa  -- err
+                    set x = call f {@local,@aaa} y: @aaa  -- err
                 }
             }
         """.trimIndent())
         //assert(out == "(ln 7, col 15): invalid assignment : type mismatch") { out }
         //assert(out == "(ln 7, col 22): invalid call : type mismatch") { out }
-        assert(out == "(ln 7, col 33): invalid call : scope mismatch") { out }
+        assert(out == "(ln 7, col 32): invalid call : scope mismatch") { out }
     }
     @Test
     fun e16_call_ok () {
         val out = inp2env("""
-            var f:     /({}->{@_2,@_1}->/()@_2->/()@_1)
+            var f:     ({}->{@_2,@_1}->/()@_2->/()@_1)
             set f = func {}->{@_2,@_1}->/()@_2->/()@_1 {}
             { @aaa
                 var x: /() @local
                 {
                     var y: /() @local
-                    set x = call f\ {@local,@aaa} y: @aaa  -- ok
+                    set x = call f {@local,@aaa} y: @aaa  -- ok
                 }
             }
         """.trimIndent())
@@ -830,7 +831,7 @@ class TEnv {
     @Test
     fun e17_call_ok () {
         val out = inp2env("""
-            var f: /(    {}->{@a_1,@a_2}->[/()@a_1,/()@a_2]->() )
+            var f: (    {}->{@a_1,@a_2}->[/()@a_1,/()@a_2]->() )
             set f = func {}->{@a_1,@a_2}->[/()@a_1,/()@a_2]->() { }
         """.trimIndent())
         assert(out == "OK") { out }
@@ -846,13 +847,13 @@ class TEnv {
     @Test
     fun e19_call_ok () {
         val out = inp2env("""
-            var f: / ({}->{@a_2,@a_1}->/()@a_2->/()@a_1)
+            var f:  ({}->{@a_2,@a_1}->/()@a_2->/()@a_1)
             set f = func {}->{@a_2,@a_1}->/()@a_2->/()@a_1 {}
             { @a
                 var x: /()
                 {
                     var y: /() @local
-                    set y = call f\ {@local,@a} y: @a  -- ok
+                    set y = call f {@local,@a} y: @a  -- ok
                 }
             }
         """.trimIndent())
@@ -861,13 +862,13 @@ class TEnv {
     @Test
     fun e19_call_err () {
         val out = inp2env("""
-            var f: /({}->{@a_2,@a_1}->/()@a_2->/()@a_1)
+            var f: ({}->{@a_2,@a_1}->/()@a_2->/()@a_1)
             set f = func {}->{@a_2,@a_1}->/()@a_2->/()@a_1 {}
             { @b
                 var x: /() @local
                 {
                     var y: /()
-                    set y = call f\ {@local,@b} y: @local -- ok: can return @b into @local
+                    set y = call f {@local,@b} y: @local -- ok: can return @b into @local
                 }
             }
         """.trimIndent())
@@ -877,13 +878,13 @@ class TEnv {
     @Test
     fun e19_call_err2 () {
         val out = inp2env("""
-            var f: /({}->{@a_2,@a_1}->/()@a_2->/()@a_1)
+            var f: ({}->{@a_2,@a_1}->/()@a_2->/()@a_1)
             set f = func {}->{@a_2,@a_1}->/()@a_2->/()@a_1 {}
             {
                 var x: /() @local
                 {
                     var y: /() @local
-                    set y = call f\ {@local,@local} y  -- no
+                    set y = call f {@local,@local} y  -- no
                 }
             }
         """.trimIndent())
@@ -893,17 +894,17 @@ class TEnv {
     @Test
     fun e19_call_ok2 () {
         val out = inp2env("""
-            var f: /({}->{@a_1}->[/()@a_1,()]->/()@a_1)
+            var f: ({}->{@a_1}->[/()@a_1,()]->/()@a_1)
             set f = func {}->{@a_1}->[/()@a_1,()]->/()@a_1 {}
             var y: /()
-            set y = call f\ {@local} [y,()]: @local  -- ok
+            set y = call f {@local} [y,()]: @local  -- ok
         """.trimIndent())
         assert(out == "OK") { out }
     }
     @Test
     fun e20_arg_ok () {
         val out = inp2env("""
-            var f: /({}->{@_1}->/()@_1->/()@_1)
+            var f: ({}->{@_1}->/()@_1->/()@_1)
             set f = func {}->{@_1}->/()@_1->/()@_1 { return arg }
         """.trimIndent())
         assert(out == "OK") { out }
@@ -911,7 +912,7 @@ class TEnv {
     @Test
     fun e20_arg_ok2 () {
         val out = inp2env("""
-            var f: /({}->{@a_1,@a_2}->/()@a_1->/()@a_2)
+            var f: ({}->{@a_1,@a_2}->/()@a_1->/()@a_2)
             set f = func {}->{@a_1,@a_2}->/()@a_1->/()@a_2 { return arg }
         """.trimIndent())
         assert(out == "OK") { out }
@@ -943,7 +944,7 @@ class TEnv {
     @Test
     fun e22_local_ok () {
         val out = inp2env("""
-            var f:/( {}->{@_1}->/()@_1->/()@_1)
+            var f:( {}->{@_1}->/()@_1->/()@_1)
             set f = func {}->{@_1}->/()@_1->/()@_1 {
                 {
                     var x: /() @local
@@ -1042,14 +1043,14 @@ class TEnv {
     @Test
     fun g01_ptr_func_ok () {
         val out = inp2env("""
-            var f : / (({}->{@_1}->/_int@_1 -> /_int@_1))
+            var f : (({}->{@_1}->/_int@_1 -> /_int@_1))
             set f = func ({}->{@_1}->/_int@_1 -> /_int@_1) {
                 return arg
             }
             var v: _int
             set v = _10
             var p: /_int @local
-            set p = call f\ {@local} /v
+            set p = call f {@local} /v
             output std p\
         """.trimIndent())
         assert(out == "OK") { out }
@@ -1059,12 +1060,12 @@ class TEnv {
         val out = inp2env("""
             var v: _int
             set v = _10
-            var f : / ({}->{@_1}->() -> /_int@_1)
+            var f :  ({}->{@_1}->() -> /_int@_1)
             set f = func {}->{@_1}->() -> /_int@_1 {
                 return /v
             }
             var p: /_int @local
-            set p = call f\ {@local} (): @local
+            set p = call f {@local} (): @local
             output std p\
         """.trimIndent())
         //assert(out == "(ln 3, col 13): undeclared variable \"v\"") { out }
@@ -1073,11 +1074,11 @@ class TEnv {
     @Test
     fun g02_ptr_func_ok () {
         val out = inp2env("""
-            var f : /    ({} -> {@_1} -> () -> /_int@_1)
+            var f :      ({} -> {@_1} -> () -> /_int@_1)
             set f = func ({} -> {@_1} -> () -> /_int@_1) {
             }
             var p: /_int @local
-            set p = call f\ {@local} (): @local
+            set p = call f {@local} (): @local
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1086,12 +1087,12 @@ class TEnv {
         val out = inp2env("""
             var v: _int
             set v = _10
-            var f : / ({}->{@_1}-> () -> /_int@_1 )
+            var f : ({}->{@_1}-> () -> /_int@_1 )
             set f = func {}->{@_1}->() -> /_int@_1 {
                 return /v
             }
             var p: /_int @local
-            set p = call f\ {@local} ()
+            set p = call f {@local} ()
             output std p\
         """.trimIndent())
         assert(out == "OK") { out }
@@ -1121,7 +1122,7 @@ class TEnv {
     @Test
     fun g05_ptr_caret_ok () {
         val out = inp2env("""
-            var f : / ({}->{@_1}->/_int@_1 -> /_int@_1)
+            var f : {}->{@_1}->/_int@_1 -> /_int@_1
             set f = func {}->{@_1}->/_int@_1 -> /_int@_1 {
                 var ptr: /_int@_1
                 set ptr = arg
@@ -1130,7 +1131,7 @@ class TEnv {
             var v: _int
             set v = _10
             var p: /_int @local
-            set p = call f\ {@local} /v
+            set p = call f {@local} /v
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1207,13 +1208,13 @@ class TEnv {
             { @a
                 var v: _int
                 set v = _10
-                var f : / ({@a} -> {@a_1} -> () -> /_int@a_1 )
+                var f : {@a} -> {@a_1} -> () -> /_int@a_1
                 set f = func [v] -> {@a} -> {@a_1} -> () -> /_int@a_1 {
                     return /v
                 }
                 var p: /_int @local
                 {
-                    set p = call f\ {@a} (): @a
+                    set p = call f {@a} (): @a
                 }
             }
         """.trimIndent())
@@ -1233,31 +1234,31 @@ class TEnv {
     @Test
     fun g14_ptr_func_err () {
         val out = inp2env("""
-            var f : /({}->{@_1}->/()@_1 -> /()@_1)
+            var f : {}->{@_1}->/()@_1 -> /()@_1
             set f = func{}->{@_1}->/()@_1 -> /()@_1 {
                 return arg
             }
             var p: /() @local
             {
                 var x: /() @local
-                set p = call f\ {@local} x: @global    -- err: call p/x have diff scopes (@ will be x which is greater)
+                set p = call f {@local} x: @global    -- err: call p/x have diff scopes (@ will be x which is greater)
             }
         """.trimIndent())
-        assert(out == "(ln 8, col 19): invalid call : type mismatch") { out }
+        assert(out == "(ln 8, col 18): invalid call : type mismatch") { out }
         //assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }
         //assert(out == "(ln 8, col 11): invalid assignment : type mismatch") { out }
     }
     @Test
     fun g15_ptr_func_ok () {
         val out = inp2env("""
-            var f : /({}->{@_1}->/()@_1 -> /()@_1)
+            var f : ({}->{@_1}->/()@_1 -> /()@_1)
             set f = func {}->{@_1}->/()@_1 -> /()@_1 {
                 return arg
             }
             var p: /() @local
             {
                 var x: /() @local
-                set x = call f\ {@global} p: @global -- ok: call p/x have diff scopes (@ will be x which is greater)
+                set x = call f {@global} p: @global -- ok: call p/x have diff scopes (@ will be x which is greater)
             }
         """.trimIndent())
         assert(out == "OK") { out }
@@ -1265,14 +1266,14 @@ class TEnv {
     @Test
     fun g16_ptr_func_ok () {
         val out = inp2env("""
-            var f : / ({}->{@a_1,@a_2}->/()@a_1 -> /()@a_2)
+            var f : {}->{@a_1,@a_2}->/()@a_1 -> /()@a_2
             set f = func {}->{@a_1,@a_2}->/()@a_1 -> /()@a_2 {
                 return arg
             }
             var p: /() @local
             {
                 var x: /() @local
-                set x = call f\ {@global,@local} p: @local -- ok: call p/x have diff scopes (@1 will be x which is greater)
+                set x = call f {@global,@local} p: @local -- ok: call p/x have diff scopes (@1 will be x which is greater)
             }
         """.trimIndent())
         assert(out == "OK") { out }
@@ -1295,17 +1296,17 @@ class TEnv {
     @Test
     fun g18_ptr_func_err () {
         val out = inp2env("""
-            var f : /({}->{@a_1,@a_2}->/()@a_1 -> /()@a_2)
+            var f : ({}->{@a_1,@a_2}->/()@a_1 -> /()@a_2)
             set f = func {}->{@a_1,@a_2}->/()@a_1 -> /()@a_2 {
                 return arg
             }
             var p: /() @local
             {
                 var x: /() @local
-                set p = call f\ {@local,@global}x     -- err: @2=p <= @1=x (false) 
+                set p = call f {@local,@global}x     -- err: @2=p <= @1=x (false) 
             }
         """.trimIndent())
-        assert(out == "(ln 8, col 29): invalid call : scope mismatch") { out }
+        assert(out == "(ln 8, col 28): invalid call : scope mismatch") { out }
         //assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }
         //assert(out == "(ln 8, col 11): invalid assignment : type mismatch") { out }
     }
@@ -1895,12 +1896,12 @@ class TEnv {
     fun j20_rec_xepr_borrow_err () {
         val out = inp2env("""
             var x: [/</^ @local> @local]
-            var f: / ({}->{@_1}-> //</^@_1>@_1@_1 -> ())
+            var f: {}->{@_1}-> //</^@_1>@_1@_1 -> ()
             set f = func {}->{@_1}->//</^@_1>@_1@_1 -> ()
             {
                 output std arg
             }
-            call f\ {@local} /x.1
+            call f {@local} /x.1
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1954,12 +1955,12 @@ class TEnv {
     fun j24_rec_xepr_borrow_ok () {
         val out = inp2env("""
             var x: [/</^ @local> @local]
-            var f: /({}->{@_1}->//</^@_1>@_1@_1 -> ())
+            var f: {}->{@_1}->//</^@_1>@_1@_1 -> ()
             set f = func {}->{@_1}->//</^@_1>@_1@_1 -> ()
             {
                 output std arg
             }
-            call f\ {@local} /x.1
+            call f {@local} /x.1
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1974,12 +1975,12 @@ class TEnv {
     @Test
     fun j26_func_move () {
         val out = inp2env("""
-            var f: /({}->{@_1}->()->/</^@_1>@_1)
+            var f: {}->{@_1}->()->/</^@_1>@_1
             set f = func {}->{@_1}->()->/</^@_1>@_1 {
                 return new <.1 <.0>:/</^@_1>@_1>:</^@_1>: @_1
             }
             var v: /</^ @local> @local
-            set v = call f \ {@local} ()
+            set v = call f {@local} ()
         """.trimIndent())
         //assert(out == "(ln 4, col 20): invalid `replace` : expected recursive variable")
         //assert(out == "(ln 4, col 25): expected `=´ : have `()´") { out }
@@ -1988,12 +1989,12 @@ class TEnv {
     @Test
     fun j27_f_rec () {
         val out = inp2env("""
-            var f: /({}->{@_1}-> ()->/</^@_1>@_1 )
+            var f: ({}->{@_1}-> ()->/</^@_1>@_1 )
             set f = func {}->{@_1}->()->/</^@_1>@_1 {
                 return new <.1 <.0>:/</^@_1>@_1>:</^@_1>: @_1
             }
             var v: /</^ @local> @local
-            set v = call f\ {@local} ()
+            set v = call f {@local} ()
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -2046,9 +2047,9 @@ class TEnv {
     @Test
     fun k02_func_arg () {
         val out = inp2env("""
-            var f1: /({}->{}->()->())
+            var f1: ({}->{}->()->())
             set f1 = func {}->{}->()->() {
-                var f2: /({}->{}->()->())
+                var f2: ({}->{}->()->())
                 set f2 = func {}->{}->()->() {
                 }
             }
@@ -2084,7 +2085,7 @@ class TEnv {
     @Test
     fun l02_borrow_func_err () {
         val out = inp2env("""
-            var f: /({}->{}->()->())
+            var f: ({}->{}->()->())
             set f = func {}->{}->()->() {
                 var x: /</^ @local> @local
                 var y: //</^ @local> @local @local
@@ -2113,12 +2114,12 @@ class TEnv {
     fun l03_borrow_err () {
         val out = inp2env("""
             var x: /</^ @local> @local
-            var f: /({}->{@_1}->//</^@_1>@_1@_1 -> ())
+            var f: {}->{@_1}->//</^@_1>@_1@_1 -> ()
             set f = func {}->{@_1}->//</^@_1>@_1@_1 -> ()
             {
                 set x = <.0>:/</^@global>@global
             }
-            call f\ {@local} /x --!1
+            call f {@local} /x --!1
         """.trimIndent())
         //assert(out == "(ln 4, col 9): undeclared variable \"x\"") { out }
         //assert(out == "(ln 4, col 11): invalid assignment of \"x\" : borrowed in line 3") { out }
@@ -2128,14 +2129,14 @@ class TEnv {
     fun l03_borrow_err2 () {
         val out = inp2env("""
             var x: /</^ @local> @local
-            var f: /({}->{@_1}->//</^@_1>@_1@_1 -> ())
+            var f: {}->{@_1}->//</^@_1>@_1@_1 -> ()
             set f = func {}->{@_1}->//</^@_1>@_1@_1 -> ()
             {
                 set x = <.0>:/</^@global>@global
             }
             var y: //</^ @local> @local @local
             set y = /x --!1
-            call f \ {@local} y
+            call f  {@local} y
         """.trimIndent())
         assert(out == "OK") { out }
         //assert(out == "(ln 4, col 9): undeclared variable \"x\"") { out }
@@ -2145,15 +2146,15 @@ class TEnv {
     fun l04_borrow_err () {
         val out = inp2env("""
             var x: /</^ @local> @local
-            var f: /({}->{}->() -> ())
+            var f: ({}->{}->() -> ())
             set f = func {}->{}->() -> () {
                 set x = <.0>:/</^@global>@global
             }
             var y: //</^ @local> @local @local
             set y = /x --!1
-            var g: /({}->{}->() -> ())
+            var g: {}->{}->() -> ()
             set g = f
-            call g \ ()
+            call g  ()
         """.trimIndent())
         assert(out == "OK") { out }
         //assert(out == "(ln 3, col 9): undeclared variable \"x\"") { out }
@@ -2231,14 +2232,14 @@ class TEnv {
     fun l08_borrow_rec_err () {
         val out = inp2env("""
         var x: /</^ @local> @local
-        var f:/( {}->{}->()->())
+        var f: ( {}->{}->()->())
         set f = func {}->{}->()->() {
             set x = <.0>:/</^ @global> @global
             var y: //</^ @local> @local @local
             set y = /x
-            return call f\ ()
+            return call f ()
         }
-        call f\ ()
+        call f ()
         """.trimIndent())
         assert(out == "OK") { out }
         //assert(out == "(ln 3, col 9): undeclared variable \"x\"") { out }
@@ -2331,7 +2332,7 @@ class TEnv {
     @Test
     fun l14_consume_ok () {
         val out = inp2env("""
-            var string_c2ce: /({}->{@_1}->_(char*)->/<[_int,/^ @_1]> @_1)
+            var string_c2ce: ({}->{@_1}->_(char*)->/<[_int,/^ @_1]> @_1)
             set string_c2ce = func {}->{@_1}->_(char*)->/<[_int,/^ @_1]> @_1 {
                 var ret: /</^ @local> @local
                 set ret = <.0>:/</^ @local> @local
@@ -2342,7 +2343,7 @@ class TEnv {
                 set zzz = ret
                 --return ret
             }
-            call string_c2ce\ {@local} _x
+            call string_c2ce {@local} _x
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -2748,9 +2749,9 @@ class TEnv {
     fun p12_pool_ff() {
         val out = inp2env(
             """
-            var f: /({}->{@_1}->() -> ())
+            var f: ({}->{@_1}->() -> ())
             set f = func {}->{@_1}->() -> () {}
-            var g: /({}->{@_1}-> {}->{@_1}->()->() -> ())
+            var g: ({}->{@_1}-> {}->{@_1}->()->() -> ())
             set g = func ({}->{@_1}-> {}->{@_1}->()->() -> ()) {}
         """.trimIndent()
         )
@@ -2760,9 +2761,9 @@ class TEnv {
     fun p13_pool_ff() {
         val out = inp2env(
             """
-            var f: /({}->{@_1}->() -> /()@_1)
+            var f: ({}->{@_1}->() -> /()@_1)
             set f = func {}->{@_1}->() -> /()@_1 {}
-            var g: /({}->{@_1}-> {}->{@_1}->()->/()@_1 -> ())
+            var g: ({}->{@_1}-> {}->{@_1}->()->/()@_1 -> ())
             set g = func {}->{@_1}-> {}->{@_1}->()->/()@_1 -> () {}
         """.trimIndent()
         )
@@ -2772,11 +2773,11 @@ class TEnv {
     fun p14_pool_ff() {
         val out = inp2env(
             """
-            var f:/({}->{@_1}-> () -> ())
+            var f:({}->{@_1}-> () -> ())
             set f = func {}->{@_1}->() -> () {}
-            var g: /  ({}->{@_1}-> /({}->{@_1}->()->())@_1 -> ())
-            set g = func ({}->{@_1}-> /({}->{@_1}->()->())@_1 -> ()) {}
-            call g\ {@local} f
+            var g:    ({}->{@_1}-> ({}->{@_1}->()->()) -> ())
+            set g = func ({}->{@_1}-> ({}->{@_1}->()->()) -> ()) {}
+            call g {@local} f
         """.trimIndent()
         )
         assert(out == "OK") { out }
@@ -2785,11 +2786,11 @@ class TEnv {
     fun p15_pool_ff() {
         val out = inp2env(
             """
-            var f:/({}->{@_1}-> () -> /()@_1)
+            var f:({}->{@_1}-> () -> /()@_1)
             set f = func{}->{@_1}-> () -> /()@_1 {}
-            var g: /({}->{@_1}-> /({}->{@_1}->()->/()@_1)@_1 -> ())
-            set g = func ({}->{@_1}-> /({}->{@_1}->()->/()@_1)@_1 -> ()) {}
-            call g\ {@local} f
+            var g: ({}->{@_1}-> ({}->{@_1}->()->/()@_1) -> ())
+            set g = func ({}->{@_1}-> ({}->{@_1}->()->/()@_1) -> ()) {}
+            call g {@local} f
         """.trimIndent()
         )
         assert(out == "OK") { out }
@@ -2798,48 +2799,49 @@ class TEnv {
     fun p16_strcpy() {
         val out = inp2env(
             """
-            var f:     /({}->{@a_1,@b_1}->[/()@a_1,/()@b_1] -> /()@a_1)
+            var f:      ({}->{@a_1,@b_1}->[/()@a_1,/()@b_1] -> /()@a_1)
             set f = func {}->{@a_1,@b_1}->[/()@a_1,/()@b_1] -> /()@a_1 {}
             var s1: ()
-            call f\ {@local,@local} [/s1,/s1]
+            call f {@local,@local} [/s1,/s1]
         """.trimIndent()
         )
         assert(out == "OK") { out }
     }
     @Test
-    fun p17_pool_closure_err() {
+    fun p17_pool_closure_() {
         val out = inp2env(
             """
-            var g: /({}->{@a_1}->() -> /({}->{@a_1}->()->())@a_1)
-            set g = func{}->{@a_1}-> () -> /({}->{@a_1}->()->())@a_1 {
-                var f:/({}->{@b_1}->() -> ())     -- this is @local, cant return it
+            var g: ({}->{@a_1}->() -> ({}->{@a_1}->()->()))
+            set g = func{}->{@a_1}-> () -> ({}->{@a_1}->()->()) {
+                var f:({}->{@b_1}->() -> ())     -- this is @local, cant return it
                 set f = func {}->{@b_1}->() -> () {
                     output std ()
                 }           
                return f                 -- can't return pointer @local
             }
-            var f: /({}->{@a_1}->() -> ())
-            set f = call g\ {@local} ()
-            call f\ {@local} ()
+            var f: ({}->{@a_1}->() -> ())
+            set f = call g {@local} ()
+            call f {@local} ()
         """.trimIndent()
         )
-        assert(out == "(ln 7, col 4): invalid return : type mismatch") { out }
+        //assert(out == "(ln 7, col 4): invalid return : type mismatch") { out }
+        assert(out == "OK") { out }
     }
     @Test
     fun p17_pool_closure_ok() {
         val out = inp2env(
             """
-            var g: /({}->{@a_1}->() -> /({}->{@a_1}->()->())@a_1)
-            set g = func {}->{@a_1}->() -> /({}->{@a_1}->()->())@a_1 {
-                var f:/({}->{@b_1}->() -> ())@a_1
+            var g: ({}->{@a_1}->() -> ({}->{@a_1}->()->()))
+            set g = func {}->{@a_1}->() -> ({}->{@a_1}->()->()) {
+                var f:({}->{@b_1}->() -> ())
                 set f = func {}->{@b_1}->() -> () {
                     output std ()
                 }           
                return f
             }
-            var f: /({}->{@a_1}->() -> ())
-            set f = call g\ {@local} ()
-            call f\ {@local} ()
+            var f: ({}->{@a_1}->() -> ())
+            set f = call g {@local} ()
+            call f {@local} ()
         """.trimIndent()
         )
         assert(out == "OK") { out }
@@ -2938,9 +2940,9 @@ class TEnv {
     fun p23_pool_closure_err() {
         val out = inp2env(
             """
-            var g: / ({}->{@a_1}->() -> /({}->{@a_1}->()->()))
-            set g = func {}->{@a_1}->() -> /({}->{@a_1}->()->()) {
-                var f: / {@a_1}->{@b_1}->() -> ()
+            var g: ({}->{@a_1}->() -> ({}->{@a_1}->()->()))
+            set g = func {}->{@a_1}->() -> ({}->{@a_1}->()->()) {
+                var f: {@a_1}->{@b_1}->() -> ()
                 var x: /</^@a_1>@a_1
                 set x = new <.1 <.0>:/</^@a_1>@a_1>: </^@a_1>: @a_1
                 set f = func {@a_1}->{@b_1}->() -> () {
@@ -2948,7 +2950,7 @@ class TEnv {
                 }
                return f
             }
-            var f: /({}->{@a_1}->() -> ())  -- still requires [@a_1]
+            var f: ({}->{@a_1}->() -> ())  -- still requires [@a_1]
             set f = call g {@local} ()
             call f {@local} ()
         """.trimIndent()

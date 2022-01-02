@@ -24,7 +24,7 @@ val NumT1 = Num(true,  "@_1")
 val NumF1 = Num(false, "@_1")
 
 val add = """
-    var add: /({}->{@_1}-> [$NumT1,$NumT1] -> $NumT1)
+    var add: ({}->{@_1}-> [$NumT1,$NumT1] -> $NumT1)
     set add = func ({}->{@_1}-> [$NumT1,$NumT1] -> $NumT1) {
         var x: $NumT1
         set x = arg.1
@@ -33,13 +33,13 @@ val add = """
         if y\?0 {
             return x
         } else {
-            return new <.1 call add\ {@_1} [x,y\!1]: @_1>:$NumF1: @_1
+            return new <.1 call add {@_1} [x,y\!1]: @_1>:$NumF1: @_1
         }
     }
 """.trimIndent()
 
 val mul = """
-    var mul: /({}->{@_1}-> [$NumT1,$NumT1] -> $NumT1)
+    var mul: ({}->{@_1}-> [$NumT1,$NumT1] -> $NumT1)
     set mul = func ({}->{@_1}-> [$NumT1,$NumT1] -> $NumT1) {
         var x: $NumT1
         set x = arg.1
@@ -49,14 +49,14 @@ val mul = """
             return <.0>: $NumT1
         } else {
             var z: ${NumT1}
-            set z = call mul\ {@_1} [x, y\!1]: @_1
-            return call add\ {@_1} [z,x]: @_1
+            set z = call mul {@_1} [x, y\!1]: @_1
+            return call add {@_1} [z,x]: @_1
         }
     }
 """.trimIndent()
 
 val lt = """
-    var lt: /({}->{@_1}-> [$NumT1,$NumT1] -> _int)
+    var lt: ({}->{@_1}-> [$NumT1,$NumT1] -> _int)
     set lt = func {}->{@_1}-> [$NumT1,$NumT1] -> _int {
         if arg.2\?0 {
             return _0
@@ -64,7 +64,7 @@ val lt = """
             if arg.1\?0 {
                 return _1
             } else {
-                return call lt\ {@_1} [arg.1\!1,arg.2\!1]
+                return call lt {@_1} [arg.1\!1,arg.2\!1]
             }
         }
     }
@@ -119,7 +119,7 @@ class TBook {
             """
             $nums
             $add
-            output std call add\ {@local} [two,one]: @local
+            output std call add {@local} [two,one]: @local
         """.trimIndent()
         )
         assert(out == "<.1 <.1 <.1 <.0>>>>\n") { out }
@@ -132,7 +132,7 @@ class TBook {
             $nums
             $add
             $mul
-            output std call mul\ {@local} [two, call add\ {@local} [two,one]]
+            output std call mul {@local} [two, call add {@local} [two,one]]
         """.trimIndent()
         )
         assert(out == "<.1 <.1 <.1 <.1 <.1 <.1 <.0>>>>>>>\n") { out }
@@ -144,8 +144,8 @@ class TBook {
             """
             $nums
             $lt
-            output std call lt\ {@local} [two, one]
-            output std call lt\ {@local} [one, two]
+            output std call lt {@local} [two, one]
+            output std call lt {@local} [one, two]
         """.trimIndent()
         )
         assert(out == "0\n1\n") { out }
@@ -160,11 +160,11 @@ class TBook {
             $nums
             $add
             $mul
-            var square: /({}->{@_1}-> $NumT1 -> $NumT1)
+            var square: ({}->{@_1}-> $NumT1 -> $NumT1)
             set square = func {}->{@_1}-> $NumT1 -> $NumT1 {
-                return call mul\ {@_1} [arg,arg]: @_1
+                return call mul {@_1} [arg,arg]: @_1
             }
-            output std call square\ {@local} two
+            output std call square {@local} two
         """.trimIndent()
         )
         assert(out == "<.1 <.1 <.1 <.1 <.0>>>>>\n") { out }
@@ -176,16 +176,16 @@ class TBook {
             """
             $nums
             $lt
-            var smaller: /({}->{@_1}-> [$NumT1,$NumT1] -> $NumT1)
+            var smaller: ({}->{@_1}-> [$NumT1,$NumT1] -> $NumT1)
             set smaller = func {}->{@_1}-> [$NumT1,$NumT1] -> $NumT1 {
-                if call lt\ {@_1} arg {
+                if call lt {@_1} arg {
                     return arg.1
                 } else {
                     return arg.2
                 }
             }
-            output std call smaller\ {@local} [one,two]: @local
-            output std call smaller\ {@local} [two,one]: @local
+            output std call smaller {@local} [one,two]: @local
+            output std call smaller {@local} [two,one]: @local
         """.trimIndent()
         )
         assert(out == "<.1 <.0>>\n<.1 <.0>>\n") { out }
@@ -203,11 +203,11 @@ class TBook {
         val out = all(
             """
             $nums
-            var f_three: /({}->{@_1}-> $NumT1 -> $NumT1)
+            var f_three: ({}->{@_1}-> $NumT1 -> $NumT1)
             set f_three = func {}->{@_1}-> $NumT1 -> $NumT1 {
                 return three
             }
-            output std call f_three\ {@local} one
+            output std call f_three {@local} one
         """.trimIndent()
         )
         assert(out == "<.1 <.1 <.1 <.0>>>>\n") { out }
@@ -237,15 +237,15 @@ class TBook {
             $nums
             $add
             $mul
-            var multiply: /({}->{@_1}-> [$NumT1,$NumT1] -> $NumT1)
+            var multiply: ({}->{@_1}-> [$NumT1,$NumT1] -> $NumT1)
             set multiply = func {}->{@_1}-> [$NumT1,$NumT1] -> $NumT1 {
                 if arg.1\?0 {
                     return <.0>:${NumT1}
                 } else {
-                    return call mul\ {@_1} [arg.1,arg.2]: @_1
+                    return call mul {@_1} [arg.1,arg.2]: @_1
                 }
             }
-            output std call multiply\ {@local} [two,three]
+            output std call multiply {@local} [two,three]
         """.trimIndent()
         )
         assert(out == "<.1 <.1 <.1 <.1 <.1 <.1 <.0>>>>>>>\n") { out }
@@ -264,14 +264,14 @@ class TBook {
             set smallerc = func {}->{@_1}-> $NumT1 -> ({@_1}->{@_1}-> $NumT1->$NumT1) {
                 var x: $NumT1
                 set x = arg
-                return func [x] {@_1}->{@_1}-> $NumT1->$NumT1 {  -- would require annotation to hold x (func [x] ...)
-                    return call lt\ {@_1} [x,arg]
+                return func [x]->{@_1}->{@_1}-> $NumT1->$NumT1 {  -- would require annotation to hold x (func [x] ...)
+                    return call lt {@_1} [x,arg]
                 }
             }
-            var f: /({@_1}->{@_1}-> $NumT1 -> $NumT1)
+            var f: ({@_1}->{@_1}-> $NumT1 -> $NumT1)
             set f = call smallerc {@local} two: @local   -- smallerc could keep two in memory as long as smallerc does not live longer than two
-            output std call f\ one
-            output std call f\ three
+            output std call f one
+            output std call f three
         """.trimIndent()
         )
         assert(out == "<.1 <.0>>\n<.1 <.1 <.0>>>\n") { out }
@@ -283,15 +283,15 @@ class TBook {
             $nums
             $add
             $mul
-            var square: /({}->{@_1}-> $NumT1 -> $NumT1)
+            var square: ({}->{@_1}-> $NumT1 -> $NumT1)
             set square = func {}->{@_1}-> $NumT1 -> $NumT1 {
-                return call mul\ {@_1} [arg,arg]: @_1
+                return call mul {@_1} [arg,arg]: @_1
             }
-            var twice: /({}->{@_1}-> [/({}->{@_1}-> $NumT1->$NumT1)@_1, $NumT1] -> $NumT1)
-            set twice = func {}->{@_1}-> [/({}->{@_1}-> $NumT1->$NumT1)@_1, $NumT1] -> $NumT1 {
-                return call arg.1\ {@_1} (call arg.1\ {@_1} arg.2: @_1): @_1
+            var twice: ({}->{@_1}-> [({}->{@_1}-> $NumT1->$NumT1), $NumT1] -> $NumT1)
+            set twice = func {}->{@_1}-> [({}->{@_1}-> $NumT1->$NumT1), $NumT1] -> $NumT1 {
+                return call arg.1 {@_1} (call arg.1 {@_1} arg.2: @_1): @_1
             }
-            output std call twice\ {@local} [square,two]: @local
+            output std call twice {@local} [square,two]: @local
         """.trimIndent()
         )
         assert(out == "<.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.0>>>>>>>>>>>>>>>>>\n") { out }

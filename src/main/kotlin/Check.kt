@@ -149,9 +149,10 @@ fun check_01_before_tps (s: Stmt) {
 fun check_02_after_tps (s: Stmt) {
     val funcs = mutableSetOf<Expr.Func>()   // funcs with checked [@] closure
     fun fe (e: Expr) {
+        val tp = AUX.tps[e]
         when (e) {
             is Expr.Var -> {    // check closures
-                if (e.tk_.str=="arg" || e.tk_.str=="_ret_") {
+                if (tp is Type.Func || e.tk_.str=="arg" || e.tk_.str=="_ret_") {
                     // ok
                 } else {
                     val var_scope = e.env(e.tk_.str)!!.type.scope()
@@ -263,17 +264,17 @@ fun check_02_after_tps (s: Stmt) {
                     Pair(aux(inp1), aux(out1))
                 }
 
-                /*
-                print("INP1: ") ; println(inp1.tostr())
+                ///*
+                //print("INP1: ") ; println(inp1.tostr())
                 print("INP2: ") ; println(inp2.tostr())
                 print("ARG1: ") ; println(arg1.tostr())
                 //print("ARG2: ") ; println(arg2.tostr())
                 //println("OUT, RET1, RET2")
-                print("OUT1: ") ; println(out1.tostr())
+                //print("OUT1: ") ; println(out1.tostr())
                 print("OUT2: ") ; println(out2.tostr())
                 print("RET1: ") ; println(ret1.tostr())
                 //print("RET2: ") ; println(ret2.tostr())
-                */
+                //*/
 
                 All_assert_tk(e.f.tk, inp2.isSupOf(arg1) && ret1.isSupOf(out2)) {
                     "invalid call : type mismatch"

@@ -177,11 +177,16 @@ fun parser_expr (all: All): Expr {
 
             if (tk_pre.enu == TK.OUTPUT) {
                 all.assert_tk(f.tk, f is Expr.Var) { "invalid `output` : expected identifier" }
+                /*
                 f = Expr.Dnref(
                     Tk.Chr(TK.CHAR, f.tk.lin, f.tk.col, '\\'),
                     Expr.Var(
                         Tk.Str(TK.XVAR, f.tk.lin, f.tk.col, "output_" + (f.tk as Tk.Str).str)
                     )
+                )
+                 */
+                f = Expr.Var (
+                    Tk.Str(TK.XVAR,f.tk.lin,f.tk.col,"output_"+(f.tk as Tk.Str).str)
                 )
             }
             val scp = if (all.accept(TK.CHAR, ':')) {

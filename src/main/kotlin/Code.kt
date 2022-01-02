@@ -29,11 +29,11 @@ fun Type.pos (): String {
         is Type.Rec -> TODO(this.toString())
         is Type.Any   -> "void"     // TODO: remove output_std prototype?
         is Type.Unit  -> "int"
-        is Type.Ptr   -> this.pln.pos() + (if (this.isclo()) "" else "*")
+        is Type.Ptr   -> this.pln.pos() + "*"
         is Type.Nat   -> this.tk_.str
         is Type.Tuple -> "struct " + this.toce()
         is Type.Union -> "struct " + this.toce()
-        is Type.Func  -> this.toce() //+ "*"
+        is Type.Func  -> this.toce() + (if (this.clo.lbl=="global") "*" else "")
     }
 }
 
@@ -41,7 +41,7 @@ fun Type.output (c: String, arg: String): String {
     val tupuni = this is Type.Ptr && (this.pln is Type.Tuple || this.pln is Type.Union)
     return when {
         tupuni -> "output_std_${(this as Type.Ptr).pln.toce()}$c($arg);\n"
-        this is Type.Ptr -> {
+        this is Type.Ptr || this is Type.Func -> {
             if (c == "_") "putchar('_');\n" else "puts(\"_\");\n"
         }
         else -> "output_std_${this.toce()}$c($arg);\n"
@@ -230,8 +230,7 @@ fun code_fe (e: Expr) {
             Pair(it.first, "(&" + it.second + ")")
         }
         is Expr.Dnref -> EXPRS.removeFirst().let {
-            val x = if (AUX.tps[e.ptr]!!.isclo()) it.second else "(*" + it.second + ")"
-            Pair(it.first, x)
+            Pair(it.first, "(*" + it.second + ")")
         }
         is Expr.TDisc -> EXPRS.removeFirst().let { Pair(it.first, it.second + "._" + e.tk_.num) }
         is Expr.UDisc -> EXPRS.removeFirst().let {
@@ -296,10 +295,11 @@ fun code_fe (e: Expr) {
         is Expr.Call  -> {
             val arg = EXPRS.removeFirst()
             val f   = EXPRS.removeFirst()
-            val ff  = e.f as? Expr.Dnref
+            //val ff  = e.f as? Expr.Dnref
             val pools = e.scps.let { if (it.size == 0) "" else (it.map { it.toce() }.joinToString(",") + ",") }
             val snd =
-                if (ff!=null && ff.ptr is Expr.Var && ff.ptr.tk_.str=="output_std") {
+                if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
+                //if (ff!=null && ff.ptr is Expr.Var && ff.ptr.tk_.str=="output_std") {
                     AUX.tps[e.arg]!!.output("", arg.second)
                 } else {
                     val tpf = AUX.tps[e.f]
