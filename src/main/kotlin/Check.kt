@@ -296,6 +296,12 @@ fun check_02_after_tps (s: Stmt) {
                     val str = if (s.dst is Expr.Var && s.dst.tk_.str == "_ret_") "return" else "assignment"
                     "invalid $str : type mismatch"
                 }
+                if (s.dst is Expr.Var) {
+                    val up = s.dst.ups_first { it is Expr.Func && it.ups.any { it.str == s.dst.tk_.str } }
+                    All_assert_tk(s.tk, up==null) {
+                        "invalid assignment : cannot modify an upalue"
+                    }
+                }
             }
         }
     }

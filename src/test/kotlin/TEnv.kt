@@ -3039,4 +3039,21 @@ class TEnv {
         )
         assert(out == "OK") { out }
     }
+    @Test
+    fun p29_upwrite_err () {
+        val out = inp2env("""
+            { @a
+                var pa: /</^ @local> @local
+                var f: /({@a}->{}-> ()->())
+                set f = func[pa]->{@a}-> {}-> ()->() {
+                    var pf: /</^ @a> @a
+                    set pf = new <.1 <.0>: /</^ @a> @a>:</^ @a>: @a
+                    set pa = pf
+                }
+                call f\ ()
+                output std pa
+            }
+        """.trimIndent())
+        assert(out == "(ln 7, col 16): invalid assignment : cannot modify an upalue") { out }
+    }
 }

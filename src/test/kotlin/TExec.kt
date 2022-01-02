@@ -1582,7 +1582,7 @@ class TExec {
             }
         """.trimIndent()
         )
-        assert(out == "five\n") { out }
+        assert(out == "5\n") { out }
     }
     @Test
     fun n10_pool_closure_todo2() {
@@ -1605,7 +1605,7 @@ class TExec {
             output std v\ --@local
         """.trimIndent()
         )
-        assert(out == "five\n") { out }
+        assert(out == "5\n") { out }
     }
 
     // ALL

@@ -77,7 +77,7 @@ fun code_ft (tp: Type) {
                 """
                     struct {
                         ${tp.out.pos()} (*f) (void** ups, $pools ${tp.inp.pos()});
-                        void* env[3];
+                        void** ups;
                     } ${tp.toce()}
                 """.trimIndent()
             }
@@ -217,7 +217,15 @@ fun code_fe (e: Expr) {
     EXPRS.addFirst(when (e) {
         is Expr.Unit -> Pair("", "0")
         is Expr.Nat -> Pair("", e.tk_.str)
-        is Expr.Var -> Pair("", e.tk_.str)
+        is Expr.Var -> {
+            val up = e.ups_first { it is Expr.Func && it.ups.any { it.str==e.tk_.str } }
+            if (up != null) {
+                val idx = (up as Expr.Func).ups.indexOfFirst { it.str==e.tk_.str }
+                Pair("", "ups[$idx]")
+            } else {
+                Pair("", e.tk_.str)
+            }
+        }
         is Expr.Upref -> EXPRS.removeFirst().let {
             Pair(it.first, "(&" + it.second + ")")
         }
@@ -298,7 +306,7 @@ fun code_fe (e: Expr) {
                     val xxx = if (tpf is Type.Nat && e.arg is Expr.Unit) "" else arg.second
                     if (tpf is Type.Func && tpf.clo.lbl!="global") {
                         // only closures that escape (@a_1)
-                        f.second + ".f(" + f.second + ".env, " + pools + xxx + ")"
+                        f.second + ".f(" + f.second + ".ups, " + pools + xxx + ")"
                     } else {
                         f.second + "(" + pools + xxx + ")"
                     }
@@ -313,8 +321,19 @@ fun code_fe (e: Expr) {
             val pools = e.type.scps.let { if (it.size == 0) "" else
                 it.map { "Pool** ${it.toce()}" }.joinToString(",") + ","
             }
+            val pool = e.type.clo.toce()
             val clo = if (e.type.clo.lbl == "global") "" else """
-                ${e.type.toce()} $ID = { $fid, {} }; 
+                void** ups = malloc(${e.ups.size} * sizeof(void*));
+                assert(ups!=NULL && "not enough memory");
+                {
+                    Pool* pool = malloc(sizeof(Pool));
+                    assert(pool!=NULL && "not enough memory");
+                    pool->val = ups;
+                    pool->nxt = *$pool;
+                    *$pool = pool;
+                }
+                ${e.ups.mapIndexed { i,up -> "ups[$i] = ${up.str};\n" }.joinToString("")}
+                ${e.type.toce()} $ID = { $fid, ups }; 
             """.trimIndent()
             val pre = """
                 auto ${e.type.out.pos()} $fid ($ups $pools ${inp.pos()} _arg_) {
