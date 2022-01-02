@@ -221,7 +221,7 @@ fun code_fe (e: Expr) {
             val up = e.ups_first { it is Expr.Func && it.ups.any { it.str==e.tk_.str } }
             if (up != null) {
                 val idx = (up as Expr.Func).ups.indexOfFirst { it.str==e.tk_.str }
-                Pair("", "ups[$idx]")
+                Pair("", "((${xp.pos()})ups[$idx])")
             } else {
                 Pair("", e.tk_.str)
             }

@@ -1328,17 +1328,22 @@ class TExec {
         val out = all("""
             { @a
                 var pa: /</^ @local> @local
+                set pa = new <.1 <.0>: /</^ @a> @a>:</^ @a>: @a
                 var f: /({@a}->{}-> ()->())
                 set f = func[pa]->{@a}-> {}-> ()->() {
                     var pf: /</^ @a> @a
                     set pf = new <.1 <.0>: /</^ @a> @a>:</^ @a>: @a
-                    set pa = pf
+                    --var p2: /</^ @a> @a
+                    --set p2 = new <.1 <.0>: /</^ @a> @a>:</^ @a>: @a
+                    --set p2\!1 = pf
+                    --output std pa
+                    set pa\!1 = pf
                 }
                 call f\ ()
                 output std pa
             }
         """.trimIndent())
-        assert(out == "<.1 <.0>>\n") { out }
+        assert(out == "<.1 <.1 <.0>>>\n") { out }
     }
     @Test
     fun m01_scope_f () {

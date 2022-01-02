@@ -588,7 +588,7 @@ class TEnv {
                 var f: / ({@a}->{}->()->()) @local
                 set f = func [pa]->{@a}->{}->()->() {
                     var pf: /_int @a
-                    set pa = pf
+                    set pf = pa
                 }
             }
         """.trimIndent())
