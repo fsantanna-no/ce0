@@ -1592,7 +1592,7 @@ class TExec {
             set cnst = func {}->{@_1}-> /_int@_1 -> /({@_1}->{}-> () -> /_int@_1)@_1 {
                 var x: /_int@_1
                 set x = arg
-                return func [x] {@_1}->{}-> () -> /_int@_1 {
+                return func [x]-> {@_1}->{}-> () -> /_int@_1 {
                     return x
                 }
             }

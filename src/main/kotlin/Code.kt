@@ -16,12 +16,20 @@ fun Type.toce (): String {
 val TYPEX = mutableSetOf<String>()
 val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 
+fun Type.isclo (): Boolean {
+    return when {
+        (this !is Type.Ptr)            -> false
+        (this.pln !is Type.Func)       -> false
+        (this.pln.clo.lbl == "global") -> false
+        else -> true
+    }
+}
 fun Type.pos (): String {
     return when (this) {
         is Type.Rec -> TODO(this.toString())
         is Type.Any   -> "void"     // TODO: remove output_std prototype?
         is Type.Unit  -> "int"
-        is Type.Ptr   -> this.pln.pos() + "*"
+        is Type.Ptr   -> this.pln.pos() + (if (this.isclo()) "" else "*")
         is Type.Nat   -> this.tk_.str
         is Type.Tuple -> "struct " + this.toce()
         is Type.Union -> "struct " + this.toce()
@@ -63,9 +71,9 @@ fun code_ft (tp: Type) {
             val pools = tp.scps.let { if (it.size == 0) "" else
                 it.mapIndexed { i,tk -> "Pool**" }.joinToString(",") + ","
             }
-            val ret = if (tp.clo.num == null) {
+            val ret = if (tp.clo.lbl == "global") {
                 "${tp.out.pos()} ${tp.toce()} ($pools ${tp.inp.pos()})"
-            } else { // only closures that escape (@a_1)
+            } else {
                 """
                     struct {
                         ${tp.out.pos()} (*f) (void** ups, $pools ${tp.inp.pos()});
@@ -200,23 +208,6 @@ fun code_ft (tp: Type) {
 
 val EXPRS = ArrayDeque<Pair<String,String>>()
 
-fun Expr.UDisc.deref (str: String): String {
-    return if (AUX.tps[this.uni]!!.isrec()) {
-        //"(*($str))"
-        str
-    } else {
-        str
-    }
-}
-fun Expr.UPred.deref (str: String): String {
-    return if (AUX.tps[this.uni]!!.isrec()) {
-        //"(*($str))"
-        str
-    } else {
-        str
-    }
-}
-
 fun Tk.Scope.toce (): String {
     return "pool_" + this.lbl + (if (this.num==null) "" else ("_"+this.num!!))
 }
@@ -231,11 +222,12 @@ fun code_fe (e: Expr) {
             Pair(it.first, "(&" + it.second + ")")
         }
         is Expr.Dnref -> EXPRS.removeFirst().let {
-            Pair(it.first, "(*" + it.second + ")")
+            val x = if (AUX.tps[e.ptr]!!.isclo()) it.second else "(*" + it.second + ")"
+            Pair(it.first, x)
         }
         is Expr.TDisc -> EXPRS.removeFirst().let { Pair(it.first, it.second + "._" + e.tk_.num) }
         is Expr.UDisc -> EXPRS.removeFirst().let {
-            val ee = e.deref(it.second)
+            val ee = it.second
             val uni = AUX.tps[e.uni]!!
             val pre = if (e.tk_.num == 0) {
                 """
@@ -252,7 +244,7 @@ fun code_fe (e: Expr) {
             Pair(it.first + pre, ee+"._"+e.tk_.num)
         }
         is Expr.UPred -> EXPRS.removeFirst().let {
-            val ee = e.deref(it.second)
+            val ee = it.second
             val pos = if (e.tk_.num == 0) {
                 "(&${it.second} == NULL)"
             } else {
@@ -304,7 +296,7 @@ fun code_fe (e: Expr) {
                 } else {
                     val tpf = AUX.tps[e.f]
                     val arg = if (tpf is Type.Nat && e.arg is Expr.Unit) "" else arg.second
-                    if (tpf is Type.Func && tpf.clo.num!=null) {
+                    if (tpf is Type.Func && tpf.clo.lbl!="global") {
                         // only closures that escape (@a_1)
                         f.second + ".f(" + f.second + ".env, " + pools + arg + ")"
                     } else {
@@ -315,13 +307,13 @@ fun code_fe (e: Expr) {
         }
         is Expr.Func  -> {
             val ID  = "_func_" + e.hashCode().absoluteValue
-            val fid = if (e.type.clo.num == null) ID else ID+"_f"
+            val fid = if (e.type.clo.lbl == "global") ID else ID+"_f"
             val inp = e.type.inp
-            val ups = if (e.type.clo.num == null) "" else "void** ups,"
+            val ups = if (e.type.clo.lbl == "global") "" else "void** ups,"
             val pools = e.type.scps.let { if (it.size == 0) "" else
                 it.mapIndexed { i,tk -> "Pool** ${tk.toce()}" }.joinToString(",") + ","
             }
-            val clo = if (e.type.clo.num == null) "" else """
+            val clo = if (e.type.clo.lbl == "global") "" else """
                 ${e.type.toce()} $ID = { $fid, {} }; 
             """.trimIndent()
             val pre = """
