@@ -1,20 +1,20 @@
 fun Tk.Scope.check (up: Any) {
-    val (lbl, num) = this.let { Pair(it.lbl, it.num) }
     val ok = when {
-        (lbl == "global") -> true                               // @global
-        (lbl == "local") -> true                                // @local
+        (this.lbl == "var")    -> true
+        (this.lbl == "global") -> true
+        (this.lbl == "local")  -> true
         //(up is Type.Func) -> true                             // ... -> ... [@_1]
         (up.ups_first { it is Type.Func } != null) -> true      // (@_1 -> ...)
         (up.ups_first {                                         // { @aaa ... @aaa }
-            it is Stmt.Block && it.scope!=null && it.scope.lbl==lbl && it.scope.num==num
+            it is Stmt.Block && it.scope!=null && it.scope.lbl==this.lbl && it.scope.num==this.num
         } != null) -> true
         (up.ups_first {                                         // [@_1, ...] { @_1 }
-            it is Expr.Func && it.type.scps.any { it.lbl==lbl && it.num==num }
+            it is Expr.Func && it.type.scps.any { it.lbl==this.lbl && it.num==this.num }
         } != null) -> true
         else -> false
     }
     All_assert_tk(this, ok) {
-        val n = if (num == null) "" else "_$num"
+        val n = if (this.num == null) "" else "_${this.num}"
         "undeclared scope \"@$lbl$n\""
     }
 }
@@ -33,19 +33,16 @@ fun check_01_before_tps (s: Stmt) {
                 }
 
             }
-            is Type.Ptr -> tp.scope!!.check(tp)
+            is Type.Ptr -> tp.scope.check(tp)
             is Type.Func -> {
                 tp.clo.check(tp)
-                //tp.scps.forEach { it.check(tp) }
-                val ptrs  = tp.flatten()
-                    .filter { it is Type.Ptr }
-                    .let    { it as List<Type.Ptr>}
-                    .filter { it.scope != null }
+                val ptrs  = tp.flatten().filter { it is Type.Ptr } as List<Type.Ptr>
                 val ok1 = ptrs.all {
-                    val ptr = it.scope!!
+                    val ptr = it.scope
                     when {
-                        (ptr.lbl == "global") -> true       // @global
-                        //(ptr.lbl == "local")  -> true       // @local
+                        (ptr.lbl == "var") -> TODO()
+                        (ptr.lbl == "global") -> true
+                        //(ptr.lbl == "local")  -> true
                         tp.clo.let { ptr.lbl==it.lbl && ptr.num==it.num } -> true   // {@a} ...@a
                         tp.scps.any {                         // (@_1 -> ...@_1...)
                             ptr.lbl==it.lbl && ptr.num==it.num
@@ -134,7 +131,7 @@ fun check_01_before_tps (s: Stmt) {
             is Stmt.Block -> {
                 if (s.scope != null) {
                     All_assert_tk(s.scope, s.scope.num == null) {
-                        "invalid pool : unexpected `_${s.scope!!.num}´ depth"
+                        "invalid pool : unexpected `_${s.scope.num}´ depth"
                     }
                     val ok = s.ups_first { it is Stmt.Block && it.scope?.lbl==s.scope.lbl } as Stmt.Block?
                     All_assert_tk(s.scope, ok==null) {
@@ -154,7 +151,6 @@ fun check_02_after_tps (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.Var -> {    // check closures
-                val tp = AUX.tps[e]!!
                 if (e.tk_.str=="arg" || e.tk_.str=="_ret_") {
                     // ok
                 } else {
@@ -253,7 +249,7 @@ fun check_02_after_tps (s: Stmt) {
                             is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { aux(it) }.toTypedArray())
                             is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { aux(it) }.toTypedArray())
                             is Type.Ptr -> {
-                                val ret = tp.scope!!.let { scp ->
+                                val ret = tp.scope.let { scp ->
                                     acc[scp.lbl].let { if (it == null) null else it[scp.num]!! }
                                 }
                                 if (ret == null) tp else {
@@ -267,7 +263,7 @@ fun check_02_after_tps (s: Stmt) {
                     Pair(aux(inp1), aux(out1))
                 }
 
-                ///*
+                /*
                 print("INP1: ") ; println(inp1.tostr())
                 print("INP2: ") ; println(inp2.tostr())
                 print("ARG1: ") ; println(arg1.tostr())
@@ -277,7 +273,7 @@ fun check_02_after_tps (s: Stmt) {
                 print("OUT2: ") ; println(out2.tostr())
                 print("RET1: ") ; println(ret1.tostr())
                 //print("RET2: ") ; println(ret2.tostr())
-                //*/
+                */
 
                 All_assert_tk(e.f.tk, inp2.isSupOf(arg1) && ret1.isSupOf(out2)) {
                     "invalid call : type mismatch"

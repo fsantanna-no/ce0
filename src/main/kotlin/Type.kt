@@ -8,7 +8,7 @@ sealed class Type (val tk: Tk) {
     data class Union (val tk_: Tk.Chr, val isrec: Boolean, val vec: Array<Type>): Type(tk_)
     //data class UCons (val tk_: Tk.Num, val arg: Type): Type(tk_)
     data class Func  (val tk_: Tk.Chr, val clo: Tk.Scope, val scps: Array<Tk.Scope>, val inp: Type, val out: Type): Type(tk_)
-    data class Ptr   (val tk_: Tk.Chr, val scope: Tk.Scope?, val pln: Type): Type(tk_)
+    data class Ptr   (val tk_: Tk.Chr, val scope: Tk.Scope, val pln: Type): Type(tk_)
     data class Rec   (val tk_: Tk.Up): Type(tk_)
     //data class Pool  (val tk_: Tk.Scope): Type(tk_)
 }
@@ -59,7 +59,7 @@ fun Type.lincol (lin: Int, col: Int): Type {
         is Type.Nat   -> Type.Nat(this.tk_.copy(lin_=lin,col_=col))
         is Type.Tuple -> Type.Tuple(this.tk_.copy(lin_=lin,col_=col), this.vec.map { it.lincol(lin,col) }.toTypedArray())
         is Type.Union -> Type.Union(this.tk_.copy(lin_=lin,col_=col), this.isrec, this.vec.map { it.lincol(lin,col) }.toTypedArray())
-        is Type.Func  -> Type.Func(this.tk_.copy(lin_=lin,col_=col), this.clo?.copy(lin_=lin,col_=col), this.scps.map { it.copy(lin_=lin,col_=col) }.toTypedArray(), this.inp.lincol(lin,col), this.out.lincol(lin,col))
+        is Type.Func  -> Type.Func(this.tk_.copy(lin_=lin,col_=col), this.clo.copy(lin_=lin,col_=col), this.scps.map { it.copy(lin_=lin,col_=col) }.toTypedArray(), this.inp.lincol(lin,col), this.out.lincol(lin,col))
         is Type.Ptr   -> Type.Ptr(this.tk_.copy(lin_=lin,col_=col), this.scope, this.pln.lincol(lin,col))
         is Type.Rec   -> Type.Rec(this.tk_.copy(lin_=lin,col_=col))
     }
@@ -94,44 +94,18 @@ fun Type.containsRec (): Boolean {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-fun Tk.Scope?.scope (up: Any): Scope {
-    // Offset of @N (max) of all crossing functions:
-    //  func /()->() {              // +1
-    //      func [/()@1,/()@2] {    // +2
-    //          ...                 // off=3
-    fun off (ups: List<Any>): Int {
-        return ups
-            .filter { it is Expr.Func }
-            .map {
-                (it as Expr.Func).type.flatten().filter { it is Type.Ptr }
-                    .map { (it as Type.Ptr).scope!!.lbl }
-                    .map { it.toIntOrNull() }
-                    .filterNotNull()
-                    .maxOrNull() ?: 0
-            }
-            .sum()
-    }
-
-    // Level of function nesting:
-    //  func ... {
-    //      ...             // lvl=1
-    //      func ... {
-    //          ...         // lvl=1
-    val lvl = up.ups_tolist().filter { it is Expr.Func }.count()
-    // dropWhile(Type).drop(1) so that prototype skips up func
-    //val lvl = up.ups_tolist().dropWhile { it is Type }.drop(1).filter { it is Expr.Func }.count()
-
-    return when (this?.lbl) {
-        null     -> Scope(lvl, null, up.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
+fun Tk.Scope.scope (up: Any): Scope {
+    val lvl = up.ups_tolist().filter { it is Expr.Func }.count() // level of function nesting
+    return when (this.lbl) {
+        "var"    -> Scope(lvl, null, up.ups_tolist().let { it.count { it is Stmt.Block } })
         "global" -> Scope(lvl, null, 0)
-        "local"  -> Scope(lvl, null, up.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
+        "local"  -> Scope(lvl, null, up.ups_tolist().let { it.count { it is Stmt.Block } })
         else -> {
-            val blk = up.ups_first { it is Stmt.Block && it.scope!=null && it.scope.lbl==this?.lbl }
+            val blk = up.ups_first { it is Stmt.Block && it.scope!=null && it.scope.lbl==this.lbl }
             if (blk != null) {
-                Scope(lvl, null, 1 + blk.ups_tolist().let { off(it) + it.count { it is Stmt.Block } })
+                Scope(lvl, null, 1 + blk.ups_tolist().let { it.count { it is Stmt.Block } })
             } else {    // false = relative to function block
-                val n = up.ups_first { it is Expr.Func }.let { if (it == null) 0 else off(it.ups_tolist()) }
-                Scope(lvl, this?.lbl, n + (this?.num ?: 0))
+                Scope(lvl, this.lbl, (this.num ?: 0))
             }
         }
     }

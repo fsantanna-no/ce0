@@ -182,7 +182,9 @@ fun Aux_tps (s: Stmt) {
         AUX.tps[e] = when (e) {
             is Expr.Unit  -> Type.Unit(e.tk_).up(e)
             is Expr.Nat   -> e.type ?: Type.Nat(e.tk_).up(e)
-            is Expr.Upref -> AUX.tps[e.pln]!!.let { Type.Ptr(e.tk_, null, it).up(it) }
+            is Expr.Upref -> AUX.tps[e.pln]!!.let {
+                Type.Ptr(e.tk_, Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col,"var",null), it).up(it)
+            }
             is Expr.Dnref -> AUX.tps[e.ptr].let {
                 if (it is Type.Nat) it else {
                     All_assert_tk(e.tk, it is Type.Ptr) {
@@ -207,7 +209,7 @@ fun Aux_tps (s: Stmt) {
                             }
                             fun map (tp: Type): Type {
                                 return when (tp) {
-                                    is Type.Ptr   -> Type.Ptr(tp.tk_, e.scope, map(tp.pln))
+                                    is Type.Ptr   -> Type.Ptr(tp.tk_, e.scope!!, map(tp.pln))
                                     is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray())
                                     is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray())
                                     is Type.Func  -> Type.Func(tp.tk_, f(tp.clo), tp.scps.map { f(it) }.toTypedArray(), map(tp.inp), map(tp.out))

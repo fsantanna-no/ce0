@@ -69,7 +69,7 @@ fun code_ft (tp: Type) {
     when (tp) {
         is Type.Func -> {
             val pools = tp.scps.let { if (it.size == 0) "" else
-                it.mapIndexed { i,tk -> "Pool**" }.joinToString(",") + ","
+                it.map { "Pool**" }.joinToString(",") + ","
             }
             val ret = if (tp.clo.lbl == "global") {
                 "${tp.out.pos()} ${tp.toce()} ($pools ${tp.inp.pos()})"
@@ -209,7 +209,7 @@ fun code_ft (tp: Type) {
 val EXPRS = ArrayDeque<Pair<String,String>>()
 
 fun Tk.Scope.toce (): String {
-    return "pool_" + this.lbl + (if (this.num==null) "" else ("_"+this.num!!))
+    return "pool_" + this.lbl + (if (this.num==null) "" else ("_"+this.num))
 }
 
 fun code_fe (e: Expr) {
@@ -256,7 +256,7 @@ fun code_fe (e: Expr) {
         is Expr.New  -> EXPRS.removeFirst().let {
             val ID  = "__tmp_" + e.hashCode().absoluteValue
             val ptr = AUX.tps[e] as Type.Ptr
-            val pool = ptr.scope!!.toce()
+            val pool = ptr.scope.toce()
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
@@ -295,12 +295,12 @@ fun code_fe (e: Expr) {
                     AUX.tps[e.arg]!!.output("", arg.second)
                 } else {
                     val tpf = AUX.tps[e.f]
-                    val arg = if (tpf is Type.Nat && e.arg is Expr.Unit) "" else arg.second
+                    val xxx = if (tpf is Type.Nat && e.arg is Expr.Unit) "" else arg.second
                     if (tpf is Type.Func && tpf.clo.lbl!="global") {
                         // only closures that escape (@a_1)
-                        f.second + ".f(" + f.second + ".env, " + pools + arg + ")"
+                        f.second + ".f(" + f.second + ".env, " + pools + xxx + ")"
                     } else {
-                        f.second + "(" + pools + arg + ")"
+                        f.second + "(" + pools + xxx + ")"
                     }
                 }
             Pair(f.first + arg.first, snd)
@@ -311,7 +311,7 @@ fun code_fe (e: Expr) {
             val inp = e.type.inp
             val ups = if (e.type.clo.lbl == "global") "" else "void** ups,"
             val pools = e.type.scps.let { if (it.size == 0) "" else
-                it.mapIndexed { i,tk -> "Pool** ${tk.toce()}" }.joinToString(",") + ","
+                it.map { "Pool** ${it.toce()}" }.joinToString(",") + ","
             }
             val clo = if (e.type.clo.lbl == "global") "" else """
                 ${e.type.toce()} $ID = { $fid, {} }; 
@@ -360,6 +360,7 @@ fun code_fs (s: Stmt) {
 
         """.trimIndent()
         is Stmt.Break -> "break;\n"
+        is Stmt.Ret   -> "return _ret_;\n"
         is Stmt.Call  -> {
             val e = EXPRS.removeFirst()
             e.first + e.second + ";\n"
@@ -373,12 +374,6 @@ fun code_fs (s: Stmt) {
             }
             
             """.trimIndent()
-        is Stmt.Ret   -> {
-            //EXPRS.removeFirst()
-            val f = s.ups_first { it is Expr.Func } as Expr.Func
-            "return _ret_;\n"
-            //"return" + if (s.e.e.toType() is Type.Unit) ";\n" else " _ret_;\n"
-        }
         is Stmt.Var   -> {
             when {
                 s.tk_.str == "_arg_" -> "int ${s.tk_.str};\n"
