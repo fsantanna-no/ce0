@@ -77,7 +77,7 @@ fun code_ft (tp: Type) {
                 """
                     struct {
                         ${tp.out.pos()} (*f) (void** ups, $pools ${tp.inp.pos()});
-                        void** ups;
+                        void** ups;     // pool + up1 + ...
                     } ${tp.toce()}
                 """.trimIndent()
             }
@@ -221,7 +221,7 @@ fun code_fe (e: Expr) {
             val up = e.ups_first { it is Expr.Func && it.ups.any { it.str==e.tk_.str } }
             if (up != null) {
                 val idx = (up as Expr.Func).ups.indexOfFirst { it.str==e.tk_.str }
-                Pair("", "((${xp.pos()})ups[$idx])")
+                Pair("", "((${xp.pos()})ups[${1+idx}])")    // +1 skips pool
             } else {
                 Pair("", e.tk_.str)
             }
@@ -263,7 +263,10 @@ fun code_fe (e: Expr) {
         is Expr.New  -> EXPRS.removeFirst().let {
             val ID  = "__tmp_" + e.hashCode().absoluteValue
             val ptr = AUX.tps[e] as Type.Ptr
-            val pool = ptr.scope.toce()
+
+            val up = e.ups_first { it is Expr.Func && (AUX.tps[it] as Type.Func).clo.let { it.lbl==ptr.scope.lbl && it.num==ptr.scope.num } }
+            val pool = if (up == null) ptr.scope.toce() else "((Pool**)ups[0])"
+
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
@@ -296,7 +299,12 @@ fun code_fe (e: Expr) {
             val arg = EXPRS.removeFirst()
             val f   = EXPRS.removeFirst()
             //val ff  = e.f as? Expr.Dnref
-            val pools = e.scps.let { if (it.size == 0) "" else (it.map { it.toce() }.joinToString(",") + ",") }
+
+            val pools = e.scps.let { if (it.size == 0) "" else (it.map { out ->
+                val up = e.ups_first { it is Expr.Func && (AUX.tps[it] as Type.Func).clo.let { it.lbl==out.lbl && it.num==out.num } }
+                if (up == null) out.toce() else "((Pool**)ups[0])"
+            }.joinToString(",") + ",") }
+
             val snd =
                 if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
                 //if (ff!=null && ff.ptr is Expr.Var && ff.ptr.tk_.str=="output_std") {
@@ -323,7 +331,7 @@ fun code_fe (e: Expr) {
             }
             val pool = e.type.clo.toce()
             val clo = if (e.type.clo.lbl == "global") "" else """
-                void** ups = malloc(${e.ups.size} * sizeof(void*));
+                void** ups = malloc(${e.ups.size+1} * sizeof(void*));   // +1 pool
                 assert(ups!=NULL && "not enough memory");
                 {
                     Pool* pool = malloc(sizeof(Pool));
@@ -332,7 +340,8 @@ fun code_fe (e: Expr) {
                     pool->nxt = *$pool;
                     *$pool = pool;
                 }
-                ${e.ups.mapIndexed { i,up -> "ups[$i] = ${up.str};\n" }.joinToString("")}
+                ups[0] = $pool;
+                ${e.ups.mapIndexed { i,up -> "ups[${i+1}] = ${up.str};\n" }.joinToString("")}
                 ${e.type.toce()} $ID = { $fid, ups }; 
             """.trimIndent()
             val pre = """
