@@ -264,7 +264,11 @@ class TBook {
                 var x: $NumT1
                 set x = arg
                 return func [x]->{@_1}->{}-> $NumT1->$NumT1 {
-                    return call lt {@_1} [x,arg]
+                    if (call lt {@_1} [x,arg]) {
+                        return x
+                    } else {
+                        return arg
+                    }
                 }
             }
             var f: ({@local}->{}-> $NumTL -> $NumTL)

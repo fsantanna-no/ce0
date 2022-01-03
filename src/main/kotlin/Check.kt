@@ -258,14 +258,17 @@ fun check_02_after_tps (s: Stmt) {
                                 }
                             }
                             is Type.Func -> if (!dofunc) tp else {
-                                Type.Func(tp.tk_, tp.clo, tp.scps, aux(tp.inp,dofunc), aux(tp.out,dofunc)).up(e)
+                                val ret = tp.clo.let { scp ->
+                                    acc[scp.lbl].let { if (it == null) tp.clo else it[scp.num]!! }
+                                }
+                                Type.Func(tp.tk_, ret, tp.scps, aux(tp.inp,dofunc), aux(tp.out,dofunc)).up(e)
                             }
                         }
                     }
                     Pair(aux(inp1,false), aux(out1,true))
                 }
 
-                ///*
+                /*
                 //print("INP1: ") ; println(inp1.tostr())
                 print("INP2: ") ; println(inp2.tostr())
                 print("ARG1: ") ; println(arg1.tostr())
@@ -275,7 +278,7 @@ fun check_02_after_tps (s: Stmt) {
                 print("OUT2: ") ; println(out2.tostr())
                 print("RET1: ") ; println(ret1.tostr())
                 //print("RET2: ") ; println(ret2.tostr())
-                //*/
+                */
 
                 All_assert_tk(e.f.tk, inp2.isSupOf(arg1) && ret1.isSupOf(out2)) {
                     "invalid call : type mismatch"
