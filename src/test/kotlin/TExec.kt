@@ -1509,8 +1509,8 @@ class TExec {
             """
             var g: ({}->{@a_1}-> () -> ({} ->{@a_1}->()->()))
             set g = func {} ->{@a_1}->() -> ({}->{@a_1}->()->()) {
-                var f: ({}->{@a_1}-> () -> ())
-                set f = func {}->{@a_1}-> () -> () {
+                var f: ({}->{@b_1}-> () -> ())
+                set f = func {}->{@b_1}-> () -> () {
                     output std ()
                 }
                return f
@@ -1526,17 +1526,17 @@ class TExec {
     fun n08_pool_closure() {
         val out = all(
             """
-            var g: ({} ->{@_1}->() -> ({}->{@_1}-> ()->()))
-            set g = func {} ->{@_1}->() -> ({}->{@_1}-> ()->()) {
-                var f: ({@b_1}->{@b_1}-> () -> ())
+            var g: ({} ->{@_1}->() -> ({@_1}->{@b_1}-> ()->()))
+            set g = func {}->{@_1}->() -> ({@_1}->{@b_1}-> ()->()) {
+                var f: ({@_1}->{@b_1}-> () -> ())
                 var x: /</^@_1>@_1
                 set x = new <.1 <.0>:/</^@_1>@_1>: </^@_1>: @_1
-                set f = func {@b_1} ->{@b_1}->() -> () {
+                set f = func [x] -> {@_1} ->{@b_1}->() -> () {
                     output std x
                 }
                return f
             }
-            var f:( {} ->{@_1}->() -> () )
+            var f: {@local} -> {@b_1} -> () -> ()
             set f = call g {@local} ()
             call f {@local}()
         """.trimIndent()
@@ -1590,7 +1590,7 @@ class TExec {
         assert(out == "5\n") { out }
     }
     @Test
-    fun n10_pool_closure_todo () {
+    fun n11_pool_closure () {
         val out = all(
             """
             var cnst:      ({}->{@_1}-> /_int@_1 -> ({@_1}->{}-> () -> /_int@_1))

@@ -2937,53 +2937,6 @@ class TEnv {
         assert(out == "(ln 1, col 9): expected `}´ : have \"@_a\"") { out }
     }
     @Test
-    fun p23_pool_closure_err() {
-        val out = inp2env(
-            """
-            var g: ({}->{@a_1}->() -> ({}->{@a_1}->()->()))
-            set g = func {}->{@a_1}->() -> ({}->{@a_1}->()->()) {
-                var f: {@a_1}->{@b_1}->() -> ()
-                var x: /</^@a_1>@a_1
-                set x = new <.1 <.0>:/</^@a_1>@a_1>: </^@a_1>: @a_1
-                set f = func {@a_1}->{@b_1}->() -> () {
-                    output std x
-                }
-               return f
-            }
-            var f: ({}->{@a_1}->() -> ())  -- still requires [@a_1]
-            set f = call g {@local} ()
-            call f {@local} ()
-        """.trimIndent()
-        )
-        assert(out == "ERR") { out }
-    }
-    @Test
-    fun p24_pool_closure_err() {
-        val out = inp2env(
-            """
-            var h: {}->{@a_1}->() -> ()
-            {
-                var g: {}->{@a_1}->() -> ({}->{@a_1}->()->())
-                set g = func {}->{@a_1}->() -> ({}->{@a_1}->()->()) {
-                    var f: {@a_1}->{@b_1}->() -> ()
-                    var x: /</^@a_1>@a_1
-                    set x = new <.1 <.0>:/</^@a_1>@a_1>: </^@a_1>: @a_1
-                    set f = func {@a_1}->{@b_1}->() -> () {
-                        output std x
-                    }
-                   return f
-                }
-                var f: {@a_1}->{@b_1}-> () -> ()
-                set f = call g {@local} ()
-                set h = f
-                set h = call g {@local} ()
-            }
-            call h {@local} ()
-        """.trimIndent()
-        )
-        assert(out == "ERR") { out }
-    }
-    @Test
     fun p25_pool_closure_err() {
         val out = inp2env(
             """

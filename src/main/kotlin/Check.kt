@@ -244,24 +244,25 @@ fun check_02_after_tps (s: Stmt) {
 
                 val (inp2,out2) = if (func !is Type.Func) Pair(inp1,out1) else
                 {
-                    fun aux (tp: Type): Type {
+                    fun aux (tp: Type, dofunc: Boolean): Type {
                         return when (tp) {
                             is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> tp
-                            is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { aux(it) }.toTypedArray())
-                            is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { aux(it) }.toTypedArray())
+                            is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { aux(it,dofunc) }.toTypedArray())
+                            is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { aux(it,dofunc) }.toTypedArray())
                             is Type.Ptr -> {
                                 val ret = tp.scope.let { scp ->
                                     acc[scp.lbl].let { if (it == null) null else it[scp.num]!! }
                                 }
                                 if (ret == null) tp else {
-                                    Type.Ptr(tp.tk_, ret, aux(tp.pln)).up(e)
+                                    Type.Ptr(tp.tk_, ret, aux(tp.pln,dofunc)).up(e)
                                 }
                             }
-                            is Type.Func -> tp
-                            //is Type.Func -> Type.Func(tp.tk_, tp.clo, tp.scps, aux(tp.inp), aux(tp.out)).up(e)
+                            is Type.Func -> if (!dofunc) tp else {
+                                Type.Func(tp.tk_, tp.clo, tp.scps, aux(tp.inp,dofunc), aux(tp.out,dofunc)).up(e)
+                            }
                         }
                     }
-                    Pair(aux(inp1), aux(out1))
+                    Pair(aux(inp1,false), aux(out1,true))
                 }
 
                 ///*

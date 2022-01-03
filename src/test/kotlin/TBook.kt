@@ -253,22 +253,21 @@ class TBook {
 
     // CHAPTER 1.4
 
-    //@Disabled  // TODO: currying requires returning function
     @Test
     fun ch_01_04_currying_pg11() {
         val out = all(
             """
             $nums
             $lt
-            var smallerc:       {}->{@_1}-> $NumT1 -> ({@_1}->{@_1}-> $NumT1->$NumT1)
-            set smallerc = func {}->{@_1}-> $NumT1 -> ({@_1}->{@_1}-> $NumT1->$NumT1) {
+            var smallerc:       {}->{@_1}-> $NumT1 -> ({@_1}->{}-> $NumT1->$NumT1)
+            set smallerc = func {}->{@_1}-> $NumT1 -> ({@_1}->{}-> $NumT1->$NumT1) {
                 var x: $NumT1
                 set x = arg
-                return func [x]->{@_1}->{@_1}-> $NumT1->$NumT1 {  -- would require annotation to hold x (func [x] ...)
+                return func [x]->{@_1}->{}-> $NumT1->$NumT1 {
                     return call lt {@_1} [x,arg]
                 }
             }
-            var f: ({@_1}->{@_1}-> $NumT1 -> $NumT1)
+            var f: ({@local}->{}-> $NumTL -> $NumTL)
             set f = call smallerc {@local} two: @local   -- smallerc could keep two in memory as long as smallerc does not live longer than two
             output std call f one
             output std call f three
