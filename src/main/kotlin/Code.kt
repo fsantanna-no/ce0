@@ -351,13 +351,12 @@ fun code_fe (e: Expr) {
                 ${e.type.toce()} $ID = { $fid, ups }; 
             """.trimIndent()
             val pre = """
-                auto ${e.type.out.pos()} $fid ($ups $pools ${inp.pos()} _arg_) {
+                ${e.type.out.pos()} $fid ($ups $pools ${inp.pos()} _arg_) {
                     ${it.stmt}
                 }
-                $clo
 
             """.trimIndent()
-            Code(it.type, pre, ID)
+            Code(it.type+pre, clo, ID)
         }
     })
 }
@@ -405,11 +404,15 @@ fun code_fs (s: Stmt) {
             Code(it.type, src, "")
         }
         is Stmt.Var -> {
-            val s = when {
+            val src = when {
                 s.tk_.str == "_arg_" -> "int ${s.tk_.str};\n"
                 else -> "${s.type.pos()} ${s.tk_.str};\n"
             }
-            Code("", s, "")
+            if (s.ups_first { it is Stmt.Block } == null) {
+                Code(src, "", "")   // globals go outside main
+            } else {
+                Code("", src, "")
+            }
         }
     })
 }
@@ -418,9 +421,8 @@ fun Stmt.code (): String {
     TYPEX.clear()
     TYPES.clear()
     XPD = true
-    this.visit( null, null, ::code_ft)
+    this.visit(::code_fs, ::code_fe, ::code_ft)
     XPD = false
-    this.visit(::code_fs, ::code_fe, null)
     //val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 
     val ord = TYPES.map { it.first }.toMap() // [ce={ce}]
@@ -480,7 +482,7 @@ fun Stmt.code (): String {
         }
         
         ${TPS.map { it.second }.joinToString("")}
-        ${TPS.map { it.third }.joinToString("")}
+        ${TPS.map { it.third  }.joinToString("")}
         ${code.type}
 
         int main (void) {

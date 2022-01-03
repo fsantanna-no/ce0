@@ -30,16 +30,16 @@ class TCyclone {
     fun strcpy_01() {
         val out = all(
             """
-            var strcpy:     ({}->{@a_1,@b_1}-> [/_char@a_1,/_char@b_1] -> /_char@a_1)
-            set strcpy = func {}->{@a_1,@b_1}-> [/_char@a_1,/_char@b_1] -> /_char@a_1 {
+            var scpy:     ({}->{@a_1,@b_1}-> [/_char@a_1,/_char@b_1] -> /_char@a_1)
+            set scpy = func {}->{@a_1,@b_1}-> [/_char@a_1,/_char@b_1] -> /_char@a_1 {
                 return arg.1
             }
             var s1: /_char
-            set s1 = call strcpy {@local,@local} [s1,s1]
+            set s1 = call scpy {@local,@local} [s1,s1]
             {
                 var s2: /_char@local
-                set s1 = call strcpy {@global,@local} [s1,s2]: @global
-                set s2 = call strcpy {@local,@global} [s2,s1]   -- TODO: should be ok @a1/@b1
+                set s1 = call scpy {@global,@local} [s1,s2]: @global
+                set s2 = call scpy {@local,@global} [s2,s1]   -- TODO: should be ok @a1/@b1
             }
             output std ()
         """.trimIndent()
@@ -50,17 +50,17 @@ class TCyclone {
     fun strdup_02() {
         val out = all(
             """
-            var strdup:     ({}->{@_1}-> /_char@_1 -> /_char@global)
-            set strdup = func {}->{@_1}-> /_char@_1 -> /_char@global {
+            var sdup:     ({}->{@_1}-> /_char@_1 -> /_char@global)
+            set sdup = func {}->{@_1}-> /_char@_1 -> /_char@global {
                 var ret: /_char @global -- new ...
                 return ret
             }
             var s1: /_char
-            --set s1 = call strdup s1 @local
+            --set s1 = call sdup s1 @local
             {
                 var s2: /_char@local
-                --set s1 = call strdup {@local} s2: @global
-                set s2 = call strdup {@global} s1: @global
+                --set s1 = call sdup {@local} s2: @global
+                set s2 = call sdup {@global} s1: @global
             }
             output std ()
         """.trimIndent()

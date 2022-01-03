@@ -1748,21 +1748,21 @@ class TExec {
         val out = all("""
             var x1: /</^ @local> @local
             set x1 = <.0>: /</^ @local> @local
-            var y1: _int
-            set y1 = x1\?0
+            var z1: _int
+            set z1 = x1\?0
             var x2: //</^ @local> @local @local
             set x2 = /x1
-            var y2: _int
-            set y2 = x2\\?1
+            var z2: _int
+            set z2 = x2\\?1
             set x2\ = new <.1 <.0>: /</^ @local> @local>:</^ @local>
             var f: ({}->{@_1}-> //</^@_1>@_1@_1->_int)
             set f = func {}->{@_1}-> //</^@_1>@_1@_1->_int {
                 return arg\\?1
             }
-            var y3: _int
-            set y3 = call f {@local} x2
+            var z3: _int
+            set z3 = call f {@local} x2
             var ret: _int
-            set ret = _(y1 + y2 + y3)
+            set ret = _(z1 + z2 + z3)
             output std ret
         """.trimIndent())
         assert(out == "2\n") { out }
