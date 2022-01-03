@@ -206,7 +206,8 @@ fun code_ft (tp: Type) {
     }
 }
 
-val EXPRS = ArrayDeque<Pair<String,String>>()
+data class Code (val type: String, val stmt: String, val expr: String)
+val CODE = ArrayDeque<Code>()
 
 fun Tk.Scope.toce (): String {
     return "pool_" + this.lbl + (if (this.num==null) "" else ("_"+this.num))
@@ -214,53 +215,53 @@ fun Tk.Scope.toce (): String {
 
 fun code_fe (e: Expr) {
     val xp = AUX.tps[e]!!
-    EXPRS.addFirst(when (e) {
-        is Expr.Unit -> Pair("", "0")
-        is Expr.Nat -> Pair("", e.tk_.str)
+    CODE.addFirst(when (e) {
+        is Expr.Unit -> Code("", "", "0")
+        is Expr.Nat -> Code("", "", e.tk_.str)
         is Expr.Var -> {
             val up = e.ups_first { it is Expr.Func && it.ups.any { it.str==e.tk_.str } }
             if (up != null) {
                 val idx = (up as Expr.Func).ups.indexOfFirst { it.str==e.tk_.str }
-                Pair("", "((${xp.pos()})ups[${1+idx}])")    // +1 skips pool
+                Code("", "", "((${xp.pos()})ups[${1+idx}])")    // +1 skips pool
             } else {
-                Pair("", e.tk_.str)
+                Code("", "", e.tk_.str)
             }
         }
-        is Expr.Upref -> EXPRS.removeFirst().let {
-            Pair(it.first, "(&" + it.second + ")")
+        is Expr.Upref -> CODE.removeFirst().let {
+            Code(it.type, it.stmt, "(&" + it.expr + ")")
         }
-        is Expr.Dnref -> EXPRS.removeFirst().let {
-            Pair(it.first, "(*" + it.second + ")")
+        is Expr.Dnref -> CODE.removeFirst().let {
+            Code(it.type, it.stmt, "(*" + it.expr + ")")
         }
-        is Expr.TDisc -> EXPRS.removeFirst().let { Pair(it.first, it.second + "._" + e.tk_.num) }
-        is Expr.UDisc -> EXPRS.removeFirst().let {
-            val ee = it.second
+        is Expr.TDisc -> CODE.removeFirst().let { Code(it.type, it.stmt, it.expr + "._" + e.tk_.num) }
+        is Expr.UDisc -> CODE.removeFirst().let {
+            val ee = it.expr
             val uni = AUX.tps[e.uni]!!
             val pre = if (e.tk_.num == 0) {
                 """
-                assert(&${it.second} == NULL);
+                assert(&${it.expr} == NULL);
 
                 """.trimIndent()
             } else {
                 """
-                ${ if (uni.let { it is Type.Union && it.isrec }) "assert(&${it.second} != NULL);\n" else "" }
+                ${ if (uni.let { it is Type.Union && it.isrec }) "assert(&${it.expr} != NULL);\n" else "" }
                 assert($ee.tag == ${e.tk_.num});
 
                 """.trimIndent()
             }
-            Pair(it.first + pre, ee+"._"+e.tk_.num)
+            Code(it.type, it.stmt + pre, ee+"._"+e.tk_.num)
         }
-        is Expr.UPred -> EXPRS.removeFirst().let {
-            val ee = it.second
+        is Expr.UPred -> CODE.removeFirst().let {
+            val ee = it.expr
             val pos = if (e.tk_.num == 0) {
-                "(&${it.second} == NULL)"
+                "(&${it.expr} == NULL)"
             } else {
-                (if (AUX.tps[e.uni].let { it is Type.Union && it.isrec }) "(&${it.second} != NULL) && " else "") +
+                (if (AUX.tps[e.uni].let { it is Type.Union && it.isrec }) "(&${it.expr} != NULL) && " else "") +
                 "($ee.tag == ${e.tk_.num})"
             }
-            Pair(it.first, pos)
+            Code(it.type, it.stmt, pos)
         }
-        is Expr.New  -> EXPRS.removeFirst().let {
+        is Expr.New  -> CODE.removeFirst().let {
             val ID  = "__tmp_" + e.hashCode().absoluteValue
             val ptr = AUX.tps[e] as Type.Ptr
 
@@ -270,7 +271,7 @@ fun code_fe (e: Expr) {
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
-                *$ID = ${it.second};
+                *$ID = ${it.expr};
                 {
                     Pool* pool = malloc(sizeof(Pool));
                     assert(pool!=NULL && "not enough memory");
@@ -280,24 +281,29 @@ fun code_fe (e: Expr) {
                 }
 
             """.trimIndent()
-            Pair(it.first+pre, ID)
+            Code(it.type, it.stmt+pre, ID)
         }
         is Expr.TCons -> {
-            val (pre,pos) = (1..e.arg.size).map { EXPRS.removeFirst() }.reversed().unzip()
-            Pair (
-                pre.joinToString(""),
-                pos.filter { it!="" }.joinToString(", ").let { "((${xp.pos()}) { $it })" }
+            val args = (1..e.arg.size).map { CODE.removeFirst() }.reversed()
+            Code (
+                args.map { it.type }.joinToString(""),
+                args.map { it.stmt }.joinToString(""),
+                args.map { it.expr }.filter { it!="" }.joinToString(", ").let { "((${xp.pos()}) { $it })" }
             )
         }
-        is Expr.UCons -> EXPRS.removeFirst().let {
-            val ID  = "_tmp_" + e.hashCode().absoluteValue
-            val sup = "struct " + xp.toce()
-            val pre = "$sup $ID = (($sup) { ${e.tk_.num} , ._${e.tk_.num} = ${it.second} });\n"
-            if (e.tk_.num == 0) Pair("","NULL") else Pair(it.first + pre, ID)
+        is Expr.UCons -> CODE.removeFirst().let {
+            if (e.tk_.num == 0) {
+                Code(it.type,it.stmt,"NULL")
+            } else {
+                val ID  = "_tmp_" + e.hashCode().absoluteValue
+                val sup = "struct " + xp.toce()
+                val pre = "$sup $ID = (($sup) { ${e.tk_.num} , ._${e.tk_.num} = ${it.expr} });\n"
+                Code(it.type, it.stmt + pre, ID)
+            }
         }
         is Expr.Call  -> {
-            val arg = EXPRS.removeFirst()
-            val f   = EXPRS.removeFirst()
+            val arg = CODE.removeFirst()
+            val f   = CODE.removeFirst()
             //val ff  = e.f as? Expr.Dnref
 
             val pools = e.scps.let { if (it.size == 0) "" else (it.map { out ->
@@ -308,20 +314,20 @@ fun code_fe (e: Expr) {
             val snd =
                 if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
                 //if (ff!=null && ff.ptr is Expr.Var && ff.ptr.tk_.str=="output_std") {
-                    AUX.tps[e.arg]!!.output("", arg.second)
+                    AUX.tps[e.arg]!!.output("", arg.expr)
                 } else {
                     val tpf = AUX.tps[e.f]
-                    val xxx = if (tpf is Type.Nat && e.arg is Expr.Unit) "" else arg.second
+                    val xxx = if (tpf is Type.Nat && e.arg is Expr.Unit) "" else arg.expr
                     if (tpf is Type.Func && tpf.clo.lbl!="global") {
                         // only closures that escape (@a_1)
-                        f.second + ".f(" + f.second + ".ups, " + pools + xxx + ")"
+                        f.expr + ".f(" + f.expr + ".ups, " + pools + xxx + ")"
                     } else {
-                        f.second + "(" + pools + xxx + ")"
+                        f.expr + "(" + pools + xxx + ")"
                     }
                 }
-            Pair(f.first + arg.first, snd)
+            Code(f.type+arg.type, f.stmt+arg.stmt, snd)
         }
-        is Expr.Func  -> {
+        is Expr.Func  -> CODE.removeFirst().let {
             val ID  = "_func_" + e.hashCode().absoluteValue
             val fid = if (e.type.clo.lbl == "global") ID else ID+"_f"
             val inp = e.type.inp
@@ -346,67 +352,64 @@ fun code_fe (e: Expr) {
             """.trimIndent()
             val pre = """
                 auto ${e.type.out.pos()} $fid ($ups $pools ${inp.pos()} _arg_) {
-                    ${CODE.removeFirst()}
+                    ${it.stmt}
                 }
                 $clo
 
             """.trimIndent()
-            Pair(pre, ID)
+            Code(it.type, pre, ID)
         }
     })
 }
 
-val CODE = ArrayDeque<String>()
-
 fun code_fs (s: Stmt) {
     CODE.addFirst(when (s) {
-        is Stmt.Pass -> ""
-        is Stmt.Nat  -> s.tk_.str + "\n"
-        is Stmt.Seq  -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; s1+s2 }
+        is Stmt.Pass -> Code("","","")
+        is Stmt.Nat  -> Code("", s.tk_.str + "\n", "")
+        is Stmt.Seq  -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; Code(s1.type+s2.type, s1.stmt+s2.stmt, "") }
         is Stmt.Set  -> {
-            val src = EXPRS.removeFirst()
-            val dst = EXPRS.removeFirst()
-            dst.first + src.first + dst.second + " = " + src.second + ";\n"
+            val src = CODE.removeFirst()
+            val dst = CODE.removeFirst()
+            Code(dst.type+src.type, dst.stmt+src.stmt + dst.expr+" = "+src.expr + ";\n", "")
         }
         is Stmt.If -> {
-            val tst = EXPRS.removeFirst()
             val false_ = CODE.removeFirst()
             val true_  = CODE.removeFirst()
-            tst.first + """
-                if (${tst.second}) {
-                    ${true_}
+            val tst = CODE.removeFirst()
+            val src = tst.stmt + """
+                if (${tst.expr}) {
+                    ${true_.stmt}
                 } else {
-                    ${false_}
+                    ${false_.stmt}
                 }
 
             """.trimIndent()
+            Code(tst.type+true_.type+false_.type, src, "")
         }
-        is Stmt.Loop  -> """
-            while (1) {
-                ${CODE.removeFirst()}
-            }
-
-        """.trimIndent()
-        is Stmt.Break -> "break;\n"
-        is Stmt.Ret   -> "return _ret_;\n"
-        is Stmt.Call  -> {
-            val e = EXPRS.removeFirst()
-            e.first + e.second + ";\n"
+        is Stmt.Loop  -> CODE.removeFirst().let {
+            Code(it.type, "while (1) { ${it.stmt} }", "")
         }
-        is Stmt.Block -> """
+        is Stmt.Break -> Code("", "break;\n", "")
+        is Stmt.Ret   -> Code("", "return _ret_;\n", "")
+        is Stmt.Call  -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
+        is Stmt.Block -> CODE.removeFirst().let {
+            val src = """
             {
                 Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
                 Pool** pool_local = &pool;
-                ${ if (s.scope==null) "" else "Pool** ${s.scope.toce()} = &pool;" }
-                ${CODE.removeFirst()}
+                ${if (s.scope == null) "" else "Pool** ${s.scope.toce()} = &pool;"}
+                ${it.stmt}
             }
             
             """.trimIndent()
-        is Stmt.Var   -> {
-            when {
+            Code(it.type, src, "")
+        }
+        is Stmt.Var -> {
+            val s = when {
                 s.tk_.str == "_arg_" -> "int ${s.tk_.str};\n"
                 else -> "${s.type.pos()} ${s.tk_.str};\n"
             }
+            Code("", s, "")
         }
     })
 }
@@ -442,8 +445,11 @@ fun Stmt.code (): String {
         })
     //*/
     //AUX.tps.forEach { println(it.first.first) }
-    assert(EXPRS.size == 0)
-    assert(CODE.size == 1)
+
+    val code = CODE.removeFirst()
+    assert(CODE.size == 0)
+    assert(code.expr == "")
+
     return ("""
         #include <assert.h>
         #include <stdio.h>
@@ -475,12 +481,13 @@ fun Stmt.code (): String {
         
         ${TPS.map { it.second }.joinToString("")}
         ${TPS.map { it.third }.joinToString("")}
+        ${code.type}
 
         int main (void) {
             Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
             Pool** pool_global = &pool;
             Pool** pool_local  = &pool;
-            ${CODE.removeFirst()}
+            ${code.stmt}
         }
 
     """).trimIndent()

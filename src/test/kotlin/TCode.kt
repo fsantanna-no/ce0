@@ -28,7 +28,7 @@ class TCode {
         val e = Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
         AUX.tps[e] = tp_unit
         code_fe(e)
-        assert(EXPRS.removeFirst().second == "0")
+        assert(CODE.removeFirst().expr == "0")
     }
     @Test
     fun b02_expr_var () {
@@ -42,7 +42,7 @@ class TCode {
         )
         AUX.tps[e] = Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))
         code_fe(e)
-        EXPRS.removeFirst().let { assert(it.second == "xxx") { it.second } }
+        CODE.removeFirst().let { assert(it.expr == "xxx") { it.expr } }
     }
     @Test
     fun b03_expr_nat () {
@@ -56,7 +56,7 @@ class TCode {
         )
         AUX.tps[e] = Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))
         code_fe(e)
-        assert(EXPRS.removeFirst().second == "xxx")
+        assert(CODE.removeFirst().expr == "xxx")
     }
     @Test
     fun b04_expr_tuple () {
@@ -71,7 +71,7 @@ class TCode {
         AUX.tps[e.arg[0]] = tp_unit
         AUX.tps[e.arg[1]] = tp_unit
         e.visit(null, ::code_fe, null)
-        EXPRS.removeFirst().second.let {
+        CODE.removeFirst().expr.let {
             assert(it == "((struct T_Unit_Unit_T) { 0, 0 })")
         }
     }
@@ -91,7 +91,7 @@ class TCode {
         AUX.tps[e] = Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))
         AUX.tps[e.tup] = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))))
         e.visit(null, ::code_fe, null)
-        EXPRS.removeFirst().second.let {
+        CODE.removeFirst().expr.let {
             assert(it == "x._1")
         }
     }
@@ -102,7 +102,7 @@ class TCode {
     fun c01_stmt_pass () {
         val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
         s.visit(::code_fs, null, null)
-        assert(CODE.removeFirst() == "")
+        assert(CODE.removeFirst().stmt == "")
         assert(CODE.size == 0)
     }
 
@@ -144,6 +144,7 @@ class TCode {
 
 
 
+
             int main (void) {
                 Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
                 Pool** pool_global = &pool;
@@ -152,16 +153,5 @@ class TCode {
             }
 
         """.trimIndent()) { out }
-    }
-
-    // STRING -> C
-
-    fun toc (inp: String): String {
-        val all = All_new(PushbackReader(StringReader(inp), 2))
-        lexer(all)
-        var s = parser_stmts(all, Pair(TK.EOF,null))
-        s = env_prelude(s)
-        s.visit(::code_fs, null, null)
-        return CODE.removeFirst()
     }
 }

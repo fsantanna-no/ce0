@@ -23,7 +23,6 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
         check_02_after_tps(s)
         return Pair(true, s.code())
     } catch (e: Throwable) {
-        EXPRS.clear()
         CODE.clear()
         //throw e
         return Pair(false, e.message!!)
