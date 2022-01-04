@@ -403,7 +403,7 @@ class TExec {
             set z = <.2>: <(),()>
             output std z!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:73: main: Assertion `z.tag == 1' failed.\n") { out }
+        assert(out == "out.exe: out.c:75: main: Assertion `z.tag == 1' failed.\n") { out }
     }
     @Test
     fun f12_user_disc_pred_idx () {
@@ -880,7 +880,7 @@ class TExec {
             set l = <.0>: /</^ @local> @local
             output std l\!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:73: main: Assertion `&(*l) != NULL' failed.\n") { out }
+        assert(out == "out.exe: out.c:75: main: Assertion `&(*l) != NULL' failed.\n") { out }
     }
     @Test
     fun j06_list_1 () {
@@ -1616,7 +1616,7 @@ class TExec {
     fun n12_pool_closure () {
         val out = all(
             """
-            var f:       {}->{}-> ({}->{}->()->()) -> ({}->{}->()->())
+            var f:       {}->{}-> ({}->{}->()->()) -> ({@global}->{}->()->())
             set f = func {}->{}-> ({}->{}->()->()) -> ({@global}->{}->()->()) {
                 var ff: ({}->{}->()->())
                 set ff = arg
@@ -1628,7 +1628,7 @@ class TExec {
             set u = func ({}->{}->()->()) {
                 output std ()
             }
-            var ff: ({}->{}->()->())
+            var ff: ({@global}->{}->()->())
             set ff = call f u
             call ff ()
         """.trimIndent()

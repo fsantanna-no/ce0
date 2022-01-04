@@ -473,13 +473,15 @@ fun Stmt.code (): String {
             *pool = NULL;
         }
         
+        Pool** pool_global;
+
         ${TPS.map { it.second }.joinToString("")}
         ${TPS.map { it.third  }.joinToString("")}
         ${code.type}
 
         int main (void) {
             Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
-            Pool** pool_global = &pool;
+            pool_global = &pool;
             Pool** pool_local  = &pool;
             ${code.stmt}
         }
