@@ -794,7 +794,7 @@ class TEnv {
                 }
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 22): invalid call : type mismatch") { out }
+        assert(out == "(ln 7, col 15): invalid assignment : type mismatch") { out }
     }
     @Test
     fun e15_call_err () {
@@ -1244,7 +1244,7 @@ class TEnv {
                 set p = call f {@local} x: @global    -- err: call p/x have diff scopes (@ will be x which is greater)
             }
         """.trimIndent())
-        assert(out == "(ln 8, col 18): invalid call : type mismatch") { out }
+        assert(out == "(ln 8, col 11): invalid assignment : type mismatch") { out }
         //assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }
         //assert(out == "(ln 8, col 11): invalid assignment : type mismatch") { out }
     }
@@ -3010,5 +3010,19 @@ class TEnv {
             }
         """.trimIndent())
         assert(out == "(ln 7, col 16): invalid assignment : cannot modify an upalue") { out }
+    }
+    @Test
+    fun p30_closure_ok () {
+        val out = inp2env("""
+            var g: {} -> {@a_1} -> () -> ({@a_1}->{@b_1}->()->/</^@b_1>@b_1)
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun p31_closure_err () {
+        val out = inp2env("""
+            var g: {} -> {@a_1} -> () -> ({@a_1}->{}->()->/</^@b_1>@b_1)
+        """.trimIndent())
+        assert(out == "(ln 1, col 31): invalid function type : missing pool argument") { out }
     }
 }

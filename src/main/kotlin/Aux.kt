@@ -206,7 +206,7 @@ fun Aux_tps (s: Stmt) {
                             }
                             fun map (tp: Type): Type {
                                 return when (tp) {
-                                    is Type.Ptr   -> Type.Ptr(tp.tk_, e.scope!!, map(tp.pln))
+                                    is Type.Ptr   -> Type.Ptr(tp.tk_, f(tp.scope), map(tp.pln))
                                     is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray())
                                     is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray())
                                     is Type.Func  -> Type.Func(tp.tk_, f(tp.clo), tp.scps.map { f(it) }.toTypedArray(), map(tp.inp), map(tp.out))

@@ -40,13 +40,15 @@ fun check_01_before_tps (s: Stmt) {
                 val ok1 = ptrs.all {
                     val ptr = it.scope
                     when {
-                        (ptr.lbl == "var") -> TODO()
+                        (ptr.lbl == "var") -> error("bug found")
                         (ptr.lbl == "global") -> true
                         //(ptr.lbl == "local")  -> true
-                        tp.clo.let { ptr.lbl==it.lbl && ptr.num==it.num } -> true   // {@a} ...@a
-                        tp.scps.any {                         // (@_1 -> ...@_1...)
-                            ptr.lbl==it.lbl && ptr.num==it.num
-                        } -> true
+                        (it.ups_first {
+                            it is Type.Func && (
+                                it.clo.let  { ptr.lbl==it.lbl && ptr.num==it.num } || // {@a} ...@a
+                                it.scps.any { ptr.lbl==it.lbl && ptr.num==it.num }    // (@_1 -> ...@_1...)
+                            )
+                        } != null) -> true
                         (tp.ups_first {                     // { @aaa \n ...@aaa... }
                             it is Stmt.Block && it.scope!=null && it.scope.lbl==ptr.lbl && it.scope.num==ptr.num
                         } != null) -> true
@@ -274,7 +276,7 @@ fun check_02_after_tps (s: Stmt) {
                 print("ARG1: ") ; println(arg1.tostr())
                 //print("ARG2: ") ; println(arg2.tostr())
                 //println("OUT, RET1, RET2")
-                //print("OUT1: ") ; println(out1.tostr())
+                print("OUT1: ") ; println(out1.tostr())
                 print("OUT2: ") ; println(out2.tostr())
                 print("RET1: ") ; println(ret1.tostr())
                 //print("RET2: ") ; println(ret2.tostr())

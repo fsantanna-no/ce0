@@ -302,4 +302,27 @@ class TBook {
         )
         assert(out == "<.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.0>>>>>>>>>>>>>>>>>\n") { out }
     }
+    @Test
+    fun ch_01_05_addc_pg12() {
+        val out = all(
+            """
+            $nums
+            $add
+            var plusc: {}->{@a_1}-> $NumA1 -> ({@a_1}->{@_1,@b_1}->$NumB1->$NumT1)
+            set plusc = func {}->{@a_1}-> $NumA1 -> ({@a_1}->{@_1,@b_1}->$NumB1->$NumT1) {
+                var x: $NumA1
+                set x = arg
+                return func [x]->{@a_1}->{@_1,@b_1}->$NumB1->$NumT1 {
+                    return call add {@_1,@a_1,@b_1} [x,arg]: @_1
+                }
+            }
+            var f: {@local}->{@_1,@b_1}->$NumB1->$NumT1
+            set f = call plusc {@local} one
+            output std call f {@local,@local} two: @local
+            output std call f {@local,@local} one: @local
+            output std call (call plusc {@local} one) {@local,@local} zero: @local
+        """.trimIndent()
+        )
+        assert(out == "<.1 <.1 <.1 <.0>>>>\n<.1 <.1 <.0>>>\n<.1 <.0>>\n") { out }
+    }
 }
