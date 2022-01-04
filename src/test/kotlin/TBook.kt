@@ -339,19 +339,19 @@ class TBook {
             set square = func {}->{@r_1,@a_1}-> $NumA1 -> $NumR1 {
                 return call mul {@r_1,@a_1,@a_1} [arg,arg]: @r_1
             }
-            var twicec: {} -> {} -> ({}->{@r_1,@a_1}->$NumA1->$NumR1) -> ({}->{}->$NumR1->$NumR1)
-            set twicec = func {} -> {} -> ({}->{@r_1,@a_1}->$NumA1->$NumR1) -> ({}->{}->$NumR1->$NumR1) {
+            var twicec:       {} -> {} -> ({}->{@r_1,@a_1}->$NumA1->$NumR1) -> ({@global}->{@s_1,@b_1}->$NumB1->$NumS1)
+            set twicec = func {} -> {} -> ({}->{@r_1,@a_1}->$NumA1->$NumR1) -> ({@global}->{@s_1,@b_1}->$NumB1->$NumS1) {
                 var f: ({}->{@r_1,@a_1}->$NumA1->$NumR1)
                 set f = arg
-                return func [f] -> ({}->{}->$NumR1->$NumR1) {
-                    return call f (call f arg)
+                return func [f] -> ({@global}->{@s_1,@b_1}->$NumB1->$NumS1) {
+                    return call f {@s_1,@b_1} (call f {@s_1,@b_1} arg)
                 }
             }
-            var quad: {}->{@r_1,@a_1}->$NumA1->$NumR1
+            var quad: ({@global}->{@s_1,@b_1}->$NumB1->$NumS1)
             set quad = call twicec square
             output std call quad {@local,@local} two
         """.trimIndent()
         )
-        assert(out == "<.1 <.1 <.1 <.1 <.0>>>>>\n") { out }
+        assert(out == "<.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.0>>>>>>>>>>>>>>>>>\n") { out }
     }
 }

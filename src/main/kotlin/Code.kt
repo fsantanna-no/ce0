@@ -9,7 +9,7 @@ fun Type.toce (): String {
         is Type.Nat   -> this.tk_.str.replace('*','_')
         is Type.Tuple -> "T_" + this.vec.map { it.toce() }.joinToString("_") + "_T"
         is Type.Union -> "U_" + this.vec.map { it.toce() }.joinToString("_") + "_U"
-        is Type.Func  -> "F_" + this.inp.toce() + "_" + this.out.toce() + "_F"
+        is Type.Func  -> "F_" + (if (this.clo==null) "" else this.clo.lbl+"_") + this.inp.toce() + "_" + this.out.toce() + "_F"
     }
 }
 
