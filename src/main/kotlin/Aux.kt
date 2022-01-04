@@ -68,7 +68,7 @@ fun env_prelude (s: Stmt): Stmt {
         Tk.Str(TK.XVAR,1,1,"output_std"),
         Type.Func (
             Tk.Chr(TK.CHAR, 1, 1, '{'),
-            Tk.Scope(TK.XSCOPE, 1, 1, "global", null),
+            null,
             emptyArray(),
             Type.Any(Tk.Chr(TK.CHAR,1,1,'?')),
             Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
@@ -209,7 +209,7 @@ fun Aux_tps (s: Stmt) {
                                     is Type.Ptr   -> Type.Ptr(tp.tk_, f(tp.scope), map(tp.pln))
                                     is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray())
                                     is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray())
-                                    is Type.Func  -> Type.Func(tp.tk_, f(tp.clo), tp.scps.map { f(it) }.toTypedArray(), map(tp.inp), map(tp.out))
+                                    is Type.Func  -> Type.Func(tp.tk_, if (tp.clo==null) tp.clo else f(tp.clo), tp.scps.map { f(it) }.toTypedArray(), map(tp.inp), map(tp.out))
                                     else -> tp
                                 }
                             }

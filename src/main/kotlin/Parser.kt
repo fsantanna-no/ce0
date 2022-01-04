@@ -54,7 +54,7 @@ fun parser_type (all: All): Type {
             val clo = if (all.accept(TK.XSCOPE)) {
                 all.tk0 as Tk.Scope
             } else {
-                Tk.Scope(TK.XSCOPE, all.tk0.lin, all.tk0.col, "global", null)
+                null
             }
             all.accept_err(TK.CHAR, '}')
             all.accept_err(TK.ARROW)

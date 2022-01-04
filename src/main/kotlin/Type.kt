@@ -7,7 +7,7 @@ sealed class Type (val tk: Tk) {
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_)
     data class Union (val tk_: Tk.Chr, val isrec: Boolean, val vec: Array<Type>): Type(tk_)
     //data class UCons (val tk_: Tk.Num, val arg: Type): Type(tk_)
-    data class Func  (val tk_: Tk.Chr, val clo: Tk.Scope, val scps: Array<Tk.Scope>, val inp: Type, val out: Type): Type(tk_)
+    data class Func  (val tk_: Tk.Chr, val clo: Tk.Scope?, val scps: Array<Tk.Scope>, val inp: Type, val out: Type): Type(tk_)
     data class Ptr   (val tk_: Tk.Chr, val scope: Tk.Scope, val pln: Type): Type(tk_)
     data class Rec   (val tk_: Tk.Up): Type(tk_)
     //data class Pool  (val tk_: Tk.Scope): Type(tk_)
@@ -49,7 +49,7 @@ fun Type.lincol (lin: Int, col: Int): Type {
         is Type.Nat   -> Type.Nat(this.tk_.copy(lin_=lin,col_=col))
         is Type.Tuple -> Type.Tuple(this.tk_.copy(lin_=lin,col_=col), this.vec.map { it.lincol(lin,col) }.toTypedArray())
         is Type.Union -> Type.Union(this.tk_.copy(lin_=lin,col_=col), this.isrec, this.vec.map { it.lincol(lin,col) }.toTypedArray())
-        is Type.Func  -> Type.Func(this.tk_.copy(lin_=lin,col_=col), this.clo.copy(lin_=lin,col_=col), this.scps.map { it.copy(lin_=lin,col_=col) }.toTypedArray(), this.inp.lincol(lin,col), this.out.lincol(lin,col))
+        is Type.Func  -> Type.Func(this.tk_.copy(lin_=lin,col_=col), this.clo?.copy(lin_=lin,col_=col), this.scps.map { it.copy(lin_=lin,col_=col) }.toTypedArray(), this.inp.lincol(lin,col), this.out.lincol(lin,col))
         is Type.Ptr   -> Type.Ptr(this.tk_.copy(lin_=lin,col_=col), this.scope, this.pln.lincol(lin,col))
         is Type.Rec   -> Type.Rec(this.tk_.copy(lin_=lin,col_=col))
     }
@@ -102,11 +102,13 @@ fun Tk.Scope.scope (up: Any): Scope {
 }
 
 fun Type.scope (): Scope {
-    return when (this) {
-        is Type.Ptr -> this.scope.scope(this)
+    return when {
+        this is Type.Ptr -> this.scope.scope(this)
+        (this is Type.Func) && (this.clo!=null) -> this.clo.scope(this)    // body holds pointers in clo
         else -> {
             val lvl = this.ups_tolist().filter { it is Expr.Func }.count()
             Scope(lvl, null, this.ups_tolist().let { it.count { it is Stmt.Block } })
+            Scope(0, null, 0)
         }
     }
 }

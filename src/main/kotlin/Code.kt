@@ -16,14 +16,6 @@ fun Type.toce (): String {
 val TYPEX = mutableSetOf<String>()
 val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 
-fun Type.isclo (): Boolean {
-    return when {
-        (this !is Type.Ptr)            -> false
-        (this.pln !is Type.Func)       -> false
-        (this.pln.clo.lbl == "global") -> false
-        else -> true
-    }
-}
 fun Type.pos (): String {
     return when (this) {
         is Type.Rec -> TODO(this.toString())
@@ -33,7 +25,7 @@ fun Type.pos (): String {
         is Type.Nat   -> this.tk_.str
         is Type.Tuple -> "struct " + this.toce()
         is Type.Union -> "struct " + this.toce()
-        is Type.Func  -> this.toce() + (if (this.clo.lbl=="global") "*" else "")
+        is Type.Func  -> this.toce() + (if (this.clo==null) "*" else "")
     }
 }
 
@@ -71,7 +63,7 @@ fun code_ft (tp: Type) {
             val pools = tp.scps.let { if (it.size == 0) "" else
                 it.map { "Pool**" }.joinToString(",") + ","
             }
-            val ret = if (tp.clo.lbl == "global") {
+            val ret = if (tp.clo == null) {
                 "${tp.out.pos()} ${tp.toce()} ($pools ${tp.inp.pos()})"
             } else {
                 """
@@ -265,7 +257,7 @@ fun code_fe (e: Expr) {
             val ID  = "__tmp_" + e.hashCode().absoluteValue
             val ptr = AUX.tps[e] as Type.Ptr
 
-            val up = e.ups_first { it is Expr.Func && (AUX.tps[it] as Type.Func).clo.let { it.lbl==ptr.scope.lbl && it.num==ptr.scope.num } }
+            val up = e.ups_first { it is Expr.Func && (AUX.tps[it] as Type.Func).clo.let { it!=null && it.lbl==ptr.scope.lbl && it.num==ptr.scope.num } }
             val pool = if (up == null) ptr.scope.toce() else "((Pool**)ups[0])"
 
             val pre = """
@@ -307,7 +299,7 @@ fun code_fe (e: Expr) {
             //val ff  = e.f as? Expr.Dnref
 
             val pools = e.scps.let { if (it.size == 0) "" else (it.map { out ->
-                val up = e.ups_first { it is Expr.Func && (AUX.tps[it] as Type.Func).clo.let { it.lbl==out.lbl && it.num==out.num } }
+                val up = e.ups_first { it is Expr.Func && (AUX.tps[it] as Type.Func).clo.let { it!=null && it.lbl==out.lbl && it.num==out.num } }
                 if (up == null) out.toce() else "((Pool**)ups[0])"
             }.joinToString(",") + ",") }
 
@@ -318,7 +310,7 @@ fun code_fe (e: Expr) {
                 } else {
                     val tpf = AUX.tps[e.f]
                     val xxx = if (tpf is Type.Nat && e.arg is Expr.Unit) "" else arg.expr
-                    if (tpf is Type.Func && tpf.clo.lbl!="global") {
+                    if (tpf is Type.Func && tpf.clo!=null) {
                         // only closures that escape (@a_1)
                         f.expr + ".f(" + f.expr + ".ups, " + pools + xxx + ")"
                     } else {
@@ -329,14 +321,14 @@ fun code_fe (e: Expr) {
         }
         is Expr.Func  -> CODE.removeFirst().let {
             val ID  = "_func_" + e.hashCode().absoluteValue
-            val fid = if (e.type.clo.lbl == "global") ID else ID+"_f"
+            val fid = if (e.ups.size == 0) ID else ID+"_f"
             val inp = e.type.inp
-            val ups = if (e.type.clo.lbl == "global") "" else "void** ups,"
+            val ups = if (e.ups.size == 0) "" else "void** ups,"
             val pools = e.type.scps.let { if (it.size == 0) "" else
                 it.map { "Pool** ${it.toce()}" }.joinToString(",") + ","
             }
-            val pool = e.type.clo.toce()
-            val clo = if (e.type.clo.lbl == "global") "" else """
+            val pool = e.type.clo?.toce()
+            val clo = if (e.type.clo == null) "" else """
                 void** ups = malloc(${e.ups.size+1} * sizeof(void*));   // +1 pool
                 assert(ups!=NULL && "not enough memory");
                 {

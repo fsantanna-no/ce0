@@ -25,6 +25,9 @@ val NumF1 = Num(false, "@_1")
 val NumA1 = Num(true,  "@a_1")
 val NumA2 = Num(true,  "@a_2")
 val NumB1 = Num(true,  "@b_1")
+val NumB2 = Num(true,  "@b_2")
+val NumR1 = Num(true,  "@r_1")
+val NumS1 = Num(true,  "@s_1")
 
 val add = """
     var add: ({}->{@_1,@a_1,@b_1}-> [$NumA1,$NumB1] -> $NumT1)
@@ -324,5 +327,31 @@ class TBook {
         """.trimIndent()
         )
         assert(out == "<.1 <.1 <.1 <.0>>>>\n<.1 <.1 <.0>>>\n<.1 <.0>>\n") { out }
+    }
+    @Test
+    fun ch_01_05_quad_pg12() {
+        val out = all(
+            """
+            $nums
+            $add
+            $mul
+            var square: ({}->{@r_1,@a_1}-> $NumA1 -> $NumR1)
+            set square = func {}->{@r_1,@a_1}-> $NumA1 -> $NumR1 {
+                return call mul {@r_1,@a_1,@a_1} [arg,arg]: @r_1
+            }
+            var twicec: {} -> {} -> ({}->{@r_1,@a_1}->$NumA1->$NumR1) -> ({}->{}->$NumR1->$NumR1)
+            set twicec = func {} -> {} -> ({}->{@r_1,@a_1}->$NumA1->$NumR1) -> ({}->{}->$NumR1->$NumR1) {
+                var f: ({}->{@r_1,@a_1}->$NumA1->$NumR1)
+                set f = arg
+                return func [f] -> ({}->{}->$NumR1->$NumR1) {
+                    return call f (call f arg)
+                }
+            }
+            var quad: {}->{@r_1,@a_1}->$NumA1->$NumR1
+            set quad = call twicec square
+            output std call quad {@local,@local} two
+        """.trimIndent()
+        )
+        assert(out == "<.1 <.1 <.1 <.1 <.0>>>>>\n") { out }
     }
 }

@@ -1612,6 +1612,29 @@ class TExec {
         )
         assert(out == "5\n") { out }
     }
+    @Test
+    fun n12_pool_closure () {
+        val out = all(
+            """
+            var f:       {}->{}-> ({}->{}->()->()) -> ({}->{}->()->())
+            set f = func {}->{}-> ({}->{}->()->()) -> ({@global}->{}->()->()) {
+                var ff: ({}->{}->()->())
+                set ff = arg
+                return func [ff]-> ({@global}->{}->()->()) {
+                    call ff ()
+                }
+            }
+            var u: ({}->{}->()->())
+            set u = func ({}->{}->()->()) {
+                output std ()
+            }
+            var ff: ({}->{}->()->())
+            set ff = call f u
+            call ff ()
+        """.trimIndent()
+        )
+        assert(out == "()\n") { out }
+    }
 
     // ALL
 

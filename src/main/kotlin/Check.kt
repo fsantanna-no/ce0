@@ -35,7 +35,7 @@ fun check_01_before_tps (s: Stmt) {
             }
             is Type.Ptr -> tp.scope.check(tp)
             is Type.Func -> {
-                tp.clo.check(tp)
+                tp.clo?.check(tp)
                 val ptrs  = tp.flatten().filter { it is Type.Ptr } as List<Type.Ptr>
                 val ok1 = ptrs.all {
                     val ptr = it.scope
@@ -45,8 +45,8 @@ fun check_01_before_tps (s: Stmt) {
                         //(ptr.lbl == "local")  -> true
                         (it.ups_first {
                             it is Type.Func && (
-                                it.clo.let  { ptr.lbl==it.lbl && ptr.num==it.num } || // {@a} ...@a
-                                it.scps.any { ptr.lbl==it.lbl && ptr.num==it.num }    // (@_1 -> ...@_1...)
+                                it.clo.let  { it!=null && ptr.lbl==it.lbl && ptr.num==it.num } || // {@a} ...@a
+                                it.scps.any { it!=null && ptr.lbl==it.lbl && ptr.num==it.num }    // (@_1 -> ...@_1...)
                             )
                         } != null) -> true
                         (tp.ups_first {                     // { @aaa \n ...@aaa... }
@@ -154,17 +154,21 @@ fun check_02_after_tps (s: Stmt) {
         val tp = AUX.tps[e]
         when (e) {
             is Expr.Var -> {    // check closures
-                if (tp is Type.Func || e.tk_.str=="arg" || e.tk_.str=="_ret_") {
+                if (e.tk_.str=="arg" || e.tk_.str=="_ret_") {
                     // ok
                 } else {
-                    val var_scope = e.env(e.tk_.str)!!.type.scope()
-                    val (exp_bdepth, exp_fdepth) = e.ups_tolist().let {
-                        Pair(it.filter { it is Stmt.Block }.count(), it.filter { it is Expr.Func }.count())
+                    val (var_fdepth,var_bdepth) = e.env(e.tk_.str)!!.ups_tolist().let {
+                        Pair (
+                            it.filter { it is Expr.Func }.count(),
+                            it.filter { it is Stmt.Block }.count()
+                        )
                     }
-                    if (var_scope.depth>0 && var_scope.lvl<exp_fdepth) {
+                    val exp_fdepth = e.ups_tolist().filter { it is Expr.Func }.count()
+                    if (var_bdepth>0 && var_fdepth<exp_fdepth) {
                         // access is inside function, declaration is outside
+                        val var_scope = e.env(e.tk_.str)!!.type.scope()
                         val func = e.ups_first { it is Expr.Func } as Expr.Func
-                        val clo = func.type.clo.scope(func.type).depth
+                        val clo = func.type.clo?.scope(func.type)?.depth ?: 0
                         All_assert_tk(e.tk, clo>=var_scope.depth && func.ups.any { it.str==e.tk_.str }) {
                             "invalid access to \"${e.tk_.str}\" : invalid closure declaration (ln ${func.tk.lin})"
                         }
@@ -173,8 +177,12 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
             is Expr.Func -> {
-                All_assert_tk(e.tk, funcs.contains(e) || e.type.clo.lbl == "global") {
+                All_assert_tk(e.tk, funcs.contains(e) || e.type.clo == null) {
                     "invalid function : unexpected closure declaration"
+                }
+                All_assert_tk(e.tk, !funcs.contains(e) || e.type.clo != null) {
+                    TODO("should fail here, otherwise remove the whole assert")
+                    "invalid function : expected closure declaration"
                 }
             }
 
@@ -261,7 +269,11 @@ fun check_02_after_tps (s: Stmt) {
                             }
                             is Type.Func -> if (!dofunc) tp else {
                                 val ret = tp.clo.let { scp ->
-                                    acc[scp.lbl].let { if (it == null) tp.clo else it[scp.num]!! }
+                                    if (scp == null) {
+                                        null
+                                    } else {
+                                        acc[scp.lbl].let { if (it == null) tp.clo else it[scp.num]!! }
+                                    }
                                 }
                                 Type.Func(tp.tk_, ret, tp.scps, aux(tp.inp,dofunc), aux(tp.out,dofunc)).up(e)
                             }
