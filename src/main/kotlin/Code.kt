@@ -25,7 +25,7 @@ fun Type.pos (): String {
         is Type.Nat   -> this.tk_.str
         is Type.Tuple -> "struct " + this.toce()
         is Type.Union -> "struct " + this.toce()
-        is Type.Func  -> this.toce() + (if (this.clo==null) "*" else "")
+        is Type.Func  -> this.toce() + "*"
     }
 }
 
@@ -312,7 +312,7 @@ fun code_fe (e: Expr) {
                     val xxx = if (tpf is Type.Nat && e.arg is Expr.Unit) "" else arg.expr
                     if (tpf is Type.Func && tpf.clo!=null) {
                         // only closures that escape (@a_1)
-                        f.expr + ".f(" + f.expr + ".ups, " + pools + xxx + ")"
+                        f.expr + "->f(" + f.expr + "->ups, " + pools + xxx + ")"
                     } else {
                         f.expr + "(" + pools + xxx + ")"
                     }
@@ -340,7 +340,16 @@ fun code_fe (e: Expr) {
                 }
                 ups[0] = $pool;
                 ${e.ups.mapIndexed { i,up -> "ups[${i+1}] = ${up.str};\n" }.joinToString("")}
-                ${e.type.toce()} $ID = { $fid, ups }; 
+                ${e.type.pos()} $ID = malloc(sizeof(*$ID));
+                // closure needs to go into the pool b/c it has to be a pointer and go into other closures
+                {
+                    Pool* pool = malloc(sizeof(Pool));
+                    assert(pool!=NULL && "not enough memory");
+                    pool->val = $ID;
+                    pool->nxt = *$pool;
+                    *$pool = pool;
+                }
+                *$ID = (${e.type.toce()}) { $fid, ups }; 
             """.trimIndent()
             val pre = """
                 ${e.type.out.pos()} $fid ($ups $pools ${inp.pos()} _arg_) {

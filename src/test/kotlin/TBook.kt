@@ -385,4 +385,52 @@ class TBook {
         )
         assert(out == "<.1 <.1 <.1 <.0>>>>\n") { out }
     }
+    @Test
+    fun ch_01_09_uncurry_pg13() {
+        val fadd  = "({} -> {@r_1,@a_1,@b_1} -> [$NumA1,$NumB1] -> $NumR1)"
+        val fadd2 = "({@global} -> {@r_1,@a_1,@b_1} -> [$NumA1,$NumB1] -> $NumR1)"
+        val ret2  = "({@a_1}->{@r_1,@b_1}->$NumB1->$NumR1)"
+        val ret1  = "({@global} -> {@a_1} -> $NumA1 -> $ret2)"
+        val out = all(
+            """
+            $nums
+            $add
+
+            var curry: {} -> {} -> $fadd -> $ret1
+            set curry = func {} -> {} -> $fadd -> $ret1 {
+                var f: $fadd
+                set f = arg
+                return func [f] -> $ret1 {
+                    var x: $NumA1
+                    set x = arg
+                    var ff: $fadd
+                    set ff = f
+                    return func [ff,x] -> $ret2 {
+                        var y: $NumB1
+                        set y = arg
+                        return call ff {@r_1,@a_1,@b_1} [x,y]: @r_1
+                    }
+                }
+            }
+
+            var uncurry: {} -> {} -> $ret1 -> $fadd2
+            set uncurry = func {} -> {} -> $ret1 -> $fadd2 {
+                var f: $ret1
+                set f = arg
+                return func [f] -> $fadd2 {
+                    return call (call f {@a_1} arg.1) {@r_1,@b_1} arg.2
+                }
+            }
+            
+            var addc: $ret1
+            set addc = call curry add
+            
+            var addu: $fadd2
+            set addu = call uncurry addc
+            
+            output std call addu {@local,@local,@local} [one,two]
+        """.trimIndent()
+        )
+        assert(out == "<.1 <.1 <.1 <.0>>>>\n") { out }
+    }
 }

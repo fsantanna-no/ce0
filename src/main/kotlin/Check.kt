@@ -181,7 +181,6 @@ fun check_02_after_tps (s: Stmt) {
                     "invalid function : unexpected closure declaration"
                 }
                 All_assert_tk(e.tk, !funcs.contains(e) || e.type.clo != null) {
-                    TODO("should fail here, otherwise remove the whole assert")
                     "invalid function : expected closure declaration"
                 }
             }
