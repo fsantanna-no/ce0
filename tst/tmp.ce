@@ -1,4 +1,0 @@
-var e: <(),<(),^^>> = new <.1>
-var s: <(),<(),^^>> = new <.2 consume e>
---var s: <(),<(),^^>> = new <.2 new <.1>>
-output std \\s
