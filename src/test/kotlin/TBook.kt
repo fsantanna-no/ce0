@@ -27,6 +27,7 @@ val NumTL  = Num(true,  "@local")
 val NumA1  = Num(true,  "@a_1")
 val NumA2  = Num(true,  "@a_2")
 val NumB1  = Num(true,  "@b_1")
+val NumC1  = Num(true,  "@c_1")
 val NumR1  = Num(true,  "@r_1")
 val _NumR1 = Num(false, "@r_1")
 val NumS1  = Num(true,  "@s_1")
@@ -136,6 +137,17 @@ val eq = """
     }
 """.trimIndent()
 
+val lte = """
+    var lte: ({}->{@a_1,@b_1}-> [$NumA1,$NumB1] -> _int)
+    set lte = func {}->{@a_1,@b_1}-> [$NumA1,$NumB1] -> _int {
+        var islt: _int
+        set islt = call lt {@a_1,@b_1} [arg.1\!1,arg.2\!1]
+        var iseq: _int
+        set iseq = call eq {@a_1,@b_1} [arg.1\!1,arg.2\!1]
+        return _(islt || iseq)
+    }
+""".trimIndent()
+
 @TestMethodOrder(Alphanumeric::class)
 class TBook {
 
@@ -147,6 +159,12 @@ class TBook {
         println("lt:    ${lt.count    { it == '\n' }}")
         println("sub:   ${sub.count   { it == '\n' }}")
         println("mod:   ${mod.count   { it == '\n' }}")
+        println("eq:    ${eq.count    { it == '\n' }}")
+        println("lte:   ${lte.count   { it == '\n' }}")
+        println("bton:  ${bton.count  { it == '\n' }}")
+        println("ntob:  ${ntob.count  { it == '\n' }}")
+        println("or:    ${or.count    { it == '\n' }}")
+        println("and:   ${and.count   { it == '\n' }}")
 
         val (ok1, out1) = All_inp2c(inp)
         if (!ok1) {
@@ -651,6 +669,17 @@ class TBook {
         }
     """.trimIndent()
 
+    val bton = """
+        var bton: {} -> {} -> $B -> _int
+        set bton = func {} -> {} -> $B -> _int {
+            if arg?2 {
+                return _1
+            } else {
+                return _0
+            } 
+        }
+    """.trimIndent()
+
     @Test
     fun ch_02_01_not_pg30 () {
         val out = all(
@@ -821,4 +850,54 @@ class TBook {
         assert(out == "<.2>\n<.1>\n") { out }
     }
 
+    @Test
+    fun ch_02_01_triangles_pg33 () {
+        val Tri = "<(),(),(),()>"
+        val out = all(
+            """
+            $nums
+            $add
+            $clone
+            $mul
+            $lt
+            $sub
+            $eq
+            $lte
+            $bton
+            $ntob
+            $or
+            -- 119
+            var analyse: {} -> {@a_1,@b_1,@c_1} -> [$NumA1,$NumB1,$NumC1] -> $Tri
+            set analyse = func {} -> {@a_1,@b_1,@c_1} -> [$NumA1,$NumB1,$NumC1] -> $Tri {
+                var xy: $NumTL
+                set xy = call add {@local,@a_1,@b_1} [arg.1,arg.2]
+                if call lte {@local,@c_1} [xy,arg.3] {
+                    return <.1>:$Tri
+                }
+                if call eq {@a_1,@c_1} [arg.1,arg.3] {
+                    return <.2>:$Tri
+                }
+                if call bton (call or [
+                    call ntob (call eq {@a_1,@b_1} [arg.1,arg.2]),
+                    call ntob (call eq {@b_1,@c_1} [arg.2,arg.3])
+                ]) {
+                    return <.3>:$Tri
+                }
+                return <.4>:$Tri
+            }
+            var n10: $NumTL
+            set n10 = call mul {@local,@local,@local} [five,two]
+            var v: $Tri
+            set v = call analyse {@local,@local,@local} [n10,n10,n10]
+            output std /v
+            set v = call analyse {@local,@local,@local} [one,five,five]
+            output std /v
+            set v = call analyse {@local,@local,@local} [one,one,five]
+            output std /v
+            set v = call analyse {@local,@local,@local} [two,four,five]
+            output std /v
+        """.trimIndent()
+        )
+        assert(out == "<.2>\n<.3>\n<.1>\n<.4>\n") { out }
+    }
 }
