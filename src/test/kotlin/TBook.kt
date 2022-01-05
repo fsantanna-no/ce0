@@ -433,4 +433,36 @@ class TBook {
         )
         assert(out == "<.1 <.1 <.1 <.0>>>>\n") { out }
     }
+    @Test
+    fun ch_01_08_composition_pg15() {
+        val T = "({} -> {@r_1,@a_1} -> $NumA1 -> $NumR1)"
+        val S = "({@global} -> {@r_1,@a_1} -> $NumA1 -> $NumR1)"
+        val out = all(
+            """
+            $nums
+            $add
+            
+            var inc: $T
+            set inc = func {}->{@r_1,@a_1}-> $NumA1 -> $NumR1 {
+                return call add {@r_1,@global,@a_1} [one,arg]: @r_1
+            }
+            output std call inc {@local,@local} two
+            
+            var compose: {}->{}->[$T,$T]->$S
+            set compose = func {}->{}->[$T,$T]->$S {
+                var f: $T
+                set f = arg.1
+                var g: $T
+                set g = arg.2
+                return func [f,g] -> $S {
+                    var v: $NumTL
+                    set v = call f {@local,@a_1} arg: @local
+                    return call g {@r_1,@local} v: @r_1
+                }
+            }
+            output std call (call compose [inc,inc]) {@local,@local} one
+        """.trimIndent()
+        )
+        assert(out == "<.1 <.1 <.1 <.0>>>>\n<.1 <.1 <.1 <.0>>>>\n") { out }
+    }
 }

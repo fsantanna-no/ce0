@@ -264,13 +264,7 @@ fun code_fe (e: Expr) {
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
                 *$ID = ${it.expr};
-                {
-                    Pool* pool = malloc(sizeof(Pool));
-                    assert(pool!=NULL && "not enough memory");
-                    pool->val = $ID;
-                    pool->nxt = *$pool;
-                    *$pool = pool;
-                }
+                pool_push($pool, $ID);
 
             """.trimIndent()
             Code(it.type, it.stmt+pre, ID)
@@ -331,24 +325,12 @@ fun code_fe (e: Expr) {
             val clo = if (e.type.clo == null) "" else """
                 void** ups = malloc(${e.ups.size+1} * sizeof(void*));   // +1 pool
                 assert(ups!=NULL && "not enough memory");
-                {
-                    Pool* pool = malloc(sizeof(Pool));
-                    assert(pool!=NULL && "not enough memory");
-                    pool->val = ups;
-                    pool->nxt = *$pool;
-                    *$pool = pool;
-                }
+                pool_push($pool, ups);
                 ups[0] = $pool;
                 ${e.ups.mapIndexed { i,up -> "ups[${i+1}] = ${up.str};\n" }.joinToString("")}
                 ${e.type.pos()} $ID = malloc(sizeof(*$ID));
                 // closure needs to go into the pool b/c it has to be a pointer and go into other closures
-                {
-                    Pool* pool = malloc(sizeof(Pool));
-                    assert(pool!=NULL && "not enough memory");
-                    pool->val = $ID;
-                    pool->nxt = *$pool;
-                    *$pool = pool;
-                }
+                pool_push($pool, $ID);
                 *$ID = (${e.type.toce()}) { $fid, ups }; 
             """.trimIndent()
             val pre = """
@@ -480,6 +462,14 @@ fun Stmt.code (): String {
                 free(cur);
             }
             *pool = NULL;
+        }
+        
+        void pool_push (Pool** root, void* val) {
+            Pool* pool = malloc(sizeof(Pool));
+            assert(pool!=NULL && "not enough memory");
+            pool->val = val;
+            pool->nxt = *root;
+            *root = pool;
         }
         
         Pool** pool_global;

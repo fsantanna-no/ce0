@@ -17,8 +17,8 @@ class TExec {
         if (!ok2) {
             return out2
         }
-        //val (_,out3) = exec("./out.exe")
-        val (_,out3) = exec("valgrind ./out.exe")
+        val (_,out3) = exec("./out.exe")
+        //val (_,out3) = exec("valgrind ./out.exe")
             // search in tests output for
             //  - "definitely lost"
             //  - "Invalid read of size"
@@ -403,7 +403,7 @@ class TExec {
             set z = <.2>: <(),()>
             output std z!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:75: main: Assertion `z.tag == 1' failed.\n") { out }
+        assert(out == "out.exe: out.c:83: main: Assertion `z.tag == 1' failed.\n") { out }
     }
     @Test
     fun f12_user_disc_pred_idx () {
@@ -880,7 +880,7 @@ class TExec {
             set l = <.0>: /</^ @local> @local
             output std l\!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:75: main: Assertion `&(*l) != NULL' failed.\n") { out }
+        assert(out == "out.exe: out.c:83: main: Assertion `&(*l) != NULL' failed.\n") { out }
     }
     @Test
     fun j06_list_1 () {

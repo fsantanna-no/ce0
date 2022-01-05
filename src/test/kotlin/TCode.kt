@@ -141,6 +141,14 @@ class TCode {
                 *pool = NULL;
             }
 
+            void pool_push (Pool** root, void* val) {
+                Pool* pool = malloc(sizeof(Pool));
+                assert(pool!=NULL && "not enough memory");
+                pool->val = val;
+                pool->nxt = *root;
+                *root = pool;
+            }
+
             Pool** pool_global;
 
 
