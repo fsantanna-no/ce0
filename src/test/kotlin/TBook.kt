@@ -13,6 +13,10 @@ val nums = """
     set two = new <.1 one>:</^ @local>
     var three: /</^ @local>
     set three = new <.1 two>:</^>
+    var four: /</^ @local>
+    set four = new <.1 three>:</^>
+    var five: /</^ @local>
+    set five = new <.1 four>:</^>
 """.trimIndent()
 
 fun Num (ptr: Boolean, scope: String): String {
@@ -26,6 +30,13 @@ val NumB1  = Num(true,  "@b_1")
 val NumR1  = Num(true,  "@r_1")
 val _NumR1 = Num(false, "@r_1")
 val NumS1  = Num(true,  "@s_1")
+
+val clone = """
+    var clone: ({}->{@r_1,@a_1}-> $NumA1 -> $NumR1)
+    set clone = func ({}->{@r_1,@a_1}-> $NumA1 -> $NumR1) {
+        return call add {@r_1,@global,@a_1} [zero, arg]
+    }
+""".trimIndent()
 
 val add = """
     var add: ({}->{@r_1,@a_1,@b_1}-> [$NumA1,$NumB1] -> $NumR1)
@@ -74,14 +85,68 @@ val lt = """
     }
 """.trimIndent()
 
+val sub = """
+    var sub: ({}->{@r_1,@a_1,@b_1}-> [$NumA1,$NumB1] -> $NumR1)
+    set sub = func ({}->{@r_1,@a_1,@b_1}-> [$NumA1,$NumB1] -> $NumR1) {
+        var x: $NumA1
+        set x = arg.1
+        var y: $NumB1
+        set y = arg.2
+        if x\?0 {
+            return x
+        } else {
+            if y\?0 {
+                return call clone {@r_1,@a_1} x
+            } else {
+                return call sub {@r_1,@a_1,@b_1} [x\!1,y\!1]: @r_1
+            }
+        }
+    }
+""".trimIndent()
+
+val mod = """
+    var mod: {} -> {@r_1,@a_1,@b_1} -> [$NumA1,$NumB1] -> $NumR1
+    set mod = func {} -> {@r_1,@a_1,@b_1} -> [$NumA1,$NumB1] -> $NumR1 {
+        if call lt {@a_1,@b_1} arg {
+            return call clone {@r_1,@a_1} arg.1: @r_1
+        } else {
+            var v: $NumTL
+            set v = call sub {@local,@a_1,@b_1} arg
+            return call mod {@r_1,@local,@b_1} [v,arg.2]: @r_1
+        }
+    }    
+""".trimIndent()
+
+val eq = """
+    var eq: ({}->{@a_1,@b_1}-> [$NumA1,$NumB1] -> _int)
+    set eq = func ({}->{@a_1,@b_1}-> [$NumA1,$NumB1] -> _int) {
+        var x: $NumA1
+        set x = arg.1
+        var y: $NumB1
+        set y = arg.2
+        if x\?0 {
+            return y\?0
+        } else {
+            if y\?0 {
+                return _0
+            } else {
+                return call eq {@a_1,@b_1} [x\!1,y\!1]
+            }
+        }
+    }
+""".trimIndent()
+
 @TestMethodOrder(Alphanumeric::class)
 class TBook {
 
     fun all(inp: String): String {
-        println("nums: ${nums.count { it == '\n' }}")
-        println("add:  ${add.count { it == '\n' }}")
-        println("mul:  ${mul.count { it == '\n' }}")
-        println("lt:   ${lt.count { it == '\n' }}")
+        println("nums:  ${nums.count  { it == '\n' }}")
+        println("add:   ${add.count   { it == '\n' }}")
+        println("clone: ${clone.count { it == '\n' }}")
+        println("mul:   ${mul.count   { it == '\n' }}")
+        println("lt:    ${lt.count    { it == '\n' }}")
+        println("sub:   ${sub.count   { it == '\n' }}")
+        println("mod:   ${mod.count   { it == '\n' }}")
 
         val (ok1, out1) = All_inp2c(inp)
         if (!ok1) {
@@ -116,9 +181,8 @@ class TBook {
         )
         assert(out == "<.1 <.1 <.0>>>\n") { out }
     }
-
     @Test
-    fun pre_03_add() {
+    fun pre_02_add() {
         val out = all(
             """
             $nums
@@ -128,7 +192,18 @@ class TBook {
         )
         assert(out == "<.1 <.1 <.1 <.0>>>>\n") { out }
     }
-
+    @Test
+    fun pre_03_clone() {
+        val out = all(
+            """
+            $nums
+            $add
+            $clone
+            output std call clone {@local,@local} two: @local
+        """.trimIndent()
+        )
+        assert(out == "<.1 <.1 <.0>>>\n") { out }
+    }
     @Test
     fun pre_04_mul() {
         val out = all(
@@ -141,7 +216,6 @@ class TBook {
         )
         assert(out == "<.1 <.1 <.1 <.1 <.1 <.1 <.0>>>>>>>\n") { out }
     }
-
     @Test
     fun pre_05_lt() {
         val out = all(
@@ -150,6 +224,31 @@ class TBook {
             $lt
             output std call lt {@local,@local} [two, one]
             output std call lt {@local,@local} [one, two]
+        """.trimIndent()
+        )
+        assert(out == "0\n1\n") { out }
+    }
+    @Test
+    fun pre_06_sub() {
+        val out = all(
+            """
+            $nums
+            $add
+            $clone
+            $sub
+            output std call sub {@local,@local,@local} [three, two]
+        """.trimIndent()
+        )
+        assert(out == "<.1 <.0>>\n") { out }
+    }
+    @Test
+    fun pre_07_eq() {
+        val out = all(
+            """
+            $nums
+            $eq
+            output std call eq {@local,@local} [three, two]
+            output std call eq {@local,@local} [one, one]
         """.trimIndent()
         )
         assert(out == "0\n1\n") { out }
@@ -285,7 +384,7 @@ class TBook {
         assert(out == "<.1 <.0>>\n<.1 <.1 <.0>>>\n") { out }
     }
     @Test
-    fun ch_01_05_twice_pg11() {
+    fun ch_01_04_twice_pg11() {
         val out = all(
             """
             $nums
@@ -305,7 +404,7 @@ class TBook {
         assert(out == "<.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.0>>>>>>>>>>>>>>>>>\n") { out }
     }
     @Test
-    fun ch_01_06_addc_pg12() {
+    fun ch_01_04_addc_pg12() {
         val out = all(
             """
             $nums
@@ -328,7 +427,7 @@ class TBook {
         assert(out == "<.1 <.1 <.1 <.0>>>>\n<.1 <.1 <.0>>>\n<.1 <.0>>\n") { out }
     }
     @Test
-    fun ch_01_07_quad_pg12() {
+    fun ch_01_04_quad_pg12() {
         val out = all(
             """
             $nums
@@ -354,7 +453,7 @@ class TBook {
         assert(out == "<.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.0>>>>>>>>>>>>>>>>>\n") { out }
     }
     @Test
-    fun ch_01_08_curry_pg13() {
+    fun ch_01_04_curry_pg13() {
         val fadd = "({} -> {@r_1,@a_1,@b_1} -> [$NumA1,$NumB1] -> $NumR1)"
         val ret2  = "({@a_1}->{@r_1,@b_1}->$NumB1->$NumR1)"
         val ret1  = "({@global} -> {@a_1} -> $NumA1 -> $ret2)"
@@ -386,7 +485,7 @@ class TBook {
         assert(out == "<.1 <.1 <.1 <.0>>>>\n") { out }
     }
     @Test
-    fun ch_01_09_uncurry_pg13() {
+    fun ch_01_04_uncurry_pg13() {
         val fadd  = "({} -> {@r_1,@a_1,@b_1} -> [$NumA1,$NumB1] -> $NumR1)"
         val fadd2 = "({@global} -> {@r_1,@a_1,@b_1} -> [$NumA1,$NumB1] -> $NumR1)"
         val ret2  = "({@a_1}->{@r_1,@b_1}->$NumB1->$NumR1)"
@@ -434,7 +533,7 @@ class TBook {
         assert(out == "<.1 <.1 <.1 <.0>>>>\n") { out }
     }
     @Test
-    fun ch_01_08_composition_pg15() {
+    fun ch_01_04_composition_pg15() {
         val T = "({} -> {@r_1,@a_1} -> $NumA1 -> $NumR1)"
         val S = "({@global} -> {@r_1,@a_1} -> $NumA1 -> $NumR1)"
         val out = all(
@@ -465,4 +564,261 @@ class TBook {
         )
         assert(out == "<.1 <.1 <.1 <.0>>>>\n<.1 <.1 <.1 <.0>>>>\n") { out }
     }
+
+    // CHAPTER 1.5
+
+    @Test
+    fun ch_01_05_fact_pg23 () {
+        val out = all(
+            """
+            $nums
+            $add
+            $mul
+            
+            var fact: {}->{@r_1,@a_1}->$NumA1->$NumR1
+            set fact = func {}->{@r_1,@a_1}->$NumA1->$NumR1 {
+                if arg\?0 {
+                    return new <.1 <.0>:$NumR1>:$_NumR1: @r_1
+                } else {
+                    var x: $NumTL
+                    set x = call fact {@local,@a_1} arg\!1
+                    return call mul {@r_1,@a_1,@local} [arg,x]: @r_1
+                }
+            }
+            
+            output std call fact {@local,@local} three
+        """.trimIndent()
+        )
+        assert(out == "<.1 <.1 <.1 <.1 <.1 <.1 <.0>>>>>>>\n") { out }
+    }
+
+    // CHAPTER 1.6
+    // CHAPTER 1.7
+
+    // CHAPTER 2.1
+
+    val B = "<(),()>"
+    val and = """
+        var and: {} -> {} -> [$B,$B] -> $B
+        set and = func {} -> {} -> [$B,$B] -> $B {
+            if arg.1?1 {
+                return <.1>:<(),()>
+            } else {
+                return arg.2
+            }
+        }        
+    """.trimIndent()
+    val or = """
+        var or: {} -> {} -> [$B,$B] -> $B
+        set or = func {} -> {} -> [$B,$B] -> $B {
+            if arg.1?2 {
+                return <.2>:<(),()>
+            } else {
+                return arg.2
+            }
+        }        
+    """.trimIndent()
+    val not = """
+        var not: {} -> {} -> <(),()> -> <(),()>
+        set not = func {} -> {} -> <(),()> -> <(),()> {
+            if arg?1 {
+                return <.2>:<(),()>
+            } else {
+                return <.1>:<(),()>
+            }
+        }        
+    """.trimIndent()
+
+    val beq = """
+        var beq: {} -> {} -> [$B,$B] -> $B
+        set beq = func {} -> {} -> [$B,$B] -> $B {
+            return call or [call and arg, call and [call not arg.1, call not arg.2]] 
+        }
+        var bneq: {} -> {} -> [$B,$B] -> $B
+        set bneq = func {} -> {} -> [$B,$B] -> $B {
+            return call not call beq arg 
+        }        
+    """.trimIndent()
+
+    val ntob = """
+        var ntob: {} -> {} -> _int -> $B
+        set ntob = func {} -> {} -> _int -> $B {
+            if arg {
+                return <.2>:$B
+            } else {
+                return <.1>:$B
+            } 
+        }
+    """.trimIndent()
+
+    @Test
+    fun ch_02_01_not_pg30 () {
+        val out = all(
+            """
+            var not: {} -> {} -> <(),()> -> <(),()>
+            set not = func {} -> {} -> <(),()> -> <(),()> {
+                if arg?1 {
+                    return <.2>:<(),()>
+                } else {
+                    return <.1>:<(),()>
+                }
+            }
+            var ret: <(),()>
+            set ret = call not <.1>:<(),()>
+            output std /ret
+        """.trimIndent()
+        )
+        assert(out == "<.2>\n") { out }
+    }
+
+    @Test
+    fun ch_02_01_and_pg30 () {
+        val out = all(
+            """
+            var and: {} -> {} -> [$B,$B] -> $B
+            set and = func {} -> {} -> [$B,$B] -> $B {
+                if arg.1?1 {
+                    return <.1>:<(),()>
+                } else {
+                    return arg.2
+                }
+            }
+            var ret: <(),()>
+            set ret = call and [<.1>:<(),()>,<.2>:<(),()>]
+            output std /ret
+            set ret = call and [<.2>:<(),()>,<.2>:<(),()>]
+            output std /ret
+        """.trimIndent()
+        )
+        assert(out == "<.1>\n<.2>\n") { out }
+    }
+    @Test
+    fun ch_02_01_or_pg30 () {
+        val out = all(
+            """
+            var or: {} -> {} -> [$B,$B] -> $B
+            set or = func {} -> {} -> [$B,$B] -> $B {
+                if arg.1?2 {
+                    return <.2>:<(),()>
+                } else {
+                    return arg.2
+                }
+            }
+            var ret: <(),()>
+            set ret = call or [<.1>:<(),()>,<.2>:<(),()>]
+            output std /ret
+            set ret = call or [<.2>:<(),()>,<.1>:<(),()>]
+            output std /ret
+            set ret = call or [<.1>:<(),()>,<.1>:<(),()>]
+            output std /ret
+        """.trimIndent()
+        )
+        assert(out == "<.2>\n<.2>\n<.1>\n") { out }
+    }
+    @Test
+    fun ch_02_01_eq_neq_pg31 () {
+        val out = all(
+            """
+            $not
+            $and
+            $or
+            var eq: {} -> {} -> [$B,$B] -> $B
+            set eq = func {} -> {} -> [$B,$B] -> $B {
+                return call or [call and arg, call and [call not arg.1, call not arg.2]] 
+            }
+            var neq: {} -> {} -> [$B,$B] -> $B
+            set neq = func {} -> {} -> [$B,$B] -> $B {
+                return call not call eq arg 
+            }
+            var ret: <(),()>
+            set ret = call eq [<.1>:<(),()>,<.2>:<(),()>]
+            output std /ret
+            set ret = call neq [<.2>:<(),()>,<.1>:<(),()>]
+            output std /ret
+            set ret = call eq [<.1>:<(),()>,<.1>:<(),()>]
+            output std /ret
+        """.trimIndent()
+        )
+        assert(out == "<.1>\n<.2>\n<.2>\n") { out }
+    }
+
+    @Test
+    fun ch_02_01_mod_pg33 () {
+        val out = all(
+            """
+            $nums
+            $add
+            $clone
+            $lt
+            $sub
+            var mod: {} -> {@r_1,@a_1,@b_1} -> [$NumA1,$NumB1] -> $NumR1
+            set mod = func {} -> {@r_1,@a_1,@b_1} -> [$NumA1,$NumB1] -> $NumR1 {
+                if call lt {@a_1,@b_1} arg {
+                    return call clone {@r_1,@a_1} arg.1: @r_1
+                } else {
+                    var v: $NumTL
+                    set v = call sub {@local,@a_1,@b_1} arg
+                    return call mod {@r_1,@local,@b_1} [v,arg.2]: @r_1
+                }
+            }
+            var v: $NumTL
+            set v = call mod {@local,@local,@local} [three,two]
+            output std v
+        """.trimIndent()
+        )
+        assert(out == "<.1 <.0>>\n") { out }
+    }
+
+    @Test
+    fun ch_02_01_leap_pg33 () {
+        val out = all(
+            """
+            $nums
+            $add
+            $clone
+            $mul
+            $lt
+            $sub
+            $mod
+            $eq
+            $or
+            $and
+            $ntob
+
+            var n10: $NumTL
+            set n10 = call mul {@local,@local,@local} [five,two]
+            var n100: $NumTL
+            set n100 = call mul {@local,@local,@local} [n10,n10]
+            var n400: $NumTL
+            set n400 = call mul {@local,@local,@local} [four,n100]
+            
+            var leap: {} -> {@a_1} -> $NumA1 -> $B
+            set leap = func {} -> {@a_1} -> $NumA1 -> $B {
+                var mod4: $NumTL
+                set mod4 = call mod {@local,@a_1,@global} [arg,four]
+                var mod100: ${NumTL}
+                set mod100 = call mod {@local,@a_1,@global} [arg,n100]
+                var mod400: ${NumTL}
+                set mod400 = call mod {@local,@a_1,@global} [arg,n400]
+                return call or [call ntob mod4\?0, call and [call ntob mod100\?1, call ntob mod400\?0]]
+            }
+            
+            var n2000: $NumTL
+            set n2000 = call mul {@local,@local,@local} [n400,five]
+            var n20: $NumTL
+            set n20 = call add {@local,@local,@local} [n10,n10]
+            var n1980: $NumTL
+            set n1980 = call sub {@local,@local,@local} [n2000,n20]
+            var n1979: $NumTL
+            set n1979 = call sub {@local,@local,@local} [n1980,one]
+            var x: $B
+            set x = call leap {@local} n1980
+            output std /x
+            set x = call leap {@local} n1979
+            output std /x
+        """.trimIndent()
+        )
+        assert(out == "<.2>\n<.1>\n") { out }
+    }
+
 }
