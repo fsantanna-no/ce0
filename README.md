@@ -11,26 +11,14 @@ When a block terminates, all attached allocations are automatically released.
 This prevents memory leaks.
 Pointers cannot be reassigned to pointers in outer blocks.
 This prevents dereferencing dangling pointers.
-
 These ideas have been successfully adopted in Cyclone:
 https://cyclone.thelanguage.org/
 
 # 1. STATEMENTS
 
-## 1.1. Variable Declaration
+## Block
 
-A variable declaration introduces an identifier of the given type in the
-current scope:
-
-```
-var x: ()           -- `x` is of unit type `()`
-var y: _int         -- `y` is a native `int`
-var z: [_int,_int]  -- `z` is a tuple of ints
-```
-
-## 1.2. Block
-
-A block delimits between curly braces `{` and `}` the scope of variables:
+A block delimits the scope of variables between curly braces:
 
 ```
 {
@@ -48,7 +36,18 @@ A block may contain a label to identify its memory region:
 }
 ```
 
-## 1.3. Assignment
+## Variable Declaration
+
+A variable declaration introduces an identifier of the given type in the
+current scope:
+
+```
+var x: ()           -- `x` is of unit type `()`
+var y: _int         -- `y` is a native `int`
+var z: [_int,_int]  -- `z` is a tuple of ints
+```
+
+## Assignment
 
 An assignment changes the value of a variable, native identifier, tuple or
 union discriminator, or pointer dereference:
@@ -60,27 +59,27 @@ set tup.1 = n       -- changes the tuple index value
 set ptr\  = v       -- dereferences pointer `ptr` and assigns `v`
 ```
 
-## 1.4. Call, Input & Output
+## Call, Input & Output
 
 The `call`, `input` & `output` statements invoke function expressions:
 
 ```
-call f ()           -- calls `f` passing ()
+call f _0           -- calls `f` passing `_0`
 input std: _int     -- reads a native `_int` value from stdin
 output std _10      -- outputs native `_10` to stdout
 ```
 
-## 1.5. Sequence
+## Sequence
 
 A sequence of statements execute one after the other:
 
 ```
 var x: _int                 -- first declares `x`
-set x = input std: _int     -- then assigns input to `x`
+set x = input std: _int     -- then assigns `_int` input to `x`
 output std x                -- finally outputs `x`
 ```
 
-## 1.6. Conditional
+## Conditional
 
 An `if` tests an `_int` value and executes one of the branches depending on the
 result:
@@ -93,7 +92,7 @@ if x {
 }
 ```
 
-## 1.7. Repetition
+## Repetition
 
 A `loop` executes a block of statements indefinitely until it reaches a `break`
 statement:
@@ -107,7 +106,7 @@ loop {
 }
 ```
 
-## 1.8. Native
+## Native
 
 A native statement executes a block of code in the host language:
 
@@ -117,20 +116,22 @@ native _{
 }
 ```
 
-## 1.9. Function
+## Function
 
 A function declaration abstracts a block of statements that can be invoked with
-arguments afterwards.
+arguments.
 The argument can be accessed through the identifier `arg`.
 A `return` exits a function with a value:
 
 ```
 set f = func () -> () {
-    return arg      -- function receives and returns `()`
+    return arg  -- `f` receives and returns `()`
 }
 ```
 
-Note that a function declaration is actually an expression.
+*Note that a function declaration is actually a `func` expression assigned to
+a variable.*
 
 # 2. EXPRESSIONS
 
+`TODO`
