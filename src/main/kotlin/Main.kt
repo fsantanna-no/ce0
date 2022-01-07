@@ -1,4 +1,24 @@
 import java.io.File
+import java.io.PushbackReader
+import java.io.StringReader
+
+fun All_inp2c (inp: String): Pair<Boolean,String> {
+    val all = All_new(PushbackReader(StringReader(inp), 2))
+    lexer(all)
+    try {
+        var s = parser_stmts(all, Pair(TK.EOF,null))
+        aux_clear()
+        s.aux_upsenvs(null, null)
+        check_01_before_tps(s)
+        Aux_tps(s)
+        check_02_after_tps(s)
+        return Pair(true, s.code())
+    } catch (e: Throwable) {
+        CODE.clear()
+        //throw e
+        return Pair(false, e.message!!)
+    }
+}
 
 fun exec (cmd: String): Pair<Boolean,String> {
     val p = ProcessBuilder(cmd.split(' '))
