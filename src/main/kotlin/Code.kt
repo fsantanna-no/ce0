@@ -3,7 +3,6 @@ import kotlin.math.absoluteValue
 fun Type.toce (): String {
     return when (this) {
         is Type.Rec   -> "Rec"
-        is Type.Any   -> "Any"
         is Type.Unit  -> "Unit"
         is Type.Ptr   -> "P_" + this.pln.toce() + "_P"
         is Type.Nat   -> this.tk_.str.replace('*','_')
@@ -19,7 +18,6 @@ val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 fun Type.pos (): String {
     return when (this) {
         is Type.Rec -> TODO(this.toString())
-        is Type.Any   -> "void"     // TODO: remove output_std prototype?
         is Type.Unit  -> "int"
         is Type.Ptr   -> this.pln.pos() + "*"
         is Type.Nat   -> this.tk_.str

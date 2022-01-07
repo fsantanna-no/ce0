@@ -1,7 +1,6 @@
 data class Scope (val lvl: Int, val rel: String?, val depth: Int)
 
 sealed class Type (val tk: Tk) {
-    data class Any   (val tk_: Tk.Chr): Type(tk_)
     data class Unit  (val tk_: Tk.Sym): Type(tk_)
     data class Nat   (val tk_: Tk.Str): Type(tk_)
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_)
@@ -20,7 +19,6 @@ fun Type.tostr (): String {
         }
     }
     return when (this) {
-        is Type.Any   -> "?"
         is Type.Unit  -> "()"
         is Type.Nat   -> this.tk_.str
         is Type.Rec   -> "^".repeat(this.tk_.up)
@@ -34,7 +32,7 @@ fun Type.tostr (): String {
 fun Type.flatten (): List<Type> {
     // TODO: func/union do not make sense?
     return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Rec -> listOf(this)
+        is Type.Unit, is Type.Nat, is Type.Rec -> listOf(this)
         is Type.Tuple -> this.vec.map { it.flatten() }.flatten() + this
         is Type.Union -> this.vec.map { it.flatten() }.flatten() + this
         is Type.Func  -> this.inp.flatten() + this.out.flatten() + this
@@ -44,7 +42,6 @@ fun Type.flatten (): List<Type> {
 
 fun Type.lincol (lin: Int, col: Int): Type {
     return when (this) {
-        is Type.Any   -> Type.Any(this.tk_.copy(lin_=lin,col_=col))
         is Type.Unit  -> Type.Unit(this.tk_.copy(lin_=lin,col_=col))
         is Type.Nat   -> Type.Nat(this.tk_.copy(lin_=lin,col_=col))
         is Type.Tuple -> Type.Tuple(this.tk_.copy(lin_=lin,col_=col), this.vec.map { it.lincol(lin,col) }.toTypedArray())
@@ -75,7 +72,7 @@ fun Type.Union.expand (): Array<Type> {
 
 fun Type.containsRec (): Boolean {
     return when (this) {
-        is Type.Any, is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
+        is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func -> false
         is Type.Rec   -> true
         is Type.Tuple -> this.vec.any { it.containsRec() }
         is Type.Union -> this.vec.any { it.containsRec() }

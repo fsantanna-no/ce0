@@ -31,7 +31,6 @@ fun Type.isSupOf (sub: Type): Boolean {
 
 fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: List<Type.Union>): Boolean {
     return when {
-        (this is Type.Any  || sub is Type.Any) -> true
         (this is Type.Nat  || sub is Type.Nat) -> true
         (this is Type.Rec  && sub is Type.Rec)  -> (this.tk_.up == sub.tk_.up)
         (this is Type.Rec) -> ups1[this.tk_.up-1].let { it.isSupOf_(sub, isproto, ups1.drop(this.tk_.up),ups2) }
