@@ -51,6 +51,7 @@ fun Expr.visit_ (fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) 
         is Expr.UDisc -> this.uni.visit_(fs,fe,ft)
         is Expr.UPred -> this.uni.visit_(fs,fe,ft)
         is Expr.Call  -> { this.f.visit_(fs,fe,ft) ; this.arg.visit_(fs,fe,ft) }
+        is Expr.Out   -> this.arg.visit_(fs,fe,ft)
         is Expr.Func  -> { this.type.visit_(ft) ; this.block.visit(fs,fe,ft) }
     }
     if (fe != null) {
@@ -63,7 +64,7 @@ fun Stmt.visit_ (fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) 
     when (this) {
         is Stmt.Var   -> this.type.visit_(ft)
         is Stmt.Set   -> { this.dst.visit_(fs,fe,ft) ; this.src.visit_(fs,fe,ft) }
-        is Stmt.Call  -> this.call.visit_(fs,fe,ft)
+        is Stmt.SExpr -> this.expr.visit_(fs,fe,ft)
         is Stmt.Seq   -> { this.s1.visit(fs,fe,ft) ; this.s2.visit(fs,fe,ft) }
         is Stmt.If    -> { this.tst.visit_(fs,fe,ft) ; this.true_.visit(fs,fe,ft) ; this.false_.visit(fs,fe,ft) }
         //is Stmt.Ret   -> this.e.visit(old,fs,fx,fe,ft)

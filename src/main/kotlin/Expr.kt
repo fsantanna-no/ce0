@@ -11,6 +11,7 @@ sealed class Expr (val tk: Tk) {
     data class Dnref (val tk_: Tk,     val ptr: Expr): Expr(tk_)
     data class Upref (val tk_: Tk.Chr, val pln: Expr): Expr(tk_)
     data class Call  (val tk_: Tk.Key, val scope: Tk.Scope?, val f: Expr, val scps: Array<Tk.Scope>, val arg: Expr): Expr(tk_)
+    data class Out   (val tk_: Tk.Key, val lib: Tk.Str, val arg: Expr): Expr(tk_)
     data class Func  (val tk_: Tk.Key, val ups: Array<Tk.Str>, val type: Type.Func, val block: Stmt.Block) : Expr(tk_)
 }
 
@@ -37,6 +38,7 @@ fun Expr.flatten (): List<Expr> {
         is Expr.Unit, is Expr.Var, is Expr.Nat, is Expr.Func -> listOf(this)
         is Expr.TCons -> this.arg.map { it.flatten() }.flatten() + this
         is Expr.Call  -> this.f.flatten() + this.arg.flatten() + this
+        is Expr.Out   -> this.arg.flatten() + this
         is Expr.TDisc -> this.tup.flatten() + this
         is Expr.UDisc -> this.uni.flatten() + this
         is Expr.UPred -> this.uni.flatten() + this

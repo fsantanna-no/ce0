@@ -157,9 +157,9 @@ fun parser_expr (all: All): Expr {
             }
             Expr.New(tk0 as Tk.Key, scp, e as Expr.UCons)
         }
-        all.accept(TK.CALL) || all.accept(TK.OUTPUT) -> {
+        all.accept(TK.CALL) -> {
             val tk_pre = all.tk0 as Tk.Key
-            var f = parser_expr(all)
+            val f = parser_expr(all)
 
             val scps = mutableListOf<Tk.Scope>()
             if (all.accept(TK.CHAR, '{')) {
@@ -175,20 +175,6 @@ fun parser_expr (all: All): Expr {
 
             val arg = parser_expr(all)
 
-            if (tk_pre.enu == TK.OUTPUT) {
-                all.assert_tk(f.tk, f is Expr.Var) { "invalid `output` : expected identifier" }
-                /*
-                f = Expr.Dnref(
-                    Tk.Chr(TK.CHAR, f.tk.lin, f.tk.col, '\\'),
-                    Expr.Var(
-                        Tk.Str(TK.XVAR, f.tk.lin, f.tk.col, "output_" + (f.tk as Tk.Str).str)
-                    )
-                )
-                 */
-                f = Expr.Var (
-                    Tk.Str(TK.XVAR,f.tk.lin,f.tk.col,"output_"+(f.tk as Tk.Str).str)
-                )
-            }
             val scp = if (all.accept(TK.CHAR, ':')) {
                 all.accept_err(TK.XSCOPE)
                 all.tk0 as Tk.Scope
@@ -196,6 +182,13 @@ fun parser_expr (all: All): Expr {
                 Tk.Scope(TK.XSCOPE, all.tk0.lin, all.tk0.col, "local", null)
             }
             return Expr.Call(tk_pre, scp, f, scps.toTypedArray(), arg)
+        }
+        all.accept(TK.OUTPUT) -> {
+            val tk = all.tk0 as Tk.Key
+            all.accept_err(TK.XVAR)
+            val lib = (all.tk0 as Tk.Str)
+            val arg = parser_expr(all)
+            return Expr.Out(tk, lib, arg)
         }
         all.accept(TK.FUNC) -> {
             val tk0 = all.tk0 as Tk.Key
@@ -362,7 +355,7 @@ fun parser_stmt (all: All): Stmt {
         all.check(TK.CALL) || all.check(TK.OUTPUT) -> {
             val tk0 = all.tk1 as Tk.Key
             val e = parser_expr(all)
-            Stmt.Call(tk0, e as Expr.Call)
+            Stmt.SExpr(tk0, e)
         }
         all.accept(TK.IF) -> {
             val tk0 = all.tk0 as Tk.Key

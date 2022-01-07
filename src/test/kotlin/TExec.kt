@@ -312,7 +312,8 @@ class TExec {
         val out = all("""
             output () ()
         """.trimIndent())
-        assert(out == "(ln 1, col 8): invalid `output` : expected identifier") { out }
+        //assert(out == "(ln 1, col 8): invalid `output` : expected identifier") { out }
+        assert(out == "(ln 1, col 8): expected variable identifier : have `()´") { out }
     }
     @Test
     fun e02_out () {
@@ -326,7 +327,7 @@ class TExec {
     fun e03_out () {
         val out = all("""
             var output_f: ({}->{}-> _int -> ())
-            set output_f = func{}->{}->  _int -> () { output std arg }
+            set output_f = func{}->{}-> _int -> () { output std arg }
             output f _10
         """.trimIndent())
         assert(out == "10\n") { out }
@@ -403,7 +404,7 @@ class TExec {
             set z = <.2>: <(),()>
             output std z!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:83: main: Assertion `z.tag == 1' failed.\n") { out }
+        assert(out == "out.exe: out.c:81: main: Assertion `z.tag == 1' failed.\n") { out }
     }
     @Test
     fun f12_user_disc_pred_idx () {
@@ -880,7 +881,7 @@ class TExec {
             set l = <.0>: /</^ @local> @local
             output std l\!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:83: main: Assertion `&(*l) != NULL' failed.\n") { out }
+        assert(out == "out.exe: out.c:81: main: Assertion `&(*l) != NULL' failed.\n") { out }
     }
     @Test
     fun j06_list_1 () {

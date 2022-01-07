@@ -15,7 +15,6 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
     lexer(all)
     try {
         var s = parser_stmts(all, Pair(TK.EOF,null))
-        s = env_prelude(s)
         aux_clear()
         s.aux_upsenvs(null, null)
         check_01_before_tps(s)

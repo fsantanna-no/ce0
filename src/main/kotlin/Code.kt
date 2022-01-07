@@ -313,6 +313,15 @@ fun code_fe (e: Expr) {
                 }
             Code(f.type+arg.type, f.stmt+arg.stmt, snd)
         }
+        is Expr.Out  -> {
+            val arg = CODE.removeFirst()
+            val call = if (e.lib.str == "std") {
+                AUX.tps[e.arg]!!.output("", arg.expr)
+            } else {
+                "output_${e.lib.str}(${arg.expr})"
+            }
+            Code(arg.type, arg.stmt, call)
+        }
         is Expr.Func  -> CODE.removeFirst().let {
             val ID  = "_func_" + e.hashCode().absoluteValue
             val fid = if (e.ups.size == 0) ID else ID+"_f"
@@ -373,7 +382,7 @@ fun code_fs (s: Stmt) {
         }
         is Stmt.Break -> Code("", "break;\n", "")
         is Stmt.Ret   -> Code("", "return _ret_;\n", "")
-        is Stmt.Call  -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
+        is Stmt.SExpr -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
         is Stmt.Block -> CODE.removeFirst().let {
             val src = """
             {

@@ -12,8 +12,7 @@ class TEnv {
         val all = All_new(PushbackReader(StringReader(inp), 2))
         lexer(all)
         try {
-            var s = parser_stmts(all, Pair(TK.EOF,null))
-            s = env_prelude(s)
+            val s = parser_stmts(all, Pair(TK.EOF,null))
             aux_clear()
             s.aux_upsenvs(null, null)
             check_01_before_tps(s)
@@ -24,16 +23,6 @@ class TEnv {
             //throw e
             return e.message!!
         }
-    }
-
-    fun pre (inp: String): Stmt {
-        val all = All_new(PushbackReader(StringReader(inp), 2))
-        lexer(all)
-        var s = parser_stmts(all, Pair(TK.EOF,null))
-        aux_clear()
-        s.aux_upsenvs(null,null)
-        Aux_tps(s)
-        return s
     }
 
     // UNDECLARED

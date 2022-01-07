@@ -63,22 +63,6 @@ fun Expr.Var.env (): Stmt.Var? {
 
 //////////////////////////////////////////////////////////////////////////////
 
-fun env_prelude (s: Stmt): Stmt {
-    val stdo = Stmt.Var (
-        Tk.Str(TK.XVAR,1,1,"output_std"),
-        Type.Func (
-            Tk.Chr(TK.CHAR, 1, 1, '{'),
-            null,
-            emptyArray(),
-            Type.Any(Tk.Chr(TK.CHAR,1,1,'?')),
-            Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
-        )
-    )
-    return Stmt.Seq(stdo.tk, stdo, s)
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
 private
 fun ups_add (v: Any, up: Any?) {
     if (up == null) return
@@ -124,6 +108,7 @@ fun Expr.aux_upsenvs (up: Any, env: Env?) {
         is Expr.TDisc -> this.tup.aux_upsenvs(this, env)
         is Expr.UDisc -> this.uni.aux_upsenvs(this, env)
         is Expr.UPred -> this.uni.aux_upsenvs(this, env)
+        is Expr.Out   -> this.arg.aux_upsenvs(this, env)
         is Expr.Call  -> {
             this.f.aux_upsenvs(this, env)
             this.arg.aux_upsenvs(this, env)
@@ -149,7 +134,7 @@ fun Stmt.aux_upsenvs (up: Any?, env: Env?): Env? {
             this.src.aux_upsenvs(this, env)
             env
         }
-        is Stmt.Call -> { this.call.aux_upsenvs(this, env) ; env }
+        is Stmt.SExpr -> { this.expr.aux_upsenvs(this, env) ; env }
         is Stmt.Seq -> {
             val e1 = this.s1.aux_upsenvs(this, env)
             val e2 = this.s2.aux_upsenvs(this, e1)
@@ -178,6 +163,7 @@ fun Aux_tps (s: Stmt) {
     fun fe (e: Expr) {
         AUX.tps[e] = when (e) {
             is Expr.Unit  -> Type.Unit(e.tk_).up(e)
+            is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).up(e)
             is Expr.Nat   -> e.type ?: Type.Nat(e.tk_).up(e)
             is Expr.Upref -> AUX.tps[e.pln]!!.let {
                 Type.Ptr(e.tk_, Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col,"var",null), it).up(it)
