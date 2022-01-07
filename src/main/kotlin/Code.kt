@@ -302,7 +302,7 @@ fun code_fe (e: Expr) {
             val f   = CODE.removeFirst()
             //val ff  = e.f as? Expr.Dnref
 
-            val pools = e.scps.let { if (it.size == 0) "" else (it.map { out ->
+            val pools = e.sinps.let { if (it.size == 0) "" else (it.map { out ->
                 val up = e.ups_first { it is Expr.Func && (AUX.tps[it] as Type.Func).clo.let { it!=null && it.lbl==out.lbl && it.num==out.num } }
                 if (up == null) out.toce() else "((Pool**)ups[0])"
             }.joinToString(",") + ",") }

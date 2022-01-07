@@ -185,7 +185,7 @@ fun Aux_tps (s: Stmt) {
                     when (it) {
                         is Type.Nat -> it
                         is Type.Func -> {
-                            val MAP = it.scps.map { Pair(it.lbl,it.num) }.zip(e.scps.map { Pair(it.lbl,it.num) }).toMap()
+                            val MAP = it.scps.map { Pair(it.lbl,it.num) }.zip(e.sinps.map { Pair(it.lbl,it.num) }).toMap()
                             fun f (tk: Tk.Scope): Tk.Scope {
                                 return MAP[Pair(tk.lbl,tk.num)].let { if (it == null) tk else
                                     Tk.Scope(TK.XSCOPE, tk.lin, tk.col, it.first, it.second)

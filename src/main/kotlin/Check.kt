@@ -111,8 +111,8 @@ fun check_01_before_tps (s: Stmt) {
 
             is Expr.New  -> e.scope.check(e)
             is Expr.Call -> {
-                e.scope.let { if (it != null) it.check(e) }
-                e.scps.forEach { it.check(e) }
+                e.sout.let { if (it != null) it.check(e) }
+                e.sinps.forEach { it.check(e) }
             }
         }
     }
@@ -223,10 +223,10 @@ fun check_02_after_tps (s: Stmt) {
                 // var f: /(... -> {@_1,@_2,...} -> ...)
                 // call f\ {@a,@b,...} ...
                 if (scps1 != null) {
-                    All_assert_tk(e.tk, scps1.size == e.scps.size) {
+                    All_assert_tk(e.tk, scps1.size == e.sinps.size) {
                         "invalid call : scope mismatch"
                     }
-                    scps1.zip(e.scps).forEach { (ff,ee) ->
+                    scps1.zip(e.sinps).forEach { (ff,ee) ->
                         val num   = ff.num!!
                         acc[ff.lbl].let {
                             if (it == null) {
