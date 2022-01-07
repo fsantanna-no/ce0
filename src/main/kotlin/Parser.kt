@@ -370,7 +370,7 @@ fun parser_stmt (all: All): Stmt {
             val tst = parser_expr(all)
             val true_ = parser_block(all)
             if (!all.accept(TK.ELSE)) {
-                return Stmt.If(tk0, tst, true_, Stmt.Block(Tk.Chr(TK.CHAR,all.tk1.lin,all.tk1.col,'{'),null,Stmt.Pass(all.tk0)))
+                return Stmt.If(tk0, tst, true_, Stmt.Block(Tk.Chr(TK.CHAR,all.tk1.lin,all.tk1.col,'{'),null,Stmt.Nop(all.tk0)))
             }
             val false_ = parser_block(all)
             Stmt.If(tk0, tst, true_, false_)
@@ -411,12 +411,12 @@ fun parser_stmt (all: All): Stmt {
 fun parser_stmts (all: All, opt: Pair<TK,Char?>): Stmt {
     fun enseq (s1: Stmt, s2: Stmt): Stmt {
         return when {
-            (s1 is Stmt.Pass) -> s2
-            (s2 is Stmt.Pass) -> s1
+            (s1 is Stmt.Nop) -> s2
+            (s2 is Stmt.Nop) -> s1
             else -> Stmt.Seq(s1.tk, s1, s2)
         }
     }
-    var ret: Stmt = Stmt.Pass(all.tk0)
+    var ret: Stmt = Stmt.Nop(all.tk0)
     while (true) {
         all.accept(TK.CHAR, ';')
         val tk_bef = all.tk0

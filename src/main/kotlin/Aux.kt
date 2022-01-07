@@ -124,7 +124,7 @@ fun Stmt.aux_upsenvs (up: Any?, env: Env?): Env? {
     ups_add(this, up)
     env_add(this, env)
     return when (this) {
-        is Stmt.Pass, is Stmt.Nat, is Stmt.Ret, is Stmt.Break -> env
+        is Stmt.Nop, is Stmt.Nat, is Stmt.Ret, is Stmt.Break -> env
         is Stmt.Var -> {
             this.type.aux_upsenvs(this)
             Env(this,env)

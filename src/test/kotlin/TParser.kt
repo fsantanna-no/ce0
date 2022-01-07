@@ -618,7 +618,7 @@ class TParser {
         val s = parser_stmt(all)
         assert (
             s is Stmt.If && s.tst is Expr.Unit &&
-            s.true_.body is Stmt.Pass && s.false_.body is Stmt.SExpr
+            s.true_.body is Stmt.Nop && s.false_.body is Stmt.SExpr
         )
     }
     @Test
@@ -628,7 +628,7 @@ class TParser {
         val s = parser_stmt(all)
         assert (
             s is Stmt.If && s.tst is Expr.UCons &&
-            s.true_.body is Stmt.Pass && s.false_.body is Stmt.Pass
+            s.true_.body is Stmt.Nop && s.false_.body is Stmt.Nop
         )
     }
 

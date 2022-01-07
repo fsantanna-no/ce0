@@ -14,6 +14,9 @@ This prevents dereferencing dangling pointers.
 These ideas have been successfully adopted in Cyclone:
 https://cyclone.thelanguage.org/
 
+*Ce0* is the most basic core version of *Ce* with no extensions (syntax sugar,
+type inference, etc).
+
 # INSTALL & RUN
 
 ```

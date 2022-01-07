@@ -1,8 +1,6 @@
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
-import java.io.PushbackReader
-import java.io.StringReader
 
 @TestMethodOrder(Alphanumeric::class)
 class TCode {
@@ -100,7 +98,7 @@ class TCode {
 
     @Test
     fun c01_stmt_pass () {
-        val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
+        val s = Stmt.Nop(Tk.Err(TK.ERR,1,1,""))
         s.visit(::code_fs, null, null)
         assert(CODE.removeFirst().stmt == "")
         assert(CODE.size == 0)
@@ -110,7 +108,7 @@ class TCode {
 
     @Test
     fun d01 () {
-        val s = Stmt.Pass(Tk.Err(TK.ERR,1,1,""))
+        val s = Stmt.Nop(Tk.Err(TK.ERR,1,1,""))
         val out = s.code()
         assert(out == """
             #include <assert.h>

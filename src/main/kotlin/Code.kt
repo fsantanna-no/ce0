@@ -356,7 +356,7 @@ fun code_fe (e: Expr) {
 
 fun code_fs (s: Stmt) {
     CODE.addFirst(when (s) {
-        is Stmt.Pass -> Code("","","")
+        is Stmt.Nop -> Code("","","")
         is Stmt.Nat  -> Code("", s.tk_.str + "\n", "")
         is Stmt.Seq  -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; Code(s1.type+s2.type, s1.stmt+s2.stmt, "") }
         is Stmt.Set  -> {

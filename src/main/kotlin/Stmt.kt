@@ -1,5 +1,5 @@
 sealed class Stmt (val tk: Tk) {
-    data class Pass  (val tk_: Tk) : Stmt(tk_)
+    data class Nop   (val tk_: Tk) : Stmt(tk_)
     data class Var   (val tk_: Tk.Str, val type: Type) : Stmt(tk_)
     data class Set   (val tk_: Tk.Chr, val dst: Expr, val src: Expr) : Stmt(tk_)
     data class Nat   (val tk_: Tk.Str) : Stmt(tk_)
