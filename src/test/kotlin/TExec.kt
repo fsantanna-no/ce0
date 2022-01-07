@@ -305,7 +305,7 @@ class TExec {
         assert(out == "()\n") { out }
     }
 
-    // OUTPUT
+    // INPUT / OUTPUT
 
     @Test
     fun e01_out () {
@@ -329,6 +329,16 @@ class TExec {
             var output_f: ({}->{}-> _int -> ())
             set output_f = func{}->{}-> _int -> () { output std arg }
             output f _10
+        """.trimIndent())
+        assert(out == "10\n") { out }
+    }
+    @Disabled   // needs user input
+    @Test
+    fun e04_inp () {
+        val out = all("""
+            var x: _int
+            set x = input std: _int
+            output std x
         """.trimIndent())
         assert(out == "10\n") { out }
     }
