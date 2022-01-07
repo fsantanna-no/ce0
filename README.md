@@ -1,4 +1,4 @@
-# Ce
+# Ce0 - Core
 
 *Ce* is simple language with algebraic data types, pointers, first-class
 functions, and region-based memory management.
@@ -13,6 +13,18 @@ Pointers cannot be reassigned to pointers in outer blocks.
 This prevents dereferencing dangling pointers.
 These ideas have been successfully adopted in Cyclone:
 https://cyclone.thelanguage.org/
+
+# INSTALL & RUN
+
+```
+$ sudo make install
+$ vi x.ce   # output std ()
+$ ce0 x.ce
+()
+$
+```
+
+# MANUAL
 
 # 1. STATEMENTS
 
