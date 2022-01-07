@@ -62,7 +62,7 @@ fun Expr.visit_ (fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) 
 private
 fun Stmt.visit_ (fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
     when (this) {
-        is Stmt.Var   -> this.type!!.visit_(ft)
+        is Stmt.Var   -> if (this.type != null) this.type.visit_(ft)
         is Stmt.Set   -> { this.dst.visit_(fs,fe,ft) ; this.src.visit_(fs,fe,ft) }
         is Stmt.SExpr -> this.expr.visit_(fs,fe,ft)
         is Stmt.Seq   -> { this.s1.visit(fs,fe,ft) ; this.s2.visit(fs,fe,ft) }
