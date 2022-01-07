@@ -518,5 +518,3 @@ In this case, a native token can contain any other characters:
 ```
 _(1 + 1)     _{2 * (1+1)}
 ```
-
-
