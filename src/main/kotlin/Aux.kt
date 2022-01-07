@@ -101,7 +101,7 @@ fun Expr.aux_upsenvs (up: Any, env: Env?) {
     env_add(this, env)
     when (this) {
         is Expr.TCons -> this.arg.forEachIndexed { _,e -> e.aux_upsenvs(this, env) }
-        is Expr.UCons -> { this.type.aux_upsenvs(this) ; this.arg.aux_upsenvs(this, env) }
+        is Expr.UCons -> { this.type!!.aux_upsenvs(this) ; this.arg.aux_upsenvs(this, env) }
         is Expr.New   -> this.arg.aux_upsenvs(this, env)
         is Expr.Dnref -> this.ptr.aux_upsenvs(this, env)
         is Expr.Upref -> this.pln.aux_upsenvs(this, env)
@@ -126,7 +126,7 @@ fun Stmt.aux_upsenvs (up: Any?, env: Env?): Env? {
     return when (this) {
         is Stmt.Nop, is Stmt.Nat, is Stmt.Ret, is Stmt.Break -> env
         is Stmt.Var -> {
-            this.type.aux_upsenvs(this)
+            this.type!!.aux_upsenvs(this)
             Env(this,env)
         }
         is Stmt.Set -> {
@@ -176,9 +176,9 @@ fun Aux_tps (s: Stmt) {
                 }
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { AUX.tps[it]!! }.toTypedArray()).up(e)
-            is Expr.UCons -> e.type
-            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scope, AUX.tps[e.arg]!!).up(e)
-            is Expr.Inp   -> e.type
+            is Expr.UCons -> e.type!!
+            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scope!!, AUX.tps[e.arg]!!).up(e)
+            is Expr.Inp   -> e.type!!
             is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).up(e)
             is Expr.Call -> {
                 AUX.tps[e.f].let {
@@ -253,7 +253,7 @@ fun Aux_tps (s: Stmt) {
                     else -> error("bug found")
                 }
             }
-            is Expr.Var -> e.env()!!.type
+            is Expr.Var -> e.env()!!.type!!
         }
     }
     s.visit(null, ::fe, null)
