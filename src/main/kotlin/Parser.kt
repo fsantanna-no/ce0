@@ -183,6 +183,14 @@ fun parser_expr (all: All): Expr {
             }
             return Expr.Call(tk_pre, scp, f, scps.toTypedArray(), arg)
         }
+        all.accept(TK.INPUT) -> {
+            val tk = all.tk0 as Tk.Key
+            all.accept_err(TK.XVAR)
+            val lib = (all.tk0 as Tk.Str)
+            all.accept_err(TK.CHAR, ':')
+            val tp = parser_type(all)
+            return Expr.Inp(tk, lib, tp)
+        }
         all.accept(TK.OUTPUT) -> {
             val tk = all.tk0 as Tk.Key
             all.accept_err(TK.XVAR)
@@ -352,7 +360,7 @@ fun parser_stmt (all: All): Stmt {
             all.accept_err(TK.XNAT)
             Stmt.Nat(all.tk0 as Tk.Str)
         }
-        all.check(TK.CALL) || all.check(TK.OUTPUT) -> {
+        all.check(TK.CALL) || all.check(TK.OUTPUT) || all.check(TK.INPUT) -> {
             val tk0 = all.tk1 as Tk.Key
             val e = parser_expr(all)
             Stmt.SExpr(tk0, e)

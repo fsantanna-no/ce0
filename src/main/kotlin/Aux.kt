@@ -163,7 +163,6 @@ fun Aux_tps (s: Stmt) {
     fun fe (e: Expr) {
         AUX.tps[e] = when (e) {
             is Expr.Unit  -> Type.Unit(e.tk_).up(e)
-            is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).up(e)
             is Expr.Nat   -> e.type ?: Type.Nat(e.tk_).up(e)
             is Expr.Upref -> AUX.tps[e.pln]!!.let {
                 Type.Ptr(e.tk_, Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col,"var",null), it).up(it)
@@ -179,6 +178,8 @@ fun Aux_tps (s: Stmt) {
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { AUX.tps[it]!! }.toTypedArray()).up(e)
             is Expr.UCons -> e.type
             is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scope, AUX.tps[e.arg]!!).up(e)
+            is Expr.Inp   -> e.type
+            is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).up(e)
             is Expr.Call -> {
                 AUX.tps[e.f].let {
                     when (it) {

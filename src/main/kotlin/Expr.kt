@@ -10,8 +10,9 @@ sealed class Expr (val tk: Tk) {
     data class New   (val tk_: Tk.Key, val scope: Tk.Scope, val arg: Expr.UCons): Expr(tk_)
     data class Dnref (val tk_: Tk,     val ptr: Expr): Expr(tk_)
     data class Upref (val tk_: Tk.Chr, val pln: Expr): Expr(tk_)
-    data class Call  (val tk_: Tk.Key, val scope: Tk.Scope?, val f: Expr, val scps: Array<Tk.Scope>, val arg: Expr): Expr(tk_)
+    data class Inp   (val tk_: Tk.Key, val lib: Tk.Str, val type: Type): Expr(tk_)
     data class Out   (val tk_: Tk.Key, val lib: Tk.Str, val arg: Expr): Expr(tk_)
+    data class Call  (val tk_: Tk.Key, val scope: Tk.Scope?, val f: Expr, val scps: Array<Tk.Scope>, val arg: Expr): Expr(tk_)
     data class Func  (val tk_: Tk.Key, val ups: Array<Tk.Str>, val type: Type.Func, val block: Stmt.Block) : Expr(tk_)
 }
 
@@ -35,7 +36,7 @@ fun Attr.toExpr (): Expr {
 
 fun Expr.flatten (): List<Expr> {
     return when (this) {
-        is Expr.Unit, is Expr.Var, is Expr.Nat, is Expr.Func -> listOf(this)
+        is Expr.Unit, is Expr.Var, is Expr.Nat, is Expr.Inp, is Expr.Func -> listOf(this)
         is Expr.TCons -> this.arg.map { it.flatten() }.flatten() + this
         is Expr.Call  -> this.f.flatten() + this.arg.flatten() + this
         is Expr.Out   -> this.arg.flatten() + this

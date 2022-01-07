@@ -285,6 +285,18 @@ fun code_fe (e: Expr) {
                 Code(it.type, it.stmt + pre, ID)
             }
         }
+        is Expr.Inp -> {
+            Code("", "", "input_${e.lib.str}_${e.type.toce()}()")
+        }
+        is Expr.Out  -> {
+            val arg = CODE.removeFirst()
+            val call = if (e.lib.str == "std") {
+                AUX.tps[e.arg]!!.output("", arg.expr)
+            } else {
+                "output_${e.lib.str}(${arg.expr})"
+            }
+            Code(arg.type, arg.stmt, call)
+        }
         is Expr.Call  -> {
             val arg = CODE.removeFirst()
             val f   = CODE.removeFirst()
@@ -310,15 +322,6 @@ fun code_fe (e: Expr) {
                     }
                 }
             Code(f.type+arg.type, f.stmt+arg.stmt, snd)
-        }
-        is Expr.Out  -> {
-            val arg = CODE.removeFirst()
-            val call = if (e.lib.str == "std") {
-                AUX.tps[e.arg]!!.output("", arg.expr)
-            } else {
-                "output_${e.lib.str}(${arg.expr})"
-            }
-            Code(arg.type, arg.stmt, call)
         }
         is Expr.Func  -> CODE.removeFirst().let {
             val ID  = "_func_" + e.hashCode().absoluteValue
