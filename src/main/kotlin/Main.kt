@@ -2,21 +2,11 @@ import java.io.File
 import java.io.PushbackReader
 import java.io.StringReader
 
-fun exec (cmd: String): Pair<Boolean,String> {
-    val p = ProcessBuilder(cmd.split(' '))
-        //.redirectOutput(ProcessBuilder.Redirect.PIPE)
-        .redirectErrorStream(true)
-        .start()
-    val ret = p.waitFor()
-    val str = p.inputStream.bufferedReader().readText()
-    return Pair(ret==0, str)
-}
-
 fun ce2c (ce: String): Pair<Boolean,String> {
     val all = All_new(PushbackReader(StringReader(ce), 2))
     lexer(all)
     try {
-        var s = parser_stmts(all, Pair(TK.EOF,null))
+        val s = parser_stmts(all, Pair(TK.EOF,null))
         aux_clear()
         s.aux_upsenvs(null, null)
         check_01_before_tps(s)

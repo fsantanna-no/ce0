@@ -103,3 +103,13 @@ inline fun All.assert_tk (tk: Tk, value: Boolean, lazyMessage: () -> String = {"
         throw AssertionError(m2)
     }
 }
+
+fun exec (cmd: String): Pair<Boolean,String> {
+    val p = ProcessBuilder(cmd.split(' '))
+        //.redirectOutput(ProcessBuilder.Redirect.PIPE)
+        .redirectErrorStream(true)
+        .start()
+    val ret = p.waitFor()
+    val str = p.inputStream.bufferedReader().readText()
+    return Pair(ret==0, str)
+}
