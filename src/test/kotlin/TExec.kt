@@ -198,7 +198,10 @@ class TExec {
     fun d01_f_int () {
         val out = all("""
             var f: ({}->{}-> _int -> _int)
-            set f = func ({}->{}-> _int -> _int) { return arg }
+            set f = func ({}->{}-> _int -> _int) {
+                set ret = arg
+                return
+            }
             var x: _int
             set x = call f _10
             output std x
@@ -222,7 +225,7 @@ class TExec {
             var f: ({}->{}-> () -> ())
             set f = func {}->{}-> ()->() { var x: _int; set x = _10 ; output std x }
             var g: ({}->{}-> () -> ())
-            set g = func {}->{}-> ()->() { return call f () }
+            set g = func {}->{}-> ()->() { call f () ; return }
             call g ()
         """.trimIndent())
         assert(out == "10\n") { out }
@@ -233,7 +236,8 @@ class TExec {
         var f : ({}->{}-> _int -> _int)
         set f = func {}->{}-> _int->_int {
            set arg = _(arg+1)
-           return arg
+           set ret = arg
+           return
         }
         output std call f _1
         """.trimIndent())
@@ -243,7 +247,7 @@ class TExec {
     fun d05_func_var () {
         val out = all("""
         var f: ({}->{}-> _int->_int)
-        set f = func {}->{}-> _int->_int { return arg }
+        set f = func {}->{}-> _int->_int { set ret=arg ; return }
         var p: ({}->{}-> _int->_int)
         set p = f
         output std call p _10
@@ -254,14 +258,15 @@ class TExec {
     fun d06_func_fg () {
         val out = all("""
             var f: ({}->{}-> _int->_int)
-            set f = func {}->{}-> _int->_int { return arg }
+            set f = func {}->{}-> _int->_int { set ret=arg ; return }
             var g: ({}->{}-> [{}->{}-> _int->_int, _int] -> _int)
             set g = func ({}->{}-> [{}->{}-> _int->_int, _int] -> _int) {
                var f: ({}->{}-> _int->_int)
                set f = arg.1
                var v: _int
                set v = call f arg.2
-               return v
+               set ret = v
+               return
             }
             output std call g [f,_10]
         """.trimIndent())
@@ -271,14 +276,15 @@ class TExec {
     fun d07_func_fg () {
         val out = all("""
             var f:({}->{}->  _int->_int)
-            set f = func {}->{}-> _int->_int { return arg }
+            set f = func {}->{}-> _int->_int { set ret=arg return }
             var g:  ({}->{@_1}-> [({}->{}-> _int->_int), _int] -> _int)
             set g = func ({}->{@_1}-> [({}->{}-> _int->_int), _int]-> _int) {
                var fx: ({}->{}-> _int->_int)
                set fx = arg.1
                var v: _int
                set v = call fx arg.2
-               return v
+               set ret = v
+               return
             }
             --var n: _int = _10
             output std call g {@local} [f,_10:_int]
@@ -289,7 +295,7 @@ class TExec {
     fun d08_func_unit () {
         val out = all("""
             var f: ({}->{}->  ()->() )
-            set f = func {}->{}-> ()->() { var x:() ; set x = arg ; return arg}
+            set f = func {}->{}-> ()->() { var x:() ; set x = arg ; set ret=arg ; return }
             var x:() ; set x = call f ()
             output std x
         """.trimIndent())
@@ -299,7 +305,7 @@ class TExec {
     fun d09_func_unit () {
         val out = all("""
             var f: ({}->{}-> ()->())
-            set f = func {}->{}-> ()->() { var x:() ; set x = arg ; return arg}
+            set f = func {}->{}-> ()->() { var x:() ; set x = arg ; set ret=arg ; return }
             output std call f ()
         """.trimIndent())
         assert(out == "()\n") { out }
@@ -516,7 +522,7 @@ class TExec {
     fun i03_ptr_func () {
         val out = all("""
             var f: ({}->{@_1}-> /_int@_1->_int)
-            set f = func{}-> {@_1}->/_int@_1->_int { return arg\ }
+            set f = func{}-> {@_1}->/_int@_1->_int { set ret = arg\ }
             var g: ({}->{@_1}-> /_int@_1->_int)
             set g = f
             var x: _int
@@ -560,7 +566,7 @@ class TExec {
         val out = all("""
             var f : ({}->{@_1}-> /_int@_1 -> /_int@_1)
             set f = func {}->{@_1}-> /_int@_1 -> /_int@_1 {
-                return arg
+                set ret = arg
             }
             var v: _int
             set v = _10
@@ -577,7 +583,7 @@ class TExec {
             set v = _10
             var f : ({}->{@_1}-> () -> /_int@_1)
             set f = func {}->{@_1}-> () -> /_int@_1 {
-                return /v
+                set ret = /v
             }
             var p: /_int @local
             set p = call f {@local} ()
@@ -591,10 +597,11 @@ class TExec {
             var f : {}->{@_1}-> () -> /_int@_1
             set f = func {}->{@_1}-> () -> /_int@_1 {
                 var v: _int; set v = _10
-                return /v   -- err
+                set ret = /v   -- err
             }
+            output std ()
         """.trimIndent())
-        assert(out == "(ln 4, col 5): invalid return : type mismatch") { out }
+        assert(out == "(ln 4, col 13): invalid return : type mismatch") { out }
     }
     @Test
     fun i10_ptr_func_err () {
@@ -603,10 +610,11 @@ class TExec {
             set f = func {}->{@_1}-> /_int@_1 -> /_int@_1 {
                 var ptr: /_int
                 set ptr = arg
-                return ptr  -- err
+                set ret = ptr  -- err
             }
+            output std ()
         """.trimIndent())
-        assert(out == "(ln 5, col 5): invalid return : type mismatch") { out }
+        assert(out == "(ln 5, col 13): invalid return : type mismatch") { out }
     }
     @Test
     fun i11_ptr_func_ok () {
@@ -615,7 +623,7 @@ class TExec {
             set f = func {}->{@_1}-> /_int@_1 -> /_int@_1 {
                 var ptr: /_int@_1
                 set ptr = arg
-                return ptr
+                set ret = ptr
             }
             var v: _int
             set v = _10
@@ -750,8 +758,9 @@ class TExec {
             var v: _int
             set v = _10
             var f : ({}->{@_1}-> /_int@_1 -> /_int@_1)
-            set f = func ({}->{@_1}-> /_int@_1 -> /_int@_1) {
-                return /v
+            set f = func ({}->{@_1}-> /_int@_1 -> /_int@_1) {            
+                set ret = /v
+                return
             }
             {
                 var p: /_int @local
@@ -766,7 +775,7 @@ class TExec {
         val out = all("""
             var f: (({}->{@_1}-> /_int@_1 -> /_int@_1))
             set f = func ({}->{@_1}-> /_int@_1 -> /_int@_1) {
-                return arg
+                set ret = arg
             }
             var v: _int
             set v = _10
@@ -1439,7 +1448,7 @@ class TExec {
         val out = all("""
             var f : ({} ->{@a_1}->/()@a_1 -> /()@a_1)
             set f = func {} ->{@a_1}->/()@a_1 -> /()@a_1 {
-                return arg
+                set ret = arg
             }
             output std ()
         """.trimIndent()
@@ -1451,7 +1460,7 @@ class TExec {
         val out = all("""
             var f :( {}->{@_1}-> /_int@_1 -> /()@_1)
             set f = func {}->{@_1}-> /_int@_1 -> /()@_1 {
-                return arg
+                set ret = arg
             }
             var x: _int
             call f {@local} /x
@@ -1465,11 +1474,11 @@ class TExec {
         val out = all("""
             var f : ({}->{@_1}-> /_int@_1 -> /()@_1)
             set f = func {}->{@_1}-> /_int@_1 -> /()@_1 {
-                return arg
+                set ret = arg
             }
             var g : ({}->{@_1}-> /_int@_1 -> /()@_1)
             set g = func {}->{@_1}-> /_int@_1 -> /()@_1 {
-                return call f {@_1} arg: @_1
+                set ret = call f {@_1} arg: @_1
             }
             var x: _int
             var px: /_int@local
@@ -1485,11 +1494,11 @@ class TExec {
             """
             var f: ( {}->{}-> () -> () )
             set f = func {}->{}-> () -> () {
-                return arg
+                set ret = arg
             }
             var g: ({}->{@_1}-> [({}->{}-> ()->()), ()] -> ())
             set g = func {}->{@_1}-> [({}->{}-> ()->()), ()] -> () {
-                return call arg.1 arg.2
+                set ret = call arg.1 arg.2
             }
             output std call g {@local} [f,()]
         """.trimIndent()
@@ -1502,11 +1511,11 @@ class TExec {
             """
             var f: ({} ->{@_1}->/()@_1 -> /()@_1)
             set f = func {}->{@_1}-> /()@_1 -> /()@_1 {
-                return arg
+                set ret = arg
             }
             var g: ({}->{@_1}-> [ ({}->{@_1}-> /()@_1->/()@_1), /()@_1] -> /()@_1)
             set g = func {} ->{@_1}->[({}->{@_1}-> /()@_1->/()@_1), /()@_1] -> /()@_1 {
-                return call arg.1 {@_1} arg.2: @_1
+                set ret = call arg.1 {@_1} arg.2: @_1
             }
             var x: ()
             output std call g {@local} [f,/_x]: @local
@@ -1524,7 +1533,7 @@ class TExec {
                 set f = func {}->{@b_1}-> () -> () {
                     output std ()
                 }
-               return f
+               set ret = f
             }
             var f: ({}->{@a_1}->() -> ())
             set f = call g {@local} ()
@@ -1545,7 +1554,7 @@ class TExec {
                 set f = func [x] -> {@_1} ->{@b_1}->() -> () {
                     output std x
                 }
-               return f
+               set ret = f
             }
             var f: {@local} -> {@b_1} -> () -> ()
             set f = call g {@local} ()
@@ -1566,7 +1575,7 @@ class TExec {
                 set f = func {}->{@a_1}-> () -> () {
                     output std x    -- f uses x in @local
                 }
-               return f             -- cannot return f which uses x in @local
+               set ret = f             -- cannot return f which uses x in @local
             }
             var f:/( {}->{@_1}-> () -> () )
             set f = call g\ {@local} ()
@@ -1583,8 +1592,8 @@ class TExec {
             set cnst = func {}->{@_1}-> /_int@_1 -> ({@_1}->{}-> () -> /_int@_1) {
                 var x: /_int@_1
                 set x = arg
-                return func [x]->{@_1}->{}-> () -> /_int@_1 {
-                    return x
+                set ret = func [x]->{@_1}->{}-> () -> /_int@_1 {
+                    set ret = x
                 }
             }
             { @aaa
@@ -1608,8 +1617,8 @@ class TExec {
             set cnst = func {}->{@_1}-> /_int@_1 -> ({@_1}->{}-> () -> /_int@_1) {
                 var x: /_int@_1
                 set x = arg
-                return func [x]-> {@_1}->{}-> () -> /_int@_1 {
-                    return x
+                set ret = func [x]-> {@_1}->{}-> () -> /_int@_1 {
+                    set ret = x
                 }
             }
             var five: _int
@@ -1631,7 +1640,7 @@ class TExec {
             set f = func {}->{}-> ({}->{}->()->()) -> ({@global}->{}->()->()) {
                 var ff: ({}->{}->()->())
                 set ff = arg
-                return func [ff]-> ({@global}->{}->()->()) {
+                set ret = func [ff]-> ({@global}->{}->()->()) {
                     call ff ()
                 }
             }
@@ -1655,9 +1664,9 @@ class TExec {
         var inv : ({}->{}-> <(),()> -> <(),()>)
         set inv = func ({}->{}-> <(),()> -> <(),()>) {
             if arg?1 {
-                return <.2>:<(),()>
+                set ret = <.2>:<(),()>
             } else {
-                return <.1>:<(),()>
+                set ret = <.1>:<(),()>
             }
         }
         var a: <(),()>
@@ -1713,10 +1722,10 @@ class TExec {
         var f: ({}->{}-> ()->())
         set f = func {}->{}-> ()->() {
             if _(i == 10) {
-                return
+                
             } else {
                 set i = _(i + 1)
-                return call f ()
+                set ret = call f ()
             }
         }
         call f ()
@@ -1791,13 +1800,13 @@ class TExec {
             set x2\ = new <.1 <.0>: /</^ @local> @local>:</^ @local>
             var f: ({}->{@_1}-> //</^@_1>@_1@_1->_int)
             set f = func {}->{@_1}-> //</^@_1>@_1@_1->_int {
-                return arg\\?1
+                set ret = arg\\?1
             }
             var z3: _int
             set z3 = call f {@local} x2
-            var ret: _int
-            set ret = _(z1 + z2 + z3)
-            output std ret
+            var xxx: _int
+            set xxx = _(z1 + z2 + z3)
+            output std xxx
         """.trimIndent())
         assert(out == "2\n") { out }
     }
@@ -1847,7 +1856,7 @@ class TExec {
             set f = func {}->{@_1}-> ()-><(),_int,/<[_int,/^@_1]>@_1> {
                 var str: /<[_int,/^@_1]> @_1
                 set str = <.0>: /<[_int,/^@_1]> @_1
-                return <.3 str>:<(),_int,/<[_int,/^@_1]>@_1>
+                set ret = <.3 str>:<(),_int,/<[_int,/^@_1]>@_1>
             }
             var x: <(),_int,/<[_int,/^@local]>@local>
             set x = call f {@local} ()

@@ -56,12 +56,16 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
             val ok = if (isproto) { // comparing func prototypes does not depend on scope calculation
                 (this.scope.lbl == sub.scope.lbl) && (this.scope.num == sub.scope.num)
             } else {
-                val dthis = this.scope()
-                val dsub  = sub.scope()
-                // (dthis.rel==dsub.rel):     abs vs abs || rel vs rel // (no @aaa vs @1)
-                // (dthis.level==dsub.level): unless @aaa=@1 are in the same function (then always @1<=@aaa)
-                // (dsub.depth == 0):         globals as source are always ok
-                ((dthis.rel==dsub.rel || dthis.lvl==dsub.lvl || dsub.depth==0) && dthis.depth>=dsub.depth)
+                val dst = this.scope()
+                val src  = sub.scope()
+                // (dthis.rel==dsub.rel): abs vs abs || rel vs rel // (no @aaa vs @1)
+                // (dthis.level==dsub.level && dthis.rel==null): unless @aaa=@1 are in the same function (then always @1<=@aaa)
+                when {
+                    (src.depth == 0) -> true                          // global as source is always ok
+                    (dst.arg == src.arg) -> (dst.depth >= src.depth)  // same abs/rel -> just checks depth
+                    else -> (dst.depth >= src.depth) && (dst.lvl == src.lvl && dst.arg == null)
+                        // diff abs/rel -> checks depth, func level, and destiny must not be arg
+                }
             }
             ok && this.pln.isSupOf_(sub.pln,isproto,ups1,ups2)
         }

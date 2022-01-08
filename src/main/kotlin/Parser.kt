@@ -218,36 +218,8 @@ fun parser_expr (all: All): Expr {
             all.assert_tk(all.tk0, tp is Type.Func) {
                 "expected function type"
             }
-            val tpf = tp as Type.Func
-
             val block = parser_block(all)
-            val lin = block.tk.lin
-            val col = block.tk.col
-
-            val xblock = Stmt.Block(
-                block.tk_, null,
-                Stmt.Seq(
-                    block.tk,
-                    Stmt.Var(Tk.Str(TK.XVAR, lin, col, "_ret_"), tpf.out.lincol(lin, col)),
-                    Stmt.Block(
-                        block.tk_, null,
-                        Stmt.Seq(
-                            block.tk,
-                            Stmt.Var(Tk.Str(TK.XVAR, lin, col, "arg"), tpf.inp.lincol(lin, col)),
-                            Stmt.Seq(
-                                block.tk,
-                                Stmt.Set(
-                                    Tk.Chr(TK.XVAR, lin, col, '='),
-                                    Expr.Var(Tk.Str(TK.XVAR, lin, col, "arg")),
-                                    Expr.Nat(Tk.Nat(TK.XNAT, lin, col, null,"_arg_"), null)
-                                ),
-                                block
-                            )
-                        )
-                    )
-                )
-            )
-            Expr.Func(tk0, ups, tp, xblock)
+            Expr.Func(tk0, ups, tp as Type.Func, block)
         }
         else -> {
             all.err_expected("expression")
@@ -375,25 +347,7 @@ fun parser_stmt (all: All): Stmt {
             val false_ = parser_block(all)
             Stmt.If(tk0, tst, true_, false_)
         }
-        all.accept(TK.RETURN) -> {
-            val tk0 = all.tk0 as Tk.Key
-            val e = try {
-                parser_expr(all)
-            } catch (e: Throwable) {
-                assert(!all.consumed(tk0)) {
-                    e.message!!
-                }
-                Expr.Unit(Tk.Sym(TK.UNIT,all.tk1.lin,all.tk1.col,"()"))
-            }
-            Stmt.Seq (tk0,
-                Stmt.Set (
-                    Tk.Chr(TK.CHAR,tk0.lin,tk0.col,'='),
-                    Expr.Var(Tk.Str(TK.XVAR,tk0.lin,tk0.col,"_ret_")),
-                    e
-                ),
-                Stmt.Ret(tk0)
-            )
-        }
+        all.accept(TK.RETURN) -> Stmt.Ret(all.tk0 as Tk.Key)
         all.accept(TK.LOOP) -> {
             val tk0 = all.tk0 as Tk.Key
             val block = parser_block(all)

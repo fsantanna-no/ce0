@@ -1,29 +1,24 @@
 fun check_02_after_tps (s: Stmt) {
     val funcs = mutableSetOf<Expr.Func>()   // funcs with checked [@] closure
     fun fe (e: Expr) {
-        val tp = AUX.tps[e]
         when (e) {
             is Expr.Var -> {    // check closures
-                if (e.tk_.str=="arg" || e.tk_.str=="_ret_") {
-                    // ok
-                } else {
-                    val (var_fdepth,var_bdepth) = e.env(e.tk_.str)!!.ups_tolist().let {
-                        Pair (
-                            it.filter { it is Expr.Func }.count(),
-                            it.filter { it is Stmt.Block }.count()
-                        )
+                val (var_fdepth,var_bdepth) = e.env(e.tk_.str)!!.ups_tolist().let {
+                    Pair (
+                        it.filter { it is Expr.Func }.count(),
+                        it.filter { it is Stmt.Block }.count()
+                    )
+                }
+                val exp_fdepth = e.ups_tolist().filter { it is Expr.Func }.count()
+                if (var_bdepth>0 && var_fdepth<exp_fdepth) {
+                    // access is inside function, declaration is outside
+                    val var_scope = e.env(e.tk_.str)!!.scope()
+                    val func = e.ups_first { it is Expr.Func } as Expr.Func
+                    val clo = func.type.clo?.scope(func.type)?.depth ?: 0
+                    All_assert_tk(e.tk, clo>=var_scope.depth && func.ups.any { it.str==e.tk_.str }) {
+                        "invalid access to \"${e.tk_.str}\" : invalid closure declaration (ln ${func.tk.lin})"
                     }
-                    val exp_fdepth = e.ups_tolist().filter { it is Expr.Func }.count()
-                    if (var_bdepth>0 && var_fdepth<exp_fdepth) {
-                        // access is inside function, declaration is outside
-                        val var_scope = e.env(e.tk_.str)!!.type!!.scope()
-                        val func = e.ups_first { it is Expr.Func } as Expr.Func
-                        val clo = func.type.clo?.scope(func.type)?.depth ?: 0
-                        All_assert_tk(e.tk, clo>=var_scope.depth && func.ups.any { it.str==e.tk_.str }) {
-                            "invalid access to \"${e.tk_.str}\" : invalid closure declaration (ln ${func.tk.lin})"
-                        }
-                        funcs.add(func)
-                    }
+                    funcs.add(func)
                 }
             }
             is Expr.Func -> {
@@ -161,7 +156,7 @@ fun check_02_after_tps (s: Stmt) {
                 val src = AUX.tps[s.src]!!
                 //println(">>> SET") ; println(s.dst) ; println(s.src) ; println(dst.tostr()) ; println(src.tostr())
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
-                    val str = if (s.dst is Expr.Var && s.dst.tk_.str == "_ret_") "return" else "assignment"
+                    val str = if (s.dst is Expr.Var && s.dst.tk_.str == "ret") "return" else "assignment"
                     "invalid $str : type mismatch"
                 }
                 if (s.dst is Expr.Var) {

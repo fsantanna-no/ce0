@@ -24,7 +24,7 @@ fun Any.ups_first (f: (Any)->Boolean): Any? {
     }
 }
 
-fun Any.env_first (f: (Stmt)->Boolean): Stmt? {
+fun Any.env_first (f: (Any)->Boolean): Any? {
     fun aux (env: Env?): Stmt? {
         return when {
             (env == null) -> null
@@ -35,12 +35,16 @@ fun Any.env_first (f: (Stmt)->Boolean): Stmt? {
     return aux (AUX.env[this])
 }
 
-fun Any.env (id: String): Stmt.Var? {
-    return this.env_first { it is Stmt.Var && it.tk_.str==id } as Stmt.Var?
+fun Any.env (id: String): Type? {
+    return when (id) {
+        "arg" -> this.ups_first { it is Expr.Func }.let { it as Expr.Func? }.let { it?.type?.inp }
+        "ret" -> this.ups_first { it is Expr.Func }.let { it as Expr.Func? }.let { it?.type?.out }
+        else  -> this.env_first { it is Stmt.Var && it.tk_.str==id }.let { it as Stmt.Var? }.let { it?.type }
+    }
 }
 
-fun Expr.Var.env (): Stmt.Var? {
-    return this.env_first { it is Stmt.Var && it.tk_.str==this.tk_.str } as Stmt.Var?
+fun Expr.Var.env (): Type? {
+    return (this as Any).env(this.tk_.str)
 }
 
 //private

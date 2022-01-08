@@ -653,9 +653,7 @@ class TParser {
         assert (
             (s is Stmt.Set) && ((s.dst as Expr.Var).tk_.str=="f") &&
             s.src.let {
-                (it is Expr.Func) && (it.type.inp is Type.Unit) && it.block.body.let {
-                    it is Stmt.Seq && it.s1 is Stmt.Var && it.s2 is Stmt.Block
-                }
+                (it is Expr.Func) && (it.type.inp is Type.Unit) && it.block.body is Stmt.Ret
             }
         )
     }
@@ -664,11 +662,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("return"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert (
-            s is Stmt.Seq && s.s1 is Stmt.Set && s.s2.let {
-                it is Stmt.Ret //&& it.e.e is Expr.Unit
-            }
-        )
+        assert(s is Stmt.Ret)
     }
     @Test
     fun c15_parser_func () {

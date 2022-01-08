@@ -1,4 +1,4 @@
-data class Scope (val lvl: Int, val rel: String?, val depth: Int)
+data class Scope (val lvl: Int, val arg: String?, val depth: Int)
 
 sealed class Type (val tk: Tk) {
     data class Unit  (val tk_: Tk.Sym): Type(tk_)

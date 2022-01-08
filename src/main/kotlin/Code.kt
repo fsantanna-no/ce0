@@ -314,7 +314,6 @@ fun code_fe (e: Expr) {
         is Expr.Func  -> CODE.removeFirst().let {
             val ID  = "_func_" + e.hashCode().absoluteValue
             val fid = if (e.ups.size == 0) ID else ID+"_f"
-            val inp = e.type.inp
             val ups = if (e.ups.size == 0) "" else "void** ups,"
             val pools = e.type.scps.let { if (it.size == 0) "" else
                 it.map { "Pool** ${it.toce()}" }.joinToString(",") + ","
@@ -332,8 +331,10 @@ fun code_fe (e: Expr) {
                 *$ID = (${e.type.toce()}) { $fid, ups }; 
             """.trimIndent()
             val pre = """
-                ${e.type.out.pos()} $fid ($ups $pools ${inp.pos()} _arg_) {
+                ${e.type.out.pos()} $fid ($ups $pools ${e.type.inp.pos()} arg) {
+                    ${e.type.out.pos()} ret;
                     ${it.stmt}
+                    return ret;
                 }
 
             """.trimIndent()
@@ -370,7 +371,7 @@ fun code_fs (s: Stmt) {
             Code(it.type, "while (1) { ${it.stmt} }", "")
         }
         is Stmt.Break -> Code("", "break;\n", "")
-        is Stmt.Ret   -> Code("", "return _ret_;\n", "")
+        is Stmt.Ret   -> Code("", "return ret;\n", "")
         is Stmt.SExpr -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
         is Stmt.Block -> CODE.removeFirst().let {
             val src = """
@@ -385,10 +386,7 @@ fun code_fs (s: Stmt) {
             Code(it.type, src, "")
         }
         is Stmt.Var -> {
-            val src = when {
-                s.tk_.str == "_arg_" -> "int ${s.tk_.str};\n"
-                else -> "${s.type!!.pos()} ${s.tk_.str};\n"
-            }
+            val src = "${s.type!!.pos()} ${s.tk_.str};\n"
             if (s.ups_first { it is Stmt.Block } == null) {
                 Code(src, "", "")   // globals go outside main
             } else {

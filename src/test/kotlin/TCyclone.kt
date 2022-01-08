@@ -31,7 +31,7 @@ class TCyclone {
             """
             var scpy:     ({}->{@a_1,@b_1}-> [/_char@a_1,/_char@b_1] -> /_char@a_1)
             set scpy = func {}->{@a_1,@b_1}-> [/_char@a_1,/_char@b_1] -> /_char@a_1 {
-                return arg.1
+                set ret = arg.1
             }
             var s1: /_char
             set s1 = call scpy {@local,@local} [s1,s1]
@@ -51,8 +51,8 @@ class TCyclone {
             """
             var sdup:     ({}->{@_1}-> /_char@_1 -> /_char@global)
             set sdup = func {}->{@_1}-> /_char@_1 -> /_char@global {
-                var ret: /_char @global -- new ...
-                return ret
+                var xxx: /_char @global -- new ...
+                set ret = xxx
             }
             var s1: /_char
             --set s1 = call sdup s1 @local

@@ -120,7 +120,7 @@ fun check_01_before_tps (s: Stmt) {
         when (s) {
             is Stmt.Var -> {
                 val dcl = s.env(s.tk_.str)
-                All_assert_tk(s.tk, dcl == null || dcl.tk_.str in arrayOf("arg", "_ret_")) {
+                All_assert_tk(s.tk, dcl == null) {
                     "invalid declaration : \"${s.tk_.str}\" is already declared (ln ${dcl!!.tk.lin})"
                 }
             }
