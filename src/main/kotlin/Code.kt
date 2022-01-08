@@ -8,7 +8,7 @@ fun Type.pos (): String {
         is Type.Rec -> TODO(this.toString())
         is Type.Unit  -> "int"
         is Type.Ptr   -> this.pln.pos() + "*"
-        is Type.Nat   -> this.tk_.str
+        is Type.Nat   -> this.tk_.src
         is Type.Tuple -> "struct " + this.toce()
         is Type.Union -> "struct " + this.toce()
         is Type.Func  -> this.toce() + "*"
@@ -195,7 +195,7 @@ fun code_fe (e: Expr) {
     val xp = AUX.tps[e]!!
     CODE.addFirst(when (e) {
         is Expr.Unit -> Code("", "", "0")
-        is Expr.Nat -> Code("", "", e.tk_.str)
+        is Expr.Nat -> Code("", "", e.tk_.src)
         is Expr.Var -> {
             val up = e.ups_first { it is Expr.Func && it.ups.any { it.str==e.tk_.str } }
             if (up != null) {
@@ -345,7 +345,7 @@ fun code_fe (e: Expr) {
 fun code_fs (s: Stmt) {
     CODE.addFirst(when (s) {
         is Stmt.Nop -> Code("","","")
-        is Stmt.Nat  -> Code("", s.tk_.str + "\n", "")
+        is Stmt.Nat  -> Code("", s.tk_.src + "\n", "")
         is Stmt.Seq  -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; Code(s1.type+s2.type, s1.stmt+s2.stmt, "") }
         is Stmt.Set  -> {
             val src = CODE.removeFirst()

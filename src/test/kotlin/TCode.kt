@@ -34,11 +34,11 @@ class TCode {
         AUX.env[e] = Env (
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"xxx"),
-                Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))
+                Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
             ),
             null
         )
-        AUX.tps[e] = Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))
+        AUX.tps[e] = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
         code_fe(e)
         CODE.removeFirst().let { assert(it.expr == "xxx") { it.expr } }
     }
@@ -48,11 +48,11 @@ class TCode {
         AUX.env[e] = Env (
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"xxx"),
-                Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))
+                Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
             ),
             null
         )
-        AUX.tps[e] = Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))
+        AUX.tps[e] = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
         code_fe(e)
         assert(CODE.removeFirst().expr == "xxx")
     }
@@ -82,12 +82,12 @@ class TCode {
         AUX.env[e.tup] = Env (
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"x"),
-                Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))))
+                Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))))
             ),
             null
         )
-        AUX.tps[e] = Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))
-        AUX.tps[e.tup] = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Str(TK.XNAT,1,1,"int"))))
+        AUX.tps[e] = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
+        AUX.tps[e.tup] = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))))
         e.visit(null, ::code_fe, null)
         CODE.removeFirst().expr.let {
             assert(it == "x._1")

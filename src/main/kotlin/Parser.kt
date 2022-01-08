@@ -1,7 +1,7 @@
 fun parser_type (all: All): Type {
     return when {
         all.accept(TK.UNIT) -> Type.Unit(all.tk0 as Tk.Sym)
-        all.accept(TK.XNAT) -> Type.Nat(all.tk0 as Tk.Str)
+        all.accept(TK.XNAT) -> Type.Nat(all.tk0 as Tk.Nat)
         all.accept(TK.XUP) -> Type.Rec(all.tk0 as Tk.Up)
         all.accept(TK.CHAR, '/') -> {
             val tk0 = all.tk0 as Tk.Chr
@@ -89,7 +89,7 @@ fun parser_expr (all: All): Expr {
         all.accept(TK.UNIT) -> Expr.Unit(all.tk0 as Tk.Sym)
         all.accept(TK.XVAR) -> Expr.Var(all.tk0 as Tk.Str)
         all.accept(TK.XNAT) -> {
-            val tk0 = all.tk0 as Tk.Str
+            val tk0 = all.tk0 as Tk.Nat
             val tp = if (!all.accept(TK.CHAR, ':')) null else {
                 parser_type(all)
             }
@@ -239,7 +239,7 @@ fun parser_expr (all: All): Expr {
                                 Stmt.Set(
                                     Tk.Chr(TK.XVAR, lin, col, '='),
                                     Expr.Var(Tk.Str(TK.XVAR, lin, col, "arg")),
-                                    Expr.Nat(Tk.Str(TK.XNAT, lin, col, "_arg_"), null)
+                                    Expr.Nat(Tk.Nat(TK.XNAT, lin, col, null,"_arg_"), null)
                                 ),
                                 block
                             )
@@ -290,7 +290,7 @@ fun parser_attr (all: All): Attr {
     fun one (): Attr {
         return when {
             all.accept(TK.XVAR) -> Attr.Var(all.tk0 as Tk.Str)
-            all.accept(TK.XNAT) -> Attr.Nat(all.tk0 as Tk.Str)
+            all.accept(TK.XNAT) -> Attr.Nat(all.tk0 as Tk.Nat)
             all.accept(TK.CHAR,'\\') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val e = parser_attr(all)
@@ -358,7 +358,7 @@ fun parser_stmt (all: All): Stmt {
         }
         all.accept(TK.NATIVE) -> {
             all.accept_err(TK.XNAT)
-            Stmt.Nat(all.tk0 as Tk.Str)
+            Stmt.Nat(all.tk0 as Tk.Nat)
         }
         all.check(TK.CALL) || all.check(TK.OUTPUT) || all.check(TK.INPUT) -> {
             val tk0 = all.tk1 as Tk.Key

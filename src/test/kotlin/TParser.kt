@@ -32,14 +32,14 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("_char"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Nat && tp.tk_.str=="char")
+        assert(tp is Type.Nat && tp.tk_.src=="char")
     }
     @Test
     fun a05_parser_type () {
         val all = All_new(PushbackReader(StringReader("[(),_char]"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Tuple && tp.vec.size==2 && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Nat && (tp.vec[1].tk as Tk.Str).str=="char")
+        assert(tp is Type.Tuple && tp.vec.size==2 && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Nat && (tp.vec[1].tk as Tk.Nat).src=="char")
     }
     @Test
     fun a05_parser_type_tuple_err () {
@@ -203,7 +203,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("_x"), 2))
         lexer(all)
         val e = parser_expr(all)
-        assert(e is Expr.Nat && e.tk_.str=="x" && e.type==null)
+        assert(e is Expr.Nat && e.tk_.src=="x" && e.type==null)
     }
     @Test
     fun b09_parser_expr_nat () {
@@ -211,7 +211,7 @@ class TParser {
         lexer(all)
         val e = parser_expr(all)
         println(e)
-        assert(e is Expr.Nat && e.tk_.str=="x" && e.type is Type.Nat)
+        assert(e is Expr.Nat && e.tk_.src=="x" && e.type is Type.Nat)
     }
 
     // PARENS, TUPLE
@@ -688,7 +688,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("native _{xxx}"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Nat && s.tk_.str=="xxx")
+        assert(s is Stmt.Nat && s.tk_.src=="xxx")
     }
     @Test
     fun c15_parser_nat () {

@@ -6,7 +6,7 @@ fun Type.tostr (): String {
     }
     return when (this) {
         is Type.Unit  -> "()"
-        is Type.Nat   -> "_" + this.tk_.str
+        is Type.Nat   -> this.tk_.toc()
         is Type.Rec   -> "^".repeat(this.tk_.up)
         is Type.Ptr   -> this.scope.let { "/" + this.pln.tostr() + it.tostr() }
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
@@ -99,7 +99,7 @@ fun Type.toce (): String {
         is Type.Rec   -> "Rec"
         is Type.Unit  -> "Unit"
         is Type.Ptr   -> "P_" + this.pln.toce() + "_P"
-        is Type.Nat   -> this.tk_.str.replace('*','_')
+        is Type.Nat   -> this.tk_.src.replace('*','_')
         is Type.Tuple -> "T_" + this.vec.map { it.toce() }.joinToString("_") + "_T"
         is Type.Union -> "U_" + this.vec.map { it.toce() }.joinToString("_") + "_U"
         is Type.Func  -> "F_" + (if (this.clo==null) "" else "CLO_") + this.inp.toce() + "_" + this.out.toce() + "_F"

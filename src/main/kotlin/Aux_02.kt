@@ -88,7 +88,7 @@ fun Stmt.aux_tps () {
                     } else {
                         tp.expand()[e.tk_.num - 1]
                     }
-                    is Expr.UPred -> Type.Nat(Tk.Str(TK.XNAT, e.tk.lin, e.tk.col, "int")).up(e)
+                    is Expr.UPred -> Type.Nat(Tk.Nat(TK.XNAT, e.tk.lin, e.tk.col, null, "int")).up(e)
                     else -> error("bug found")
                 }
             }

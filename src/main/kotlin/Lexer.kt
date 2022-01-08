@@ -32,9 +32,19 @@ sealed class Tk (
     data class Chr (val enu_: TK, val lin_: Int, val col_: Int, val chr: Char):   Tk(enu_,lin_,col_)
     data class Key (val enu_: TK, val lin_: Int, val col_: Int, val key: String): Tk(enu_,lin_,col_)
     data class Str (val enu_: TK, val lin_: Int, val col_: Int, val str: String): Tk(enu_,lin_,col_)
+    data class Nat (val enu_: TK, val lin_: Int, val col_: Int, val chr: Char?, val src: String): Tk(enu_,lin_,col_)
     data class Num (val enu_: TK, val lin_: Int, val col_: Int, val num: Int):    Tk(enu_,lin_,col_)
     data class Up  (val enu_: TK, val lin_: Int, val col_: Int, val up:  Int):    Tk(enu_,lin_,col_)
     data class Scope (val enu_: TK, val lin_: Int, val col_: Int, val lbl: String, val num: Int?):Tk(enu_,lin_,col_)
+}
+
+fun Tk.Nat.toc (): String {
+    val (op, cl) = when (this.chr) {
+        '{' -> Pair("{", "}")
+        '(' -> Pair("(", ")")
+        else -> Pair("", "")
+    }
+    return "_" + op + this.src + cl
 }
 
 fun TK.toErr (chr: Char?): String {
@@ -189,7 +199,7 @@ fun token (all: All) {
             if (close == null) {
                 all.unread(c2)
             }
-            all.tk1 = Tk.Str(TK.XNAT, LIN, COL, pay)
+            all.tk1 = Tk.Nat(TK.XNAT, LIN, COL, open, pay)
         }
         x1.isDigit() -> {
             var pay = ""

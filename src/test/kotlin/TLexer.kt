@@ -109,14 +109,14 @@ class TLexer {
     @Test
     fun b07_lexer_xnat () {
         val all = All_new(PushbackReader(StringReader("_char _Tp"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1 as Tk.Str).str=="char")
-        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1 as Tk.Str).str=="Tp")
+        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1 as Tk.Nat).src=="char")
+        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1 as Tk.Nat).src=="Tp")
     }
     @Test
     fun b08_lexer_xnat () {
         val all = All_new(PushbackReader(StringReader("_{(1)} _(2+2)"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1 as Tk.Str).str=="(1)")
-        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1 as Tk.Str).str=="2+2")
+        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1 as Tk.Nat).src=="(1)")
+        lexer(all) ; assert(all.tk1.enu==TK.XNAT && (all.tk1 as Tk.Nat).src=="2+2")
     }
 
     // XNUM
