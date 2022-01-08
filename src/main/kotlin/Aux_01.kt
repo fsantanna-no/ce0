@@ -35,15 +35,15 @@ fun Any.env_first (f: (Any)->Boolean): Any? {
     return aux (AUX.env[this])
 }
 
-fun Any.env (id: String): Type? {
+fun Any.env (id: String): Pair<Stmt.Var?,Type?> {   // TODO: Either
     return when (id) {
-        "arg" -> this.ups_first { it is Expr.Func }.let { it as Expr.Func? }.let { it?.type?.inp }
-        "ret" -> this.ups_first { it is Expr.Func }.let { it as Expr.Func? }.let { it?.type?.out }
-        else  -> this.env_first { it is Stmt.Var && it.tk_.str==id }.let { it as Stmt.Var? }.let { it?.type }
+        "arg" -> this.ups_first { it is Expr.Func }.let { it as Expr.Func? }.let { if (it == null) Pair(null,null) else Pair(null,it.type.inp) }
+        "ret" -> this.ups_first { it is Expr.Func }.let { it as Expr.Func? }.let { if (it == null) Pair(null,null) else Pair(null,it.type.inp) }
+        else  -> this.env_first { it is Stmt.Var && it.tk_.str==id }.let { it as Stmt.Var? }.let { if (it == null) Pair(null,null) else Pair(it,it.type) }
     }
 }
 
-fun Expr.Var.env (): Type? {
+fun Expr.Var.env (): Pair<Stmt.Var?,Type?> {   // TODO: Either
     return (this as Any).env(this.tk_.str)
 }
 

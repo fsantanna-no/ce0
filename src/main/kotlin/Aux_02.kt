@@ -92,7 +92,7 @@ fun Stmt.aux_tps () {
                     else -> error("bug found")
                 }
             }
-            is Expr.Var -> e.env()!!
+            is Expr.Var -> e.env().second!!
         }
     }
     this.visit(null, ::fe, null)
