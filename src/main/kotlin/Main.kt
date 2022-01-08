@@ -10,7 +10,7 @@ fun All_inp2c (inp: String): Pair<Boolean,String> {
         aux_clear()
         s.aux_upsenvs(null, null)
         check_01_before_tps(s)
-        Aux_tps(s)
+        s.aux_tps()
         check_02_after_tps(s)
         return Pair(true, s.code())
     } catch (e: Throwable) {

@@ -16,7 +16,7 @@ class TEnv {
             aux_clear()
             s.aux_upsenvs(null, null)
             check_01_before_tps(s)
-            Aux_tps(s)
+            s.aux_tps()
             check_02_after_tps(s)
             return "OK"
         } catch (e: Throwable) {

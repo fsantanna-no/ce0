@@ -1,4 +1,4 @@
-fun Aux_tps (s: Stmt) {
+fun Stmt.aux_tps () {
     fun fe (e: Expr) {
         AUX.tps[e] = when (e) {
             is Expr.Unit  -> Type.Unit(e.tk_).up(e)
@@ -95,5 +95,5 @@ fun Aux_tps (s: Stmt) {
             is Expr.Var -> e.env()!!.type
         }
     }
-    s.visit(null, ::fe, null)
+    this.visit(null, ::fe, null)
 }
