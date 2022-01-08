@@ -122,7 +122,7 @@ fun Stmt.aux_upsenvs (up: Any?, env: Env?): Env? {
             this.src.aux_upsenvs(this, env)
             env
         }
-        is Stmt.SExpr -> { this.expr.aux_upsenvs(this, env) ; env }
+        is Stmt.SExpr -> { this.e.aux_upsenvs(this, env) ; env }
         is Stmt.Seq -> {
             val e1 = this.s1.aux_upsenvs(this, env)
             val e2 = this.s2.aux_upsenvs(this, e1)

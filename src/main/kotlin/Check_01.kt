@@ -109,7 +109,7 @@ fun check_01_before_tps (s: Stmt) {
                 }
             }
 
-            is Expr.New  -> if (e.scope != null) e.scope.check(e)
+            is Expr.New  -> if (e.scp != null) e.scp.check(e)
             is Expr.Call -> {
                 e.sout.let { if (it != null) it.check(e) }
                 e.sinps.forEach { it.check(e) }

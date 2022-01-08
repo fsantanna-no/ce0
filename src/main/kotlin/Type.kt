@@ -6,7 +6,7 @@ fun Type.tostr (): String {
     }
     return when (this) {
         is Type.Unit  -> "()"
-        is Type.Nat   -> this.tk_.str
+        is Type.Nat   -> "_" + this.tk_.str
         is Type.Rec   -> "^".repeat(this.tk_.up)
         is Type.Ptr   -> this.scope.let { "/" + this.pln.tostr() + it.tostr() }
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"

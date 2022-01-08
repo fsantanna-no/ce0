@@ -1,4 +1,3 @@
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
@@ -8,7 +7,7 @@ import java.io.File
 class TCyclone {
 
     fun all(inp: String): String {
-        val (ok1, out1) = All_inp2c(inp)
+        val (ok1, out1) = ce2c(inp)
         if (!ok1) {
             return out1
         }

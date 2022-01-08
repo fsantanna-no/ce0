@@ -16,7 +16,7 @@ fun Stmt.aux_tps () {
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { AUX.tps[it]!! }.toTypedArray()).up(e)
             is Expr.UCons -> e.type
-            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scope!!, AUX.tps[e.arg]!!).up(e)
+            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp!!, AUX.tps[e.arg]!!).up(e)
             is Expr.Inp   -> e.type
             is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).up(e)
             is Expr.Call -> {

@@ -166,7 +166,7 @@ class TBook {
         println("or:    ${or.count    { it == '\n' }}")
         println("and:   ${and.count   { it == '\n' }}")
 
-        val (ok1, out1) = All_inp2c(inp)
+        val (ok1, out1) = ce2c(inp)
         if (!ok1) {
             return out1
         }

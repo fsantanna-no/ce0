@@ -274,7 +274,7 @@ fun code_fe (e: Expr) {
             }
         }
         is Expr.Inp -> {
-            Code("", "", "input_${e.lib.str}_${e.type.toce()}()")
+            Code("", "", "input_${e.lib.str}_${e.type!!.toce()}()")
         }
         is Expr.Out  -> {
             val arg = CODE.removeFirst()
@@ -387,7 +387,7 @@ fun code_fs (s: Stmt) {
         is Stmt.Var -> {
             val src = when {
                 s.tk_.str == "_arg_" -> "int ${s.tk_.str};\n"
-                else -> "${s.type.pos()} ${s.tk_.str};\n"
+                else -> "${s.type!!.pos()} ${s.tk_.str};\n"
             }
             if (s.ups_first { it is Stmt.Block } == null) {
                 Code(src, "", "")   // globals go outside main

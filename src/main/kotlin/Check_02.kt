@@ -16,7 +16,7 @@ fun check_02_after_tps (s: Stmt) {
                     val exp_fdepth = e.ups_tolist().filter { it is Expr.Func }.count()
                     if (var_bdepth>0 && var_fdepth<exp_fdepth) {
                         // access is inside function, declaration is outside
-                        val var_scope = e.env(e.tk_.str)!!.type.scope()
+                        val var_scope = e.env(e.tk_.str)!!.type!!.scope()
                         val func = e.ups_first { it is Expr.Func } as Expr.Func
                         val clo = func.type.clo?.scope(func.type)?.depth ?: 0
                         All_assert_tk(e.tk, clo>=var_scope.depth && func.ups.any { it.str==e.tk_.str }) {
