@@ -589,7 +589,7 @@ class TEnv {
         val out = inp2env("""
             { @a
                 var pa: /_int @local
-                var f: /({}->{}->()->())
+                var f: ({}->{}->()->())
                 set f = func {}->{}->()->() {
                     var pf: /_int @a
                     set pa = pf
@@ -3025,5 +3025,22 @@ class TEnv {
             var g: {} -> {@a_1} -> () -> ({@a_1}->{}->()->/</^@b_1>@b_1)
         """.trimIndent())
         assert(out == "(ln 1, col 31): invalid function type : missing pool argument") { out }
+    }
+    @Test
+    fun p32_test () {
+        val out = inp2env(
+            """
+            var fact: ({}->{}->() -> ())
+            set fact = func {}->{} ->() -> () { @f
+                var x: _int
+                set x = _1
+                var p2: /_int@local
+                set p2 = /x
+                var p1: /_int@f
+                set p1 = /x
+            }
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
     }
 }

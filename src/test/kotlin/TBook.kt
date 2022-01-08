@@ -98,7 +98,7 @@ val sub = """
         var y: $NumB1
         set y = arg.2
         if x\?0 {
-            set ret = x
+            set ret = <.0>: $NumR1
         } else {
             if y\?0 {
                 set ret = call clone {@r_1,@a_1} x

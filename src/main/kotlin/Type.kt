@@ -67,14 +67,14 @@ fun Type.Union.expand (): Array<Type> {
 
 fun Tk.Scope.scope (up: Any): Scope {
     val lvl = up.ups_tolist().filter { it is Expr.Func }.count() // level of function nesting
-    return when (this.lbl) {
+    return when (this.lbl) { // (... || it is Expr.Func) b/c of arg/ret, otherwise no block up to outer func
         "var"    -> Scope(lvl, null, up.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
         "global" -> Scope(lvl, null, 0)
         "local"  -> Scope(lvl, null, up.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
         else -> {
             val blk = up.ups_first { it is Stmt.Block && it.scope!=null && it.scope.lbl==this.lbl }
             if (blk != null) {
-                Scope(lvl, null, 1 + blk.ups_tolist().let { it.count { it is Stmt.Block } })
+                Scope(lvl, null, 1 + blk.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
             } else {    // false = relative to function block
                 Scope(lvl, this.lbl, (this.num ?: 0))
             }

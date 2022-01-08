@@ -75,7 +75,7 @@ fun check_01_before_tps (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.Var -> {
-                All_assert_tk(e.tk, e.env() != null) {
+                All_assert_tk(e.tk, e.env().let { it.first!=null || it.second!=null }) {
                     "undeclared variable \"${e.tk_.str}\""
                 }
             }
@@ -103,7 +103,7 @@ fun check_01_before_tps (s: Stmt) {
                     }
                 }
                 e.ups.forEach {
-                    All_assert_tk(e.tk, e.env(it.str) != null) {
+                    All_assert_tk(e.tk, e.env(it.str).first != null) {
                         "undeclared variable \"${it.str}\""
                     }
                 }

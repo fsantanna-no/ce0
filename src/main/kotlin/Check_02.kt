@@ -3,7 +3,7 @@ fun check_02_after_tps (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.Var -> {    // check closures
-                val (var_fdepth,var_bdepth) = e.env(e.tk_.str)!!.ups_tolist().let {
+                val (var_fdepth,var_bdepth) = e.env(e.tk_.str).let { it.first ?: it.second }!!.ups_tolist().let {
                     Pair (
                         it.filter { it is Expr.Func }.count(),
                         it.filter { it is Stmt.Block }.count()
