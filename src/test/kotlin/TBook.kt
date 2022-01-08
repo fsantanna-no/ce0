@@ -68,9 +68,9 @@ val mul = """
         if y\?0 {
             set ret = <.0>: $NumR1
         } else {
-            var z: ${NumR1}
-            set z = call mul {@r_1,@a_1,@b_1} [x, y\!1]: @r_1
-            set ret = call add {@r_1,@a_1,@b_1} [z,x]: @r_1
+            var z: $NumTL
+            set z = call mul {@r_1,@a_1,@b_1} [x, y\!1]
+            set ret = call add {@r_1,@a_1,@local} [x,z]: @r_1
         }
     }
 """.trimIndent()
@@ -422,7 +422,7 @@ class TBook {
             }
             var twice: ({}->{@r_1,@a_1}-> [({}->{@r_1,@a_1}-> $NumA1->$NumR1), $NumA1] -> $NumR1)
             set twice = func {}->{@r_1,@a_1}-> [({}->{@r_1,@a_1}-> $NumA1->$NumR1), $NumA1] -> $NumR1 {
-                set ret = call arg.1 {@r_1,@a_1} (call arg.1 {@r_1,@a_1} arg.2: @r_1): @r_1
+                set ret = call arg.1 {@r_1,@r_1} (call arg.1 {@r_1,@a_1} arg.2: @r_1): @r_1
             }
             output std call twice {@local,@local} [square,two]: @local
         """.trimIndent()
@@ -470,7 +470,7 @@ class TBook {
                 var f: ({}->{@r_1,@a_1}->$NumA1->$NumR1)
                 set f = arg
                 set ret = func [f] -> ({@global}->{@s_1,@b_1}->$NumB1->$NumS1) {
-                    set ret = call f {@s_1,@b_1} (call f {@s_1,@b_1} arg)
+                    set ret = call f {@s_1,@s_1} (call f {@s_1,@b_1} arg)
                 }
             }
             var quad: ({@global}->{@s_1,@b_1}->$NumB1->$NumS1)
