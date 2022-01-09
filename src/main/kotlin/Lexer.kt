@@ -38,7 +38,7 @@ sealed class Tk (
     data class Scope (val enu_: TK, val lin_: Int, val col_: Int, val lbl: String, val num: Int?):Tk(enu_,lin_,col_)
 }
 
-fun Tk.Nat.toc (): String {
+fun Tk.Nat.toce (): String {
     val (op, cl) = when (this.chr) {
         '{' -> Pair("{", "}")
         '(' -> Pair("(", ")")

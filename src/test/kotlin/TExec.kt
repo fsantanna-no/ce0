@@ -539,7 +539,8 @@ class TExec {
             var p1: /_int @local
             var p2: /_int @local
             {
-                var v: _int; set v = _10: _int
+                var v: _int
+                set v = _10: _int
                 set p1 = /v  -- no
             }
             {
@@ -548,7 +549,7 @@ class TExec {
             }
             output std p1\
         """.trimIndent())
-        assert(out == "(ln 5, col 12): invalid assignment : type mismatch") { out }
+        assert(out == "(ln 6, col 12): invalid assignment : type mismatch") { out }
     }
     @Test
     fun i06_ptr_block_err () {
