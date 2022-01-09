@@ -49,8 +49,10 @@ fun parser_type (all: All): Type {
                 Type.Union(tk0, isrec, vec)
             }
         }
-        all.accept(TK.CHAR, '{') -> {
-            val tk0 = all.tk0 as Tk.Chr
+        all.accept(TK.FUNC) -> {
+            val tk0 = all.tk0 as Tk.Key
+            val par = all.accept(TK.CHAR, '(')
+            all.accept_err(TK.CHAR, '{')
             val clo = if (all.accept(TK.XSCOPE)) {
                 all.tk0 as Tk.Scope
             } else {
@@ -75,6 +77,7 @@ fun parser_type (all: All): Type {
             val inp = parser_type(all)
             all.accept_err(TK.ARROW)
             val out = parser_type(all) // right associative
+            if (par) all.accept_err(TK.CHAR, ')')
             Type.Func(tk0, clo, scps.toTypedArray(), inp, out)
         }
         else -> {
@@ -197,8 +200,9 @@ fun parser_expr (all: All): Expr {
             val arg = parser_expr(all)
             return Expr.Out(tk, lib, arg)
         }
-        all.accept(TK.FUNC) -> {
-            val tk0 = all.tk0 as Tk.Key
+        all.check(TK.FUNC) -> {
+            val tk = all.tk1 as Tk.Key
+            val tp = parser_type(all) as Type.Func
 
             val ups: Array<Tk.Str> = if (!all.accept(TK.CHAR,'[')) emptyArray() else {
                 val ret = mutableListOf<Tk.Str>()
@@ -209,16 +213,11 @@ fun parser_expr (all: All): Expr {
                     }
                 }
                 all.accept_err(TK.CHAR,']')
-                all.accept_err(TK.ARROW)
                 ret.toTypedArray()
             }
 
-            val tp = parser_type(all)
-            all.assert_tk(all.tk0, tp is Type.Func) {
-                "expected function type"
-            }
             val block = parser_block(all)
-            Expr.Func(tk0, ups, tp as Type.Func, block)
+            Expr.Func(tk, ups, tp, block)
         }
         else -> {
             all.err_expected("expression")
