@@ -37,8 +37,8 @@ fun Any.env_first (f: (Any)->Boolean): Any? {
 
 fun Any.env (id: String): Pair<Stmt.Var?,Type?> {   // TODO: Either
     return when (id) {
-        "arg" -> this.ups_first { it is Expr.Func }.let { it as Expr.Func? }.let { if (it == null) Pair(null,null) else Pair(null,it.type.inp) }
-        "ret" -> this.ups_first { it is Expr.Func }.let { it as Expr.Func? }.let { if (it == null) Pair(null,null) else Pair(null,it.type.out) }
+        "arg" -> this.ups_first { it is Expr.Func }.let { it as Expr.Func? }.let { if (it == null) Pair(null,null) else Pair(null,it.type_.inp) }
+        "ret" -> this.ups_first { it is Expr.Func }.let { it as Expr.Func? }.let { if (it == null) Pair(null,null) else Pair(null,it.type_.out) }
         else  -> this.env_first { it is Stmt.Var && it.tk_.str==id }.let { it as Stmt.Var? }.let { if (it == null) Pair(null,null) else Pair(it,it.type) }
     }
 }
@@ -72,7 +72,6 @@ fun env_add (v: Any, env: Env?) {
 fun aux_clear () {
     AUX.ups.clear()
     AUX.env.clear()
-    AUX.tps.clear()
 }
 
 //private
@@ -106,7 +105,7 @@ fun Expr.aux_upsenvs (up: Any, env: Env?) {
             this.arg.aux_upsenvs(this, env)
         }
         is Expr.Func  -> {
-            this.type.aux_upsenvs(this)
+            this.type_.aux_upsenvs(this)
             this.block.aux_upsenvs(this, env)
         }
     }
@@ -118,7 +117,7 @@ fun Stmt.aux_upsenvs (up: Any?, env: Env?): Env? {
     return when (this) {
         is Stmt.Nop, is Stmt.Nat, is Stmt.Ret, is Stmt.Break -> env
         is Stmt.Var -> {
-            if (this.type != null) this.type.aux_upsenvs(this)
+            this.type?.aux_upsenvs(this)
             Env(this,env)
         }
         is Stmt.Set -> {

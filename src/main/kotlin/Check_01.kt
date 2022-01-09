@@ -9,7 +9,7 @@ fun Tk.Scope.check (up: Any) {
             it is Stmt.Block && it.scope!=null && it.scope.lbl==this.lbl && it.scope.num==this.num
         } != null) -> true
         (up.ups_first {                                         // [@_1, ...] { @_1 }
-            it is Expr.Func && it.type.scps.any { it.lbl==this.lbl && it.num==this.num }
+            it is Expr.Func && it.type_.scps.any { it.lbl==this.lbl && it.num==this.num }
         } != null) -> true
         else -> false
     }
@@ -97,7 +97,7 @@ fun check_01_before_tps (s: Stmt) {
             is Expr.Func -> {
                 val funcs = e.ups_tolist().filter { it is Expr.Func } as List<Expr.Func>
                 for (f in funcs) {
-                    val err = f.type.scps.find { tk2 -> e.type.scps.any { tk1 -> tk1.lbl==tk2.lbl } }
+                    val err = f.type_.scps.find { tk2 -> e.type_.scps.any { tk1 -> tk1.lbl==tk2.lbl } }
                     All_assert_tk(e.tk, err==null) {
                         "invalid pool : \"@${err!!.lbl}\" is already declared (ln ${err!!.lin})"
                     }

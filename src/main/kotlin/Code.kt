@@ -192,7 +192,7 @@ fun Tk.Scope.toce (): String {
 }
 
 fun code_fe (e: Expr) {
-    val xp = AUX.tps[e]!!
+    val xp = e.type!!
     CODE.addFirst(when (e) {
         is Expr.Unit -> Code("", "", "0")
         is Expr.Nat -> Code("", "", e.tk_.src)
@@ -214,7 +214,7 @@ fun code_fe (e: Expr) {
         is Expr.TDisc -> CODE.removeFirst().let { Code(it.type, it.stmt, it.expr + "._" + e.tk_.num) }
         is Expr.UDisc -> CODE.removeFirst().let {
             val ee = it.expr
-            val uni = AUX.tps[e.uni]!!
+            val uni = e.uni.type!!
             val pre = if (e.tk_.num == 0) {
                 """
                 assert(&${it.expr} == NULL);
@@ -234,16 +234,16 @@ fun code_fe (e: Expr) {
             val pos = if (e.tk_.num == 0) {
                 "(&${it.expr} == NULL)"
             } else {
-                (if (AUX.tps[e.uni].let { it is Type.Union && it.isrec }) "(&${it.expr} != NULL) && " else "") +
+                (if (e.uni.type.let { it is Type.Union && it.isrec }) "(&${it.expr} != NULL) && " else "") +
                 "($ee.tag == ${e.tk_.num})"
             }
             Code(it.type, it.stmt, pos)
         }
         is Expr.New  -> CODE.removeFirst().let {
             val ID  = "__tmp_" + e.hashCode().absoluteValue
-            val ptr = AUX.tps[e] as Type.Ptr
+            val ptr = e.type as Type.Ptr
 
-            val up = e.ups_first { it is Expr.Func && (AUX.tps[it] as Type.Func).clo.let { it!=null && it.lbl==ptr.scope.lbl && it.num==ptr.scope.num } }
+            val up = e.ups_first { it is Expr.Func && (it.type as Type.Func).clo.let { it!=null && it.lbl==ptr.scope.lbl && it.num==ptr.scope.num } }
             val pool = if (up == null) ptr.scope.toce() else "((Pool**)ups[0])"
 
             val pre = """
@@ -279,7 +279,7 @@ fun code_fe (e: Expr) {
         is Expr.Out  -> {
             val arg = CODE.removeFirst()
             val call = if (e.lib.str == "std") {
-                AUX.tps[e.arg]!!.output("", arg.expr)
+                e.arg.type!!.output("", arg.expr)
             } else {
                 "output_${e.lib.str}(${arg.expr})"
             }
@@ -291,16 +291,16 @@ fun code_fe (e: Expr) {
             //val ff  = e.f as? Expr.Dnref
 
             val pools = e.sinps.let { if (it.size == 0) "" else (it.map { out ->
-                val up = e.ups_first { it is Expr.Func && (AUX.tps[it] as Type.Func).clo.let { it!=null && it.lbl==out.lbl && it.num==out.num } }
+                val up = e.ups_first { it is Expr.Func && (it.type as Type.Func).clo.let { it!=null && it.lbl==out.lbl && it.num==out.num } }
                 if (up == null) out.toce() else "((Pool**)ups[0])"
             }.joinToString(",") + ",") }
 
             val snd =
                 if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
                 //if (ff!=null && ff.ptr is Expr.Var && ff.ptr.tk_.str=="output_std") {
-                    AUX.tps[e.arg]!!.output("", arg.expr)
+                    e.arg.type!!.output("", arg.expr)
                 } else {
-                    val tpf = AUX.tps[e.f]
+                    val tpf = e.f.type
                     val xxx = if (tpf is Type.Nat && e.arg is Expr.Unit) "" else arg.expr
                     if (tpf is Type.Func && tpf.clo!=null) {
                         // only closures that escape (@a_1)
@@ -315,24 +315,24 @@ fun code_fe (e: Expr) {
             val ID  = "_func_" + e.hashCode().absoluteValue
             val fid = if (e.ups.size == 0) ID else ID+"_f"
             val ups = if (e.ups.size == 0) "" else "void** ups,"
-            val pools = e.type.scps.let { if (it.size == 0) "" else
+            val pools = e.type_.scps.let { if (it.size == 0) "" else
                 it.map { "Pool** ${it.toce()}" }.joinToString(",") + ","
             }
-            val pool = e.type.clo?.toce()
-            val clo = if (e.type.clo == null) "" else """
+            val pool = e.type_.clo?.toce()
+            val clo = if (e.type_.clo == null) "" else """
                 void** ups = malloc(${e.ups.size+1} * sizeof(void*));   // +1 pool
                 assert(ups!=NULL && "not enough memory");
                 pool_push($pool, ups);
                 ups[0] = $pool;
                 ${e.ups.mapIndexed { i,up -> "ups[${i+1}] = ${up.str};\n" }.joinToString("")}
-                ${e.type.pos()} $ID = malloc(sizeof(*$ID));
+                ${e.type_.pos()} $ID = malloc(sizeof(*$ID));
                 // closure needs to go into the pool b/c it has to be a pointer and go into other closures
                 pool_push($pool, $ID);
-                *$ID = (${e.type.toce()}) { $fid, ups }; 
+                *$ID = (${e.type_.toce()}) { $fid, ups }; 
             """.trimIndent()
             val pre = """
-                ${e.type.out.pos()} $fid ($ups $pools ${e.type.inp.pos()} arg) {
-                    ${e.type.out.pos()} ret;
+                ${e.type_.out.pos()} $fid ($ups $pools ${e.type_.inp.pos()} arg) {
+                    ${e.type_.out.pos()} ret;
                     ${it.stmt}
                     return ret;
                 }
@@ -425,7 +425,6 @@ fun Stmt.code (): String {
              */
         })
     //*/
-    //AUX.tps.forEach { println(it.first.first) }
 
     val code = CODE.removeFirst()
     assert(CODE.size == 0)

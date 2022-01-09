@@ -1,12 +1,11 @@
 fun Stmt.aux_tps () {
     fun fe (e: Expr) {
-        AUX.tps[e] = when (e) {
+        e.type = e.type ?: when (e) {
             is Expr.Unit  -> Type.Unit(e.tk_).up(e)
-            is Expr.Nat   -> e.type ?: Type.Nat(e.tk_).up(e)
-            is Expr.Upref -> AUX.tps[e.pln]!!.let {
+            is Expr.Upref -> e.pln.type!!.let {
                 Type.Ptr(e.tk_, Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col,"var",null), it).up(it)
             }
-            is Expr.Dnref -> AUX.tps[e.ptr].let {
+            is Expr.Dnref -> e.ptr.type.let {
                 if (it is Type.Nat) it else {
                     All_assert_tk(e.tk, it is Type.Ptr) {
                         "invalid operand to `\\´ : not a pointer"
@@ -14,13 +13,11 @@ fun Stmt.aux_tps () {
                     (it as Type.Ptr).pln
                 }
             }
-            is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { AUX.tps[it]!! }.toTypedArray()).up(e)
-            is Expr.UCons -> e.type
-            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp!!, AUX.tps[e.arg]!!).up(e)
-            is Expr.Inp   -> e.type
+            is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.type!! }.toTypedArray()).up(e)
+            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp!!, e.arg.type!!).up(e)
             is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).up(e)
             is Expr.Call -> {
-                AUX.tps[e.f].let {
+                e.f.type.let {
                     when (it) {
                         is Type.Nat -> it
                         is Type.Func -> {
@@ -53,8 +50,7 @@ fun Stmt.aux_tps () {
                     it
                 }
             }
-            is Expr.Func -> e.type
-            is Expr.TDisc -> AUX.tps[e.tup].let {
+            is Expr.TDisc -> e.tup.type.let {
                 All_assert_tk(e.tk, it is Type.Tuple) {
                     "invalid discriminator : type mismatch"
                 }
@@ -70,7 +66,7 @@ fun Stmt.aux_tps () {
                     is Expr.UDisc -> Pair(e.tk_,e.uni)
                     else -> error("impossible case")
                 }
-                val tp = AUX.tps[uni]!!
+                val tp = uni.type!!
 
                 All_assert_tk(e.tk, tp is Type.Union) {
                     "invalid discriminator : not an union"
@@ -93,6 +89,7 @@ fun Stmt.aux_tps () {
                 }
             }
             is Expr.Var -> e.env().second!!
+            else -> error("bug found")
         }
     }
     this.visit(null, ::fe, null)

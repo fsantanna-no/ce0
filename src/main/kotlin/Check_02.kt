@@ -14,7 +14,7 @@ fun check_02_after_tps (s: Stmt) {
                     // access is inside function, declaration is outside
                     val var_scope = e.env(e.tk_.str).second!!.scope()
                     val func = e.ups_first { it is Expr.Func } as Expr.Func
-                    val clo = func.type.clo?.scope(func.type)?.depth ?: 0
+                    val clo = func.type_.clo?.scope(func.type_)?.depth ?: 0
                     All_assert_tk(e.tk, clo>=var_scope.depth && func.ups.any { it.str==e.tk_.str }) {
                         "invalid access to \"${e.tk_.str}\" : invalid closure declaration (ln ${func.tk.lin})"
                     }
@@ -22,21 +22,21 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
             is Expr.Func -> {
-                All_assert_tk(e.tk, funcs.contains(e) || e.type.clo == null) {
+                All_assert_tk(e.tk, funcs.contains(e) || e.type_.clo == null) {
                     "invalid function : unexpected closure declaration"
                 }
-                All_assert_tk(e.tk, !funcs.contains(e) || e.type.clo != null) {
+                All_assert_tk(e.tk, !funcs.contains(e) || e.type_.clo != null) {
                     "invalid function : expected closure declaration"
                 }
             }
 
             is Expr.UCons -> {
-                val ok = when (e.type) {
+                val ok = when (e.type_) {
                     is Type.Ptr -> {
-                        (e.tk_.num == 0) && e.arg is Expr.Unit && (e.type.pln is Type.Rec || e.type.pln.isrec())
+                        (e.tk_.num == 0) && e.arg is Expr.Unit && (e.type_.pln is Type.Rec || e.type_.pln.isrec())
                     }
                     is Type.Union -> {
-                        (e.tk_.num > 0) && (e.type.vec.size >= e.tk_.num) && e.type.expand()[e.tk_.num - 1].isSupOf(AUX.tps[e.arg]!!)
+                        (e.tk_.num > 0) && (e.type_.vec.size >= e.tk_.num) && e.type_.expand()[e.tk_.num - 1].isSupOf(e.arg.type!!)
                     }
                     else -> error("bug found")
                 }
@@ -45,14 +45,14 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
             is Expr.New -> {
-                All_assert_tk(e.tk, AUX.tps[e.arg] is Type.Union && e.arg.tk_.num>0) {
+                All_assert_tk(e.tk, e.arg.type is Type.Union && e.arg.tk_.num>0) {
                     "invalid `new` : expected constructor" // TODO: remove?
                 }
             }
             is Expr.Call -> {
-                val func = AUX.tps[e.f]
-                val ret1 = AUX.tps[e]!!
-                val arg1 = AUX.tps[e.arg]!!
+                val func = e.f.type
+                val ret1 = e.type!!
+                val arg1 = e.arg.type!!
 
                 val (scps1,inp1,out1) = when (func) {
                     is Type.Func -> Triple(func.scps,func.inp,func.out)
@@ -147,13 +147,13 @@ fun check_02_after_tps (s: Stmt) {
     fun fs (s: Stmt) {
         when (s) {
             is Stmt.If -> {
-                All_assert_tk(s.tk, AUX.tps[s.tst] is Type.Nat) {
+                All_assert_tk(s.tk, s.tst.type is Type.Nat) {
                     "invalid condition : type mismatch"
                 }
             }
             is Stmt.Set -> {
-                val dst = AUX.tps[s.dst]!!
-                val src = AUX.tps[s.src]!!
+                val dst = s.dst.type!!
+                val src = s.src.type!!
                 //println(">>> SET") ; println(s.dst) ; println(s.src) ; println(dst.tostr()) ; println(src.tostr())
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
                     val str = if (s.dst is Expr.Var && s.dst.tk_.str == "ret") "return" else "assignment"

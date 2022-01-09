@@ -367,15 +367,8 @@ class TParser {
             parser_expr(all)
             //error("impossible case")
         } catch (e: Throwable) {
-            //assert(e.message == "(ln 1, col 9): expected union type") { e.message!! }
+            assert(e.message == "(ln 1, col 9): invalid type : expected union") { e.message!! }
         }
-    }
-    @Test
-    fun b15_parser_expr_cons () {
-        val all = All_new(PushbackReader(StringReader("<.0 ()>:()"), 2))
-        lexer(all)
-        val e = parser_expr(all)
-        assert(e is Expr.UCons && e.tk_.num==0 && e.arg is Expr.Unit && e.type is Type.Unit)
     }
     @Test
     fun b16_parser_expr_cons () {
@@ -673,7 +666,7 @@ class TParser {
         assert (
             (s is Stmt.Set) && ((s.dst as Expr.Var).tk_.str=="f") &&
             s.src.let {
-                (it is Expr.Func) && (it.type.inp is Type.Unit) && it.block.body is Stmt.Ret
+                (it is Expr.Func) && (it.type_.inp is Type.Unit) && it.block.body is Stmt.Ret
             }
         )
     }

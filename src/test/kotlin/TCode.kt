@@ -24,7 +24,7 @@ class TCode {
     @Test
     fun b01_expr_unit () {
         val e = Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
-        AUX.tps[e] = tp_unit
+        e.type = tp_unit
         code_fe(e)
         assert(CODE.removeFirst().expr == "0")
     }
@@ -38,7 +38,7 @@ class TCode {
             ),
             null
         )
-        AUX.tps[e] = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
+        e.type = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
         code_fe(e)
         CODE.removeFirst().let { assert(it.expr == "xxx") { it.expr } }
     }
@@ -52,7 +52,7 @@ class TCode {
             ),
             null
         )
-        AUX.tps[e] = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
+        e.type = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
         code_fe(e)
         assert(CODE.removeFirst().expr == "xxx")
     }
@@ -65,9 +65,9 @@ class TCode {
                 Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()")),
             )
         )
-        AUX.tps[e] = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray())
-        AUX.tps[e.arg[0]] = tp_unit
-        AUX.tps[e.arg[1]] = tp_unit
+        e.type = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray())
+        e.arg[0].type = tp_unit
+        e.arg[1].type = tp_unit
         e.visit(null, ::code_fe, null)
         CODE.removeFirst().expr.let {
             assert(it == "((struct T_Unit_Unit_T) { 0, 0 })")
@@ -86,8 +86,8 @@ class TCode {
             ),
             null
         )
-        AUX.tps[e] = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
-        AUX.tps[e.tup] = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))))
+        e.type = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
+        e.tup.type = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))))
         e.visit(null, ::code_fe, null)
         CODE.removeFirst().expr.let {
             assert(it == "x._1")

@@ -142,6 +142,7 @@ fun parser_expr (all: All): Expr {
             all.accept_err(TK.CHAR, '>')
             all.accept_err(TK.CHAR, ':')
             val tp = parser_type(all)
+            All_assert_tk(tp.tk, tp is Type.Union || (tp is Type.Ptr && tp.pln is Type.Union)) { "invalid type : expected union"}
             Expr.UCons(tk0, tp, cons)
         }
         all.accept(TK.NEW) -> {
@@ -191,7 +192,7 @@ fun parser_expr (all: All): Expr {
             val lib = (all.tk0 as Tk.Str)
             all.accept_err(TK.CHAR, ':')
             val tp = parser_type(all)
-            return Expr.Inp(tk, lib, tp)
+            return Expr.Inp(tk, tp, lib)
         }
         all.accept(TK.OUTPUT) -> {
             val tk = all.tk0 as Tk.Key
@@ -217,7 +218,7 @@ fun parser_expr (all: All): Expr {
             }
 
             val block = parser_block(all)
-            Expr.Func(tk, ups, tp, block)
+            Expr.Func(tk, tp, ups, block)
         }
         else -> {
             all.err_expected("expression")

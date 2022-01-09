@@ -52,7 +52,7 @@ fun Expr.visit_ (fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) 
         is Expr.UPred -> this.uni.visit_(fs,fe,ft)
         is Expr.Call  -> { this.f.visit_(fs,fe,ft) ; this.arg.visit_(fs,fe,ft) }
         is Expr.Out   -> this.arg.visit_(fs,fe,ft)
-        is Expr.Func  -> { this.type.visit_(ft) ; this.block.visit(fs,fe,ft) }
+        is Expr.Func  -> { this.type_.visit_(ft) ; this.block.visit(fs,fe,ft) }
     }
     if (fe != null) {
         fe(this)
