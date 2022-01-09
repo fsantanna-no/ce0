@@ -1,7 +1,6 @@
 fun Stmt.aux_tps () {
     fun fe (e: Expr) {
         e.type = e.type ?: when (e) {
-            is Expr.Unit  -> Type.Unit(e.tk_).up(e)
             is Expr.Upref -> e.pln.type!!.let {
                 Type.Ptr(e.tk_, Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col,"var",null), it).up(it)
             }

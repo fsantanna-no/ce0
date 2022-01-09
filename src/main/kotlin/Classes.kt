@@ -19,7 +19,7 @@ sealed class Attr (val tk: Tk) {
 }
 
 sealed class Expr (val tk: Tk, var type: Type?) {
-    data class Unit  (val tk_: Tk.Sym): Expr(tk_, null)
+    data class Unit  (val tk_: Tk.Sym): Expr(tk_, Type.Unit(tk_))
     data class Var   (val tk_: Tk.Str): Expr(tk_, null)
     data class Nat   (val tk_: Tk.Nat, val type_: Type): Expr(tk_, type_)
     data class TCons (val tk_: Tk.Chr, val arg: Array<Expr>): Expr(tk_, null)
