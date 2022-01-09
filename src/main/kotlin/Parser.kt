@@ -90,9 +90,8 @@ fun parser_expr (all: All): Expr {
         all.accept(TK.XVAR) -> Expr.Var(all.tk0 as Tk.Str)
         all.accept(TK.XNAT) -> {
             val tk0 = all.tk0 as Tk.Nat
-            val tp = if (!all.accept(TK.CHAR, ':')) null else {
-                parser_type(all)
-            }
+            all.accept_err(TK.CHAR, ':')
+            val tp = parser_type(all)
             Expr.Nat(tk0, tp)
         }
         all.accept(TK.CHAR, '/') -> {
@@ -262,7 +261,11 @@ fun parser_attr (all: All): Attr {
     fun one (): Attr {
         return when {
             all.accept(TK.XVAR) -> Attr.Var(all.tk0 as Tk.Str)
-            all.accept(TK.XNAT) -> Attr.Nat(all.tk0 as Tk.Nat)
+            all.accept(TK.XNAT) -> {
+                all.accept_err(TK.CHAR, ':')
+                val tp = parser_type(all)
+                Attr.Nat(all.tk0 as Tk.Nat, tp)
+            }
             all.accept(TK.CHAR,'\\') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val e = parser_attr(all)

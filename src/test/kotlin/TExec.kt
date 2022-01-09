@@ -49,7 +49,7 @@ class TExec {
     fun a05_int () {
         val out = all("""
             var x: _int
-            set x = _10
+            set x = _10: _int
             output std x
         """.trimIndent())
         assert(out == "10\n")
@@ -84,7 +84,7 @@ class TExec {
     fun a09_int_abs () {
         val out = all("""
             var x: _int
-            set x = call _abs _(-1)
+            set x = call _abs:_ _(-1): _int
             output std x
         """.trimIndent())
         assert(out == "1\n") { out }
@@ -93,8 +93,8 @@ class TExec {
     fun a10_int_set () {
         val out = all("""
             var x: _int
-            set x = _10
-            set x = _(-20)
+            set x = _10: _int
+            set x = _(-20): _int
             output std x
         """.trimIndent())
         assert(out == "-20\n") { out }
@@ -103,7 +103,7 @@ class TExec {
     fun a11_unk () {
         val out = all("""
             var x: _int
-            set x = _(-20)
+            set x = _(-20): _int
             output std x
         """.trimIndent())
         assert(out == "-20\n")
@@ -127,7 +127,7 @@ class TExec {
             var x: [(),()]
             set x = [(),()]
             var y: (); set y = x.1
-            call _output_std_Unit y
+            call _output_std_Unit:{}->{}->()->() y
         """.trimIndent())
         assert(out == "()\n")
     }
@@ -152,7 +152,7 @@ class TExec {
     @Test
     fun b04_tuple_pp () {
         val out = all("""
-            var n: _int ; set n = _1
+            var n: _int ; set n = _1: _int
             var x: [[_int,_int],[_int,_int]] ; set x = [[n,n],[n,n]]
             output std /x
         """.trimIndent())
@@ -167,25 +167,27 @@ class TExec {
             native _{
                 void f (void) { putchar('a'); }
             }
-            call _f ()
+            call _f:_ ()
         """.trimIndent())
         assert(out == "a") { out }
     }
     @Test
     fun c02_nat () {
         val out = all("""
-            var y: _(char*); set y = _("hello")
-            var n: _int; set n = _10
-            var x: [_int,_(char*)]; set x = [n,y]
-            call _puts x.2
+            var y: _(char*); set y = _("hello"): _(char*)
+            var n: _int
+            set n = _10: _int
+            var x: [_int,_(char*)]
+            set x = [n,y]
+            call _puts:_ x.2
         """.trimIndent())
-        assert(out == "hello\n")
+        assert(out == "hello\n") { out }
     }
     @Test
     fun c03_nat () {
         val out = all("""
-            var y: _(char*); set y = _("hello")
-            var n: _int; set n = _10
+            var y: _(char*); set y = _("hello"): _(char*)
+            var n: _int; set n = _10: _int
             var x: [_int,_(char*)]; set x = [n,y]
             output std /x
         """.trimIndent())
@@ -203,7 +205,7 @@ class TExec {
                 return
             }
             var x: _int
-            set x = call f _10
+            set x = call f _10: _int
             output std x
         """.trimIndent())
         assert(out == "10\n") { out }
@@ -223,7 +225,7 @@ class TExec {
     fun d03_fg () {
         val out = all("""
             var f: ({}->{}-> () -> ())
-            set f = func {}->{}-> ()->() { var x: _int; set x = _10 ; output std x }
+            set f = func {}->{}-> ()->() { var x: _int; set x = _10: _int ; output std x }
             var g: ({}->{}-> () -> ())
             set g = func {}->{}-> ()->() { call f () ; return }
             call g ()
@@ -235,11 +237,11 @@ class TExec {
         val out = all("""
         var f : ({}->{}-> _int -> _int)
         set f = func {}->{}-> _int->_int {
-           set arg = _(arg+1)
+           set arg = _(arg+1): _int
            set ret = arg
            return
         }
-        output std call f _1
+        output std call f _1: _int
         """.trimIndent())
         assert(out == "2\n") { out }
     }
@@ -250,7 +252,7 @@ class TExec {
         set f = func {}->{}-> _int->_int { set ret=arg ; return }
         var p: ({}->{}-> _int->_int)
         set p = f
-        output std call p _10
+        output std call p _10: _int
         """.trimIndent())
         assert(out == "10\n")
     }
@@ -268,7 +270,7 @@ class TExec {
                set ret = v
                return
             }
-            output std call g [f,_10]
+            output std call g [f,_10: _int]
         """.trimIndent())
         assert(out == "(ln 5, col 8): invalid declaration : \"f\" is already declared (ln 1)") { out }
     }
@@ -286,7 +288,7 @@ class TExec {
                set ret = v
                return
             }
-            --var n: _int = _10
+            --var n: _int = _10: _int
             output std call g {@local} [f,_10:_int]
         """.trimIndent())
         assert(out == "10\n") { out }
@@ -334,7 +336,7 @@ class TExec {
         val out = all("""
             var output_f: ({}->{}-> _int -> ())
             set output_f = func{}->{}-> _int -> () { output std arg }
-            output f _10
+            output f _10: _int
         """.trimIndent())
         assert(out == "10\n") { out }
     }
@@ -496,7 +498,7 @@ class TExec {
     fun i01_ptr () {
         val out = all("""
             var y: _int
-            set y = _10
+            set y = _10: _int
             var x: /_int
             set x = /y
             output std x\
@@ -508,11 +510,11 @@ class TExec {
         val out = all("""
         var f : ({}->{@_1}-> /_int@_1 -> ())
         set f = func {}->{@_1}-> /_int@_1 -> () {
-           set arg\ = _(*arg+1)
+           set arg\ = _(*arg+1): _int
            return
         }
         var x: _int
-        set x = _1
+        set x = _1: _int
         call f {@local} /x
         output std x
         """.trimIndent())
@@ -526,7 +528,7 @@ class TExec {
             var g: ({}->{@_1}-> /_int@_1->_int)
             set g = f
             var x: _int
-            set x = _10
+            set x = _10: _int
             output std call g {@local}(/x)
         """.trimIndent())
         assert(out == "10\n") { out }
@@ -537,11 +539,11 @@ class TExec {
             var p1: /_int @local
             var p2: /_int @local
             {
-                var v: _int; set v = _10
+                var v: _int; set v = _10: _int
                 set p1 = /v  -- no
             }
             {
-                var v: _int; set v = _20
+                var v: _int; set v = _20: _int
                 set p2 = /v
             }
             output std p1\
@@ -551,10 +553,10 @@ class TExec {
     @Test
     fun i06_ptr_block_err () {
         val out = all("""
-            var x: _int; set x = _10
+            var x: _int; set x = _10: _int
             var p: /_int
             {
-                var y: _int; set y = _10
+                var y: _int; set y = _10: _int
                 set p = /x
                 set p = /y  -- no
             }
@@ -569,7 +571,7 @@ class TExec {
                 set ret = arg
             }
             var v: _int
-            set v = _10
+            set v = _10: _int
             var p: /_int@local
             set p = call f{@local} /v
             output std p\
@@ -580,7 +582,7 @@ class TExec {
     fun i08_ptr_func_ok () {
         val out = all("""
             var v: _int
-            set v = _10
+            set v = _10: _int
             var f : ({}->{@_1}-> () -> /_int@_1)
             set f = func {}->{@_1}-> () -> /_int@_1 {
                 set ret = /v
@@ -596,7 +598,7 @@ class TExec {
         val out = all("""
             var f : {}->{@_1}-> () -> /_int@_1
             set f = func {}->{@_1}-> () -> /_int@_1 {
-                var v: _int; set v = _10
+                var v: _int; set v = _10: _int
                 set ret = /v   -- err
             }
             output std ()
@@ -626,7 +628,7 @@ class TExec {
                 set ret = ptr
             }
             var v: _int
-            set v = _10
+            set v = _10: _int
             var p: /_int@local
             set p = call f {@local} /v
             output std p\
@@ -637,7 +639,7 @@ class TExec {
     fun i12_ptr_ptr_ok () {
         val out = all("""
             var p: //_int @local @local
-            var z: _int; set z = _10
+            var z: _int; set z = _10: _int
             var y: /_int; set y = /z
             set p = /y
             output std p\\
@@ -651,7 +653,7 @@ class TExec {
             set v = [_10:_int,_20:_int]
             var p: /_int @local
             set p = /v.1
-            set p\ = _20
+            set p\ = _20: _int
             output std /v
         """.trimIndent())
         assert(out == "[20,20]\n") { out }
@@ -660,7 +662,7 @@ class TExec {
     fun i14_ptr_type_err () {
         val out = all("""
             var v: <_int>
-            set v = <.1 _10>: <_int>
+            set v = <.1 _10: _int>: <_int>
             var p: /_int @local
             set p = /v!1
             output std ()
@@ -673,7 +675,7 @@ class TExec {
         val out = all("""
             var v: [_int]; set v = [_10:_int]
             var p: /_int; set p = /v.1
-            set p\ = _20
+            set p\ = _20: _int
             output std /v
         """.trimIndent())
         assert(out == "[20]\n") { out }
@@ -681,9 +683,9 @@ class TExec {
     @Test
     fun i15_ptr_tup () {
         val out = all("""
-            var x: _int; set x = _10
+            var x: _int; set x = _10: _int
             var p: [_int,/_int @local]; set p = [_10:_int,/x]
-            var v: _int; set v = _20
+            var v: _int; set v = _20: _int
             set p.2 = /v
             output std p.2\
         """.trimIndent())
@@ -692,9 +694,9 @@ class TExec {
     @Test
     fun i16_ptr_tup () {
         val out = all("""
-            var x: _int; set x = _10
+            var x: _int; set x = _10: _int
             var p: [_int,/_int @local]; set p = [_10:_int,/x]
-            var v: _int; set v = _20
+            var v: _int; set v = _20: _int
             set p = [_10:_int,/v]
             output std p.2\
         """.trimIndent())
@@ -704,35 +706,35 @@ class TExec {
     fun i17_ptr_type () {
         val out = all("""
             var x: _int
-            set x = _10
+            set x = _10: _int
             var p: </_int>
             set p = <.1 /x>: </_int @local>
             var v: _int
-            set v = _20
+            set v = _20: _int
             set p!1 = /v
             output std p!1\
         """.trimIndent())
-        assert(out == "20\n")
+        assert(out == "20\n") { out }
     }
     @Test
     fun i18_ptr_type () {
         val out = all("""
             var x: _int
-            set x = _10
+            set x = _10: _int
             var p: </_int @local>
             set p = <.1 /x>: </_int>
             var v: _int
-            set v = _20
+            set v = _20: _int
             set p = <.1 /v>: </_int @local>
             output std p!1\
         """.trimIndent())
-        assert(out == "20\n")
+        assert(out == "20\n") { out }
     }
     @Test
     fun i19_ptr_tup () {
         val out = all("""
             var x1: [_int,/_int @local]
-            var v: _int; set v = _20
+            var v: _int; set v = _20: _int
             var x2: [_int,/_int]; set x2 = [_10:_int,/v]
             set x1 = x2
             output std x1.2\
@@ -744,7 +746,7 @@ class TExec {
         val out = all("""
             var x1: </_int @local>
             var v: _int
-            set v = _20
+            set v = _20: _int
             var x2: </_int @local>
             set x2 = <.1 /v>:</_int>
             set x1 = x2
@@ -756,7 +758,7 @@ class TExec {
     fun f10_ptr_func () {
         val out = all("""
             var v: _int
-            set v = _10
+            set v = _10: _int
             var f : ({}->{@_1}-> /_int@_1 -> /_int@_1)
             set f = func ({}->{@_1}-> /_int@_1 -> /_int@_1) {            
                 set ret = /v
@@ -778,7 +780,7 @@ class TExec {
                 set ret = arg
             }
             var v: _int
-            set v = _10
+            set v = _10: _int
             var p: /_int @local
             set p = call f {@local} /v: @local
             output std p\
@@ -789,7 +791,7 @@ class TExec {
     fun i20_ptr_uni_ok () {
         val out = all("""
             var uni: <_(char*),_int>
-                set uni = <.1 _("oi")>: <_(char*),_int>
+                set uni = <.1 _("oi"): _(char*)>: <_(char*),_int>
             var ptr: /_(char*)
                 set ptr = /uni!1
             call _puts ptr\
@@ -800,10 +802,10 @@ class TExec {
     fun i21_ptr_uni_err () {
         val out = all("""
             var uni: <_(char*),_int>
-                set uni = <.1 _("oi")>: <_(char*),_int>
+                set uni = <.1 _("oi"): _(char*)>: <_(char*),_int>
             var ptr: /_(char*) @local
                 set ptr = /uni!1
-            set uni = <.2 _65>
+            set uni = <.2 _65:_int>
             call _puts ptr\
         """.trimIndent())
         //assert(out == "(ln 5, col 9): invalid assignment of \"uni\" : borrowed in line 4")
@@ -856,7 +858,7 @@ class TExec {
     fun j02_list_new_err_src () {
         val out = all("""
             var l: /</^ @local> @local
-            set l = new _1 @local
+            set l = new _1: _int @local
             output std l
         """.trimIndent())
         assert(out == "(ln 2, col 9): invalid `new` : expected constructor") { out }
@@ -1219,7 +1221,7 @@ class TExec {
             var x: /</^ @local> @local
             set x = new <.1 <.0>: /</^ @local> @local>:</^ @local>: @local
             var y: /</^ @local> @local
-            if _1 {
+            if _1: _int {
                 set y = x
             } else {
                 set y = x
@@ -1235,10 +1237,10 @@ class TExec {
     fun k01_set_tuple () {
         val out = all("""
             var xy: [_int,_int]; set xy = [_10:_int,_10:_int]
-            set xy.1 = _20
+            set xy.1 = _20: _int
             var x: _int; set x = xy.1
             var y: _int; set y = xy.2
-            var v: _int; set v = _(x+y)
+            var v: _int; set v = _(x+y): _int
             output std v
         """.trimIndent())
         assert(out == "30\n") { out }
@@ -1273,7 +1275,7 @@ class TExec {
             var x: /< [<(),//^^ @local @local>,_int,/^ @local]> @local
             var z: /< [<(),//^^ @local @local>,_int,/^ @local]> @local
             set z = <.0>: /< [<(),//^^ @local @local>,_int,/^ @local]> @local
-            set x = new <.1 [z,_1,new <.1 [z,_2,z]>:< [<(),//^^ @local @local>,_int,/^ @local]>: @local]>:< [<(),//^^ @local @local>,_int,/^ @local]>: @local
+            set x = new <.1 [z,_1: _int,new <.1 [z,_2: _int,z]>:< [<(),//^^ @local @local>,_int,/^ @local]>: @local]>:< [<(),//^^ @local @local>,_int,/^ @local]>: @local
             set x!1.3!1.1 = <.1 /x>: <(),//< [<(),//^^ @local @local>,_int,/^ @local]> @local @local>
             set x!1.1 = <.1 /x!1.3>: <(),//< [<(),//^^ @local @local>,_int,/^ @local]> @local @local> -- err: address of field inside union
             output std x!1.3!1.2
@@ -1333,7 +1335,7 @@ class TExec {
     fun l04_ptr_null () {
         val out = all("""
             var n: _int
-            set n = _10
+            set n = _10: _int
             var x: <(),/_int @local>
             set x = <.2 /n>: <(),/_int @local>
             output std x!2\
@@ -1518,7 +1520,7 @@ class TExec {
                 set ret = call arg.1 {@_1} arg.2: @_1
             }
             var x: ()
-            output std call g {@local} [f,/_x]: @local
+            output std call g {@local} [f,/x]: @local
         """.trimIndent()
         )
         assert(out == "_\n") { out }
@@ -1598,7 +1600,7 @@ class TExec {
             }
             { @aaa
             var five: _int
-            set five = _5
+            set five = _5: _int
             var f: ({@local} -> {} -> () -> /_int@local)
             set f = call cnst {@local} /five
             var v: /_int@local
@@ -1622,7 +1624,7 @@ class TExec {
                 }
             }
             var five: _int
-            set five = _5
+            set five = _5: _int
             var f: ({@local} -> {} -> () -> /_int@local)
             set f = call cnst {@local} /five
             var v: /_int@local
@@ -1680,18 +1682,18 @@ class TExec {
     @Test
     fun z02 () {
         val out = all("""
-        var i: _int; set i = _1
-        var n: _int; set n = _0
+        var i: _int; set i = _1: _int
+        var n: _int; set n = _0: _int
         loop {
-            set n = _(n + i)
-            set i = _(i + 1)
-            if _(i > 5) {
+            set n = _(n + i): _int
+            set i = _(i + 1): _int
+            if _(i > 5): _int {
                 break
             }
         }
         output std n
         """.trimIndent())
-        assert(out == "15\n")
+        assert(out == "15\n") { out }
     }
     @Test
     fun z03 () {
@@ -1704,11 +1706,11 @@ class TExec {
     @Test
     fun z04_if_bool () {
         val out = all("""
-        if _0 {
+        if _0: _int {
         } else {
             output std ()
         }
-        if _1 {
+        if _1: _int {
             output std ()
         } else {
         }
@@ -1718,13 +1720,13 @@ class TExec {
     @Test
     fun z05_func_rec () {
         val out = all("""
-        var i: _int; set i = _0
+        var i: _int; set i = _0: _int
         var f: ({}->{}-> ()->())
         set f = func {}->{}-> ()->() {
-            if _(i == 10) {
+            if _(i == 10): _int {
                 
             } else {
-                set i = _(i + 1)
+                set i = _(i + 1): _int
                 set ret = call f ()
             }
         }
@@ -1805,7 +1807,7 @@ class TExec {
             var z3: _int
             set z3 = call f {@local} x2
             var xxx: _int
-            set xxx = _(z1 + z2 + z3)
+            set xxx = _(z1 + z2 + z3): _int
             output std xxx
         """.trimIndent())
         assert(out == "2\n") { out }

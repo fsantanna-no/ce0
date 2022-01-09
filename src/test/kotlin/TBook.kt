@@ -79,10 +79,10 @@ val lt = """
     var lt: ({}->{@a_1,@b_1}-> [$NumA1,$NumB1] -> _int)
     set lt = func {}->{@a_1,@b_1}-> [$NumA1,$NumB1] -> _int {
         if arg.2\?0 {
-            set ret = _0
+            set ret = _0:_int
         } else {
             if arg.1\?0 {
-                set ret = _1
+                set ret = _1:_int
             } else {
                 set ret = call lt {@a_1,@b_1} [arg.1\!1,arg.2\!1]
             }
@@ -133,7 +133,7 @@ val eq = """
             set ret = y\?0
         } else {
             if y\?0 {
-                set ret = _0
+                set ret = _0:_int
             } else {
                 set ret = call eq {@a_1,@b_1} [x\!1,y\!1]
             }
@@ -148,7 +148,7 @@ val lte = """
         set islt = call lt {@a_1,@b_1} [arg.1\!1,arg.2\!1]
         var iseq: _int
         set iseq = call eq {@a_1,@b_1} [arg.1\!1,arg.2\!1]
-        set ret = _(islt || iseq)
+        set ret = _(islt || iseq): _int
     }
 """.trimIndent()
 
@@ -687,9 +687,9 @@ class TBook {
         var bton: {} -> {} -> $B -> _int
         set bton = func {} -> {} -> $B -> _int {
             if arg?2 {
-                set ret = _1
+                set ret = _1: _int
             } else {
-                set ret = _0
+                set ret = _0: _int
             } 
         }
     """.trimIndent()

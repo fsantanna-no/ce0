@@ -200,10 +200,10 @@ class TParser {
     }
     @Test
     fun b08_parser_expr_nat () {
-        val all = All_new(PushbackReader(StringReader("_x"), 2))
+        val all = All_new(PushbackReader(StringReader("_x:_int"), 2))
         lexer(all)
         val e = parser_expr(all)
-        assert(e is Expr.Nat && e.tk_.src=="x" && e.type==null)
+        assert(e is Expr.Nat && e.tk_.src=="x" && e.type is Type.Nat)
     }
     @Test
     fun b09_parser_expr_nat () {
@@ -560,7 +560,7 @@ class TParser {
     }
     @Test
     fun c07_parser_stmt_call () {
-        val all = All_new(PushbackReader(StringReader("call _printf ()"), 2))
+        val all = All_new(PushbackReader(StringReader("call _printf:{}->{}->()->() ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert(s is Stmt.SExpr && (s.e as Expr.Call).f is Expr.Nat && (s.e as Expr.Call).arg is Expr.Unit)
@@ -586,7 +586,7 @@ class TParser {
 
     @Test
     fun c08_parser_stmt_seq () {
-        val all = All_new(PushbackReader(StringReader("call f() ; call _printf() call g()"), 2))
+        val all = All_new(PushbackReader(StringReader("call f() ; call _printf:{}->{}->()->() () call g()"), 2))
         lexer(all)
         val s = parser_stmts(all, Pair(TK.EOF,null))
         assert (

@@ -93,7 +93,7 @@ fun Expr.aux_upsenvs (up: Any, env: Env?) {
     env_add(this, env)
     when (this) {
         is Expr.TCons -> this.arg.forEachIndexed { _,e -> e.aux_upsenvs(this, env) }
-        is Expr.UCons -> { this.type!!.aux_upsenvs(this) ; this.arg.aux_upsenvs(this, env) }
+        is Expr.UCons -> { this.type?.aux_upsenvs(this) ; this.arg.aux_upsenvs(this, env) }
         is Expr.New   -> this.arg.aux_upsenvs(this, env)
         is Expr.Dnref -> this.ptr.aux_upsenvs(this, env)
         is Expr.Upref -> this.pln.aux_upsenvs(this, env)
