@@ -1549,65 +1549,6 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK") { out }
     }
-    @Disabled // TODO: explicit type
-    @Test
-    fun i06_uni_rec_ok2 () {
-        val out = inp2env("""
-            var ret: /<(),/</^^ @local,/^ @local> @local> @local
-            set ret =
-                new <.2
-                    new <.1
-                        new <.1>
-                    >
-                >
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun i06_uni_rec_ok3 () {
-        val out = inp2env("""
-            var ret: /<(),/</^^ @local,/^ @local> @local> @local
-            set ret = new <.2 new <.2 new <.2 <.0>>: @local>>
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun i06_uni_rec_ok4 () {
-        val out = inp2env("""
-            var ret: /<(),/</^^ @local,/^ @local> @local> @local
-            set ret = new <.2 new <.1 new <.1>: @local>: @local>
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun i06_uni_rec_ok5 () {
-        val out = inp2env("""
-            var ret: /<(),/</^^ @local,/^ @local> @local> @local
-            set ret = new <.2 new <.2 new <.1 new <.1>>>>
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun i06_uni_rec_ok6 () {
-        val out = inp2env("""
-            var ret: /<(),/</^^ @local,/^ @local> @local> @local
-            set ret = new <.2 new <.2 new <.1 new <.1>: @local>: @local>: @local> :@local
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun i06_uni_rec_err2 () {
-        val out = inp2env("""
-            var ret: /<(),/</^^ @local,/^ @local> @local> @local
-            set ret = new <.2 new <.1 <.1>>: @local>: @local
-        """.trimIndent())
-        assert(out == "(ln 2, col 9): invalid assignment : type mismatch") { out }
-    }
     @Test
     fun i07_list_err () {
         val out = inp2env("""
@@ -1741,15 +1682,6 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK") { out }
     }
-    @Disabled // TODO: explicit type
-    @Test
-    fun j10_rec_xepr_double_rec () {
-        val out = inp2env("""
-            var x: /</<[/^^ @local,/^ @local]> @local> @local
-            set x = new <.1 new <.1 [<.0>,<.0>]>: @local>: @local
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
     @Test
     fun j11_rec_xepr_double_rec () {
         val out = inp2env("""
@@ -1777,42 +1709,6 @@ class TEnv {
             set x = new <.1 [<.0>:/<[/^ @local,/^ @local]> @local,<.0>:/<[/^ @local,/^ @local]> @local]>:<[/^ @local,/^ @local]>: @local
         """.trimIndent())
         assert(out == "OK") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun j11_rec_xepr_double_rec4 () {
-        val out = inp2env("""
-            var x: /</<[/^^ @local,/^ @local]> @local> @local
-            set x = new <.1 new <.1 [<.0>,new <.1 [<.0>,<.0>]>: @local]>: @local>: @local
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun j11_rec_xepr_double_rec5 () {
-        val out = inp2env("""
-            var x: /</<[/^^ @local,/^ @local]> @local> @local
-            set x = new <.1 new <.1 [<.0>,<.0>]>: @local>: @local
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun j11_rec_xepr_double_rec6 () {
-        val out = inp2env("""
-            var x: /</<[/^^ @local,/^ @local]> @local> @local
-            set x = new <.1 new <.1 [<.0>,new <.1 [_,<.0>]> @local]> @local> @local
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun j12_rec_xepr_double_rec_err () {
-        val out = inp2env("""
-            var x: /</<[/^^ @local,/^ @local]> @local> @local
-            set x = new <.1 <.1 [<.0>,<.0>]>> @local
-        """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
     @Test
     fun j13_tup_move_no () {
@@ -2026,17 +1922,6 @@ class TEnv {
         //assert(out == "(ln 1, col 29): unexpected `new` : expected recursive type") { out }
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
-    @Disabled // TODO: explicit type
-    @Test
-    fun j31_rec_mutual () {
-        val out = inp2env("""
-            var e: /<(),<(),/^^ @local>> @local
-            set e = new <.2 <.2 new <.1> @local>> @local
-            var s: <(),/<(),<(),/^^ @local>> @local>
-            set s = <.2 e>
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
 
     // IF / FUNC
 
@@ -2207,18 +2092,6 @@ class TEnv {
         //assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2") { out }
         assert(out == "OK") { out }
     }
-    @Disabled // TODO: explicit type
-    @Test
-    fun l07_borrow_err () {
-        val out = inp2env("""
-            var x: /</^ @local> @local
-            var y: <//</^ @local> @local @local>
-            set y = <.1 /x> --/x!1>
-            set x = <.0>: /</^ @local> @local
-        """.trimIndent())
-        //assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2") { out }
-        assert(out == "OK") { out }
-    }
     @Test
     fun l08_borrow_err () {
         val out = inp2env("""
@@ -2361,16 +2234,6 @@ class TEnv {
 
     // UNION SELF POINTER
 
-    @Disabled // TODO: explicit type
-    @Test
-    fun m01_hold_ok () {
-        val out = inp2env("""
-            var x: /<(),/^ @local> @local
-            set x = new <.2 new <.1>: @local>: @local
-            output std /x
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
     @Test
     fun m02_borrow_err () {
         val out = inp2env("""
@@ -2413,106 +2276,6 @@ class TEnv {
 
     // UNION SELF POINTER / HOLD
 
-    @Disabled // TODO: explicit type
-    @Test
-    fun n01_hold_ok () {
-        val out = inp2env("""
-            var x: /< [<(),//^^ @local @local>,/^ @local]> @local
-            set x = new <.1 [<.1>,<.0>]> @local
-            var y: /< [<(),//^^ @local @local>,/^ @local]> @local
-            set y = new <.1 [<.1>,x]> @local
-            set y\!1.2\!1.1 = <.1>
-            -- <.1 [<.1>,<.1 [<.1>,<.0>]>]>
-            output std /y
-        """.trimIndent())
-        //assert(out == "OK") { out }
-        //assert(out == "(ln 1, col 16): invalid type declaration : unexpected `^´") { out }
-        assert(out == "OK") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun n02_hold_err () {
-        val out = inp2env("""
-            var x: /< [<(),//^^ @local @local>,/^ @local]> @local
-            set x = new <.1 [<.1>,<.0>]> @local
-            var y: /< [<(),//^^ @local @local>,/^ @local]> @local
-            set y = new <.1 [<.1>, x]> @local
-            set y\!1.2\!1.1 = <.2 /y>
-            output std /y
-        """.trimIndent())
-        //assert(out == "(ln 3, col 21): invalid expression : expected `hold` operation modifier") { out }
-        //assert(out == "(ln 1, col 16): invalid type declaration : unexpected `^´") { out }
-        assert(out == "OK") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun n03_hold_ok () {
-        val out = inp2env("""
-            var x: /< [<(),//^^ @local @local>,/^ @local]> @local
-            set x = new <.1 [<.1>,<.0>]> @local
-            var y: /< [<(),//^^ @local @local>,/^ @local]> @local
-            set y = new <.1 [<.1>, x]> @local
-                -- can receive x
-                -- can be consumed by + (but not -)
-                -- can hold itself (or borrows)
-                -- cannot set its parts
-            set y\!1.2\!1.1 = <.2 /y>
-            output std /y
-        """.trimIndent())
-        assert(out == "OK") { out }
-        //assert(out == "(ln 1, col 16): invalid type declaration : unexpected `^´") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun n04_hold_err () {
-        val out = inp2env("""
-            var x: /< [<(),//^^ @local @local>,/^ @local]> @local
-            set x = new <.1 [<.1>,<.0>]> @local
-            var y: /< [<(),//^^ @local @local>,/^ @local]> @local
-            set y = new <.1 [<.1>, x]> @local
-            set y\!1.2\!1.1 = <.2 /y>
-            output std /y
-        """.trimIndent())
-        assert(out == "OK") { out }
-        //assert(out == "(ln 3, col 28): invalid `borrow` : expected pointer to recursive variable") { out }
-        //assert(out == "(ln 1, col 16): invalid type declaration : unexpected `^´") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun n05_borrow_ok () {
-        val out = inp2env("""
-            var x: /<[(),/^ @local]> @local
-            set x = new <.1 [(),<.0>]> @local
-            var y: [(),/<[(),/^ @local]> @local]
-            set y = [(), new <.1 [(),<.0>]> @local]
-            var z: [(),//<[(),/^ @local]> @local @local]
-            set z = [(), /x]
-            output std z.2\\!1.2\!0
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun n06_hold_ok () {
-        val out = inp2env("""
-            var x: /< [//^ @local @local,/^ @local]> @local
-            set x = new <.1 [_,<.0>]> @local
-            set x\!1.1 = /x
-        """.trimIndent())
-        assert(out == "OK") { out }
-        //assert(out == "(ln 1, col 12): invalid type declaration : unexpected `^´") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun n07_hold_ok () {
-        val out = inp2env("""
-            var x: /< [<(),//^^ @local @local>,/^ @local]> @local
-            set x = new <.1 [<.1>,<.0>]> @local
-            set x\!1.1 = <.2 /x>  -- ok
-        """.trimIndent())
-        assert(out == "OK") { out }
-        //assert(out == "(ln 1, col 16): invalid type declaration : unexpected `^´") { out }
-    }
     @Test
     fun n08_hold_err () {
         val out = inp2env("""
@@ -2521,16 +2284,6 @@ class TEnv {
         //assert(out == "(ln 1, col 12): invalid type declaration : unexpected `?´") { out }
         //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
         assert(out == "(ln 1, col 10): expected type : have `?´") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun n08_hold_ok1 () {
-        val out = inp2env("""
-            var x: /< <(),//^^ @local @local>> @local
-            set x = new <.1 <.1>> @local
-        """.trimIndent())
-        assert(out == "OK") { out }
-        //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
     }
     @Test
     fun n08_hold_ok2 () {

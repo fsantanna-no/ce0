@@ -1051,16 +1051,6 @@ class TExec {
         """.trimIndent())
         assert(out == "<.1 <.1 <.0>>>\n") { out }
     }
-    @Disabled // TODO: explicit type
-    @Test
-    fun j11_rec_double () {
-        val out = all("""
-            var n: /<</^^ @local>> @local
-            set n = new <.1 <.1 new <.1 <.1 <.0>>>>>
-            output std n
-        """.trimIndent())
-        assert(out == "<.1 <.1 <.1 <.1 <.0>>>>>\n") { out }
-    }
     @Test
     fun j11_rec_double2 () {
         val out = all("""
@@ -1118,34 +1108,6 @@ class TExec {
         """.trimIndent())
         assert(out == "[<.1 <.0>>]\n") { out }
     }
-    @Disabled // TODO: explicit type
-    @Test
-    fun j12_tup_copy_ok () {
-        val out = all("""
-            var l: /<(),/^ @local> @local
-            set l = new <.2 new <.1>: @local>
-            var t1: [/<(),/^ @local> @local]
-            set t1 = [l]
-            var t2: [/<(),/^ @local> @local]
-            set t2 = [t1.1]
-            output std /t2
-        """.trimIndent())
-        assert(out == "[<.2 <.1>>]\n") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun j13_tup_copy_ok () {
-        val out = all("""
-            var l: /<(),/^ @local> @local
-            set l = new <.2 new <.1>: @local>: @local
-            var t1: [(),/<(),/^ @local> @local]
-            set t1 = [(), l]
-            var t2: [(),/<(),/^ @local> @local]
-            set t2 = [(), t1.2]
-            output std /t2
-        """.trimIndent())
-        assert(out == "[(),<.2 <.1>>]\n") { out }
-    }
     @Test
     fun j14_tup_copy_ok () {
         val out = all("""
@@ -1181,19 +1143,6 @@ class TExec {
             output std /t3
         """.trimIndent())
         assert(out == "<.1 <.0>>\n[(),<.1 <.1 <.0>>>]\n") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun j17_uni_rec () {
-        val out = all("""
-            var v1: /<(),/<[/^^ @local,/^ @local]> @local> @local
-            set v1 = new <.2 <.0>>: @local
-            var v2: /<(),/<[/^^ @local,/^ @local]> @local> @local
-            set v2 = new <.2 new <.1 [new <.1>: @local,<.0>]>: @local>: @local
-            output std v1
-            output std v2
-        """.trimIndent())
-        assert(out == "<.2 <.0>>\n<.2 <.1 [<.1>,<.0>]>>\n") { out }
     }
     @Test
     fun j18_tup_copy_rec_ok () {
@@ -1256,20 +1205,6 @@ class TExec {
 
     // UNION SELF POINTER / HOLD
 
-    @Disabled // TODO: explicit type
-    @Test
-    fun l01_hold_ok () {
-        val out = all("""
-            var x: /< [<(),//^^ @local @local>,/^ @local]> @local
-            set x = new <.1 [<.1>,<.0>]>: @local
-            var y: /< [<(),//^^ @local @local>,/^ @local]> @local
-            set y = new <.1 [<.1>,x]>: @local
-            set y\!1.2\!1.1 = <.1>
-            output std y
-        """.trimIndent())
-        assert(out == "<.1 [<.1>,<.1 [<.1>,<.0>]>]>\n") { out }
-        //assert(out == "(ln 1, col 16): invalid type declaration : unexpected `^´") { out }
-    }
     @Test
     fun l02_hold_ok () {
         val out = all("""
@@ -1318,19 +1253,6 @@ class TExec {
         """.trimIndent())
         assert(out == "<.1 [<.1>,2,<.0>]>\n") { out }
         //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun l03_hold_err () {
-        val out = all("""
-            var x: /< [<(),//^^ @local @local>,/^ @local]> @local
-            set x = new <.1 [<.1>,new <.1 [<.1>,<.0>]> @local]> @local
-            set x\!1.2 = <.0>
-            output std x
-        """.trimIndent())
-        //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
-        //assert(out == "out.exe: out.c:133: main: Assertion `(*(x))._1._2 == NULL' failed.\n") { out }
-        assert(out == "<.1 [<.1>,<.0>]>\n") { out }
     }
     @Test // TODO: esse vai falhar enquanto nao voltar isnullptr
     fun l04_ptr_null () {
@@ -1887,29 +1809,6 @@ class TExec {
         """.trimIndent())
         assert(out == "<.0>\n") { out }
     }
-    @Disabled // TODO: explicit type
-    @Test
-    fun z13_union_rec () {
-        val out = all("""
-            var x: /<(),/^ @local> @local
-            set x = new <.2 new <.1>: @local>: @local
-            output std x
-        """.trimIndent())
-        assert(out == "<.2 <.1>>\n") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun z14_acc_aft_move () {
-        val out = all("""
-            var x: /<(),/^ @local> @local
-            set x = new <.2 new <.1>: @local>: @local
-            var y: /<(),/^ @local> @local
-            set y = x
-            output std x
-            output std y
-        """.trimIndent())
-        assert(out == "<.2 <.1>>\n<.2 <.1>>\n") { out }
-    }
     @Test
     fun z15_acc_move_sub () {
         val out = all("""
@@ -1921,18 +1820,5 @@ class TExec {
             output std y
         """.trimIndent())
         assert(out == "<.2 <.1>>\n<.1>\n") { out }
-    }
-    @Disabled // TODO: explicit type
-    @Test
-    fun z16_acc_move_sub () {
-        val out = all("""
-            var x: /<(),[(),/^ @local]> @local
-            set x = new <.2 [(),new <.1>: @local]>: @local
-            var y: [(),/<(),[(),/^ @local]> @local]
-            set y = [(), x\!2.2]
-            output std x
-            output std /y
-        """.trimIndent())
-        assert(out == "<.2 [(),<.1>]>\n[(),<.1>]\n") { out }
     }
 }

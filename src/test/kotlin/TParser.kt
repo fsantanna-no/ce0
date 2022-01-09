@@ -486,6 +486,25 @@ class TParser {
         assert(e is Expr.TDisc && e.tk_.num==1 && e.tup is Expr.UDisc)
     }
 
+    // ATTR
+
+    @Test
+    fun b29 () {
+        val all = All_new(PushbackReader(StringReader("y\\!1.2\\!1.1"), 2))
+        lexer(all)
+        val e = parser_attr(all)
+        //println(e)
+        assert(e is Attr.TDisc && e.tk_.num==1)
+    }
+    @Test
+    fun b30 () {
+        val all = All_new(PushbackReader(StringReader("((((((y\\)!1).2)\\)!1).1)"), 2))
+        lexer(all)
+        val e = parser_attr(all)
+        //println(e)
+        assert(e is Attr.TDisc && e.tk_.num==1)
+    }
+
     // STMT
 
     @Test

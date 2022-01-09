@@ -1,9 +1,10 @@
-fun Type.tostr (): String {
-    fun Tk.Scope?.tostr (): String {
-        return if (this == null) "" else {
-            "@" + this.lbl + (if (this.num == null) "" else ("_" + this.num))
-        }
+fun Tk.Scope?.tostr (): String {
+    return if (this == null) "" else {
+        "@" + this.lbl + (if (this.num == null) "" else ("_" + this.num))
     }
+}
+
+fun Type.tostr (): String {
     return when (this) {
         is Type.Unit  -> "()"
         is Type.Nat   -> this.tk_.toce()
