@@ -36,25 +36,24 @@ fun check_01_before_tps (s: Stmt) {
             is Type.Ptr -> tp.scope.check(tp)
             is Type.Func -> {
                 tp.clo?.check(tp)
-                val ptrs  = tp.flatten().filter { it is Type.Ptr } as List<Type.Ptr>
+                val ptrs  = (tp.inp.flatten() + tp.out.flatten()).filter { it is Type.Ptr } as List<Type.Ptr>
                 val ok1 = ptrs.all {
                     val ptr = it.scope
                     when {
                         (ptr.lbl == "var") -> error("bug found")
                         (ptr.lbl == "global") -> true
                         //(ptr.lbl == "local")  -> true
-                        (it.ups_first {
-                            it is Type.Func && (
-                                it.clo.let  { it!=null && ptr.lbl==it.lbl && ptr.num==it.num } || // {@a} ...@a
-                                it.scps.any { it!=null && ptr.lbl==it.lbl && ptr.num==it.num }    // (@_1 -> ...@_1...)
-                            )
-                        } != null) -> true
+                        (
+                            tp.clo.let  { it!=null && ptr.lbl==it.lbl && ptr.num==it.num } || // {@a} ...@a
+                            tp.scps.any { it!=null && ptr.lbl==it.lbl && ptr.num==it.num }    // (@_1 -> ...@_1...)
+                        ) -> true
                         (tp.ups_first {                     // { @aaa \n ...@aaa... }
                             it is Stmt.Block && it.scope!=null && it.scope.lbl==ptr.lbl && it.scope.num==ptr.num
                         } != null) -> true
                         else -> false
                     }
                 }
+                // all pointers must be listed either in "func.clo" or "func.scps"
                 All_assert_tk(tp.tk, ok1) {
                     "invalid function type : missing pool argument"
                 }

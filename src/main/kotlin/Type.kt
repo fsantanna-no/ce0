@@ -22,7 +22,7 @@ fun Type.flatten (): List<Type> {
         is Type.Unit, is Type.Nat, is Type.Rec -> listOf(this)
         is Type.Tuple -> this.vec.map { it.flatten() }.flatten() + this
         is Type.Union -> this.vec.map { it.flatten() }.flatten() + this
-        is Type.Func  -> this.inp.flatten() + this.out.flatten() + this
+        is Type.Func  -> listOf(this) //this.inp.flatten() + this.out.flatten() + this
         is Type.Ptr   -> this.pln.flatten() + this
     }
 }
