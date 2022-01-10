@@ -31,13 +31,11 @@ class TCode {
     @Test
     fun b02_expr_var () {
         val e = Expr.Var(Tk.Str(TK.XVAR,1,1,"xxx"))
-        e.env = Env (
+        e.env =
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"xxx"),
                 Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
-            ),
-            null
-        )
+            )
         e.type = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
         code_fe(e)
         CODE.removeFirst().let { assert(it.expr == "xxx") { it.expr } }
@@ -45,13 +43,11 @@ class TCode {
     @Test
     fun b03_expr_nat () {
         val e = Expr.Var(Tk.Str(TK.XNAT,1,1,"xxx"))
-        e.env = Env (
+        e.env =
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"xxx"),
                 Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
-            ),
-            null
-        )
+            )
         e.type = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
         code_fe(e)
         assert(CODE.removeFirst().expr == "xxx")
@@ -79,13 +75,11 @@ class TCode {
             Tk.Num(TK.XNUM,1,1,1),
             Expr.Var(Tk.Str(TK.XVAR,1,1,"x"))
         )
-        e.tup.env = Env (
+        e.tup.env =
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"x"),
                 Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))))
-            ),
-            null
-        )
+            )
         e.type = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
         e.tup.type = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))))
         e.visit(null, ::code_fe, null)

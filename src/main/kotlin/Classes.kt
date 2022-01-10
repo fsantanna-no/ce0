@@ -1,6 +1,6 @@
 data class Scope (val lvl: Int, val arg: String?, val depth: Int)
 
-sealed class Type (val tk: Tk, var up: Any?, var env: Env?) {
+sealed class Type (val tk: Tk, var up: Any?, var env: Any?) {
     data class Unit  (val tk_: Tk.Sym): Type(tk_, null, null)
     data class Nat   (val tk_: Tk.Nat): Type(tk_, null, null)
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_, null, null)
@@ -18,7 +18,7 @@ sealed class Attr (val tk: Tk, var up: Any?) {
     data class UDisc (val tk_: Tk.Num, val uni: Attr): Attr(tk_, null)
 }
 
-sealed class Expr (val tk: Tk, var up: Any?, var env: Env?, var type: Type?) {
+sealed class Expr (val tk: Tk, var up: Any?, var env: Any?, var type: Type?) {
     data class Unit  (val tk_: Tk.Sym): Expr(tk_, null, null, Type.Unit(tk_))
     data class Var   (val tk_: Tk.Str): Expr(tk_, null, null, null)
     data class Nat   (val tk_: Tk.Nat, val type_: Type): Expr(tk_, null, null, type_)
@@ -36,7 +36,7 @@ sealed class Expr (val tk: Tk, var up: Any?, var env: Env?, var type: Type?) {
     data class Func  (val tk_: Tk.Key, val type_: Type.Func, val ups: Array<Tk.Str>, val block: Stmt.Block) : Expr(tk_, null, null, type_)
 }
 
-sealed class Stmt (val tk: Tk, var up: Any?, var env: Env?) {
+sealed class Stmt (val tk: Tk, var up: Any?, var env: Any?) {
     data class Nop   (val tk_: Tk) : Stmt(tk_, null, null)
     data class Var   (val tk_: Tk.Str, val type: Type) : Stmt(tk_, null, null)
     data class Set   (val tk_: Tk.Chr, val dst: Expr, val src: Expr) : Stmt(tk_, null, null)
