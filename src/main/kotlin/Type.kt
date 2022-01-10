@@ -4,6 +4,12 @@ fun Type.build (up: Any): Type {
     return this
 }
 
+fun Type.buildAll (up: Any): Type {
+    this.setUps(up)
+    //it.visit { it.env = up.getEnv() }
+    return this
+}
+
 fun Tk.Scope?.tostr (): String {
     return if (this == null) "" else {
         "@" + this.lbl + (if (this.num == null) "" else ("_" + this.num))
@@ -58,11 +64,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
             is Type.Rec -> Type.Rec(this.tk_.copy(lin_ = lin, col_ = col))
         }
     }
-    return this.aux(lin,col).let {
-        it.setUps(up)
-        //it.visit { it.setEnv(up) }
-        it
-    }
+    return this.aux(lin,col).buildAll(up)
 }
 
 fun Type.isrec (): Boolean {
