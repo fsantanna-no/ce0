@@ -27,28 +27,34 @@ fun Type.flatten (): List<Type> {
     }
 }
 
-fun Type.lincol (lin: Int, col: Int): Type {
-    return when (this) {
-        is Type.Unit  -> Type.Unit(this.tk_.copy(lin_=lin,col_=col))
-        is Type.Nat   -> Type.Nat(this.tk_.copy(lin_=lin,col_=col))
-        is Type.Tuple -> Type.Tuple(this.tk_.copy(lin_=lin,col_=col), this.vec.map { it.lincol(lin,col) }.toTypedArray()).let {
-            it.vec.forEach { sub -> sub.up = it }
-            it
+fun Type.lincol (up: Any, lin: Int, col: Int): Type {
+    fun Type.aux (lin: Int, col: Int): Type {
+        return when (this) {
+            is Type.Unit -> Type.Unit(this.tk_.copy(lin_ = lin, col_ = col))
+            is Type.Nat -> Type.Nat(this.tk_.copy(lin_ = lin, col_ = col))
+            is Type.Tuple -> Type.Tuple(
+                this.tk_.copy(lin_ = lin, col_ = col),
+                this.vec.map { it.aux(lin, col) }.toTypedArray()
+            )
+            is Type.Union -> Type.Union(
+                this.tk_.copy(lin_ = lin, col_ = col),
+                this.isrec,
+                this.vec.map { it.aux(lin, col) }.toTypedArray()
+            )
+            is Type.Func -> Type.Func(
+                this.tk_.copy(lin_ = lin, col_ = col),
+                this.clo?.copy(lin_ = lin, col_ = col),
+                this.scps.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray(),
+                this.inp.aux(lin, col),
+                this.out.aux(lin, col)
+            )
+            is Type.Ptr -> Type.Ptr(this.tk_.copy(lin_ = lin, col_ = col), this.scope, this.pln.aux(lin, col))
+            is Type.Rec -> Type.Rec(this.tk_.copy(lin_ = lin, col_ = col))
         }
-        is Type.Union -> Type.Union(this.tk_.copy(lin_=lin,col_=col), this.isrec, this.vec.map { it.lincol(lin,col) }.toTypedArray()).let {
-            it.vec.forEach { sub -> sub.up = it }
-            it
-        }
-        is Type.Func  -> Type.Func(this.tk_.copy(lin_=lin,col_=col), this.clo?.copy(lin_=lin,col_=col), this.scps.map { it.copy(lin_=lin,col_=col) }.toTypedArray(), this.inp.lincol(lin,col), this.out.lincol(lin,col)).let {
-            it.inp.up = it
-            it.out.up = it
-            it
-        }
-        is Type.Ptr   -> Type.Ptr(this.tk_.copy(lin_=lin,col_=col), this.scope, this.pln.lincol(lin,col)).let {
-            it.pln.up = it
-            it
-        }
-        is Type.Rec   -> Type.Rec(this.tk_.copy(lin_=lin,col_=col))
+    }
+    return this.aux(lin,col).let {
+        it.setUps(up)
+        it
     }
 }
 
