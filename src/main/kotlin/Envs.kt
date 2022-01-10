@@ -9,8 +9,8 @@ fun Any.getEnv (): Any? {
     }
 }
 
-fun Type.setEnv (up: Any): Type {
-    this.setEnv(up.getEnv())
+fun Type.setEnv (env: Any?): Type {
+    (this as Any).setEnv(env)
     return this
 }
 

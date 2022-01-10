@@ -108,7 +108,7 @@ fun check_02_after_tps (s: Stmt) {
                                     acc[scp.lbl].let { if (it == null) null else it[scp.num]!! }
                                 }
                                 if (ret == null) tp else {
-                                    Type.Ptr(tp.tk_, ret, aux(tp.pln,dofunc)).setUp(e).setEnv(e)
+                                    Type.Ptr(tp.tk_, ret, aux(tp.pln,dofunc)).setUp(e).setEnv(e.env)
                                 }
                             }
                             is Type.Func -> if (!dofunc) tp else {
@@ -119,7 +119,7 @@ fun check_02_after_tps (s: Stmt) {
                                         acc[scp.lbl].let { if (it == null) tp.clo else it[scp.num]!! }
                                     }
                                 }
-                                Type.Func(tp.tk_, ret, tp.scps, aux(tp.inp,dofunc), aux(tp.out,dofunc)).setUp(e).setEnv(e)
+                                Type.Func(tp.tk_, ret, tp.scps, aux(tp.inp,dofunc), aux(tp.out,dofunc)).setUp(e).setEnv(e.env)
                             }
                         }
                     }
