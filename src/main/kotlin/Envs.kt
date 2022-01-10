@@ -1,11 +1,20 @@
-data class Env (val s: Stmt.Var, val prv: Env?)
+// s = Stmt.Var (var), Type (arg/ret), Block (@xxx)
+data class Env (val s: Any, val prv: Env?)
 
 val ENV = mutableMapOf<Any,Env>()
 
 //////////////////////////////////////////////////////////////////////////////
 
+fun Any.toType (): Type {
+    return when (this) {
+        is Type     -> this
+        is Stmt.Var -> this.type
+        else -> error("bug found")
+    }
+}
+
 fun Any.env_first (f: (Any)->Boolean): Any? {
-    fun aux (env: Env?): Stmt? {
+    fun aux (env: Env?): Any? {
         return when {
             (env == null) -> null
             f(env.s) -> env.s
@@ -15,15 +24,21 @@ fun Any.env_first (f: (Any)->Boolean): Any? {
     return aux (ENV[this])
 }
 
-fun Any.env (id: String): Pair<Stmt.Var?,Type?> {   // TODO: Either
-    return when (id) {
-        "arg" -> this.ups_first { it is Expr.Func }.let { it as Expr.Func? }.let { if (it == null) Pair(null,null) else Pair(null,it.type_.inp) }
-        "ret" -> this.ups_first { it is Expr.Func }.let { it as Expr.Func? }.let { if (it == null) Pair(null,null) else Pair(null,it.type_.out) }
-        else  -> this.env_first { it is Stmt.Var && it.tk_.str==id }.let { it as Stmt.Var? }.let { if (it == null) Pair(null,null) else Pair(it,it.type) }
+fun Any.env (id: String): Any? {
+    return this.env_first {
+        it is Stmt.Var   && it.tk_.str==id ||
+        it is Stmt.Block && it.scope!!.lbl==id ||
+        it is Expr.Func  && (id=="arg" || id=="ret")
+    }.let {
+        if (it is Expr.Func) {
+            if (id=="arg") it.type_.inp else it.type_.out
+    } else {
+            it
+        }
     }
 }
 
-fun Expr.Var.env (): Pair<Stmt.Var?,Type?> {   // TODO: Either
+fun Expr.Var.env (): Any? {
     return (this as Any).env(this.tk_.str)
 }
 
@@ -53,7 +68,7 @@ fun Expr.setEnvs (env: Env?) {
             this.f.setEnvs(env)
             this.arg.setEnvs(env)
         }
-        is Expr.Func  -> this.block.setEnvs(env)
+        is Expr.Func  -> this.block.setEnvs(Env(this,env))
     }
 }
 
@@ -80,6 +95,10 @@ fun Stmt.setEnvs (env: Env?): Env? {
             env
         }
         is Stmt.Loop  -> { this.block.setEnvs(env) ; env }
-        is Stmt.Block -> { this.body.setEnvs(env) ; env }
+        is Stmt.Block -> {
+            val env_ = if (this.scope == null) env else Env(this,env)
+            this.body.setEnvs(env_)
+            env
+        }
     }
 }

@@ -3,7 +3,7 @@ fun check_02_after_tps (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.Var -> {    // check closures
-                val (var_fdepth,var_bdepth) = e.env(e.tk_.str).let { it.first ?: it.second }!!.ups_tolist().let {
+                val (var_fdepth,var_bdepth) = e.env(e.tk_.str)!!.ups_tolist().let {
                     Pair (
                         it.filter { it is Expr.Func }.count(),
                         it.filter { it is Stmt.Block }.count()
@@ -12,7 +12,7 @@ fun check_02_after_tps (s: Stmt) {
                 val exp_fdepth = e.ups_tolist().filter { it is Expr.Func }.count()
                 if (var_bdepth>0 && var_fdepth<exp_fdepth) {
                     // access is inside function, declaration is outside
-                    val var_scope = e.env(e.tk_.str).second!!.scope()
+                    val var_scope = e.env(e.tk_.str)!!.toType().scope()
                     val func = e.ups_first { it is Expr.Func } as Expr.Func
                     val clo = func.type_.clo?.scope(func.type_)?.depth ?: 0
                     All_assert_tk(e.tk, clo>=var_scope.depth && func.ups.any { it.str==e.tk_.str }) {

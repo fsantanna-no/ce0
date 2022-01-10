@@ -84,7 +84,7 @@ fun Stmt.setTypes () {
                     else -> error("bug found")
                 }
             }
-            is Expr.Var -> e.env().second!!
+            is Expr.Var -> e.env()!!.toType()
             else -> error("bug found")
         }
     }

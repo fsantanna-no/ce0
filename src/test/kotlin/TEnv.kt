@@ -560,6 +560,23 @@ class TEnv {
         assert(out == "OK")
     }
     @Test
+    fun e05_block_err1 () {
+        val out = inp2env("""
+            { @a
+                var a: ()
+            }
+        """.trimIndent())
+        assert(out == "(ln 2, col 9): invalid declaration : \"a\" is already declared (ln 1)") { out }
+    }
+    @Test
+    fun e05_block_err2 () {
+        val out = inp2env("""
+            var a: ()
+            { @a }
+        """.trimIndent())
+        assert(out == "(ln 2, col 3): invalid pool : \"@a\" is already declared (ln 1)") { out }
+    }
+    @Test
     fun e05_ptr_ok () {
         val out = inp2env("""
             { @a

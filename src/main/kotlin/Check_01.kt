@@ -74,7 +74,7 @@ fun check_01_before_tps (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.Var -> {
-                All_assert_tk(e.tk, e.env().let { it.first!=null || it.second!=null }) {
+                All_assert_tk(e.tk, e.env() != null) {
                     "undeclared variable \"${e.tk_.str}\""
                 }
             }
@@ -102,7 +102,7 @@ fun check_01_before_tps (s: Stmt) {
                     }
                 }
                 e.ups.forEach {
-                    All_assert_tk(e.tk, e.env(it.str).first != null) {
+                    All_assert_tk(e.tk, e.env(it.str) != null) {
                         "undeclared variable \"${it.str}\""
                     }
                 }
@@ -116,14 +116,20 @@ fun check_01_before_tps (s: Stmt) {
         }
     }
     fun fs (s: Stmt) {
+        fun Any.toTk (): Tk {
+            return when (this) {
+                is Type -> this.tk
+                is Stmt.Var -> this.tk
+                is Stmt.Block -> this.tk
+                else -> error("bug found")
+            }
+        }
+
         when (s) {
             is Stmt.Var -> {
                 val dcl = s.env(s.tk_.str)
-                All_assert_tk(s.tk, dcl.first == null) {
-                    "invalid declaration : \"${s.tk_.str}\" is already declared (ln ${dcl.first!!.tk.lin})"
-                }
-                All_assert_tk(s.tk, dcl.second == null) {
-                    "invalid declaration : \"${s.tk_.str}\" is already declared (ln ${dcl.second!!.tk.lin})"
+                All_assert_tk(s.tk, dcl == null) {
+                    "invalid declaration : \"${s.tk_.str}\" is already declared (ln ${dcl!!.toTk().lin})"
                 }
             }
             is Stmt.Ret -> {
@@ -137,9 +143,9 @@ fun check_01_before_tps (s: Stmt) {
                     All_assert_tk(s.scope, s.scope.num == null) {
                         "invalid pool : unexpected `_${s.scope.num}´ depth"
                     }
-                    val ok = s.ups_first { it is Stmt.Block && it.scope?.lbl==s.scope.lbl } as Stmt.Block?
-                    All_assert_tk(s.scope, ok==null) {
-                        "invalid pool : \"@${s.scope.lbl}\" is already declared (ln ${ok!!.tk.lin})"
+                    val dcl = s.env(s.scope.lbl)
+                    All_assert_tk(s.scope, dcl == null) {
+                        "invalid pool : \"@${s.scope.lbl}\" is already declared (ln ${dcl!!.toTk().lin})"
                     }
                 }
             }
