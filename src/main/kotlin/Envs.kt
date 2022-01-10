@@ -9,9 +9,18 @@ fun Any.getEnv (): Any? {
     }
 }
 
-fun Type.setEnv (env: Any): Type {
-    env_add(this, env.getEnv())
+fun Type.setEnv (up: Any): Type {
+    this.setEnv(up.getEnv())
     return this
+}
+
+fun Any.setEnv (env: Any?) {
+    when (this) {
+        is Type -> this.env = env
+        is Expr -> this.env = env
+        is Stmt -> this.env = env
+        else -> error("bug found")
+    }
 }
 
 fun Any.toType (): Type {
@@ -57,25 +66,13 @@ fun Expr.Var.env (): Any? {
     return (this as Any).env(this.tk_.str)
 }
 
-private
-fun env_add (v: Any, env: Any?) {
-    if (env == null) return
-    assert(v.getEnv() == null)
-    when (v) {
-        is Type -> v.env = env
-        is Expr -> v.env = env
-        is Stmt -> v.env = env
-        else -> error("bug found")
-    }
-}
-
 //////////////////////////////////////////////////////////////////////////////
 
 private
 fun Expr.setEnvs (env: Any?) {
-    env_add(this, env)
+    this.env = env
     fun ft (tp: Type) {
-        env_add(tp, env)
+        tp.env = env
     }
     when (this) {
         is Expr.Unit  -> this.type?.visit(::ft)
@@ -105,9 +102,9 @@ fun Expr.setEnvs (env: Any?) {
 }
 
 fun Stmt.setEnvs (env: Any?): Any? {
-    env_add(this, env)
+    this.env = env
     fun ft (tp: Type) {
-        env_add(tp, env)
+        tp.env = env
     }
     return when (this) {
         is Stmt.Nop, is Stmt.Nat, is Stmt.Ret, is Stmt.Break -> env
