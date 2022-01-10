@@ -8,7 +8,6 @@ fun ce2c (ce: String): Pair<Boolean,String> {
     try {
         val s = parser_stmts(all, Pair(TK.EOF,null))
         s.setUps(null)
-        ENV.clear()
         s.setEnvs(null)
         check_01_before_tps(s)
         s.setTypes()

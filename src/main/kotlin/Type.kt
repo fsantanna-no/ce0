@@ -93,11 +93,13 @@ fun Tk.Scope.scope (up: Any): Scope {
         "local"  -> Scope(lvl, null, up.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
         else -> {
             val blk = up.env(this.lbl)
+            /*
             println(this.lbl)
             println(up)
             println(up.env_all())
+             */
             if (blk != null) {
-                println(this.lbl)
+                //println(this.lbl)
                 val one = if (blk is Stmt.Block) 1 else 0
                 Scope(lvl, null, one + blk.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
             } else {    // false = relative to function block
@@ -110,7 +112,7 @@ fun Tk.Scope.scope (up: Any): Scope {
 fun Type.scope (): Scope {
     return when {
         this is Type.Ptr -> {
-            print("SCOPE: ") ; println(this)
+            //print("SCOPE: ") ; println(this)
             this.scope.scope(this)
         }
         (this is Type.Func) && (this.clo!=null) -> this.clo.scope(this)    // body holds pointers in clo

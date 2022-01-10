@@ -129,7 +129,7 @@ fun check_02_after_tps (s: Stmt) {
                     )
                 }
 
-                ///*
+                /*
                 //print("INP1: ") ; println(inp1.tostr())
                 print("INP2: ") ; println(inp2.tostr()) ; println(inp2.scope())
                 print("ARG1: ") ; println(arg1.tostr()) ; println(arg1.scope())
@@ -139,7 +139,7 @@ fun check_02_after_tps (s: Stmt) {
                 print("OUT2: ") ; println(out2.tostr())
                 print("RET1: ") ; println(ret1.tostr())
                 //print("RET2: ") ; println(ret2.tostr())
-                //*/
+                */
 
                 All_assert_tk(e.f.tk, inp2.isSupOf(arg1) && ret1.isSupOf(out2)) {
                     //println(inp2.isSupOf(arg1))

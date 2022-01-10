@@ -1,12 +1,19 @@
 // s = Stmt.Var (var), Type (arg/ret), Block (@xxx)
 data class Env (val s: Any, val prv: Env?)
 
-val ENV = mutableMapOf<Any,Env>()
-
 //////////////////////////////////////////////////////////////////////////////
 
+fun Any.getEnv (): Env? {
+    return when (this) {
+        is Type -> this.env
+        is Expr -> this.env
+        is Stmt -> this.env
+        else -> error("bug found")
+    }
+}
+
 fun Type.setEnv (env: Any): Type {
-    env_add(this, ENV[env])
+    env_add(this, env.getEnv())
     return this
 }
 
@@ -19,7 +26,7 @@ fun Any.toType (): Type {
 }
 
 fun Any.env_all (): List<Any> {
-    return ENV[this]?.let { listOf(it.s) + it.s.env_all() } ?: emptyList()
+    return this.getEnv()?.let { listOf(it.s) + it.s.env_all() } ?: emptyList()
 }
 
 fun Any.env_first (f: (Any)->Boolean): Any? {
@@ -30,7 +37,7 @@ fun Any.env_first (f: (Any)->Boolean): Any? {
             else -> aux(env.prv)
         }
     }
-    return aux (ENV[this])
+    return aux (this.getEnv())
 }
 
 fun Any.env (id: String): Any? {
@@ -56,8 +63,13 @@ fun Expr.Var.env (): Any? {
 private
 fun env_add (v: Any, env: Env?) {
     if (env == null) return
-    assert(ENV[v] == null)
-    ENV[v] = env
+    assert(v.getEnv() == null)
+    when (v) {
+        is Type -> v.env = env
+        is Expr -> v.env = env
+        is Stmt -> v.env = env
+        else -> error("bug found")
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////
