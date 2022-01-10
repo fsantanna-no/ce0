@@ -44,7 +44,7 @@ fun Stmt.setTypes () {
                             error("impossible case")
                         }
                     }
-                }.lincol(e.f, e.f.tk.lin, e.f.tk.col)
+                }.clone(e.f, e.f.tk.lin, e.f.tk.col)
             }
             is Expr.TDisc -> e.tup.type.let {
                 All_assert_tk(e.tk, it is Type.Tuple) {

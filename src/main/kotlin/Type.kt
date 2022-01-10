@@ -27,7 +27,7 @@ fun Type.flatten (): List<Type> {
     }
 }
 
-fun Type.lincol (up: Any, lin: Int, col: Int): Type {
+fun Type.clone (up: Any, lin: Int, col: Int): Type {
     fun Type.aux (lin: Int, col: Int): Type {
         return when (this) {
             is Type.Unit -> Type.Unit(this.tk_.copy(lin_ = lin, col_ = col))
@@ -82,7 +82,7 @@ fun Type.Union.expand (): Array<Type> {
             else -> cur
         }
     }
-    return this.vec.map { aux(it, 1).lincol(this,this.tk.lin,this.tk.col) }.toTypedArray()
+    return this.vec.map { aux(it, 1).clone(this,this.tk.lin,this.tk.col) }.toTypedArray()
 }
 
 fun Tk.Scope.scope (up: Any): Scope {
