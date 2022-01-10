@@ -45,14 +45,14 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
             sub.out.isSupOf_(this.out,true,ups1,ups2)
         )}
         (this is Type.Ptr && sub is Type.Ptr) -> {
-            /*
+            ///*
             println("===")
             println(this)
             println(sub)
             println(this.tostr())
             println(sub.tostr())
             println("SUPOF [$isproto] ${this.tk.lin}: ${this.scope()} = ${sub.scope()} /// ${this.scope}")
-            */
+            //*/
             val ok = if (isproto) { // comparing func prototypes does not depend on scope calculation
                 (this.scope.lbl == sub.scope.lbl) && (this.scope.num == sub.scope.num)
             } else {

@@ -5,12 +5,21 @@ val ENV = mutableMapOf<Any,Env>()
 
 //////////////////////////////////////////////////////////////////////////////
 
+fun Type.setEnv (env: Any): Type {
+    env_add(this, ENV[env])
+    return this
+}
+
 fun Any.toType (): Type {
     return when (this) {
         is Type     -> this
         is Stmt.Var -> this.type
         else -> error("bug found")
     }
+}
+
+fun Any.env_all (): List<Any> {
+    return ENV[this]?.let { listOf(it.s) + it.s.env_all() } ?: emptyList()
 }
 
 fun Any.env_first (f: (Any)->Boolean): Any? {
@@ -25,7 +34,9 @@ fun Any.env_first (f: (Any)->Boolean): Any? {
 }
 
 fun Any.env (id: String): Any? {
+    //print(">>> ") ; println(id)
     return this.env_first {
+        //println(it)
         it is Stmt.Var   && it.tk_.str==id ||
         it is Stmt.Block && it.scope!!.lbl==id ||
         it is Expr.Func  && (id=="arg" || id=="ret")
@@ -54,9 +65,18 @@ fun env_add (v: Any, env: Env?) {
 private
 fun Expr.setEnvs (env: Env?) {
     env_add(this, env)
+    fun ft (tp: Type) {
+        env_add(tp, env)
+    }
     when (this) {
+        is Expr.Unit  -> this.type?.visit(::ft)
+        is Expr.Nat   -> this.type_?.visit(::ft)
+        is Expr.Inp   -> this.type_?.visit(::ft)
         is Expr.TCons -> this.arg.forEachIndexed { _,e -> e.setEnvs(env) }
-        is Expr.UCons -> this.arg.setEnvs(env)
+        is Expr.UCons -> {
+            this.type_?.visit(::ft)
+            this.arg.setEnvs(env)
+        }
         is Expr.New   -> this.arg.setEnvs(env)
         is Expr.Dnref -> this.ptr.setEnvs(env)
         is Expr.Upref -> this.pln.setEnvs(env)
@@ -68,15 +88,24 @@ fun Expr.setEnvs (env: Env?) {
             this.f.setEnvs(env)
             this.arg.setEnvs(env)
         }
-        is Expr.Func  -> this.block.setEnvs(Env(this,env))
+        is Expr.Func  -> {
+            this.type_?.visit(::ft)
+            this.block.setEnvs(Env(this,env))
+        }
     }
 }
 
 fun Stmt.setEnvs (env: Env?): Env? {
     env_add(this, env)
+    fun ft (tp: Type) {
+        env_add(tp, env)
+    }
     return when (this) {
         is Stmt.Nop, is Stmt.Nat, is Stmt.Ret, is Stmt.Break -> env
-        is Stmt.Var -> Env(this,env)
+        is Stmt.Var -> {
+            this.type?.visit(::ft)
+            Env(this,env)
+        }
         is Stmt.Set -> {
             this.dst.setEnvs(env)
             this.src.setEnvs(env)

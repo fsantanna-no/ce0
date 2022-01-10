@@ -2,7 +2,8 @@ fun Stmt.setTypes () {
     fun fe (e: Expr) {
         e.type = e.type ?: when (e) {
             is Expr.Upref -> e.pln.type!!.let {
-                Type.Ptr(e.tk_, Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col,"var",null), it).setUp(it)
+                val lbl = e.toBaseVar()?.tk_?.str ?: "global"
+                Type.Ptr(e.tk_, Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col, lbl,null), it).setUp(it).setEnv(e)
             }
             is Expr.Dnref -> e.ptr.type.let {
                 if (it is Type.Nat) it else {
@@ -12,9 +13,9 @@ fun Stmt.setTypes () {
                     (it as Type.Ptr).pln
                 }
             }
-            is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.type!! }.toTypedArray()).setUp(e)
-            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp!!, e.arg.type!!).setUp(e)
-            is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).setUp(e)
+            is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.type!! }.toTypedArray()).setUp(e).setEnv(e)
+            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp!!, e.arg.type!!).setUp(e).setEnv(e)
+            is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).setUp(e).setEnv(e)
             is Expr.Call -> {
                 e.f.type.let {
                     when (it) {
@@ -76,11 +77,11 @@ fun Stmt.setTypes () {
 
                 when (e) {
                     is Expr.UDisc -> if (e.tk_.num == 0) {
-                        Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).setUp(e)
+                        Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).setUp(e).setEnv(e)
                     } else {
                         tp.expand()[e.tk_.num - 1]
                     }
-                    is Expr.UPred -> Type.Nat(Tk.Nat(TK.XNAT, e.tk.lin, e.tk.col, null, "int")).setUp(e)
+                    is Expr.UPred -> Type.Nat(Tk.Nat(TK.XNAT, e.tk.lin, e.tk.col, null, "int")).setUp(e).setEnv(e)
                     else -> error("bug found")
                 }
             }

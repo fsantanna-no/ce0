@@ -23,3 +23,16 @@ fun Attr.toExpr (): Expr {
         is Attr.UDisc -> Expr.UDisc(this.tk_,this.uni.toExpr())
     }
 }
+
+// Expr.Var or Expr.Nat->null
+fun Expr.toBaseVar (): Expr.Var? {
+    return when (this) {
+        is Expr.Nat -> null
+        is Expr.Var -> this
+        is Expr.TDisc -> this.tup.toBaseVar()
+        is Expr.Dnref -> this.ptr.toBaseVar()
+        is Expr.Upref -> this.pln.toBaseVar()
+        is Expr.UDisc -> this.uni.toBaseVar()
+        else -> error("bug found")
+    }
+}

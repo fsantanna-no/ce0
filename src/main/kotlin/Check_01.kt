@@ -1,14 +1,21 @@
 fun Tk.Scope.check (up: Any) {
     val ok = when {
-        (this.lbl == "var")    -> true
         (this.lbl == "global") -> true
         (this.lbl == "local")  -> true
-        //(up is Type.Func) -> true                             // ... -> ... [@_1]
-        (up.ups_first { it is Type.Func } != null) -> true      // (@_1 -> ...)
-        (up.ups_first {                                         // { @aaa ... @aaa }
-            it is Stmt.Block && it.scope!=null && it.scope.lbl==this.lbl && it.scope.num==this.num
-        } != null) -> true
-        (up.ups_first {                                         // [@_1, ...] { @_1 }
+        (up.ups_first { it is Type.Func } != null) -> true  // (@_1 -> ...)
+        up.env(this.lbl).let {                              // { @aaa ... @aaa }
+            /*
+            println(this.lbl)
+            println(up)
+            println(">>>")
+            println(up.env_all())
+            println("<<<")
+            println(it)
+             */
+            it is Stmt.Block && this.lbl==it.scope!!.lbl && this.num==it.scope!!.num ||
+            it is Stmt.Var   && this.lbl==it.tk_.str     && this.num==null
+        } -> true
+        (up.ups_first {                                     // [@_1, ...] { @_1 }
             it is Expr.Func && it.type_.scps.any { it.lbl==this.lbl && it.num==this.num }
         } != null) -> true
         else -> false

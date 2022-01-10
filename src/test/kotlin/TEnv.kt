@@ -791,7 +791,7 @@ class TEnv {
                 var x: /()
                 {
                     var y: /() @local
-                    set x = call f {@aaa} x: @aaa -- ok
+                    set x = call f {@x} x: @aaa -- ok
                 }
             }
         """.trimIndent())

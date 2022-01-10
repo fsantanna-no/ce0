@@ -54,6 +54,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
     }
     return this.aux(lin,col).let {
         it.setUps(up)
+        //it.visit { it.setEnv(up) }
         it
     }
 }
@@ -88,13 +89,17 @@ fun Type.Union.expand (): Array<Type> {
 fun Tk.Scope.scope (up: Any): Scope {
     val lvl = up.ups_tolist().filter { it is Expr.Func }.count() // level of function nesting
     return when (this.lbl) { // (... || it is Expr.Func) b/c of arg/ret, otherwise no block up to outer func
-        "var"    -> Scope(lvl, null, up.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
         "global" -> Scope(lvl, null, 0)
         "local"  -> Scope(lvl, null, up.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
         else -> {
-            val blk = up.ups_first { it is Stmt.Block && it.scope!=null && it.scope.lbl==this.lbl }
+            val blk = up.env(this.lbl)
+            println(this.lbl)
+            println(up)
+            println(up.env_all())
             if (blk != null) {
-                Scope(lvl, null, 1 + blk.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
+                println(this.lbl)
+                val one = if (blk is Stmt.Block) 1 else 0
+                Scope(lvl, null, one + blk.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
             } else {    // false = relative to function block
                 Scope(lvl, this.lbl, (this.num ?: 0))
             }
@@ -104,12 +109,16 @@ fun Tk.Scope.scope (up: Any): Scope {
 
 fun Type.scope (): Scope {
     return when {
-        this is Type.Ptr -> this.scope.scope(this)
+        this is Type.Ptr -> {
+            print("SCOPE: ") ; println(this)
+            this.scope.scope(this)
+        }
         (this is Type.Func) && (this.clo!=null) -> this.clo.scope(this)    // body holds pointers in clo
         else -> {
             val lvl = this.ups_tolist().filter { it is Expr.Func }.count()
             Scope(lvl, null, this.ups_tolist().let { it.count { it is Stmt.Block } })
             Scope(0, null, 0)
+            //TODO()
         }
     }
 }

@@ -108,7 +108,7 @@ fun check_02_after_tps (s: Stmt) {
                                     acc[scp.lbl].let { if (it == null) null else it[scp.num]!! }
                                 }
                                 if (ret == null) tp else {
-                                    Type.Ptr(tp.tk_, ret, aux(tp.pln,dofunc)).setUp(e)
+                                    Type.Ptr(tp.tk_, ret, aux(tp.pln,dofunc)).setUp(e).setEnv(e)
                                 }
                             }
                             is Type.Func -> if (!dofunc) tp else {
@@ -119,7 +119,7 @@ fun check_02_after_tps (s: Stmt) {
                                         acc[scp.lbl].let { if (it == null) tp.clo else it[scp.num]!! }
                                     }
                                 }
-                                Type.Func(tp.tk_, ret, tp.scps, aux(tp.inp,dofunc), aux(tp.out,dofunc)).setUp(e)
+                                Type.Func(tp.tk_, ret, tp.scps, aux(tp.inp,dofunc), aux(tp.out,dofunc)).setUp(e).setEnv(e)
                             }
                         }
                     }
@@ -129,17 +129,17 @@ fun check_02_after_tps (s: Stmt) {
                     )
                 }
 
-                /*
+                ///*
                 //print("INP1: ") ; println(inp1.tostr())
-                print("INP2: ") ; println(inp2.tostr())
-                print("ARG1: ") ; println(arg1.tostr())
+                print("INP2: ") ; println(inp2.tostr()) ; println(inp2.scope())
+                print("ARG1: ") ; println(arg1.tostr()) ; println(arg1.scope())
                 //print("ARG2: ") ; println(arg2.tostr())
                 //println("OUT, RET1, RET2")
                 //print("OUT1: ") ; println(out1.tostr())
                 print("OUT2: ") ; println(out2.tostr())
                 print("RET1: ") ; println(ret1.tostr())
                 //print("RET2: ") ; println(ret2.tostr())
-                */
+                //*/
 
                 All_assert_tk(e.f.tk, inp2.isSupOf(arg1) && ret1.isSupOf(out2)) {
                     //println(inp2.isSupOf(arg1))
