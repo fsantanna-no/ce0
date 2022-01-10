@@ -75,14 +75,14 @@ fun Type.Union.expand (): Array<Type> {
     fun aux (cur: Type, up: Int): Type {
         return when (cur) {
             is Type.Rec   -> if (up == cur.tk_.up) this else { assert(up>cur.tk_.up) ; cur }
-            is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray()) .setUp(cur.up!!)
-            is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray()) .setUp(cur.up!!)
-            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scope, aux(cur.pln,up)) .setUp(cur.up!!)
-            is Type.Func  -> Type.Func(cur.tk_, cur.clo, cur.scps, aux(cur.inp,up), aux(cur.out,up)) .setUp(cur.up!!)
+            is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray())
+            is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray())
+            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scope, aux(cur.pln,up))
+            is Type.Func  -> Type.Func(cur.tk_, cur.clo, cur.scps, aux(cur.inp,up), aux(cur.out,up))
             else -> cur
         }
     }
-    return this.vec.map { aux(it, 1) }.toTypedArray()
+    return this.vec.map { aux(it, 1).lincol(this,this.tk.lin,this.tk.col) }.toTypedArray()
 }
 
 fun Tk.Scope.scope (up: Any): Scope {

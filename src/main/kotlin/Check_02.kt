@@ -123,7 +123,10 @@ fun check_02_after_tps (s: Stmt) {
                             }
                         }
                     }
-                    Pair(aux(inp1,false), aux(out1,true))
+                    Pair (
+                        aux(inp1,false), //.lincol(func,func.tk.lin,func.tk.col),
+                        aux(out1,true)   //.lincol(func,func.tk.lin,func.tk.col)
+                    )
                 }
 
                 /*
