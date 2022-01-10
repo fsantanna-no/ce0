@@ -390,6 +390,13 @@ class TEnv {
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
+    @Test
+    fun c19_arg_err () {
+        val out = inp2env("""
+            var c: _int; set c = arg.1\!1.1
+        """.trimIndent())
+        assert(out == "(ln 1, col 22): undeclared variable \"arg\"") { out }
+    }
 
     // TUPLE / UNION DISCRIMINATOR
 

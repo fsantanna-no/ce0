@@ -1195,13 +1195,6 @@ class TExec {
         """.trimIndent())
         assert(out == "30\n") { out }
     }
-    @Test
-    fun k02_var_union () {
-        val out = all("""
-            var c: _int; set c = arg.1\!1.1
-        """.trimIndent())
-        assert(out == "(ln 1, col 22): undeclared variable \"arg\"") { out }
-    }
 
     // UNION SELF POINTER / HOLD
 
