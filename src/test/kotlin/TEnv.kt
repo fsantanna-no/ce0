@@ -1,4 +1,3 @@
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
@@ -14,7 +13,7 @@ class TEnv {
         try {
             val s = parser_stmts(all, Pair(TK.EOF,null))
             aux_clear()
-            s.aux_upsenvs(null, null)
+            s.aux_envs(null, null)
             check_01_before_tps(s)
             s.aux_tps()
             check_02_after_tps(s)

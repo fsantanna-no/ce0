@@ -31,10 +31,23 @@ fun Type.lincol (lin: Int, col: Int): Type {
     return when (this) {
         is Type.Unit  -> Type.Unit(this.tk_.copy(lin_=lin,col_=col))
         is Type.Nat   -> Type.Nat(this.tk_.copy(lin_=lin,col_=col))
-        is Type.Tuple -> Type.Tuple(this.tk_.copy(lin_=lin,col_=col), this.vec.map { it.lincol(lin,col) }.toTypedArray())
-        is Type.Union -> Type.Union(this.tk_.copy(lin_=lin,col_=col), this.isrec, this.vec.map { it.lincol(lin,col) }.toTypedArray())
-        is Type.Func  -> Type.Func(this.tk_.copy(lin_=lin,col_=col), this.clo?.copy(lin_=lin,col_=col), this.scps.map { it.copy(lin_=lin,col_=col) }.toTypedArray(), this.inp.lincol(lin,col), this.out.lincol(lin,col))
-        is Type.Ptr   -> Type.Ptr(this.tk_.copy(lin_=lin,col_=col), this.scope, this.pln.lincol(lin,col))
+        is Type.Tuple -> Type.Tuple(this.tk_.copy(lin_=lin,col_=col), this.vec.map { it.lincol(lin,col) }.toTypedArray()).let {
+            it.vec.forEach { sub -> sub.up = it }
+            it
+        }
+        is Type.Union -> Type.Union(this.tk_.copy(lin_=lin,col_=col), this.isrec, this.vec.map { it.lincol(lin,col) }.toTypedArray()).let {
+            it.vec.forEach { sub -> sub.up = it }
+            it
+        }
+        is Type.Func  -> Type.Func(this.tk_.copy(lin_=lin,col_=col), this.clo?.copy(lin_=lin,col_=col), this.scps.map { it.copy(lin_=lin,col_=col) }.toTypedArray(), this.inp.lincol(lin,col), this.out.lincol(lin,col)).let {
+            it.inp.up = it
+            it.out.up = it
+            it
+        }
+        is Type.Ptr   -> Type.Ptr(this.tk_.copy(lin_=lin,col_=col), this.scope, this.pln.lincol(lin,col)).let {
+            it.pln.up = it
+            it
+        }
         is Type.Rec   -> Type.Rec(this.tk_.copy(lin_=lin,col_=col))
     }
 }
@@ -56,10 +69,10 @@ fun Type.Union.expand (): Array<Type> {
     fun aux (cur: Type, up: Int): Type {
         return when (cur) {
             is Type.Rec   -> if (up == cur.tk_.up) this else { assert(up>cur.tk_.up) ; cur }
-            is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray()) .up(AUX.ups[cur]!!)
-            is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray()) .up(AUX.ups[cur]!!)
-            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scope, aux(cur.pln,up)) .up(AUX.ups[cur]!!)
-            is Type.Func  -> Type.Func(cur.tk_, cur.clo, cur.scps, aux(cur.inp,up), aux(cur.out,up)) .up(AUX.ups[cur]!!)
+            is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray()) .setUp(cur.up!!)
+            is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray()) .setUp(cur.up!!)
+            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scope, aux(cur.pln,up)) .setUp(cur.up!!)
+            is Type.Func  -> Type.Func(cur.tk_, cur.clo, cur.scps, aux(cur.inp,up), aux(cur.out,up)) .setUp(cur.up!!)
             else -> cur
         }
     }

@@ -57,7 +57,7 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
                 (this.scope.lbl == sub.scope.lbl) && (this.scope.num == sub.scope.num)
             } else {
                 val dst = this.scope()
-                val src  = sub.scope()
+                val src = sub.scope()
                 // (dthis.rel==dsub.rel): abs vs abs || rel vs rel // (no @aaa vs @1)
                 // (dthis.level==dsub.level && dthis.rel==null): unless @aaa=@1 are in the same function (then always @1<=@aaa)
                 when {

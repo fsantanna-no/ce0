@@ -8,7 +8,7 @@ fun ce2c (ce: String): Pair<Boolean,String> {
     try {
         val s = parser_stmts(all, Pair(TK.EOF,null))
         aux_clear()
-        s.aux_upsenvs(null, null)
+        s.aux_envs(null, null)
         check_01_before_tps(s)
         s.aux_tps()
         check_02_after_tps(s)
