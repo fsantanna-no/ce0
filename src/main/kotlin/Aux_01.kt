@@ -76,36 +76,23 @@ fun env_add (v: Any, env: Env?) {
 //////////////////////////////////////////////////////////////////////////////
 
 //private
-fun Type.aux_envs() {
-    when (this) {
-        is Type.Tuple -> this.vec.forEach { it.aux_envs() }
-        is Type.Union -> this.vec.forEach { it.aux_envs() }
-        is Type.Func  -> { this.inp.aux_envs(); this.out.aux_envs() }
-        is Type.Ptr   -> this.pln.aux_envs()
-    }
-}
-
-//private
-fun Expr.aux_envs (up: Any, env: Env?) {
+fun Expr.aux_envs (env: Env?) {
     env_add(this, env)
     when (this) {
-        is Expr.TCons -> this.arg.forEachIndexed { _,e -> e.aux_envs(this, env) }
-        is Expr.UCons -> { this.type?.aux_envs(); this.arg.aux_envs(this, env) }
-        is Expr.New   -> this.arg.aux_envs(this, env)
-        is Expr.Dnref -> this.ptr.aux_envs(this, env)
-        is Expr.Upref -> this.pln.aux_envs(this, env)
-        is Expr.TDisc -> this.tup.aux_envs(this, env)
-        is Expr.UDisc -> this.uni.aux_envs(this, env)
-        is Expr.UPred -> this.uni.aux_envs(this, env)
-        is Expr.Out   -> this.arg.aux_envs(this, env)
+        is Expr.TCons -> this.arg.forEachIndexed { _,e -> e.aux_envs(env) }
+        is Expr.UCons -> this.arg.aux_envs(env)
+        is Expr.New   -> this.arg.aux_envs(env)
+        is Expr.Dnref -> this.ptr.aux_envs(env)
+        is Expr.Upref -> this.pln.aux_envs(env)
+        is Expr.TDisc -> this.tup.aux_envs(env)
+        is Expr.UDisc -> this.uni.aux_envs(env)
+        is Expr.UPred -> this.uni.aux_envs(env)
+        is Expr.Out   -> this.arg.aux_envs(env)
         is Expr.Call  -> {
-            this.f.aux_envs(this, env)
-            this.arg.aux_envs(this, env)
+            this.f.aux_envs(env)
+            this.arg.aux_envs(env)
         }
-        is Expr.Func  -> {
-            this.type_.aux_envs()
-            this.block.aux_envs(this, env)
-        }
+        is Expr.Func  -> this.block.aux_envs(this, env)
     }
 }
 
@@ -113,23 +100,20 @@ fun Stmt.aux_envs (up: Any?, env: Env?): Env? {
     env_add(this, env)
     return when (this) {
         is Stmt.Nop, is Stmt.Nat, is Stmt.Ret, is Stmt.Break -> env
-        is Stmt.Var -> {
-            this.type?.aux_envs()
-            Env(this,env)
-        }
+        is Stmt.Var -> Env(this,env)
         is Stmt.Set -> {
-            this.dst.aux_envs(this, env)
-            this.src.aux_envs(this, env)
+            this.dst.aux_envs(env)
+            this.src.aux_envs(env)
             env
         }
-        is Stmt.SExpr -> { this.e.aux_envs(this, env) ; env }
+        is Stmt.SExpr -> { this.e.aux_envs(env) ; env }
         is Stmt.Seq -> {
             val e1 = this.s1.aux_envs(this, env)
             val e2 = this.s2.aux_envs(this, e1)
             e2
         }
         is Stmt.If -> {
-            this.tst.aux_envs(this,env)
+            this.tst.aux_envs(env)
             this.true_.aux_envs(this, env)
             this.false_.aux_envs(this, env)
             env
