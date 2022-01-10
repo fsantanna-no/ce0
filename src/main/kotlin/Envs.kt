@@ -9,20 +9,6 @@ fun Any.getEnv (): Any? {
     }
 }
 
-fun Type.setEnv (env: Any?): Type {
-    (this as Any).setEnv(env)
-    return this
-}
-
-fun Any.setEnv (env: Any?) {
-    when (this) {
-        is Type -> this.env = env
-        is Expr -> this.env = env
-        is Stmt -> this.env = env
-        else -> error("bug found")
-    }
-}
-
 fun Any.toType (): Type {
     return when (this) {
         is Type     -> this

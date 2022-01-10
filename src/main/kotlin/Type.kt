@@ -1,3 +1,9 @@
+fun Type.build (up: Any): Type {
+    this.up  = up
+    this.env = up.getEnv()
+    return this
+}
+
 fun Tk.Scope?.tostr (): String {
     return if (this == null) "" else {
         "@" + this.lbl + (if (this.num == null) "" else ("_" + this.num))

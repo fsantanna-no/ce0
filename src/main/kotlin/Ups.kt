@@ -1,8 +1,3 @@
-fun Type.setUp (up: Any): Type {
-    this.up = up
-    return this
-}
-
 fun Any.getUp (): Any? {
     return when (this) {
         is Type -> this.up
