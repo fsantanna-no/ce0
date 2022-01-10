@@ -75,7 +75,7 @@ fun env_add (v: Any, env: Env?) {
 
 //////////////////////////////////////////////////////////////////////////////
 
-//private
+private
 fun Expr.aux_envs (env: Env?) {
     env_add(this, env)
     when (this) {
@@ -92,11 +92,11 @@ fun Expr.aux_envs (env: Env?) {
             this.f.aux_envs(env)
             this.arg.aux_envs(env)
         }
-        is Expr.Func  -> this.block.aux_envs(this, env)
+        is Expr.Func  -> this.block.aux_envs(env)
     }
 }
 
-fun Stmt.aux_envs (up: Any?, env: Env?): Env? {
+fun Stmt.aux_envs (env: Env?): Env? {
     env_add(this, env)
     return when (this) {
         is Stmt.Nop, is Stmt.Nat, is Stmt.Ret, is Stmt.Break -> env
@@ -108,17 +108,17 @@ fun Stmt.aux_envs (up: Any?, env: Env?): Env? {
         }
         is Stmt.SExpr -> { this.e.aux_envs(env) ; env }
         is Stmt.Seq -> {
-            val e1 = this.s1.aux_envs(this, env)
-            val e2 = this.s2.aux_envs(this, e1)
+            val e1 = this.s1.aux_envs(env)
+            val e2 = this.s2.aux_envs(e1)
             e2
         }
         is Stmt.If -> {
             this.tst.aux_envs(env)
-            this.true_.aux_envs(this, env)
-            this.false_.aux_envs(this, env)
+            this.true_.aux_envs(env)
+            this.false_.aux_envs(env)
             env
         }
-        is Stmt.Loop  -> { this.block.aux_envs(this,env) ; env }
-        is Stmt.Block -> { this.body.aux_envs(this,env) ; env }
+        is Stmt.Loop  -> { this.block.aux_envs(env) ; env }
+        is Stmt.Block -> { this.body.aux_envs(env) ; env }
     }
 }
