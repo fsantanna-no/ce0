@@ -31,7 +31,7 @@ class TCode {
     @Test
     fun b02_expr_var () {
         val e = Expr.Var(Tk.Str(TK.XVAR,1,1,"xxx"))
-        AUX.env[e] = Env (
+        ENV[e] = Env (
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"xxx"),
                 Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
@@ -45,7 +45,7 @@ class TCode {
     @Test
     fun b03_expr_nat () {
         val e = Expr.Var(Tk.Str(TK.XNAT,1,1,"xxx"))
-        AUX.env[e] = Env (
+        ENV[e] = Env (
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"xxx"),
                 Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
@@ -79,7 +79,7 @@ class TCode {
             Tk.Num(TK.XNUM,1,1,1),
             Expr.Var(Tk.Str(TK.XVAR,1,1,"x"))
         )
-        AUX.env[e.tup] = Env (
+        ENV[e.tup] = Env (
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"x"),
                 Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))))

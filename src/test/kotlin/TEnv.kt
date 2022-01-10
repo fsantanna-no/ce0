@@ -12,7 +12,7 @@ class TEnv {
         lexer(all)
         try {
             val s = parser_stmts(all, Pair(TK.EOF,null))
-            aux_clear()
+            ENV.clear()
             s.aux_envs(null)
             check_01_before_tps(s)
             s.aux_tps()

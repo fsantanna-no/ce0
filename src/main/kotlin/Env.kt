@@ -1,45 +1,6 @@
 data class Env (val s: Stmt.Var, val prv: Env?)
 
-object AUX {
-    val env = mutableMapOf<Any,Env>()
-}
-
-fun aux_clear () {
-    AUX.env.clear()
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-fun Type.setUp (up: Any): Type {
-    this.up = up
-    return this
-}
-
-fun Any.getUp (): Any? {
-    return when (this) {
-        is Type -> this.up
-        is Expr -> this.up
-        is Stmt -> this.up
-        else    -> error("bug found")
-    }
-}
-
-fun Any.ups_tolist(): List<Any> {
-    val up = this.getUp()
-    return when {
-        (up == null) -> emptyList()
-        else -> up.let { listOf(it) + it.ups_tolist() }
-    }
-}
-
-fun Any.ups_first (f: (Any)->Boolean): Any? {
-    val up = this.getUp()
-    return when {
-        (up == null) -> null
-        f(up) -> up
-        else -> up.ups_first(f)
-    }
-}
+val ENV = mutableMapOf<Any,Env>()
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -51,7 +12,7 @@ fun Any.env_first (f: (Any)->Boolean): Any? {
             else -> aux(env.prv)
         }
     }
-    return aux (AUX.env[this])
+    return aux (ENV[this])
 }
 
 fun Any.env (id: String): Pair<Stmt.Var?,Type?> {   // TODO: Either
@@ -69,8 +30,8 @@ fun Expr.Var.env (): Pair<Stmt.Var?,Type?> {   // TODO: Either
 private
 fun env_add (v: Any, env: Env?) {
     if (env == null) return
-    assert(AUX.env[v] == null)
-    AUX.env[v] = env
+    assert(ENV[v] == null)
+    ENV[v] = env
 }
 
 //////////////////////////////////////////////////////////////////////////////
