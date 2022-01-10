@@ -13,9 +13,9 @@ class TEnv {
         try {
             val s = parser_stmts(all, Pair(TK.EOF,null))
             ENV.clear()
-            s.aux_envs(null)
+            s.setEnvs(null)
             check_01_before_tps(s)
-            s.aux_tps()
+            s.setTypes()
             check_02_after_tps(s)
             return "OK"
         } catch (e: Throwable) {

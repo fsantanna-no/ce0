@@ -1,4 +1,4 @@
-fun Stmt.aux_tps () {
+fun Stmt.setTypes () {
     fun fe (e: Expr) {
         e.type = e.type ?: when (e) {
             is Expr.Upref -> e.pln.type!!.let {
