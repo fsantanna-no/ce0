@@ -4,7 +4,7 @@ fun Stmt.setTypes () {
             is Expr.Upref -> e.pln.xtype!!.let {
                 val lbl = e.toBaseVar()?.tk_?.str ?: "global"
                 val scp1 = Tk.Scp1(TK.XSCOPE,e.tk.lin,e.tk.col, lbl,null)
-                Type.Ptr(e.tk_, scp1, scp1.toScp2(e), it).clone(e,e.tk.lin,e.tk.col).clone(e,e.tk.lin,e.tk.col)
+                Type.Ptr(e.tk_, scp1, scp1.toScp2(e), it).clone(e,e.tk.lin,e.tk.col)
             }
             is Expr.Dnref -> e.ptr.xtype.let {
                 if (it is Type.Nat) it else {
