@@ -117,8 +117,8 @@ fun check_01_before_tps (s: Stmt) {
 
             is Expr.New  -> e.scp1?.check(e)
             is Expr.Call -> {
-                e.sout.let { it?.check(e) }
-                e.sinps.forEach { it.check(e) }
+                e.scp1s.second.let { it?.check(e) }
+                e.scp1s.first.forEach { it.check(e) }
             }
         }
     }

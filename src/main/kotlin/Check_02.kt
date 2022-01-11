@@ -68,10 +68,10 @@ fun check_02_after_tps (s: Stmt) {
                 // var f: /(... -> {@_1,@_2,...} -> ...)
                 // call f\ {@a,@b,...} ...
                 if (scps1 != null) {
-                    All_assert_tk(e.tk, scps1.size == e.sinps.size) {
+                    All_assert_tk(e.tk, scps1.size == e.scp1s.first.size) {
                         "invalid call : scope mismatch"
                     }
-                    scps1.zip(e.sinps).forEach { (ff,ee) ->
+                    scps1.zip(e.scp1s.first).forEach { (ff,ee) ->
                         val num   = ff.num!!
                         acc[ff.lbl].let {
                             if (it == null) {

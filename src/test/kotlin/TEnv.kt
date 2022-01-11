@@ -16,6 +16,7 @@ class TEnv {
             s.setEnvs(null)
             check_01_before_tps(s)
             s.setTypes()
+            s.setScopes()
             check_02_after_tps(s)
             return "OK"
         } catch (e: Throwable) {

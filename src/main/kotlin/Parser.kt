@@ -164,11 +164,11 @@ fun parser_expr (all: All): Expr {
             val tk_pre = all.tk0 as Tk.Key
             val f = parser_expr(all)
 
-            val scps = mutableListOf<Tk.Scope>()
+            val iscps = mutableListOf<Tk.Scope>()
             if (all.accept(TK.CHAR, '{')) {
                 while (all.accept(TK.XSCOPE)) {
                     val tk = all.tk0 as Tk.Scope
-                    scps.add(tk)
+                    iscps.add(tk)
                     if (!all.accept(TK.CHAR, ',')) {
                         break
                     }
@@ -178,13 +178,13 @@ fun parser_expr (all: All): Expr {
 
             val arg = parser_expr(all)
 
-            val scp = if (all.accept(TK.CHAR, ':')) {
+            val oscp = if (all.accept(TK.CHAR, ':')) {
                 all.accept_err(TK.XSCOPE)
                 all.tk0 as Tk.Scope
             } else {
                 Tk.Scope(TK.XSCOPE, all.tk0.lin, all.tk0.col, "local", null)
             }
-            Expr.Call(tk_pre, scp, f, scps.toTypedArray(), arg)
+            Expr.Call(tk_pre, f, arg, Pair(iscps.toTypedArray(),oscp))
         }
         all.accept(TK.INPUT) -> {
             val tk = all.tk0 as Tk.Key

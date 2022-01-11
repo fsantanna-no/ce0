@@ -21,7 +21,7 @@ fun Stmt.setTypes () {
                     when (it) {
                         is Type.Nat -> it
                         is Type.Func -> {
-                            val MAP = it.scp1s.map { Pair(it.lbl,it.num) }.zip(e.sinps.map { Pair(it.lbl,it.num) }).toMap()
+                            val MAP = it.scp1s.map { Pair(it.lbl,it.num) }.zip(e.scp1s.first.map { Pair(it.lbl,it.num) }).toMap()
                             fun f (tk: Tk.Scope): Tk.Scope {
                                 return MAP[Pair(tk.lbl,tk.num)].let { if (it == null) tk else
                                     Tk.Scope(TK.XSCOPE, tk.lin, tk.col, it.first, it.second)
