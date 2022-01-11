@@ -67,7 +67,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
                     this.scp1s.first?.copy(lin_ = lin, col_ = col),
                     this.scp1s.second.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray()
                 ),
-                //this.scp2s,
+                this.scp2s,
                 this.inp.aux(lin, col),
                 this.out.aux(lin, col)
             )
@@ -103,7 +103,7 @@ fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
                     this.scp1s.first?.copy(lin_ = lin, col_ = col),
                     this.scp1s.second.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray()
                 ),
-                //this.scp2s,
+                this.scp2s,
                 this.inp.aux(lin, col),
                 this.out.aux(lin, col)
             )
@@ -134,7 +134,7 @@ fun Type.Union.expand (): Array<Type> {
             is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray())
             is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray())
             is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scp1, cur.scp2, aux(cur.pln,up))
-            is Type.Func  -> Type.Func(cur.tk_, cur.scp1s, /*cur.scp2s,*/ aux(cur.inp,up), aux(cur.out,up))
+            is Type.Func  -> Type.Func(cur.tk_, cur.scp1s, cur.scp2s, aux(cur.inp,up), aux(cur.out,up))
             else -> cur
         }
     }
@@ -143,12 +143,8 @@ fun Type.Union.expand (): Array<Type> {
 
 fun Type.toScp2 (): Scp2 {
     return when {
-        this is Type.Ptr -> {
-            //print("SCOPE: ") ; println(this)
-            //this.scp1.scope(this)
-            this.scp2 ?: this.scp1.toScp2(this)
-        }
-        (this is Type.Func) && (this.scp1s.first!=null) -> this.scp1s.first!!.toScp2(this)    // body holds pointers in clo
+        this is Type.Ptr -> this.scp2!!
+        (this is Type.Func) && (this.scp1s.first!=null) -> this.scp2s!!.first!! // body holds pointers in clo
         else -> {
             val lvl = this.ups_tolist().filter { it is Expr.Func }.count()
             Scp2(lvl, null, this.ups_tolist().let { it.count { it is Stmt.Block } })

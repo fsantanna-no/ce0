@@ -78,7 +78,7 @@ fun parser_type (all: All): Type {
             all.accept_err(TK.ARROW)
             val out = parser_type(all) // right associative
             if (par) all.accept_err(TK.CHAR, ')')
-            Type.Func(tk0, Pair(clo,scps.toTypedArray()), /*null,*/ inp, out)
+            Type.Func(tk0, Pair(clo,scps.toTypedArray()), null, inp, out)
         }
         else -> {
             all.err_expected("type")
