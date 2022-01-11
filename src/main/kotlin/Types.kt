@@ -22,25 +22,40 @@ fun Stmt.setTypes () {
                     when (it) {
                         is Type.Nat -> it
                         is Type.Func -> {
-                            val MAP = it.scp1s.second.map { Pair(it.lbl,it.num) }.zip(e.scp1s.first.map { Pair(it.lbl,it.num) }).toMap()
-                            fun f (tk: Tk.Scp1): Tk.Scp1 {
-                                return MAP[Pair(tk.lbl,tk.num)].let { if (it == null) tk else
-                                    Tk.Scp1(TK.XSCOPE, tk.lin, tk.col, it.first, it.second)
-                                }
+                            // calculates return of "e" call based on "e.f" function type
+                            // "e" passes "e.arg" with "e.scp1s.first" scopes which may affect "e.f" return scopes
+                            // we want to map these input scopes into "e.f" return scopes
+                            //  var f: func /@a_1 -> /@b_1
+                            //              /     /---/
+                            //  call f {@scp1,@scp2}  -->  /@scp2
+                            //  f passes two scopes, first goes to @a_1, second goes to @b_1 which is the return
+                            //  so @scp2 maps to @b_1
+                            // zip [[{@scp1a,@scp1b},{@scp2a,@scp2b}],{@a_1,@b_1}]
+                            //assert(it.scp1s.second.size == e.scp1s.first.size) // TODO: may fail before check2
+                            val MAP: List<Pair<Tk.Scp1,Pair<Tk.Scp1,Scp2>>> = it.scp1s.second.zip(e.scp1s.first.zip(e.xscp2s!!.first))
+                            fun Tk.Scp1.get (scp2: Scp2): Pair<Tk.Scp1,Scp2> {
+                                return MAP.find { it.first.let { it.lbl==this.lbl && it.num==this.num } }?.second ?: Pair(this,scp2)
                             }
                             fun map (tp: Type): Type {
                                 return when (tp) {
-                                    is Type.Ptr   -> Type.Ptr(tp.tk_, f(tp.scp1), f(tp.scp1).toScp2(e), map(tp.pln)).clone(e,e.tk.lin,e.tk.col)
+                                    is Type.Ptr   -> tp.scp1.get(tp.xscp2!!).let {
+                                        Type.Ptr(tp.tk_, it.first, it.second, map(tp.pln)).clone(e,e.tk.lin,e.tk.col)
+                                    }
                                     is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
                                     is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
-                                    is Type.Func  -> Type.Func (
-                                        tp.tk_,
-                                        Pair(if (tp.scp1s.first==null) tp.scp1s.first else f(tp.scp1s.first!!),
-                                        tp.scp1s.second.map { f(it) }.toTypedArray()),
-                                        tp.xscp2s,
-                                        map(tp.inp),
-                                        map(tp.out)).clone(e,e.tk.lin,e.tk.col
-                                    )
+                                    is Type.Func  -> {
+                                        val clo = tp.scp1s.first?.get(tp.xscp2s!!.first!!)
+                                        val (x1,x2) = tp.scp1s.second.zip(tp.xscp2s!!.second)
+                                            .map { it.first.get(it.second) }
+                                            .unzip()
+                                        Type.Func (
+                                            tp.tk_,
+                                            Pair(clo?.first, x1.toTypedArray()),
+                                            Pair(clo?.second, x2.toTypedArray()),
+                                            map(tp.inp),
+                                            map(tp.out)
+                                        ).clone(e,e.tk.lin,e.tk.col)
+                                    }
                                     else -> tp
                                 }
                             }
