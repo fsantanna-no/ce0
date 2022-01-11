@@ -67,7 +67,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
                     this.scp1s.first?.copy(lin_ = lin, col_ = col),
                     this.scp1s.second.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray()
                 ),
-                this.scp2s,
+                //this.scp2s,
                 this.inp.aux(lin, col),
                 this.out.aux(lin, col)
             )
@@ -103,7 +103,7 @@ fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
                     this.scp1s.first?.copy(lin_ = lin, col_ = col),
                     this.scp1s.second.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray()
                 ),
-                this.scp2s,
+                //this.scp2s,
                 this.inp.aux(lin, col),
                 this.out.aux(lin, col)
             )
@@ -134,7 +134,7 @@ fun Type.Union.expand (): Array<Type> {
             is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray())
             is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray())
             is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scp1, cur.scp2, aux(cur.pln,up))
-            is Type.Func  -> Type.Func(cur.tk_, cur.scp1s, cur.scp2s, aux(cur.inp,up), aux(cur.out,up))
+            is Type.Func  -> Type.Func(cur.tk_, cur.scp1s, /*cur.scp2s,*/ aux(cur.inp,up), aux(cur.out,up))
             else -> cur
         }
     }
