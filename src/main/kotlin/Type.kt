@@ -29,7 +29,7 @@ fun Type.tostr (): String {
         is Type.Unit  -> "()"
         is Type.Nat   -> this.tk_.toce()
         is Type.Rec   -> "^".repeat(this.tk_.up)
-        is Type.Ptr   -> this.scp1.let { "/" + this.pln.tostr() + it.tostr() }
+        is Type.Ptr   -> this.xscp1.let { "/" + this.pln.tostr() + it.tostr() }
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
         is Type.Func  -> "func {" + this.xscp1s.first.tostr() + "} -> {" + this.xscp1s.second.map { it.tostr() }.joinToString(",") + "} -> " + this.inp.tostr() + " -> " + this.out.tostr()
@@ -73,7 +73,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
             )
             is Type.Ptr -> Type.Ptr(
                 this.tk_.copy(lin_ = lin, col_ = col),
-                this.scp1.copy(lin_=lin,col_=col),
+                this.xscp1.copy(lin_=lin,col_=col),
                 this.xscp2,
                 this.pln.aux(lin, col)
             )
@@ -107,7 +107,7 @@ fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
                 this.inp.aux(lin, col),
                 this.out.aux(lin, col)
             )
-            is Type.Ptr -> Type.Ptr(this.tk_.copy(lin_ = lin, col_ = col), this.scp1.copy(lin_=lin,col_=col), this.xscp2, this.pln.aux(lin, col))
+            is Type.Ptr -> Type.Ptr(this.tk_.copy(lin_ = lin, col_ = col), this.xscp1.copy(lin_=lin,col_=col), this.xscp2, this.pln.aux(lin, col))
             is Type.Rec -> Type.Rec(this.tk_.copy(lin_ = lin, col_ = col))
         }
     }
@@ -133,7 +133,7 @@ fun Type.Union.expand (): Array<Type> {
             is Type.Rec   -> if (up == cur.tk_.up) this else { assert(up>cur.tk_.up) ; cur }
             is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray())
             is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray())
-            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scp1, cur.xscp2, aux(cur.pln,up))
+            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.xscp1, cur.xscp2, aux(cur.pln,up))
             is Type.Func  -> Type.Func(cur.tk_, cur.xscp1s, cur.xscp2s, aux(cur.inp,up), aux(cur.out,up))
             else -> cur
         }

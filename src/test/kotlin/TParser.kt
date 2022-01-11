@@ -100,14 +100,14 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("/()"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Ptr && tp.scp1.lbl=="local")      // error on check
+        assert(tp is Type.Ptr && tp.xscp1.lbl=="local")      // error on check
     }
     @Test
     fun a09_parser_type_ptr_err2 () {
         val all = All_new(PushbackReader(StringReader("/()@"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Ptr && tp.scp1.lbl=="")
+        assert(tp is Type.Ptr && tp.xscp1.lbl=="")
     }
     @Test
     fun a10_parser_type_ptr0 () {
@@ -179,7 +179,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("//() @a @b"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Ptr && tp.scp1.lbl=="b" && tp.pln is Type.Ptr && (tp.pln as Type.Ptr).scp1.lbl=="a")
+        assert(tp is Type.Ptr && tp.xscp1.lbl=="b" && tp.pln is Type.Ptr && (tp.pln as Type.Ptr).xscp1.lbl=="a")
     }
 
     // EXPR

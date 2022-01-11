@@ -32,13 +32,13 @@ fun Stmt.setTypes () {
                             //  so @scp2 maps to @b_1
                             // zip [[{@scp1a,@scp1b},{@scp2a,@scp2b}],{@a_1,@b_1}]
                             //assert(it.scp1s.second.size == e.scp1s.first.size) // TODO: may fail before check2
-                            val MAP: List<Pair<Tk.Scp1,Pair<Tk.Scp1,Scp2>>> = it.xscp1s.second.zip(e.scp1s.first.zip(e.xscp2s!!.first))
+                            val MAP: List<Pair<Tk.Scp1,Pair<Tk.Scp1,Scp2>>> = it.xscp1s.second.zip(e.xscp1s.first.zip(e.xscp2s!!.first))
                             fun Tk.Scp1.get (scp2: Scp2): Pair<Tk.Scp1,Scp2> {
                                 return MAP.find { it.first.let { it.lbl==this.lbl && it.num==this.num } }?.second ?: Pair(this,scp2)
                             }
                             fun map (tp: Type): Type {
                                 return when (tp) {
-                                    is Type.Ptr   -> tp.scp1.get(tp.xscp2!!).let {
+                                    is Type.Ptr   -> tp.xscp1.get(tp.xscp2!!).let {
                                         Type.Ptr(tp.tk_, it.first, it.second, map(tp.pln)).clone(e,e.tk.lin,e.tk.col)
                                     }
                                     is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)

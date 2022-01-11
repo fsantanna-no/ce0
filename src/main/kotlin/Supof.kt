@@ -54,7 +54,7 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
             println("SUPOF [$isproto] ${this.tk.lin}: ${this.scope()} = ${sub.scope()} /// ${this.scope}")
             */
             val ok = if (isproto) { // comparing func prototypes does not depend on scope calculation
-                (this.scp1.lbl == sub.scp1.lbl) && (this.scp1.num == sub.scp1.num)
+                (this.xscp1.lbl == sub.xscp1.lbl) && (this.xscp1.num == sub.xscp1.num)
             } else {
                 val dst = this.xscp2!!
                 val src = sub.xscp2!!

@@ -3,7 +3,7 @@ sealed class Type (val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Nat   (val tk_: Tk.Nat): Type(tk_, null, null)
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_, null, null)
     data class Union (val tk_: Tk.Chr, val isrec: Boolean, val vec: Array<Type>): Type(tk_, null, null)
-    data class Ptr   (val tk_: Tk.Chr, val scp1: Tk.Scp1, var xscp2: Scp2?, val pln: Type): Type(tk_, null, null)
+    data class Ptr   (val tk_: Tk.Chr, val xscp1: Tk.Scp1, var xscp2: Scp2?, val pln: Type): Type(tk_, null, null)
     data class Rec   (val tk_: Tk.Up): Type(tk_, null, null)
     data class Func  (
         val tk_: Tk.Key,
@@ -35,7 +35,7 @@ sealed class Expr (val tk: Tk, var wup: Any?, var wenv: Any?, var wtype: Type?) 
     data class Upref (val tk_: Tk.Chr, val pln: Expr): Expr(tk_, null, null, null)
     data class Inp   (val tk_: Tk.Key, val xtype: Type, val lib: Tk.Str): Expr(tk_, null, null, xtype)
     data class Out   (val tk_: Tk.Key, val lib: Tk.Str, val arg: Expr): Expr(tk_, null, null, null)
-    data class Call  (val tk_: Tk.Key, val f: Expr, val arg: Expr, val scp1s: Pair<Array<Tk.Scp1>,Tk.Scp1?>, var xscp2s: Pair<Array<Scp2>,Scp2?>?): Expr(tk_, null, null, null)
+    data class Call  (val tk_: Tk.Key, val f: Expr, val arg: Expr, val xscp1s: Pair<Array<Tk.Scp1>,Tk.Scp1?>, var xscp2s: Pair<Array<Scp2>,Scp2?>?): Expr(tk_, null, null, null)
     data class Func  (val tk_: Tk.Key, val type: Type.Func, val ups: Array<Tk.Str>, val block: Stmt.Block) : Expr(tk_, null, null, type)
 }
 

@@ -243,8 +243,8 @@ fun code_fe (e: Expr) {
             val ID  = "__tmp_" + e.hashCode().absoluteValue
             val ptr = e.wtype as Type.Ptr
 
-            val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==ptr.scp1.lbl && it.num==ptr.scp1.num } }
-            val pool = if (up == null) ptr.scp1.toce() else "((Pool**)ups[0])"
+            val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==ptr.xscp1.lbl && it.num==ptr.xscp1.num } }
+            val pool = if (up == null) ptr.xscp1.toce() else "((Pool**)ups[0])"
 
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
@@ -290,7 +290,7 @@ fun code_fe (e: Expr) {
             val f   = CODE.removeFirst()
             //val ff  = e.f as? Expr.Dnref
 
-            val pools = e.scp1s.first.let { if (it.size == 0) "" else (it.map { out ->
+            val pools = e.xscp1s.first.let { if (it.size == 0) "" else (it.map { out ->
                 val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==out.lbl && it.num==out.num } }
                 if (up == null) out.toce() else "((Pool**)ups[0])"
             }.joinToString(",") + ",") }

@@ -68,10 +68,10 @@ fun check_02_after_tps (s: Stmt) {
                 // var f: (... -> {@_1,@_2,...} -> ...)
                 // call f {@a,@b,...} ...
                 if (scps1 != null) {
-                    All_assert_tk(e.tk, scps1.size == e.scp1s.first.size) {
+                    All_assert_tk(e.tk, scps1.size == e.xscp1s.first.size) {
                         "invalid call : scope mismatch"
                     }
-                    scps1.zip(e.scp1s.first.zip(e.xscp2s!!.first)).forEach { (ff,ee) ->
+                    scps1.zip(e.xscp1s.first.zip(e.xscp2s!!.first)).forEach { (ff,ee) ->
                         val num   = ff.num!!
                         acc[ff.lbl].let {
                             if (it == null) {
@@ -105,7 +105,7 @@ fun check_02_after_tps (s: Stmt) {
                             is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { aux(it,dofunc) }.toTypedArray())
                             is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { aux(it,dofunc) }.toTypedArray())
                             is Type.Ptr -> {
-                                val ret = tp.scp1.let { scp ->
+                                val ret = tp.xscp1.let { scp ->
                                     acc[scp.lbl].let { if (it == null) null else it[scp.num]!! }
                                 }
                                 if (ret == null) tp else {
