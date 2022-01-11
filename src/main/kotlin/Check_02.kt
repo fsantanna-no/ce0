@@ -14,7 +14,7 @@ fun check_02_after_tps (s: Stmt) {
                     // access is inside function, declaration is outside
                     val var_scope = e.env(e.tk_.str)!!.toType().toScp2()
                     val func = e.ups_first { it is Expr.Func } as Expr.Func
-                    val clo = func.type.scp1s.first?.toScp2(func.type)?.depth ?: 0
+                    val clo = func.type.xscp2s!!.first?.depth ?: 0
                     All_assert_tk(e.tk, clo>=var_scope.depth && func.ups.any { it.str==e.tk_.str }) {
                         "invalid access to \"${e.tk_.str}\" : invalid closure declaration (ln ${func.tk.lin})"
                     }

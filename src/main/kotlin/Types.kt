@@ -33,7 +33,14 @@ fun Stmt.setTypes () {
                                     is Type.Ptr   -> Type.Ptr(tp.tk_, f(tp.scp1), f(tp.scp1).toScp2(e), map(tp.pln)).clone(e,e.tk.lin,e.tk.col)
                                     is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
                                     is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
-                                    is Type.Func  -> Type.Func(tp.tk_, Pair(if (tp.scp1s.first==null) tp.scp1s.first else f(tp.scp1s.first!!), tp.scp1s.second.map { f(it) }.toTypedArray()), tp.xscp2s, map(tp.inp), map(tp.out)).clone(e,e.tk.lin,e.tk.col)
+                                    is Type.Func  -> Type.Func (
+                                        tp.tk_,
+                                        Pair(if (tp.scp1s.first==null) tp.scp1s.first else f(tp.scp1s.first!!),
+                                        tp.scp1s.second.map { f(it) }.toTypedArray()),
+                                        tp.xscp2s,
+                                        map(tp.inp),
+                                        map(tp.out)).clone(e,e.tk.lin,e.tk.col
+                                    )
                                     else -> tp
                                 }
                             }
