@@ -62,7 +62,7 @@ fun check_02_after_tps (s: Stmt) {
 
                 // { [lbl]={1=depth,2=depth} }
                 // { [""]={[1]=@local, [2]=@aaa, ...}
-                val acc = mutableMapOf<String,MutableMap<Int,Tk.Scp1>>()
+                val acc = mutableMapOf<String,MutableMap<Int,Pair<Tk.Scp1,Scp2>>>()
 
                 // check scopes, build acc
                 // var f: /(... -> {@_1,@_2,...} -> ...)
@@ -75,11 +75,11 @@ fun check_02_after_tps (s: Stmt) {
                         val num   = ff.num!!
                         acc[ff.lbl].let {
                             if (it == null) {
-                                acc[ff.lbl] = mutableMapOf(Pair(num,ee.first))
+                                acc[ff.lbl] = mutableMapOf(Pair(num,ee))
                             } else {
-                                val d1 = ee.second.depth // TODO
+                                val d1 = ee.second.depth
                                 val ok = it.all {
-                                    val d2 = it.value.toScp2(e).depth   // TODO
+                                    val d2 = it.value.second.depth
                                     when {
                                         (it.key == num) -> (d2 == d1)
                                         (it.key > num)  -> (d2 >= d1)
@@ -90,7 +90,7 @@ fun check_02_after_tps (s: Stmt) {
                                 All_assert_tk(ee.first, ok) {
                                     "invalid call : scope mismatch"
                                 }
-                                it[num] = ee.first
+                                it[num] = ee
                             }
                         }
                     }
@@ -108,7 +108,7 @@ fun check_02_after_tps (s: Stmt) {
                                     acc[scp.lbl].let { if (it == null) null else it[scp.num]!! }
                                 }
                                 if (ret == null) tp else {
-                                    Type.Ptr(tp.tk_, ret, ret.toScp2(e), aux(tp.pln,dofunc))
+                                    Type.Ptr(tp.tk_, ret.first, ret.second, aux(tp.pln,dofunc))
                                 }
                             }
                             is Type.Func -> if (!dofunc) tp else {
@@ -116,7 +116,7 @@ fun check_02_after_tps (s: Stmt) {
                                     if (scp == null) {
                                         null
                                     } else {
-                                        acc[scp.lbl].let { if (it == null) tp.scp1s.first else it[scp.num]!! }
+                                        acc[scp.lbl].let { if (it == null) tp.scp1s.first else it[scp.num]!!.first }
                                     }
                                 }
                                 Type.Func (
