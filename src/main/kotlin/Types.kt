@@ -1,6 +1,7 @@
 fun Stmt.setTypes () {
     fun fe (e: Expr) {
-        e.wtype = e.wtype ?: when (e) {
+        e.wtype = when (e) {
+            is Expr.Unit, is Expr.Nat, is Expr.UCons, is Expr.Inp, is Expr.Func -> e.wtype!!
             is Expr.Upref -> e.pln.wtype!!.let {
                 val lbl = e.toBaseVar()?.tk_?.str ?: "global"
                 val scp1 = Tk.Scp1(TK.XSCOPE,e.tk.lin,e.tk.col, lbl,null)
@@ -109,7 +110,6 @@ fun Stmt.setTypes () {
                 }
             }
             is Expr.Var -> e.env()!!.toType()
-            else -> error("bug found")
         }
     }
     this.visit(false, null, ::fe, null)
