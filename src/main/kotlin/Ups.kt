@@ -40,6 +40,8 @@ fun Type.setUps (up: Any) {
 fun Expr.setUps (up: Any) {
     this.wup = up
     when (this) {
+        is Expr.Nat -> this.xtype?.setUps(this)
+        is Expr.Inp -> this.xtype?.setUps(this)
         is Expr.TCons -> this.arg.forEach { it.setUps(this) }
         is Expr.UCons -> { this.xtype?.setUps(this) ; this.arg.setUps(this) }
         is Expr.New   -> this.arg.setUps(this)
