@@ -3,7 +3,8 @@ fun Stmt.setTypes () {
         e.type = e.type ?: when (e) {
             is Expr.Upref -> e.pln.type!!.let {
                 val lbl = e.toBaseVar()?.tk_?.str ?: "global"
-                Type.Ptr(e.tk_, Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col, lbl,null), null, it). link1(e) /*clone2(e,e.tk.lin,e.tk.col)*/
+                val scp1 = Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col, lbl,null)
+                Type.Ptr(e.tk_, scp1, scp1.scope(e), it).clone2(e,e.tk.lin,e.tk.col)
             }
             is Expr.Dnref -> e.ptr.type.let {
                 if (it is Type.Nat) it else {
@@ -13,9 +14,9 @@ fun Stmt.setTypes () {
                     (it as Type.Ptr).pln
                 }
             }
-            is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.type!! }.toTypedArray()).link1(e)
-            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp1!!, null, e.arg.type!!).link1(e)
-            is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).link1(e)
+            is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.type!! }.toTypedArray()).clone2(e,e.tk.lin,e.tk.col)
+            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp1!!, e.scp1!!.scope(e), e.arg.type!!).clone2(e,e.tk.lin,e.tk.col)
+            is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).clone2(e,e.tk.lin,e.tk.col)
             is Expr.Call -> {
                 e.f.type.let {
                     when (it) {
@@ -29,10 +30,10 @@ fun Stmt.setTypes () {
                             }
                             fun map (tp: Type): Type {
                                 return when (tp) {
-                                    is Type.Ptr   -> Type.Ptr(tp.tk_, f(tp.scp1), null, map(tp.pln)).link1(e)
-                                    is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray()).link1(e)
-                                    is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray()).link1(e)
-                                    is Type.Func  -> Type.Func(tp.tk_, if (tp.clo1==null) tp.clo1 else f(tp.clo1), tp.scp1s.map { f(it) }.toTypedArray(), map(tp.inp), map(tp.out)).link1(e)
+                                    is Type.Ptr   -> Type.Ptr(tp.tk_, f(tp.scp1), f(tp.scp1).scope(e), map(tp.pln)).clone2(e,e.tk.lin,e.tk.col)
+                                    is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray()).clone2(e,e.tk.lin,e.tk.col)
+                                    is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray()).clone2(e,e.tk.lin,e.tk.col)
+                                    is Type.Func  -> Type.Func(tp.tk_, if (tp.clo1==null) tp.clo1 else f(tp.clo1), tp.scp1s.map { f(it) }.toTypedArray(), map(tp.inp), map(tp.out)).clone2(e,e.tk.lin,e.tk.col)
                                     else -> tp
                                 }
                             }
@@ -45,7 +46,7 @@ fun Stmt.setTypes () {
                             error("impossible case")
                         }
                     }
-                }.clone2(e.f, e.f.tk.lin, e.f.tk.col)
+                }
             }
             is Expr.TDisc -> e.tup.type.let {
                 All_assert_tk(e.tk, it is Type.Tuple) {
@@ -77,11 +78,11 @@ fun Stmt.setTypes () {
 
                 when (e) {
                     is Expr.UDisc -> if (e.tk_.num == 0) {
-                        Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).link1(e)
+                        Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).clone2(e,e.tk.lin,e.tk.col)
                     } else {
                         tp.expand()[e.tk_.num - 1]
                     }
-                    is Expr.UPred -> Type.Nat(Tk.Nat(TK.XNAT, e.tk.lin, e.tk.col, null, "int")).link1(e)
+                    is Expr.UPred -> Type.Nat(Tk.Nat(TK.XNAT, e.tk.lin, e.tk.col, null, "int")).clone2(e,e.tk.lin,e.tk.col)
                     else -> error("bug found")
                 }
             }

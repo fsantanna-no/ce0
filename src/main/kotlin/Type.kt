@@ -1,8 +1,10 @@
+/*
 fun Type.link1 (up: Any): Type {
     this.up  = up
     this.env = up.getEnv()
     return this
 }
+*/
 
 fun Type.link2 (up: Any): Type {
     this.setUps(up)
@@ -125,7 +127,7 @@ fun Type.Union.expand (): Array<Type> {
             is Type.Rec   -> if (up == cur.tk_.up) this else { assert(up>cur.tk_.up) ; cur }
             is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray())
             is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray())
-            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scp1, null, aux(cur.pln,up))
+            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scp1, cur.scp2, aux(cur.pln,up))
             is Type.Func  -> Type.Func(cur.tk_, cur.clo1, cur.scp1s, aux(cur.inp,up), aux(cur.out,up))
             else -> cur
         }
