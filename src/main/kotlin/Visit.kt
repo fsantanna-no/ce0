@@ -41,9 +41,10 @@ fun Type.visit_ (ft: ((Type)->Unit)?) {
 
 private
 fun Expr.visit_ (fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
+    this.type?.visit_(ft)
     when (this) {
         is Expr.TCons -> this.arg.forEach { it.visit_(fs,fe,ft) }
-        is Expr.UCons -> { this.type?.visit_(ft) ; this.arg.visit_(fs,fe,ft) }
+        is Expr.UCons -> { this.type_?.visit_(ft) ; this.arg.visit_(fs,fe,ft) }
         is Expr.New   -> this.arg.visit_(fs,fe,ft)
         is Expr.Dnref -> this.ptr.visit_(fs,fe,ft)
         is Expr.Upref -> this.pln.visit_(fs,fe,ft)
