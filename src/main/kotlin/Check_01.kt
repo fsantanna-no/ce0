@@ -16,7 +16,7 @@ fun Tk.Scope.check (up: Any) {
             it is Stmt.Var   && this.lbl==it.tk_.str     && this.num==null
         } -> true
         (up.ups_first {                                     // [@_1, ...] { @_1 }
-            it is Expr.Func && it.type_.scp1s.any { it.lbl==this.lbl && it.num==this.num }
+            it is Expr.Func && it.type_.scp1s.second.any { it.lbl==this.lbl && it.num==this.num }
         } != null) -> true
         else -> false
     }
@@ -42,7 +42,7 @@ fun check_01_before_tps (s: Stmt) {
             }
             is Type.Ptr -> tp.scp1.check(tp)
             is Type.Func -> {
-                tp.clo1?.check(tp)
+                tp.scp1s.first?.check(tp)
                 val ptrs  = (tp.inp.flatten() + tp.out.flatten()).filter { it is Type.Ptr } as List<Type.Ptr>
                 val ok1 = ptrs.all {
                     val ptr = it.scp1
@@ -51,8 +51,8 @@ fun check_01_before_tps (s: Stmt) {
                         (ptr.lbl == "global") -> true
                         //(ptr.lbl == "local")  -> true
                         (
-                            tp.clo1.let  { it!=null && ptr.lbl==it.lbl && ptr.num==it.num } || // {@a} ...@a
-                            tp.scp1s.any { it!=null && ptr.lbl==it.lbl && ptr.num==it.num }    // (@_1 -> ...@_1...)
+                            tp.scp1s.first.let  { it!=null && ptr.lbl==it.lbl && ptr.num==it.num } || // {@a} ...@a
+                            tp.scp1s.second.any { it!=null && ptr.lbl==it.lbl && ptr.num==it.num }    // (@_1 -> ...@_1...)
                         ) -> true
                         (tp.ups_first {                     // { @aaa \n ...@aaa... }
                             it is Stmt.Block && it.scope!=null && it.scope.lbl==ptr.lbl && it.scope.num==ptr.num
@@ -64,7 +64,7 @@ fun check_01_before_tps (s: Stmt) {
                 All_assert_tk(tp.tk, ok1) {
                     "invalid function type : missing pool argument"
                 }
-                val ok2 = tp.scp1s
+                val ok2 = tp.scp1s.second
                     .groupBy { it.lbl }             // { "a"=[...], "b"=[...]
                     .all {
                         it.value                        // [...]
@@ -103,7 +103,7 @@ fun check_01_before_tps (s: Stmt) {
             is Expr.Func -> {
                 val funcs = e.ups_tolist().filter { it is Expr.Func } as List<Expr.Func>
                 for (f in funcs) {
-                    val err = f.type_.scp1s.find { tk2 -> e.type_.scp1s.any { tk1 -> tk1.lbl==tk2.lbl } }
+                    val err = f.type_.scp1s.second.find { tk2 -> e.type_.scp1s.second.any { tk1 -> tk1.lbl==tk2.lbl } }
                     All_assert_tk(e.tk, err==null) {
                         "invalid pool : \"@${err!!.lbl}\" is already declared (ln ${err!!.lin})"
                     }

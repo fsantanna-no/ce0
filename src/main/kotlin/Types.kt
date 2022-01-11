@@ -22,7 +22,7 @@ fun Stmt.setTypes () {
                     when (it) {
                         is Type.Nat -> it
                         is Type.Func -> {
-                            val MAP = it.scp1s.map { Pair(it.lbl,it.num) }.zip(e.scp1s.first.map { Pair(it.lbl,it.num) }).toMap()
+                            val MAP = it.scp1s.second.map { Pair(it.lbl,it.num) }.zip(e.scp1s.first.map { Pair(it.lbl,it.num) }).toMap()
                             fun f (tk: Tk.Scope): Tk.Scope {
                                 return MAP[Pair(tk.lbl,tk.num)].let { if (it == null) tk else
                                     Tk.Scope(TK.XSCOPE, tk.lin, tk.col, it.first, it.second)
@@ -33,7 +33,7 @@ fun Stmt.setTypes () {
                                     is Type.Ptr   -> Type.Ptr(tp.tk_, f(tp.scp1), f(tp.scp1).scope(e), map(tp.pln)).clone(e,e.tk.lin,e.tk.col)
                                     is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
                                     is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
-                                    is Type.Func  -> Type.Func(tp.tk_, if (tp.clo1==null) tp.clo1 else f(tp.clo1), tp.scp1s.map { f(it) }.toTypedArray(), map(tp.inp), map(tp.out)).clone(e,e.tk.lin,e.tk.col)
+                                    is Type.Func  -> Type.Func(tp.tk_, Pair(if (tp.scp1s.first==null) tp.scp1s.first else f(tp.scp1s.first!!), tp.scp1s.second.map { f(it) }.toTypedArray()), map(tp.inp), map(tp.out)).clone(e,e.tk.lin,e.tk.col)
                                     else -> tp
                                 }
                             }

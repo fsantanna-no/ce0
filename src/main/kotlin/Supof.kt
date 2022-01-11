@@ -38,7 +38,7 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
         (this::class != sub::class) -> false
         (this is Type.Unit && sub is Type.Unit) -> true
         (this is Type.Func && sub is Type.Func) -> { (
-            this.clo1?.scope(this)?.depth == sub.clo1?.scope(sub)?.depth &&
+            this.scp1s.first?.scope(this)?.depth == sub.scp1s.first?.scope(sub)?.depth &&
             this.inp.isSupOf_(sub.inp,true,ups1,ups2) &&
             sub.inp.isSupOf_(this.inp,true,ups1,ups2) &&
             this.out.isSupOf_(sub.out,true,ups1,ups2) &&

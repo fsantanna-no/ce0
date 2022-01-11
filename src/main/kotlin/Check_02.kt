@@ -14,7 +14,7 @@ fun check_02_after_tps (s: Stmt) {
                     // access is inside function, declaration is outside
                     val var_scope = e.env(e.tk_.str)!!.toType().scope()
                     val func = e.ups_first { it is Expr.Func } as Expr.Func
-                    val clo = func.type_.clo1?.scope(func.type_)?.depth ?: 0
+                    val clo = func.type_.scp1s.first?.scope(func.type_)?.depth ?: 0
                     All_assert_tk(e.tk, clo>=var_scope.depth && func.ups.any { it.str==e.tk_.str }) {
                         "invalid access to \"${e.tk_.str}\" : invalid closure declaration (ln ${func.tk.lin})"
                     }
@@ -22,10 +22,10 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
             is Expr.Func -> {
-                All_assert_tk(e.tk, funcs.contains(e) || e.type_.clo1 == null) {
+                All_assert_tk(e.tk, funcs.contains(e) || e.type_.scp1s.first == null) {
                     "invalid function : unexpected closure declaration"
                 }
-                All_assert_tk(e.tk, !funcs.contains(e) || e.type_.clo1 != null) {
+                All_assert_tk(e.tk, !funcs.contains(e) || e.type_.scp1s.first != null) {
                     "invalid function : expected closure declaration"
                 }
             }
@@ -55,7 +55,7 @@ fun check_02_after_tps (s: Stmt) {
                 val arg1 = e.arg.type!!
 
                 val (scps1,inp1,out1) = when (func) {
-                    is Type.Func -> Triple(func.scp1s,func.inp,func.out)
+                    is Type.Func -> Triple(func.scp1s.second,func.inp,func.out)
                     is Type.Nat  -> Triple(null,func,func)
                     else -> error("impossible case")
                 }
@@ -112,14 +112,14 @@ fun check_02_after_tps (s: Stmt) {
                                 }
                             }
                             is Type.Func -> if (!dofunc) tp else {
-                                val ret = tp.clo1.let { scp ->
+                                val ret = tp.scp1s.first.let { scp ->
                                     if (scp == null) {
                                         null
                                     } else {
-                                        acc[scp.lbl].let { if (it == null) tp.clo1 else it[scp.num]!! }
+                                        acc[scp.lbl].let { if (it == null) tp.scp1s.first else it[scp.num]!! }
                                     }
                                 }
-                                Type.Func(tp.tk_, ret, tp.scp1s, aux(tp.inp,dofunc), aux(tp.out,dofunc))
+                                Type.Func(tp.tk_, Pair(ret, tp.scp1s.second), aux(tp.inp,dofunc), aux(tp.out,dofunc))
                             }
                         }
                     }
