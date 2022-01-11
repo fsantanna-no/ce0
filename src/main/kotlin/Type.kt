@@ -18,7 +18,7 @@ fun Type.linkX (up: Any): Type {
     return this
 }
 
-fun Tk.Scope?.tostr (): String {
+fun Tk.Scp1?.tostr (): String {
     return if (this == null) "" else {
         "@" + this.lbl + (if (this.num == null) "" else ("_" + this.num))
     }
@@ -139,18 +139,18 @@ fun Type.Union.expand (): Array<Type> {
     return this.vec.map { aux(it, 1).cloneX(this,this.tk.lin,this.tk.col) }.toTypedArray()
 }
 
-fun Type.scope (): Scope {
+fun Type.toScp2 (): Scp2 {
     return when {
         this is Type.Ptr -> {
             //print("SCOPE: ") ; println(this)
             //this.scp1.scope(this)
-            this.scp2 ?: this.scp1.scope(this)
+            this.scp2 ?: this.scp1.toScp2(this)
         }
-        (this is Type.Func) && (this.scp1s.first!=null) -> this.scp1s.first!!.scope(this)    // body holds pointers in clo
+        (this is Type.Func) && (this.scp1s.first!=null) -> this.scp1s.first!!.toScp2(this)    // body holds pointers in clo
         else -> {
             val lvl = this.ups_tolist().filter { it is Expr.Func }.count()
-            Scope(lvl, null, this.ups_tolist().let { it.count { it is Stmt.Block } })
-            Scope(0, null, 0)
+            Scp2(lvl, null, this.ups_tolist().let { it.count { it is Stmt.Block } })
+            Scp2(0, null, 0)
             //TODO()
         }
     }

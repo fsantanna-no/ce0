@@ -12,9 +12,9 @@ fun check_02_after_tps (s: Stmt) {
                 val exp_fdepth = e.ups_tolist().filter { it is Expr.Func }.count()
                 if (var_bdepth>0 && var_fdepth<exp_fdepth) {
                     // access is inside function, declaration is outside
-                    val var_scope = e.env(e.tk_.str)!!.toType().scope()
+                    val var_scope = e.env(e.tk_.str)!!.toType().toScp2()
                     val func = e.ups_first { it is Expr.Func } as Expr.Func
-                    val clo = func.type_.scp1s.first?.scope(func.type_)?.depth ?: 0
+                    val clo = func.type_.scp1s.first?.toScp2(func.type_)?.depth ?: 0
                     All_assert_tk(e.tk, clo>=var_scope.depth && func.ups.any { it.str==e.tk_.str }) {
                         "invalid access to \"${e.tk_.str}\" : invalid closure declaration (ln ${func.tk.lin})"
                     }
@@ -62,7 +62,7 @@ fun check_02_after_tps (s: Stmt) {
 
                 // { [lbl]={1=depth,2=depth} }
                 // { [""]={[1]=@local, [2]=@aaa, ...}
-                val acc = mutableMapOf<String,MutableMap<Int,Tk.Scope>>()
+                val acc = mutableMapOf<String,MutableMap<Int,Tk.Scp1>>()
 
                 // check scopes, build acc
                 // var f: /(... -> {@_1,@_2,...} -> ...)
@@ -77,9 +77,9 @@ fun check_02_after_tps (s: Stmt) {
                             if (it == null) {
                                 acc[ff.lbl] = mutableMapOf(Pair(num,ee))
                             } else {
-                                val d1 = ee.scope(e).depth
+                                val d1 = ee.toScp2(e).depth
                                 val ok = it.all {
-                                    val d2 = it.value.scope(e).depth
+                                    val d2 = it.value.toScp2(e).depth
                                     when {
                                         (it.key == num) -> (d2 == d1)
                                         (it.key > num)  -> (d2 >= d1)
@@ -108,7 +108,7 @@ fun check_02_after_tps (s: Stmt) {
                                     acc[scp.lbl].let { if (it == null) null else it[scp.num]!! }
                                 }
                                 if (ret == null) tp else {
-                                    Type.Ptr(tp.tk_, ret, ret.scope(e), aux(tp.pln,dofunc))
+                                    Type.Ptr(tp.tk_, ret, ret.toScp2(e), aux(tp.pln,dofunc))
                                 }
                             }
                             is Type.Func -> if (!dofunc) tp else {

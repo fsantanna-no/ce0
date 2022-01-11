@@ -1,12 +1,12 @@
-data class Scope (val lvl: Int, val arg: String?, val depth: Int)
+data class Scp2 (val lvl: Int, val arg: String?, val depth: Int)
 
 sealed class Type (val tk: Tk, var up: Any?, var env: Any?) {
     data class Unit  (val tk_: Tk.Sym): Type(tk_, null, null)
     data class Nat   (val tk_: Tk.Nat): Type(tk_, null, null)
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_, null, null)
     data class Union (val tk_: Tk.Chr, val isrec: Boolean, val vec: Array<Type>): Type(tk_, null, null)
-    data class Func  (val tk_: Tk.Key, val scp1s: Pair<Tk.Scope?,Array<Tk.Scope>>, val inp: Type, val out: Type): Type(tk_, null, null)
-    data class Ptr   (val tk_: Tk.Chr, val scp1: Tk.Scope, var scp2: Scope?, val pln: Type): Type(tk_, null, null)
+    data class Func  (val tk_: Tk.Key, val scp1s: Pair<Tk.Scp1?,Array<Tk.Scp1>>, val inp: Type, val out: Type): Type(tk_, null, null)
+    data class Ptr   (val tk_: Tk.Chr, val scp1: Tk.Scp1, var scp2: Scp2?, val pln: Type): Type(tk_, null, null)
     data class Rec   (val tk_: Tk.Up): Type(tk_, null, null)
 }
 
@@ -27,12 +27,12 @@ sealed class Expr (val tk: Tk, var up: Any?, var env: Any?, var type: Type?) {
     data class TDisc (val tk_: Tk.Num, val tup: Expr): Expr(tk_, null, null, null)
     data class UDisc (val tk_: Tk.Num, val uni: Expr): Expr(tk_, null, null, null)
     data class UPred (val tk_: Tk.Num, val uni: Expr): Expr(tk_, null, null, null)
-    data class New   (val tk_: Tk.Key, val scp1: Tk.Scope, val arg: Expr.UCons): Expr(tk_, null, null, null)
+    data class New   (val tk_: Tk.Key, val scp1: Tk.Scp1, val arg: Expr.UCons): Expr(tk_, null, null, null)
     data class Dnref (val tk_: Tk,     val ptr: Expr): Expr(tk_, null, null, null)
     data class Upref (val tk_: Tk.Chr, val pln: Expr): Expr(tk_, null, null, null)
     data class Inp   (val tk_: Tk.Key, val type_: Type, val lib: Tk.Str): Expr(tk_, null, null, type_)
     data class Out   (val tk_: Tk.Key, val lib: Tk.Str, val arg: Expr): Expr(tk_, null, null, null)
-    data class Call  (val tk_: Tk.Key, val f: Expr, val arg: Expr, val scp1s: Pair<Array<Tk.Scope>,Tk.Scope?>): Expr(tk_, null, null, null)
+    data class Call  (val tk_: Tk.Key, val f: Expr, val arg: Expr, val scp1s: Pair<Array<Tk.Scp1>,Tk.Scp1?>): Expr(tk_, null, null, null)
     data class Func  (val tk_: Tk.Key, val type_: Type.Func, val ups: Array<Tk.Str>, val block: Stmt.Block) : Expr(tk_, null, null, type_)
 }
 
@@ -47,5 +47,5 @@ sealed class Stmt (val tk: Tk, var up: Any?, var env: Any?) {
     data class Ret   (val tk_: Tk.Key) : Stmt(tk_, null, null)
     data class Loop  (val tk_: Tk.Key, val block: Block) : Stmt(tk_, null, null)
     data class Break (val tk_: Tk.Key) : Stmt(tk_, null, null)
-    data class Block (val tk_: Tk.Chr, val scope: Tk.Scope?, val body: Stmt) : Stmt(tk_, null, null)
+    data class Block (val tk_: Tk.Chr, val scope: Tk.Scp1?, val body: Stmt) : Stmt(tk_, null, null)
 }

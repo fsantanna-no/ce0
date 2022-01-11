@@ -139,26 +139,26 @@ class TLexer {
     @Test
     fun c01_scope () {
         val all = All_new(PushbackReader(StringReader("@global"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.XSCOPE && (all.tk1 as Tk.Scope).lbl=="global" && (all.tk1 as Tk.Scope).num==null)
+        lexer(all) ; assert(all.tk1.enu==TK.XSCOPE && (all.tk1 as Tk.Scp1).lbl=="global" && (all.tk1 as Tk.Scp1).num==null)
     }
     @Test
     fun c02_scope () {
         val all = All_new(PushbackReader(StringReader("@_1"), 2))
         lexer(all)
         //assert(all.tk1.enu==TK.ERR && (all.tk1 as Tk.Err).err=="@")
-        assert(all.tk1.enu==TK.XSCOPE && (all.tk1 as Tk.Scope).lbl=="" && (all.tk1 as Tk.Scope).num==1)
+        assert(all.tk1.enu==TK.XSCOPE && (all.tk1 as Tk.Scp1).lbl=="" && (all.tk1 as Tk.Scp1).num==1)
     }
     @Test
     fun c03_scope () {
         val all = All_new(PushbackReader(StringReader("@x_11"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.XSCOPE && (all.tk1 as Tk.Scope).lbl=="x" && (all.tk1 as Tk.Scope).num==11)
+        lexer(all) ; assert(all.tk1.enu==TK.XSCOPE && (all.tk1 as Tk.Scp1).lbl=="x" && (all.tk1 as Tk.Scp1).num==11)
     }
     @Test
     fun c04_scope () {
         val all = All_new(PushbackReader(StringReader("@1"), 2))
         lexer(all)
         //println(all.tk1)
-        assert(all.tk1.enu==TK.XSCOPE && (all.tk1 as Tk.Scope).lbl=="" && (all.tk1 as Tk.Scope).num==null)
+        assert(all.tk1.enu==TK.XSCOPE && (all.tk1 as Tk.Scp1).lbl=="" && (all.tk1 as Tk.Scp1).num==null)
         //assert(all.tk1.enu==TK.ERR && (all.tk1 as Tk.Err).err=="@")
     }
 }

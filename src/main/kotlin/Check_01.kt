@@ -1,4 +1,4 @@
-fun Tk.Scope.check (up: Any) {
+fun Tk.Scp1.check (up: Any) {
     val ok = when {
         (this.lbl == "global") -> true
         (this.lbl == "local")  -> true

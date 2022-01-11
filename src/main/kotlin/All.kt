@@ -1,5 +1,4 @@
 import java.io.PushbackReader
-import java.io.StringReader
 import java.lang.AssertionError
 
 data class All(
@@ -78,7 +77,7 @@ fun All.err_expected (str: String) {
             (this is Tk.Str)     -> '"' + this.str + '"'
             (this is Tk.Num)     -> "" + this.num
             (this is Tk.Key)     -> this.key
-            (this is Tk.Scope)   -> "`@" + this.lbl + '´'
+            (this is Tk.Scp1)   -> "`@" + this.lbl + '´'
             (this is Tk.Nat)     -> '"' + this.src + '"'
             else -> TODO(this.toString())
         }

@@ -187,7 +187,7 @@ fun code_ft (tp: Type) {
 data class Code (val type: String, val stmt: String, val expr: String)
 val CODE = ArrayDeque<Code>()
 
-fun Tk.Scope.toce (): String {
+fun Tk.Scp1.toce (): String {
     return "pool_" + this.lbl + (if (this.num==null) "" else ("_"+this.num))
 }
 

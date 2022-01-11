@@ -35,7 +35,7 @@ sealed class Tk (
     data class Nat (val enu_: TK, val lin_: Int, val col_: Int, val chr: Char?, val src: String): Tk(enu_,lin_,col_)
     data class Num (val enu_: TK, val lin_: Int, val col_: Int, val num: Int):    Tk(enu_,lin_,col_)
     data class Up  (val enu_: TK, val lin_: Int, val col_: Int, val up:  Int):    Tk(enu_,lin_,col_)
-    data class Scope (val enu_: TK, val lin_: Int, val col_: Int, val lbl: String, val num: Int?):Tk(enu_,lin_,col_)
+    data class Scp1 (val enu_: TK, val lin_: Int, val col_: Int, val lbl: String, val num: Int?):Tk(enu_,lin_,col_)
 }
 
 fun Tk.Nat.toce (): String {
@@ -147,7 +147,7 @@ fun token (all: All) {
             }
 
             all.unread(c1)
-            all.tk1 = Tk.Scope(TK.XSCOPE, LIN, COL, lbl, num)
+            all.tk1 = Tk.Scp1(TK.XSCOPE, LIN, COL, lbl, num)
         }
         (x1 == '(') -> {
             val (c2,x2) = all.read()
