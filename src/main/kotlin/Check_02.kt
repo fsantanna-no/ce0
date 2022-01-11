@@ -122,8 +122,8 @@ fun check_02_after_tps (s: Stmt) {
                                 }
                                 Type.Func (
                                     tp.tk_,
-                                    Pair(ret?.first, tp.scp1s.second),
-                                    Pair(ret?.second, tp.scp1s.second.map { it.toScp2(e) }.toTypedArray()),
+                                    Pair(ret?.first,  tp.scp1s.second),
+                                    Pair(ret?.second, tp.xscp2s!!.second),
                                     aux(tp.inp,dofunc),
                                     aux(tp.out,dofunc)
                                 )
