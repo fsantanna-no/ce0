@@ -3,7 +3,7 @@ fun Stmt.setTypes () {
         e.type = e.type ?: when (e) {
             is Expr.Upref -> e.pln.type!!.let {
                 val lbl = e.toBaseVar()?.tk_?.str ?: "global"
-                Type.Ptr(e.tk_, Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col, lbl,null), null, it).link1(e)
+                Type.Ptr(e.tk_, Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col, lbl,null), null, it). link1(e) /*clone2(e,e.tk.lin,e.tk.col)*/
             }
             is Expr.Dnref -> e.ptr.type.let {
                 if (it is Type.Nat) it else {
@@ -45,7 +45,7 @@ fun Stmt.setTypes () {
                             error("impossible case")
                         }
                     }
-                }.clone(e.f, e.f.tk.lin, e.f.tk.col)
+                }.clone2(e.f, e.f.tk.lin, e.f.tk.col)
             }
             is Expr.TDisc -> e.tup.type.let {
                 All_assert_tk(e.tk, it is Type.Tuple) {

@@ -45,7 +45,40 @@ fun Type.flatten (): List<Type> {
     }
 }
 
-fun Type.clone (up: Any, lin: Int, col: Int): Type {
+fun Type.clone2 (up: Any, lin: Int, col: Int): Type {
+    fun Type.aux (lin: Int, col: Int): Type {
+        return when (this) {
+            is Type.Unit -> Type.Unit(this.tk_.copy(lin_ = lin, col_ = col))
+            is Type.Nat -> Type.Nat(this.tk_.copy(lin_ = lin, col_ = col))
+            is Type.Tuple -> Type.Tuple(
+                this.tk_.copy(lin_ = lin, col_ = col),
+                this.vec.map { it.aux(lin, col) }.toTypedArray()
+            )
+            is Type.Union -> Type.Union(
+                this.tk_.copy(lin_ = lin, col_ = col),
+                this.isrec,
+                this.vec.map { it.aux(lin, col) }.toTypedArray()
+            )
+            is Type.Func -> Type.Func(
+                this.tk_.copy(lin_ = lin, col_ = col),
+                this.clo1?.copy(lin_ = lin, col_ = col),
+                this.scp1s.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray(),
+                this.inp.aux(lin, col),
+                this.out.aux(lin, col)
+            )
+            is Type.Ptr -> Type.Ptr(
+                this.tk_.copy(lin_ = lin, col_ = col),
+                this.scp1.copy(lin_=lin,col_=col),
+                this.scp2,
+                this.pln.aux(lin, col)
+            )
+            is Type.Rec -> Type.Rec(this.tk_.copy(lin_ = lin, col_ = col))
+        }
+    }
+    return this.aux(lin,col).link2(up)
+}
+
+fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
     fun Type.aux (lin: Int, col: Int): Type {
         return when (this) {
             is Type.Unit -> Type.Unit(this.tk_.copy(lin_ = lin, col_ = col))
@@ -97,7 +130,7 @@ fun Type.Union.expand (): Array<Type> {
             else -> cur
         }
     }
-    return this.vec.map { aux(it, 1).clone(this,this.tk.lin,this.tk.col) }.toTypedArray()
+    return this.vec.map { aux(it, 1).cloneX(this,this.tk.lin,this.tk.col) }.toTypedArray()
 }
 
 fun Type.scope (): Scope {
