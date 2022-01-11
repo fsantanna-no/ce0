@@ -9,7 +9,7 @@ fun parser_type (all: All): Type {
             val scp = if (all.accept(TK.XSCOPE)) (all.tk0 as Tk.Scope) else {
                 Tk.Scope(TK.XSCOPE, all.tk0.lin, all.tk0.col, "local", null)
             }
-            Type.Ptr(tk0, scp, pln)
+            Type.Ptr(tk0, scp, null, pln)
         }
         all.accept(TK.CHAR, '(') -> {
             val tp = parser_type(all)

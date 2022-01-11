@@ -108,7 +108,7 @@ fun check_02_after_tps (s: Stmt) {
                                     acc[scp.lbl].let { if (it == null) null else it[scp.num]!! }
                                 }
                                 if (ret == null) tp else {
-                                    Type.Ptr(tp.tk_, ret, aux(tp.pln,dofunc)).build(e)
+                                    Type.Ptr(tp.tk_, ret, null, aux(tp.pln,dofunc)).build(e)
                                 }
                             }
                             is Type.Func -> if (!dofunc) tp else {

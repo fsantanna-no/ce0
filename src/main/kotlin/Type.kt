@@ -62,7 +62,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
                 this.inp.aux(lin, col),
                 this.out.aux(lin, col)
             )
-            is Type.Ptr -> Type.Ptr(this.tk_.copy(lin_ = lin, col_ = col), this.scp1, this.pln.aux(lin, col))
+            is Type.Ptr -> Type.Ptr(this.tk_.copy(lin_ = lin, col_ = col), this.scp1, null, this.pln.aux(lin, col))
             is Type.Rec -> Type.Rec(this.tk_.copy(lin_ = lin, col_ = col))
         }
     }
@@ -88,7 +88,7 @@ fun Type.Union.expand (): Array<Type> {
             is Type.Rec   -> if (up == cur.tk_.up) this else { assert(up>cur.tk_.up) ; cur }
             is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray())
             is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray())
-            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scp1, aux(cur.pln,up))
+            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scp1, null, aux(cur.pln,up))
             is Type.Func  -> Type.Func(cur.tk_, cur.clo1, cur.scp1s, aux(cur.inp,up), aux(cur.out,up))
             else -> cur
         }
