@@ -65,8 +65,8 @@ fun check_02_after_tps (s: Stmt) {
                 val acc = mutableMapOf<String,MutableMap<Int,Pair<Tk.Scp1,Scp2>>>()
 
                 // check scopes, build acc
-                // var f: /(... -> {@_1,@_2,...} -> ...)
-                // call f\ {@a,@b,...} ...
+                // var f: (... -> {@_1,@_2,...} -> ...)
+                // call f {@a,@b,...} ...
                 if (scps1 != null) {
                     All_assert_tk(e.tk, scps1.size == e.scp1s.first.size) {
                         "invalid call : scope mismatch"
@@ -96,6 +96,7 @@ fun check_02_after_tps (s: Stmt) {
                     }
                 }
 
+                // transform inp2, out2 to use scopes from the call @local... (vs arg scopes @a_1...)
                 val (inp2,out2) = if (func !is Type.Func) Pair(inp1,out1) else
                 {
                     fun aux (tp: Type, dofunc: Boolean): Type {
@@ -116,13 +117,13 @@ fun check_02_after_tps (s: Stmt) {
                                     if (scp == null) {
                                         null
                                     } else {
-                                        acc[scp.lbl].let { if (it == null) tp.scp1s.first else it[scp.num]!!.first }
+                                        acc[scp.lbl].let { if (it == null) Pair(tp.scp1s.first,tp.xscp2s!!.first) else it[scp.num]!! }
                                     }
                                 }
                                 Type.Func (
                                     tp.tk_,
-                                    Pair(ret, tp.scp1s.second),
-                                    Pair(ret?.toScp2(e), tp.scp1s.second.map { it.toScp2(e) }.toTypedArray()),
+                                    Pair(ret?.first, tp.scp1s.second),
+                                    Pair(ret?.second, tp.scp1s.second.map { it.toScp2(e) }.toTypedArray()),
                                     aux(tp.inp,dofunc),
                                     aux(tp.out,dofunc)
                                 )
