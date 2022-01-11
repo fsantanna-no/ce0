@@ -141,19 +141,6 @@ fun Type.Union.expand (): Array<Type> {
     return this.vec.map { aux(it, 1).cloneX(this,this.tk.lin,this.tk.col) }.toTypedArray()
 }
 
-fun Type.toScp2 (): Scp2 {
-    return when {
-        this is Type.Ptr -> this.xscp2!!
-        (this is Type.Func) && (this.scp1s.first!=null) -> this.xscp2s!!.first!! // body holds pointers in clo
-        else -> {
-            val lvl = this.ups_tolist().filter { it is Expr.Func }.count()
-            Scp2(lvl, null, this.ups_tolist().let { it.count { it is Stmt.Block } })
-            Scp2(0, null, 0)
-            //TODO()
-        }
-    }
-}
-
 fun Type.toce (): String {
     return when (this) {
         is Type.Rec   -> "Rec"

@@ -115,6 +115,14 @@ fun Stmt.setTypes () {
     this.visit(false, null, ::fe, null)
 }
 
+fun Type.toScp2 (): Scp2 {
+    return when {
+        this is Type.Ptr -> this.xscp2!!
+        (this is Type.Func) && (this.scp1s.first!=null) -> this.xscp2s!!.first!! // body holds pointers in clo
+        else -> Scp2(0, null, 0)
+    }
+}
+
 fun Tk.Scp1.toScp2 (up: Any): Scp2 {
     val lvl = up.ups_tolist().filter { it is Expr.Func }.count() // level of function nesting
     return when (this.lbl) { // (... || it is Expr.Func) b/c of arg/ret, otherwise no block up to outer func
