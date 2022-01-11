@@ -124,8 +124,8 @@ fun check_02_after_tps (s: Stmt) {
                         }
                     }
                     Pair (
-                        aux(inp1,false).clone2(e,e.tk.lin,e.tk.col),
-                        aux(out1,true).clone2(e,e.tk.lin,e.tk.col)
+                        aux(inp1,false).clone(e,e.tk.lin,e.tk.col),
+                        aux(out1,true).clone(e,e.tk.lin,e.tk.col)
                     )
                 }
 

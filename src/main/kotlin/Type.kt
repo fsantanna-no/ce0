@@ -6,7 +6,7 @@ fun Type.link1 (up: Any): Type {
 }
 */
 
-fun Type.link2 (up: Any): Type {
+fun Type.link (up: Any): Type {
     this.setUps(up)
     this.visit(false, { this.env = up.getEnv() })
     return this
@@ -47,7 +47,7 @@ fun Type.flatten (): List<Type> {
     }
 }
 
-fun Type.clone2 (up: Any, lin: Int, col: Int): Type {
+fun Type.clone (up: Any, lin: Int, col: Int): Type {
     fun Type.aux (lin: Int, col: Int): Type {
         return when (this) {
             is Type.Unit -> Type.Unit(this.tk_.copy(lin_ = lin, col_ = col))
@@ -77,7 +77,7 @@ fun Type.clone2 (up: Any, lin: Int, col: Int): Type {
             is Type.Rec -> Type.Rec(this.tk_.copy(lin_ = lin, col_ = col))
         }
     }
-    return this.aux(lin,col).link2(up)
+    return this.aux(lin,col).link(up)
 }
 
 fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
