@@ -46,10 +46,10 @@ fun code_ft (tp: Type) {
 
     when (tp) {
         is Type.Func -> {
-            val pools = tp.scps.let { if (it.size == 0) "" else
+            val pools = tp.scp1s.let { if (it.size == 0) "" else
                 it.map { "Pool**" }.joinToString(",") + ","
             }
-            val ret = if (tp.clo == null) {
+            val ret = if (tp.clo1 == null) {
                 "${tp.out.pos()} ${tp.toce()} ($pools ${tp.inp.pos()})"
             } else {
                 """
@@ -243,8 +243,8 @@ fun code_fe (e: Expr) {
             val ID  = "__tmp_" + e.hashCode().absoluteValue
             val ptr = e.type as Type.Ptr
 
-            val up = e.ups_first { it is Expr.Func && (it.type as Type.Func).clo.let { it!=null && it.lbl==ptr.scope.lbl && it.num==ptr.scope.num } }
-            val pool = if (up == null) ptr.scope.toce() else "((Pool**)ups[0])"
+            val up = e.ups_first { it is Expr.Func && (it.type as Type.Func).clo1.let { it!=null && it.lbl==ptr.scp1.lbl && it.num==ptr.scp1.num } }
+            val pool = if (up == null) ptr.scp1.toce() else "((Pool**)ups[0])"
 
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
@@ -291,7 +291,7 @@ fun code_fe (e: Expr) {
             //val ff  = e.f as? Expr.Dnref
 
             val pools = e.sinps.let { if (it.size == 0) "" else (it.map { out ->
-                val up = e.ups_first { it is Expr.Func && (it.type as Type.Func).clo.let { it!=null && it.lbl==out.lbl && it.num==out.num } }
+                val up = e.ups_first { it is Expr.Func && (it.type as Type.Func).clo1.let { it!=null && it.lbl==out.lbl && it.num==out.num } }
                 if (up == null) out.toce() else "((Pool**)ups[0])"
             }.joinToString(",") + ",") }
 
@@ -302,7 +302,7 @@ fun code_fe (e: Expr) {
                 } else {
                     val tpf = e.f.type
                     val xxx = if (tpf is Type.Nat && e.arg is Expr.Unit) "" else arg.expr
-                    if (tpf is Type.Func && tpf.clo!=null) {
+                    if (tpf is Type.Func && tpf.clo1!=null) {
                         // only closures that escape (@a_1)
                         f.expr + "->f(" + f.expr + "->ups, " + pools + xxx + ")"
                     } else {
@@ -315,11 +315,11 @@ fun code_fe (e: Expr) {
             val ID  = "_func_" + e.hashCode().absoluteValue
             val fid = if (e.ups.size == 0) ID else ID+"_f"
             val ups = if (e.ups.size == 0) "" else "void** ups,"
-            val pools = e.type_.scps.let { if (it.size == 0) "" else
+            val pools = e.type_.scp1s.let { if (it.size == 0) "" else
                 it.map { "Pool** ${it.toce()}" }.joinToString(",") + ","
             }
-            val pool = e.type_.clo?.toce()
-            val clo = if (e.type_.clo == null) "" else """
+            val pool = e.type_.clo1?.toce()
+            val clo = if (e.type_.clo1 == null) "" else """
                 void** ups = malloc(${e.ups.size+1} * sizeof(void*));   // +1 pool
                 assert(ups!=NULL && "not enough memory");
                 pool_push($pool, ups);

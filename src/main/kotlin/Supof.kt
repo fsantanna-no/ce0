@@ -38,7 +38,7 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
         (this::class != sub::class) -> false
         (this is Type.Unit && sub is Type.Unit) -> true
         (this is Type.Func && sub is Type.Func) -> { (
-            this.clo?.scope(this)?.depth == sub.clo?.scope(sub)?.depth &&
+            this.clo1?.scope(this)?.depth == sub.clo1?.scope(sub)?.depth &&
             this.inp.isSupOf_(sub.inp,true,ups1,ups2) &&
             sub.inp.isSupOf_(this.inp,true,ups1,ups2) &&
             this.out.isSupOf_(sub.out,true,ups1,ups2) &&
@@ -54,7 +54,7 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
             println("SUPOF [$isproto] ${this.tk.lin}: ${this.scope()} = ${sub.scope()} /// ${this.scope}")
             */
             val ok = if (isproto) { // comparing func prototypes does not depend on scope calculation
-                (this.scope.lbl == sub.scope.lbl) && (this.scope.num == sub.scope.num)
+                (this.scp1.lbl == sub.scp1.lbl) && (this.scp1.num == sub.scp1.num)
             } else {
                 val dst = this.scope()
                 val src = sub.scope()

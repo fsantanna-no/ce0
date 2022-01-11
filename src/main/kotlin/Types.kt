@@ -14,14 +14,14 @@ fun Stmt.setTypes () {
                 }
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.type!! }.toTypedArray()).build(e)
-            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp!!, e.arg.type!!).build(e)
+            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp1!!, e.arg.type!!).build(e)
             is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).build(e)
             is Expr.Call -> {
                 e.f.type.let {
                     when (it) {
                         is Type.Nat -> it
                         is Type.Func -> {
-                            val MAP = it.scps.map { Pair(it.lbl,it.num) }.zip(e.sinps.map { Pair(it.lbl,it.num) }).toMap()
+                            val MAP = it.scp1s.map { Pair(it.lbl,it.num) }.zip(e.sinps.map { Pair(it.lbl,it.num) }).toMap()
                             fun f (tk: Tk.Scope): Tk.Scope {
                                 return MAP[Pair(tk.lbl,tk.num)].let { if (it == null) tk else
                                     Tk.Scope(TK.XSCOPE, tk.lin, tk.col, it.first, it.second)
@@ -29,14 +29,14 @@ fun Stmt.setTypes () {
                             }
                             fun map (tp: Type): Type {
                                 return when (tp) {
-                                    is Type.Ptr   -> Type.Ptr(tp.tk_, f(tp.scope), map(tp.pln))
+                                    is Type.Ptr   -> Type.Ptr(tp.tk_, f(tp.scp1), map(tp.pln))
                                     is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray())
                                     is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray())
-                                    is Type.Func  -> Type.Func(tp.tk_, if (tp.clo==null) tp.clo else f(tp.clo), tp.scps.map { f(it) }.toTypedArray(), map(tp.inp), map(tp.out))
+                                    is Type.Func  -> Type.Func(tp.tk_, if (tp.clo1==null) tp.clo1 else f(tp.clo1), tp.scp1s.map { f(it) }.toTypedArray(), map(tp.inp), map(tp.out))
                                     else -> tp
                                 }
                             }
-                            map(it.out)
+                            map(it.out).buildAll(e)
                         }
                         else -> {
                             All_assert_tk(e.f.tk, false) {
