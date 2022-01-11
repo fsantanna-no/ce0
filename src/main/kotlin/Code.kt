@@ -378,7 +378,7 @@ fun code_fs (s: Stmt) {
             {
                 Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
                 Pool** pool_local = &pool;
-                ${if (s.scope == null) "" else "Pool** ${s.scope.toce()} = &pool;"}
+                ${if (s.scp1 == null) "" else "Pool** ${s.scp1.toce()} = &pool;"}
                 ${it.stmt}
             }
             

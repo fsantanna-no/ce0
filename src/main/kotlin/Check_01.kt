@@ -12,7 +12,7 @@ fun Tk.Scp1.check (up: Any) {
             println("<<<")
             println(it)
              */
-            it is Stmt.Block && this.lbl==it.scope!!.lbl && this.num==it.scope!!.num ||
+            it is Stmt.Block && this.lbl==it.scp1!!.lbl && this.num==it.scp1!!.num ||
             it is Stmt.Var   && this.lbl==it.tk_.str     && this.num==null
         } -> true
         (up.ups_first {                                     // [@_1, ...] { @_1 }
@@ -55,7 +55,7 @@ fun check_01_before_tps (s: Stmt) {
                             tp.scp1s.second.any { it!=null && ptr.lbl==it.lbl && ptr.num==it.num }    // (@_1 -> ...@_1...)
                         ) -> true
                         (tp.ups_first {                     // { @aaa \n ...@aaa... }
-                            it is Stmt.Block && it.scope!=null && it.scope.lbl==ptr.lbl && it.scope.num==ptr.num
+                            it is Stmt.Block && it.scp1!=null && it.scp1.lbl==ptr.lbl && it.scp1.num==ptr.num
                         } != null) -> true
                         else -> false
                     }
@@ -146,13 +146,13 @@ fun check_01_before_tps (s: Stmt) {
                 }
             }
             is Stmt.Block -> {
-                if (s.scope != null) {
-                    All_assert_tk(s.scope, s.scope.num == null) {
-                        "invalid pool : unexpected `_${s.scope.num}´ depth"
+                if (s.scp1 != null) {
+                    All_assert_tk(s.scp1, s.scp1.num == null) {
+                        "invalid pool : unexpected `_${s.scp1.num}´ depth"
                     }
-                    val dcl = s.env(s.scope.lbl)
-                    All_assert_tk(s.scope, dcl == null) {
-                        "invalid pool : \"@${s.scope.lbl}\" is already declared (ln ${dcl!!.toTk().lin})"
+                    val dcl = s.env(s.scp1.lbl)
+                    All_assert_tk(s.scp1, dcl == null) {
+                        "invalid pool : \"@${s.scp1.lbl}\" is already declared (ln ${dcl!!.toTk().lin})"
                     }
                 }
             }
