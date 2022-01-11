@@ -12,7 +12,7 @@ fun Tk.Scp1.check (up: Any) {
             println("<<<")
             println(it)
              */
-            it is Stmt.Block && this.lbl==it.scp1!!.lbl && this.num==it.scp1!!.num ||
+            it is Stmt.Block && this.lbl==it.xscp1!!.lbl && this.num==it.xscp1!!.num ||
             it is Stmt.Var   && this.lbl==it.tk_.str     && this.num==null
         } -> true
         (up.ups_first {                                     // [@_1, ...] { @_1 }
@@ -55,7 +55,7 @@ fun check_01_before_tps (s: Stmt) {
                             tp.xscp1s.second?.any { ptr.lbl==it.lbl && ptr.num==it.num } ?: false      // (@_1 -> ...@_1...)
                         ) -> true
                         (tp.ups_first {                     // { @aaa \n ...@aaa... }
-                            it is Stmt.Block && it.scp1!=null && it.scp1.lbl==ptr.lbl && it.scp1.num==ptr.num
+                            it is Stmt.Block && it.xscp1.let { it!=null && it.lbl==ptr.lbl && it.num==ptr.num }
                         } != null) -> true
                         else -> false
                     }
@@ -145,15 +145,13 @@ fun check_01_before_tps (s: Stmt) {
                     "invalid return : no enclosing function"
                 }
             }
-            is Stmt.Block -> {
-                if (s.scp1 != null) {
-                    All_assert_tk(s.scp1, s.scp1.num == null) {
-                        "invalid pool : unexpected `_${s.scp1.num}´ depth"
-                    }
-                    val dcl = s.env(s.scp1.lbl)
-                    All_assert_tk(s.scp1, dcl == null) {
-                        "invalid pool : \"@${s.scp1.lbl}\" is already declared (ln ${dcl!!.toTk().lin})"
-                    }
+            is Stmt.Block -> s.xscp1?.let {
+                All_assert_tk(it, it.num == null) {
+                    "invalid pool : unexpected `_${it.num}´ depth"
+                }
+                val dcl = s.env(it.lbl)
+                All_assert_tk(it, dcl == null) {
+                    "invalid pool : \"@${it.lbl}\" is already declared (ln ${dcl!!.toTk().lin})"
                 }
             }
         }

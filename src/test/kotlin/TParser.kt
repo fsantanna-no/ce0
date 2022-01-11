@@ -537,7 +537,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("{ @a }"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Block && s.scp1!!.lbl=="a")
+        assert(s is Stmt.Block && s.xscp1!!.lbl=="a")
     }
 
     // STMT_CALL
