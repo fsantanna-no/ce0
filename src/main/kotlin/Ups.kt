@@ -1,8 +1,8 @@
 fun Any.getUp (): Any? {
     return when (this) {
-        is Type -> this.up
-        is Expr -> this.up
-        is Stmt -> this.up
+        is Type -> this.xup
+        is Expr -> this.xup
+        is Stmt -> this.xup
         else    -> error("bug found")
     }
 }
@@ -27,7 +27,7 @@ fun Any.ups_first (f: (Any)->Boolean): Any? {
 //////////////////////////////////////////////////////////////////////////////
 
 fun Type.setUps (up: Any) {
-    this.up = up
+    this.xup = up
     when (this) {
         is Type.Tuple -> this.vec.forEach { it.setUps(this) }
         is Type.Union -> this.vec.forEach { it.setUps(this) }
@@ -38,10 +38,10 @@ fun Type.setUps (up: Any) {
 
 //private
 fun Expr.setUps (up: Any) {
-    this.up = up
+    this.xup = up
     when (this) {
         is Expr.TCons -> this.arg.forEach { it.setUps(this) }
-        is Expr.UCons -> { this.type?.setUps(this) ; this.arg.setUps(this) }
+        is Expr.UCons -> { this.xtype?.setUps(this) ; this.arg.setUps(this) }
         is Expr.New   -> this.arg.setUps(this)
         is Expr.Dnref -> this.ptr.setUps(this)
         is Expr.Upref -> this.pln.setUps(this)
@@ -54,14 +54,14 @@ fun Expr.setUps (up: Any) {
             this.arg.setUps(this)
         }
         is Expr.Func  -> {
-            this.type_.setUps(this)
+            this.type.setUps(this)
             this.block.setUps(this)
         }
     }
 }
 
 fun Stmt.setUps (up: Any?) {
-    this.up = up
+    this.xup = up
     when (this) {
         is Stmt.Var -> this.type?.setUps(this)
         is Stmt.Set -> {

@@ -2,9 +2,9 @@
 
 fun Any.getEnv (): Any? {
     return when (this) {
-        is Type -> this.env
-        is Expr -> this.env
-        is Stmt -> this.env
+        is Type -> this.xenv
+        is Expr -> this.xenv
+        is Stmt -> this.xenv
         else -> error("bug found")
     }
 }
@@ -41,7 +41,7 @@ fun Any.env (id: String): Any? {
         it is Expr.Func  && (id=="arg" || id=="ret")
     }.let {
         if (it is Expr.Func) {
-            if (id=="arg") it.type_.inp else it.type_.out
+            if (id=="arg") it.type.inp else it.type.out
     } else {
             it
         }
@@ -56,17 +56,17 @@ fun Expr.Var.env (): Any? {
 
 private
 fun Expr.setEnvs (env: Any?) {
-    this.env = env
+    this.xenv = env
     fun ft (tp: Type) {
-        tp.env = env
+        tp.xenv = env
     }
     when (this) {
-        is Expr.Unit  -> this.type?.visit(false, ::ft)
-        is Expr.Nat   -> this.type_?.visit(false, ::ft)
-        is Expr.Inp   -> this.type_?.visit(false, ::ft)
+        is Expr.Unit  -> this.xtype?.visit(false, ::ft)
+        is Expr.Nat   -> this.type?.visit(false, ::ft)
+        is Expr.Inp   -> this.type?.visit(false, ::ft)
         is Expr.TCons -> this.arg.forEachIndexed { _,e -> e.setEnvs(env) }
         is Expr.UCons -> {
-            this.type_?.visit(false, ::ft)
+            this.type?.visit(false, ::ft)
             this.arg.setEnvs(env)
         }
         is Expr.New   -> this.arg.setEnvs(env)
@@ -81,16 +81,16 @@ fun Expr.setEnvs (env: Any?) {
             this.arg.setEnvs(env)
         }
         is Expr.Func  -> {
-            this.type_?.visit(false, ::ft)
+            this.type?.visit(false, ::ft)
             this.block.setEnvs(this)
         }
     }
 }
 
 fun Stmt.setEnvs (env: Any?): Any? {
-    this.env = env
+    this.xenv = env
     fun ft (tp: Type) {
-        tp.env = env
+        tp.xenv = env
     }
     return when (this) {
         is Stmt.Nop, is Stmt.Nat, is Stmt.Ret, is Stmt.Break -> env

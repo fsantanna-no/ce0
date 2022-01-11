@@ -41,10 +41,10 @@ fun Type.visit_ (xpd: Boolean, ft: ((Type)->Unit)?) {
 
 private
 fun Expr.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
-    this.type?.visit_(xpd,ft)
+    this.xtype?.visit_(xpd,ft)
     when (this) {
         is Expr.TCons -> this.arg.forEach { it.visit_(xpd,fs,fe,ft) }
-        is Expr.UCons -> { this.type_?.visit_(xpd,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
+        is Expr.UCons -> { this.type?.visit_(xpd,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
         is Expr.New   -> this.arg.visit_(xpd,fs,fe,ft)
         is Expr.Dnref -> this.ptr.visit_(xpd,fs,fe,ft)
         is Expr.Upref -> this.pln.visit_(xpd,fs,fe,ft)
@@ -53,7 +53,7 @@ fun Expr.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((T
         is Expr.UPred -> this.uni.visit_(xpd,fs,fe,ft)
         is Expr.Call  -> { this.f.visit_(xpd,fs,fe,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
         is Expr.Out   -> this.arg.visit_(xpd,fs,fe,ft)
-        is Expr.Func  -> { this.type_.visit_(xpd,ft) ; this.block.visit(xpd,fs,fe,ft) }
+        is Expr.Func  -> { this.type.visit_(xpd,ft) ; this.block.visit(xpd,fs,fe,ft) }
     }
     if (fe != null) {
         fe(this)

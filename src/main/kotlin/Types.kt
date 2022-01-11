@@ -1,12 +1,12 @@
 fun Stmt.setTypes () {
     fun fe (e: Expr) {
-        e.type = e.type ?: when (e) {
-            is Expr.Upref -> e.pln.type!!.let {
+        e.xtype = e.xtype ?: when (e) {
+            is Expr.Upref -> e.pln.xtype!!.let {
                 val lbl = e.toBaseVar()?.tk_?.str ?: "global"
                 val scp1 = Tk.Scp1(TK.XSCOPE,e.tk.lin,e.tk.col, lbl,null)
                 Type.Ptr(e.tk_, scp1, scp1.toScp2(e), it).clone(e,e.tk.lin,e.tk.col)
             }
-            is Expr.Dnref -> e.ptr.type.let {
+            is Expr.Dnref -> e.ptr.xtype.let {
                 if (it is Type.Nat) it else {
                     All_assert_tk(e.tk, it is Type.Ptr) {
                         "invalid operand to `\\´ : not a pointer"
@@ -14,11 +14,11 @@ fun Stmt.setTypes () {
                     (it as Type.Ptr).pln
                 }
             }
-            is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.type!! }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
-            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp1!!, e.scp2!!, e.arg.type!!).clone(e,e.tk.lin,e.tk.col)
+            is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.xtype!! }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
+            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp1!!, e.xscp2!!, e.arg.xtype!!).clone(e,e.tk.lin,e.tk.col)
             is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).clone(e,e.tk.lin,e.tk.col)
             is Expr.Call -> {
-                e.f.type.let {
+                e.f.xtype.let {
                     when (it) {
                         is Type.Nat -> it
                         is Type.Func -> {
@@ -33,7 +33,7 @@ fun Stmt.setTypes () {
                                     is Type.Ptr   -> Type.Ptr(tp.tk_, f(tp.scp1), f(tp.scp1).toScp2(e), map(tp.pln)).clone(e,e.tk.lin,e.tk.col)
                                     is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
                                     is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
-                                    is Type.Func  -> Type.Func(tp.tk_, Pair(if (tp.scp1s.first==null) tp.scp1s.first else f(tp.scp1s.first!!), tp.scp1s.second.map { f(it) }.toTypedArray()), tp.scp2s, map(tp.inp), map(tp.out)).clone(e,e.tk.lin,e.tk.col)
+                                    is Type.Func  -> Type.Func(tp.tk_, Pair(if (tp.scp1s.first==null) tp.scp1s.first else f(tp.scp1s.first!!), tp.scp1s.second.map { f(it) }.toTypedArray()), tp.xscp2s, map(tp.inp), map(tp.out)).clone(e,e.tk.lin,e.tk.col)
                                     else -> tp
                                 }
                             }
@@ -48,7 +48,7 @@ fun Stmt.setTypes () {
                     }
                 }
             }
-            is Expr.TDisc -> e.tup.type.let {
+            is Expr.TDisc -> e.tup.xtype.let {
                 All_assert_tk(e.tk, it is Type.Tuple) {
                     "invalid discriminator : type mismatch"
                 }
@@ -64,7 +64,7 @@ fun Stmt.setTypes () {
                     is Expr.UDisc -> Pair(e.tk_,e.uni)
                     else -> error("impossible case")
                 }
-                val tp = uni.type!!
+                val tp = uni.xtype!!
 
                 All_assert_tk(e.tk, tp is Type.Union) {
                     "invalid discriminator : not an union"
@@ -120,17 +120,17 @@ fun Stmt.setScopes () {
     fun ft (tp: Type) {
         when (tp) {
             is Type.Ptr -> {
-                tp.scp2 = tp.scp1.toScp2(tp)
+                tp.xscp2 = tp.scp1.toScp2(tp)
             }
             is Type.Func -> {
-                tp.scp2s = Pair(tp.scp1s.first?.toScp2(tp), tp.scp1s.second.map { it.toScp2(tp) }.toTypedArray())
+                tp.xscp2s = Pair(tp.scp1s.first?.toScp2(tp), tp.scp1s.second.map { it.toScp2(tp) }.toTypedArray())
             }
         }
     }
     fun fe (e: Expr) {
         when (e) {
             is Expr.New -> {
-                e.scp2 = e.scp1.toScp2(e)
+                e.xscp2 = e.scp1.toScp2(e)
             }
         }
     }

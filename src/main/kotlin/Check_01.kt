@@ -16,7 +16,7 @@ fun Tk.Scp1.check (up: Any) {
             it is Stmt.Var   && this.lbl==it.tk_.str     && this.num==null
         } -> true
         (up.ups_first {                                     // [@_1, ...] { @_1 }
-            it is Expr.Func && it.type_.scp1s.second.any { it.lbl==this.lbl && it.num==this.num }
+            it is Expr.Func && it.type.scp1s.second.any { it.lbl==this.lbl && it.num==this.num }
         } != null) -> true
         else -> false
     }
@@ -31,7 +31,7 @@ fun check_01_before_tps (s: Stmt) {
         when (tp) {
             is Type.Rec -> {
                 val str = "^".repeat(tp.tk_.up)
-                All_assert_tk(tp.tk, tp.up is Type.Ptr) {
+                All_assert_tk(tp.tk, tp.xup is Type.Ptr) {
                     "invalid `$str´ : expected pointer type"
                 }
                 val unions = tp.ups_tolist().count { it is Type.Union }
@@ -103,7 +103,7 @@ fun check_01_before_tps (s: Stmt) {
             is Expr.Func -> {
                 val funcs = e.ups_tolist().filter { it is Expr.Func } as List<Expr.Func>
                 for (f in funcs) {
-                    val err = f.type_.scp1s.second.find { tk2 -> e.type_.scp1s.second.any { tk1 -> tk1.lbl==tk2.lbl } }
+                    val err = f.type.scp1s.second.find { tk2 -> e.type.scp1s.second.any { tk1 -> tk1.lbl==tk2.lbl } }
                     All_assert_tk(e.tk, err==null) {
                         "invalid pool : \"@${err!!.lbl}\" is already declared (ln ${err!!.lin})"
                     }

@@ -24,31 +24,31 @@ class TCode {
     @Test
     fun b01_expr_unit () {
         val e = Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
-        e.type = tp_unit
+        e.xtype = tp_unit
         code_fe(e)
         assert(CODE.removeFirst().expr == "0")
     }
     @Test
     fun b02_expr_var () {
         val e = Expr.Var(Tk.Str(TK.XVAR,1,1,"xxx"))
-        e.env =
+        e.xenv =
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"xxx"),
                 Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
             )
-        e.type = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
+        e.xtype = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
         code_fe(e)
         CODE.removeFirst().let { assert(it.expr == "xxx") { it.expr } }
     }
     @Test
     fun b03_expr_nat () {
         val e = Expr.Var(Tk.Str(TK.XNAT,1,1,"xxx"))
-        e.env =
+        e.xenv =
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"xxx"),
                 Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
             )
-        e.type = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
+        e.xtype = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
         code_fe(e)
         assert(CODE.removeFirst().expr == "xxx")
     }
@@ -61,9 +61,9 @@ class TCode {
                 Expr.Unit(Tk.Sym(TK.UNIT,1,1,"()")),
             )
         )
-        e.type = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray())
-        e.arg[0].type = tp_unit
-        e.arg[1].type = tp_unit
+        e.xtype = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray())
+        e.arg[0].xtype = tp_unit
+        e.arg[1].xtype = tp_unit
         e.visit(false, null, ::code_fe, null)
         CODE.removeFirst().expr.let {
             assert(it == "((struct T_Unit_Unit_T) { 0, 0 })")
@@ -75,13 +75,13 @@ class TCode {
             Tk.Num(TK.XNUM,1,1,1),
             Expr.Var(Tk.Str(TK.XVAR,1,1,"x"))
         )
-        e.tup.env =
+        e.tup.xenv =
             Stmt.Var (
                 Tk.Str(TK.XVAR,1,1,"x"),
                 Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))))
             )
-        e.type = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
-        e.tup.type = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))))
+        e.xtype = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
+        e.tup.xtype = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))))
         e.visit(false, null, ::code_fe, null)
         CODE.removeFirst().expr.let {
             assert(it == "x._1")
