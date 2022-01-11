@@ -22,10 +22,10 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
             is Expr.Func -> {
-                All_assert_tk(e.tk, funcs.contains(e) || e.type.scp1s.first == null) {
+                All_assert_tk(e.tk, funcs.contains(e) || e.type.xscp1s.first == null) {
                     "invalid function : unexpected closure declaration"
                 }
-                All_assert_tk(e.tk, !funcs.contains(e) || e.type.scp1s.first != null) {
+                All_assert_tk(e.tk, !funcs.contains(e) || e.type.xscp1s.first != null) {
                     "invalid function : expected closure declaration"
                 }
             }
@@ -55,7 +55,7 @@ fun check_02_after_tps (s: Stmt) {
                 val arg1 = e.arg.wtype!!
 
                 val (scps1,inp1,out1) = when (func) {
-                    is Type.Func -> Triple(func.scp1s.second,func.inp,func.out)
+                    is Type.Func -> Triple(func.xscp1s.second,func.inp,func.out)
                     is Type.Nat  -> Triple(null,func,func)
                     else -> error("impossible case")
                 }
@@ -113,16 +113,16 @@ fun check_02_after_tps (s: Stmt) {
                                 }
                             }
                             is Type.Func -> if (!dofunc) tp else {
-                                val ret = tp.scp1s.first.let { scp ->
+                                val ret = tp.xscp1s.first.let { scp ->
                                     if (scp == null) {
                                         null
                                     } else {
-                                        acc[scp.lbl].let { if (it == null) Pair(tp.scp1s.first,tp.xscp2s!!.first) else it[scp.num]!! }
+                                        acc[scp.lbl].let { if (it == null) Pair(tp.xscp1s.first,tp.xscp2s!!.first) else it[scp.num]!! }
                                     }
                                 }
                                 Type.Func (
                                     tp.tk_,
-                                    Pair(ret?.first,  tp.scp1s.second),
+                                    Pair(ret?.first,  tp.xscp1s.second),
                                     Pair(ret?.second, tp.xscp2s!!.second),
                                     aux(tp.inp,dofunc),
                                     aux(tp.out,dofunc)

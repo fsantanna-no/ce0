@@ -12,7 +12,7 @@ fun Any.getEnv (): Any? {
 fun Any.toType (): Type {
     return when (this) {
         is Type     -> this
-        is Stmt.Var -> this.xtype
+        is Stmt.Var -> this.xtype!!
         else -> error("bug found")
     }
 }

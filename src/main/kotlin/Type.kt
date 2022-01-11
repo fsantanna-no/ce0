@@ -32,7 +32,7 @@ fun Type.tostr (): String {
         is Type.Ptr   -> this.scp1.let { "/" + this.pln.tostr() + it.tostr() }
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
-        is Type.Func  -> "func {" + this.scp1s.first.tostr() + "} -> {" + this.scp1s.second.map { it.tostr() }.joinToString(",") + "} -> " + this.inp.tostr() + " -> " + this.out.tostr()
+        is Type.Func  -> "func {" + this.xscp1s.first.tostr() + "} -> {" + this.xscp1s.second.map { it.tostr() }.joinToString(",") + "} -> " + this.inp.tostr() + " -> " + this.out.tostr()
     }
 }
 
@@ -64,8 +64,8 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
             is Type.Func -> Type.Func(
                 this.tk_.copy(lin_ = lin, col_ = col),
                 Pair (
-                    this.scp1s.first?.copy(lin_ = lin, col_ = col),
-                    this.scp1s.second.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray()
+                    this.xscp1s.first?.copy(lin_ = lin, col_ = col),
+                    this.xscp1s.second.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray()
                 ),
                 this.xscp2s,
                 this.inp.aux(lin, col),
@@ -100,8 +100,8 @@ fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
             is Type.Func -> Type.Func(
                 this.tk_.copy(lin_ = lin, col_ = col),
                 Pair (
-                    this.scp1s.first?.copy(lin_ = lin, col_ = col),
-                    this.scp1s.second.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray()
+                    this.xscp1s.first?.copy(lin_ = lin, col_ = col),
+                    this.xscp1s.second.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray()
                 ),
                 this.xscp2s,
                 this.inp.aux(lin, col),
@@ -134,7 +134,7 @@ fun Type.Union.expand (): Array<Type> {
             is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray())
             is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray())
             is Type.Ptr   -> Type.Ptr(cur.tk_, cur.scp1, cur.xscp2, aux(cur.pln,up))
-            is Type.Func  -> Type.Func(cur.tk_, cur.scp1s, cur.xscp2s, aux(cur.inp,up), aux(cur.out,up))
+            is Type.Func  -> Type.Func(cur.tk_, cur.xscp1s, cur.xscp2s, aux(cur.inp,up), aux(cur.out,up))
             else -> cur
         }
     }
@@ -149,6 +149,6 @@ fun Type.toce (): String {
         is Type.Nat   -> this.tk_.src.replace('*','_')
         is Type.Tuple -> "T_" + this.vec.map { it.toce() }.joinToString("_") + "_T"
         is Type.Union -> "U_" + this.vec.map { it.toce() }.joinToString("_") + "_U"
-        is Type.Func  -> "F_" + (if (this.scp1s.first==null) "" else "CLO_") + this.inp.toce() + "_" + this.out.toce() + "_F"
+        is Type.Func  -> "F_" + (if (this.xscp1s.first==null) "" else "CLO_") + this.inp.toce() + "_" + this.out.toce() + "_F"
     }
 }

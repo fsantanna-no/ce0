@@ -32,7 +32,7 @@ fun Stmt.setTypes () {
                             //  so @scp2 maps to @b_1
                             // zip [[{@scp1a,@scp1b},{@scp2a,@scp2b}],{@a_1,@b_1}]
                             //assert(it.scp1s.second.size == e.scp1s.first.size) // TODO: may fail before check2
-                            val MAP: List<Pair<Tk.Scp1,Pair<Tk.Scp1,Scp2>>> = it.scp1s.second.zip(e.scp1s.first.zip(e.xscp2s!!.first))
+                            val MAP: List<Pair<Tk.Scp1,Pair<Tk.Scp1,Scp2>>> = it.xscp1s.second.zip(e.scp1s.first.zip(e.xscp2s!!.first))
                             fun Tk.Scp1.get (scp2: Scp2): Pair<Tk.Scp1,Scp2> {
                                 return MAP.find { it.first.let { it.lbl==this.lbl && it.num==this.num } }?.second ?: Pair(this,scp2)
                             }
@@ -44,8 +44,8 @@ fun Stmt.setTypes () {
                                     is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
                                     is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
                                     is Type.Func  -> {
-                                        val clo = tp.scp1s.first?.get(tp.xscp2s!!.first!!)
-                                        val (x1,x2) = tp.scp1s.second.zip(tp.xscp2s!!.second)
+                                        val clo = tp.xscp1s.first?.get(tp.xscp2s!!.first!!)
+                                        val (x1,x2) = tp.xscp1s.second.zip(tp.xscp2s!!.second)
                                             .map { it.first.get(it.second) }
                                             .unzip()
                                         Type.Func (

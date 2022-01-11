@@ -3,7 +3,7 @@ data class Scp2 (val lvl: Int, val arg: String?, val depth: Int)
 fun Type.toScp2 (): Scp2 {
     return when {
         this is Type.Ptr -> this.xscp2!!
-        (this is Type.Func) && (this.scp1s.first!=null) -> this.xscp2s!!.first!! // body holds pointers in clo
+        (this is Type.Func) && (this.xscp1s.first!=null) -> this.xscp2s!!.first!! // body holds pointers in clo
         else -> Scp2(0, null, 0)
     }
 }
@@ -38,14 +38,14 @@ fun Stmt.setScopes () {
                 tp.xscp2 = tp.scp1.toScp2(tp)
             }
             is Type.Func -> {
-                tp.xscp2s = Pair(tp.scp1s.first?.toScp2(tp), tp.scp1s.second.map { it.toScp2(tp) }.toTypedArray())
+                tp.xscp2s = Pair(tp.xscp1s.first?.toScp2(tp), tp.xscp1s.second.map { it.toScp2(tp) }.toTypedArray())
             }
         }
     }
     fun fe (e: Expr) {
         when (e) {
             is Expr.New -> {
-                e.xscp2 = e.xscp1.toScp2(e)
+                e.xscp2 = e.xscp1!!.toScp2(e)
             }
             is Expr.Call -> {
                 e.xscp2s = Pair(e.scp1s.first.map { it.toScp2(e) }.toTypedArray(), e.scp1s.second?.toScp2(e))

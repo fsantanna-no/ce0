@@ -7,7 +7,7 @@ sealed class Type (val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Rec   (val tk_: Tk.Up): Type(tk_, null, null)
     data class Func  (
         val tk_: Tk.Key,
-        val scp1s: Pair<Tk.Scp1?,Array<Tk.Scp1>>,   // first=closure scope, second=input scopes
+        val xscp1s: Pair<Tk.Scp1?,Array<Tk.Scp1>>,   // first=closure scope, second=input scopes
         var xscp2s: Pair<Scp2?,Array<Scp2>>?,
         val inp: Type, val out: Type
     ): Type(tk_, null, null)
