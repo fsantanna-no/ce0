@@ -31,7 +31,7 @@ fun check_01_before_tps (s: Stmt) {
         when (tp) {
             is Type.Rec -> {
                 val str = "^".repeat(tp.tk_.up)
-                All_assert_tk(tp.tk, tp.xup is Type.Ptr) {
+                All_assert_tk(tp.tk, tp.wup is Type.Ptr) {
                     "invalid `$str´ : expected pointer type"
                 }
                 val unions = tp.ups_tolist().count { it is Type.Union }
@@ -115,7 +115,7 @@ fun check_01_before_tps (s: Stmt) {
                 }
             }
 
-            is Expr.New  -> e.scp1?.check(e)
+            is Expr.New  -> e.xscp1?.check(e)
             is Expr.Call -> {
                 e.scp1s.second.let { it?.check(e) }
                 e.scp1s.first.forEach { it.check(e) }

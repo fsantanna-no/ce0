@@ -8,7 +8,7 @@ fun Type.link1 (up: Any): Type {
 
 fun Type.link (up: Any): Type {
     this.setUps(up)
-    this.visit(false, { this.xenv = up.getEnv() })
+    this.visit(false, { this.wenv = up.getEnv() })
     return this
 }
 

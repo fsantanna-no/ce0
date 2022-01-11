@@ -141,7 +141,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("<(),<(),^^>>"), 2))
         lexer(all)
         val tp1 = parser_type(all)
-        tp1.visit(false, { it.xup = Any() })
+        tp1.visit(false, { it.wup = Any() })
         val tp2 = (tp1 as Type.Union).expand()[1]
         // <(),<(),^^>> = <(),<(),<(),^^>>>
         val ok1 = tp1.isSupOf(tp2)
@@ -203,7 +203,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("_x:_int"), 2))
         lexer(all)
         val e = parser_expr(all)
-        assert(e is Expr.Nat && e.tk_.src=="x" && e.xtype is Type.Nat)
+        assert(e is Expr.Nat && e.tk_.src=="x" && e.wtype is Type.Nat)
     }
     @Test
     fun b09_parser_expr_nat () {
@@ -211,7 +211,7 @@ class TParser {
         lexer(all)
         val e = parser_expr(all)
         println(e)
-        assert(e is Expr.Nat && e.tk_.src=="x" && e.xtype is Type.Nat)
+        assert(e is Expr.Nat && e.tk_.src=="x" && e.wtype is Type.Nat)
     }
 
     // PARENS, TUPLE
@@ -505,14 +505,14 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("var x: ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Var && s.type is Type.Unit)
+        assert(s is Stmt.Var && s.xtype is Type.Unit)
     }
     @Test
     fun c03_parser_stmt_var_tuple () {
         val all = All_new(PushbackReader(StringReader("var x: [(),()]"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Var && s.type is Type.Tuple)
+        assert(s is Stmt.Var && s.xtype is Type.Tuple)
     }
     @Test
     fun c04_parser_stmt_var_caret () {
@@ -530,7 +530,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("var x: /()@1"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Var && s.type is Type.Ptr)
+        assert(s is Stmt.Var && s.xtype is Type.Ptr)
     }
     @Test
     fun c06_parser_stmt_block_scope () {
@@ -591,7 +591,7 @@ class TParser {
         lexer(all)
         val s = parser_stmt(all)
         //assert(s is Stmt.Call && s.call.f is Expr.Dnref && ((s.call.f as Expr.Dnref).ptr is Expr.Var) && ((s.call.f as Expr.Dnref).ptr as Expr.Var).tk_.str=="output_std")
-        assert(s is Stmt.SExpr && (s.e as Expr.Inp).let { it.lib.str=="std" && it.xtype is Type.Nat })
+        assert(s is Stmt.SExpr && (s.e as Expr.Inp).let { it.lib.str=="std" && it.wtype is Type.Nat })
     }
 
     // STMT_SEQ

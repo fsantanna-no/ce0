@@ -1,12 +1,12 @@
 fun Stmt.setTypes () {
     fun fe (e: Expr) {
-        e.xtype = e.xtype ?: when (e) {
-            is Expr.Upref -> e.pln.xtype!!.let {
+        e.wtype = e.wtype ?: when (e) {
+            is Expr.Upref -> e.pln.wtype!!.let {
                 val lbl = e.toBaseVar()?.tk_?.str ?: "global"
                 val scp1 = Tk.Scp1(TK.XSCOPE,e.tk.lin,e.tk.col, lbl,null)
                 Type.Ptr(e.tk_, scp1, scp1.toScp2(e), it).clone(e,e.tk.lin,e.tk.col)
             }
-            is Expr.Dnref -> e.ptr.xtype.let {
+            is Expr.Dnref -> e.ptr.wtype.let {
                 if (it is Type.Nat) it else {
                     All_assert_tk(e.tk, it is Type.Ptr) {
                         "invalid operand to `\\´ : not a pointer"
@@ -14,11 +14,11 @@ fun Stmt.setTypes () {
                     (it as Type.Ptr).pln
                 }
             }
-            is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.xtype!! }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
-            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp1!!, e.xscp2!!, e.arg.xtype!!).clone(e,e.tk.lin,e.tk.col)
+            is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.wtype!! }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
+            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.xscp1!!, e.xscp2!!, e.arg.wtype!!).clone(e,e.tk.lin,e.tk.col)
             is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).clone(e,e.tk.lin,e.tk.col)
             is Expr.Call -> {
-                e.f.xtype.let {
+                e.f.wtype.let {
                     when (it) {
                         is Type.Nat -> it
                         is Type.Func -> {
@@ -70,7 +70,7 @@ fun Stmt.setTypes () {
                     }
                 }
             }
-            is Expr.TDisc -> e.tup.xtype.let {
+            is Expr.TDisc -> e.tup.wtype.let {
                 All_assert_tk(e.tk, it is Type.Tuple) {
                     "invalid discriminator : type mismatch"
                 }
@@ -86,7 +86,7 @@ fun Stmt.setTypes () {
                     is Expr.UDisc -> Pair(e.tk_,e.uni)
                     else -> error("impossible case")
                 }
-                val tp = uni.xtype!!
+                val tp = uni.wtype!!
 
                 All_assert_tk(e.tk, tp is Type.Union) {
                     "invalid discriminator : not an union"

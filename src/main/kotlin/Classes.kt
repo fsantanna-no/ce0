@@ -1,4 +1,4 @@
-sealed class Type (val tk: Tk, var xup: Any?, var xenv: Any?) {
+sealed class Type (val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Unit  (val tk_: Tk.Sym): Type(tk_, null, null)
     data class Nat   (val tk_: Tk.Nat): Type(tk_, null, null)
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_, null, null)
@@ -13,35 +13,35 @@ sealed class Type (val tk: Tk, var xup: Any?, var xenv: Any?) {
     ): Type(tk_, null, null)
 }
 
-sealed class Attr (val tk: Tk, var xup: Any?) {
-    data class Var   (val tk_: Tk.Str): Attr(tk_, null)
-    data class Nat   (val tk_: Tk.Nat, val type: Type): Attr(tk_, null)
-    data class Dnref (val tk_: Tk, val ptr: Attr): Attr(tk_, null)
-    data class TDisc (val tk_: Tk.Num, val tup: Attr): Attr(tk_, null)
-    data class UDisc (val tk_: Tk.Num, val uni: Attr): Attr(tk_, null)
+sealed class Attr (val tk: Tk) {
+    data class Var   (val tk_: Tk.Str): Attr(tk_)
+    data class Nat   (val tk_: Tk.Nat, val type: Type): Attr(tk_)
+    data class Dnref (val tk_: Tk, val ptr: Attr): Attr(tk_)
+    data class TDisc (val tk_: Tk.Num, val tup: Attr): Attr(tk_)
+    data class UDisc (val tk_: Tk.Num, val uni: Attr): Attr(tk_)
 }
 
-sealed class Expr (val tk: Tk, var xup: Any?, var xenv: Any?, var xtype: Type?) {
+sealed class Expr (val tk: Tk, var wup: Any?, var wenv: Any?, var wtype: Type?) {
     data class Unit  (val tk_: Tk.Sym): Expr(tk_, null, null, Type.Unit(tk_))
     data class Var   (val tk_: Tk.Str): Expr(tk_, null, null, null)
-    data class Nat   (val tk_: Tk.Nat, val type: Type): Expr(tk_, null, null, type)
+    data class Nat   (val tk_: Tk.Nat, val xtype: Type): Expr(tk_, null, null, xtype)
     data class TCons (val tk_: Tk.Chr, val arg: Array<Expr>): Expr(tk_, null, null, null)
-    data class UCons (val tk_: Tk.Num, val type: Type, val arg: Expr): Expr(tk_, null, null, type)
+    data class UCons (val tk_: Tk.Num, val xtype: Type, val arg: Expr): Expr(tk_, null, null, xtype)
     data class TDisc (val tk_: Tk.Num, val tup: Expr): Expr(tk_, null, null, null)
     data class UDisc (val tk_: Tk.Num, val uni: Expr): Expr(tk_, null, null, null)
     data class UPred (val tk_: Tk.Num, val uni: Expr): Expr(tk_, null, null, null)
-    data class New   (val tk_: Tk.Key, val scp1: Tk.Scp1, var xscp2: Scp2?, val arg: Expr.UCons): Expr(tk_, null, null, null)
+    data class New   (val tk_: Tk.Key, val xscp1: Tk.Scp1, var xscp2: Scp2?, val arg: Expr.UCons): Expr(tk_, null, null, null)
     data class Dnref (val tk_: Tk,     val ptr: Expr): Expr(tk_, null, null, null)
     data class Upref (val tk_: Tk.Chr, val pln: Expr): Expr(tk_, null, null, null)
-    data class Inp   (val tk_: Tk.Key, val type: Type, val lib: Tk.Str): Expr(tk_, null, null, type)
+    data class Inp   (val tk_: Tk.Key, val xtype: Type, val lib: Tk.Str): Expr(tk_, null, null, xtype)
     data class Out   (val tk_: Tk.Key, val lib: Tk.Str, val arg: Expr): Expr(tk_, null, null, null)
     data class Call  (val tk_: Tk.Key, val f: Expr, val arg: Expr, val scp1s: Pair<Array<Tk.Scp1>,Tk.Scp1?>, var xscp2s: Pair<Array<Scp2>,Scp2?>?): Expr(tk_, null, null, null)
     data class Func  (val tk_: Tk.Key, val type: Type.Func, val ups: Array<Tk.Str>, val block: Stmt.Block) : Expr(tk_, null, null, type)
 }
 
-sealed class Stmt (val tk: Tk, var xup: Any?, var xenv: Any?) {
+sealed class Stmt (val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Nop   (val tk_: Tk) : Stmt(tk_, null, null)
-    data class Var   (val tk_: Tk.Str, val type: Type) : Stmt(tk_, null, null)
+    data class Var   (val tk_: Tk.Str, val xtype: Type) : Stmt(tk_, null, null)
     data class Set   (val tk_: Tk.Chr, val dst: Expr, val src: Expr) : Stmt(tk_, null, null)
     data class Nat   (val tk_: Tk.Nat) : Stmt(tk_, null, null)
     data class SExpr (val tk_: Tk.Key, val e: Expr) : Stmt(tk_, null, null)

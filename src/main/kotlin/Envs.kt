@@ -2,9 +2,9 @@
 
 fun Any.getEnv (): Any? {
     return when (this) {
-        is Type -> this.xenv
-        is Expr -> this.xenv
-        is Stmt -> this.xenv
+        is Type -> this.wenv
+        is Expr -> this.wenv
+        is Stmt -> this.wenv
         else -> error("bug found")
     }
 }
@@ -12,7 +12,7 @@ fun Any.getEnv (): Any? {
 fun Any.toType (): Type {
     return when (this) {
         is Type     -> this
-        is Stmt.Var -> this.type
+        is Stmt.Var -> this.xtype
         else -> error("bug found")
     }
 }
@@ -56,17 +56,17 @@ fun Expr.Var.env (): Any? {
 
 private
 fun Expr.setEnvs (env: Any?) {
-    this.xenv = env
+    this.wenv = env
     fun ft (tp: Type) {
-        tp.xenv = env
+        tp.wenv = env
     }
     when (this) {
-        is Expr.Unit  -> this.xtype?.visit(false, ::ft)
-        is Expr.Nat   -> this.type?.visit(false, ::ft)
-        is Expr.Inp   -> this.type?.visit(false, ::ft)
+        is Expr.Unit  -> this.wtype?.visit(false, ::ft)
+        is Expr.Nat   -> this.xtype?.visit(false, ::ft)
+        is Expr.Inp   -> this.xtype?.visit(false, ::ft)
         is Expr.TCons -> this.arg.forEachIndexed { _,e -> e.setEnvs(env) }
         is Expr.UCons -> {
-            this.type?.visit(false, ::ft)
+            this.xtype?.visit(false, ::ft)
             this.arg.setEnvs(env)
         }
         is Expr.New   -> this.arg.setEnvs(env)
@@ -88,14 +88,14 @@ fun Expr.setEnvs (env: Any?) {
 }
 
 fun Stmt.setEnvs (env: Any?): Any? {
-    this.xenv = env
+    this.wenv = env
     fun ft (tp: Type) {
-        tp.xenv = env
+        tp.wenv = env
     }
     return when (this) {
         is Stmt.Nop, is Stmt.Nat, is Stmt.Ret, is Stmt.Break -> env
         is Stmt.Var -> {
-            this.type?.visit(false, ::ft)
+            this.xtype?.visit(false, ::ft)
             this
         }
         is Stmt.Set -> {

@@ -45,7 +45,7 @@ fun Stmt.setScopes () {
     fun fe (e: Expr) {
         when (e) {
             is Expr.New -> {
-                e.xscp2 = e.scp1.toScp2(e)
+                e.xscp2 = e.xscp1.toScp2(e)
             }
             is Expr.Call -> {
                 e.xscp2s = Pair(e.scp1s.first.map { it.toScp2(e) }.toTypedArray(), e.scp1s.second?.toScp2(e))

@@ -41,10 +41,10 @@ fun Type.visit_ (xpd: Boolean, ft: ((Type)->Unit)?) {
 
 private
 fun Expr.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
-    this.xtype?.visit_(xpd,ft)
+    this.wtype?.visit_(xpd,ft)
     when (this) {
         is Expr.TCons -> this.arg.forEach { it.visit_(xpd,fs,fe,ft) }
-        is Expr.UCons -> { this.type?.visit_(xpd,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
+        is Expr.UCons -> { this.xtype?.visit_(xpd,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
         is Expr.New   -> this.arg.visit_(xpd,fs,fe,ft)
         is Expr.Dnref -> this.ptr.visit_(xpd,fs,fe,ft)
         is Expr.Upref -> this.pln.visit_(xpd,fs,fe,ft)
@@ -63,7 +63,7 @@ fun Expr.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((T
 private
 fun Stmt.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
     when (this) {
-        is Stmt.Var   -> this.type?.visit_(xpd,ft)
+        is Stmt.Var   -> this.xtype?.visit_(xpd,ft)
         is Stmt.Set   -> { this.dst.visit_(xpd,fs,fe,ft) ; this.src.visit_(xpd,fs,fe,ft) }
         is Stmt.SExpr -> this.e.visit_(xpd,fs,fe,ft)
         is Stmt.Seq   -> { this.s1.visit(xpd,fs,fe,ft) ; this.s2.visit(xpd,fs,fe,ft) }

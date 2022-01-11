@@ -31,12 +31,12 @@ fun check_02_after_tps (s: Stmt) {
             }
 
             is Expr.UCons -> {
-                val ok = when (e.type) {
+                val ok = when (e.xtype) {
                     is Type.Ptr -> {
-                        (e.tk_.num == 0) && e.arg is Expr.Unit && (e.type.pln is Type.Rec || e.type.pln.isrec())
+                        (e.tk_.num == 0) && e.arg is Expr.Unit && (e.xtype.pln is Type.Rec || e.xtype.pln.isrec())
                     }
                     is Type.Union -> {
-                        (e.tk_.num > 0) && (e.type.vec.size >= e.tk_.num) && e.type.expand()[e.tk_.num - 1].isSupOf(e.arg.xtype!!)
+                        (e.tk_.num > 0) && (e.xtype.vec.size >= e.tk_.num) && e.xtype.expand()[e.tk_.num - 1].isSupOf(e.arg.wtype!!)
                     }
                     else -> error("bug found")
                 }
@@ -45,14 +45,14 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
             is Expr.New -> {
-                All_assert_tk(e.tk, e.arg.xtype is Type.Union && e.arg.tk_.num>0) {
+                All_assert_tk(e.tk, e.arg.wtype is Type.Union && e.arg.tk_.num>0) {
                     "invalid `new` : expected constructor" // TODO: remove?
                 }
             }
             is Expr.Call -> {
-                val func = e.f.xtype
-                val ret1 = e.xtype!!
-                val arg1 = e.arg.xtype!!
+                val func = e.f.wtype
+                val ret1 = e.wtype!!
+                val arg1 = e.arg.wtype!!
 
                 val (scps1,inp1,out1) = when (func) {
                     is Type.Func -> Triple(func.scp1s.second,func.inp,func.out)
@@ -159,13 +159,13 @@ fun check_02_after_tps (s: Stmt) {
     fun fs (s: Stmt) {
         when (s) {
             is Stmt.If -> {
-                All_assert_tk(s.tk, s.tst.xtype is Type.Nat) {
+                All_assert_tk(s.tk, s.tst.wtype is Type.Nat) {
                     "invalid condition : type mismatch"
                 }
             }
             is Stmt.Set -> {
-                val dst = s.dst.xtype!!
-                val src = s.src.xtype!!
+                val dst = s.dst.wtype!!
+                val src = s.src.wtype!!
                 //println(">>> SET") ; println(s.dst) ; println(s.src) ; println(dst.tostr()) ; println(src.tostr())
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
                     val str = if (s.dst is Expr.Var && s.dst.tk_.str == "ret") "return" else "assignment"
