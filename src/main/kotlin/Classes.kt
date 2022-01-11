@@ -1,5 +1,3 @@
-data class Scp2 (val lvl: Int, val arg: String?, val depth: Int)
-
 sealed class Type (val tk: Tk, var xup: Any?, var xenv: Any?) {
     data class Unit  (val tk_: Tk.Sym): Type(tk_, null, null)
     data class Nat   (val tk_: Tk.Nat): Type(tk_, null, null)
