@@ -114,27 +114,3 @@ fun Stmt.setTypes () {
     }
     this.visit(false, null, ::fe, null)
 }
-
-fun Stmt.setScopes () {
-    fun ft (tp: Type) {
-        when (tp) {
-            is Type.Ptr -> {
-                tp.xscp2 = tp.scp1.toScp2(tp)
-            }
-            is Type.Func -> {
-                tp.xscp2s = Pair(tp.xscp1s.first?.toScp2(tp), tp.xscp1s.second.map { it.toScp2(tp) }.toTypedArray())
-            }
-        }
-    }
-    fun fe (e: Expr) {
-        when (e) {
-            is Expr.New -> {
-                e.xscp2 = e.xscp1!!.toScp2(e)
-            }
-            is Expr.Call -> {
-                e.xscp2s = Pair(e.scp1s.first.map { it.toScp2(e) }.toTypedArray(), e.scp1s.second?.toScp2(e))
-            }
-        }
-    }
-    this.visit(false, null, ::fe, ::ft)
-}
