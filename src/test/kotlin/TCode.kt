@@ -64,7 +64,7 @@ class TCode {
         e.type = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'['), listOf(tp_unit,tp_unit).toTypedArray())
         e.arg[0].type = tp_unit
         e.arg[1].type = tp_unit
-        e.visit(null, ::code_fe, null)
+        e.visit(false, null, ::code_fe, null)
         CODE.removeFirst().expr.let {
             assert(it == "((struct T_Unit_Unit_T) { 0, 0 })")
         }
@@ -82,7 +82,7 @@ class TCode {
             )
         e.type = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
         e.tup.type = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))))
-        e.visit(null, ::code_fe, null)
+        e.visit(false, null, ::code_fe, null)
         CODE.removeFirst().expr.let {
             assert(it == "x._1")
         }
@@ -93,7 +93,7 @@ class TCode {
     @Test
     fun c01_stmt_pass () {
         val s = Stmt.Nop(Tk.Err(TK.ERR,1,1,""))
-        s.visit(::code_fs, null, null)
+        s.visit(false, ::code_fs, null, null)
         assert(CODE.removeFirst().stmt == "")
         assert(CODE.size == 0)
     }

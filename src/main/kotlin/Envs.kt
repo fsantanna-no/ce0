@@ -61,12 +61,12 @@ fun Expr.setEnvs (env: Any?) {
         tp.env = env
     }
     when (this) {
-        is Expr.Unit  -> this.type?.visit(::ft)
-        is Expr.Nat   -> this.type_?.visit(::ft)
-        is Expr.Inp   -> this.type_?.visit(::ft)
+        is Expr.Unit  -> this.type?.visit(false, ::ft)
+        is Expr.Nat   -> this.type_?.visit(false, ::ft)
+        is Expr.Inp   -> this.type_?.visit(false, ::ft)
         is Expr.TCons -> this.arg.forEachIndexed { _,e -> e.setEnvs(env) }
         is Expr.UCons -> {
-            this.type_?.visit(::ft)
+            this.type_?.visit(false, ::ft)
             this.arg.setEnvs(env)
         }
         is Expr.New   -> this.arg.setEnvs(env)
@@ -81,7 +81,7 @@ fun Expr.setEnvs (env: Any?) {
             this.arg.setEnvs(env)
         }
         is Expr.Func  -> {
-            this.type_?.visit(::ft)
+            this.type_?.visit(false, ::ft)
             this.block.setEnvs(this)
         }
     }
@@ -95,7 +95,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
     return when (this) {
         is Stmt.Nop, is Stmt.Nat, is Stmt.Ret, is Stmt.Break -> env
         is Stmt.Var -> {
-            this.type?.visit(::ft)
+            this.type?.visit(false, ::ft)
             this
         }
         is Stmt.Set -> {

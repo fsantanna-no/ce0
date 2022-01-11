@@ -399,9 +399,7 @@ fun code_fs (s: Stmt) {
 fun Stmt.code (): String {
     TYPEX.clear()
     TYPES.clear()
-    XPD = true
-    this.visit(::code_fs, ::code_fe, ::code_ft)
-    XPD = false
+    this.visit(true, ::code_fs, ::code_fe, ::code_ft)
     //val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 
     val ord = TYPES.map { it.first }.toMap() // [ce={ce}]

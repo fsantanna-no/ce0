@@ -3,7 +3,7 @@ fun Stmt.setTypes () {
         e.type = e.type ?: when (e) {
             is Expr.Upref -> e.pln.type!!.let {
                 val lbl = e.toBaseVar()?.tk_?.str ?: "global"
-                Type.Ptr(e.tk_, Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col, lbl,null), null, it).build(e)
+                Type.Ptr(e.tk_, Tk.Scope(TK.XSCOPE,e.tk.lin,e.tk.col, lbl,null), null, it).link(e)
             }
             is Expr.Dnref -> e.ptr.type.let {
                 if (it is Type.Nat) it else {
@@ -13,9 +13,9 @@ fun Stmt.setTypes () {
                     (it as Type.Ptr).pln
                 }
             }
-            is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.type!! }.toTypedArray()).build(e)
-            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp1!!, null, e.arg.type!!).build(e)
-            is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).build(e)
+            is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.type!! }.toTypedArray()).link(e)
+            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp1!!, null, e.arg.type!!).link(e)
+            is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).link(e)
             is Expr.Call -> {
                 e.f.type.let {
                     when (it) {
@@ -29,14 +29,14 @@ fun Stmt.setTypes () {
                             }
                             fun map (tp: Type): Type {
                                 return when (tp) {
-                                    is Type.Ptr   -> Type.Ptr(tp.tk_, f(tp.scp1), null, map(tp.pln))
-                                    is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray())
-                                    is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray())
-                                    is Type.Func  -> Type.Func(tp.tk_, if (tp.clo1==null) tp.clo1 else f(tp.clo1), tp.scp1s.map { f(it) }.toTypedArray(), map(tp.inp), map(tp.out))
+                                    is Type.Ptr   -> Type.Ptr(tp.tk_, f(tp.scp1), null, map(tp.pln)).link(e)
+                                    is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray()).link(e)
+                                    is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { map(it) }.toTypedArray()).link(e)
+                                    is Type.Func  -> Type.Func(tp.tk_, if (tp.clo1==null) tp.clo1 else f(tp.clo1), tp.scp1s.map { f(it) }.toTypedArray(), map(tp.inp), map(tp.out)).link(e)
                                     else -> tp
                                 }
                             }
-                            map(it.out).buildAll(e)
+                            map(it.out)
                         }
                         else -> {
                             All_assert_tk(e.f.tk, false) {
@@ -77,11 +77,11 @@ fun Stmt.setTypes () {
 
                 when (e) {
                     is Expr.UDisc -> if (e.tk_.num == 0) {
-                        Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).build(e)
+                        Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).link(e)
                     } else {
                         tp.expand()[e.tk_.num - 1]
                     }
-                    is Expr.UPred -> Type.Nat(Tk.Nat(TK.XNAT, e.tk.lin, e.tk.col, null, "int")).build(e)
+                    is Expr.UPred -> Type.Nat(Tk.Nat(TK.XNAT, e.tk.lin, e.tk.col, null, "int")).link(e)
                     else -> error("bug found")
                 }
             }
@@ -89,7 +89,7 @@ fun Stmt.setTypes () {
             else -> error("bug found")
         }
     }
-    this.visit(null, ::fe, null)
+    this.visit(false, null, ::fe, null)
 }
 
 fun Tk.Scope.scope (up: Any): Scope {
@@ -123,5 +123,5 @@ fun Stmt.setScopes () {
             }
         }
     }
-    this.visit(null, null, ::ft)
+    this.visit(false, null, null, ::ft)
 }

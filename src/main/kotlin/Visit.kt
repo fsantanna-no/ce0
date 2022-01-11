@@ -1,27 +1,27 @@
 // TODO: remove this hack completely
-var XPD = false
+
 private val XPDS = mutableSetOf<String>()
 
-fun Type.visit (ft: ((Type)->Unit)?) {
+fun Type.visit (xpd: Boolean, ft: ((Type)->Unit)?) {
     XPDS.clear()
-    return this.visit_(ft)
+    return this.visit_(xpd, ft)
 }
 
-fun Expr.visit (fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
+fun Expr.visit (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
     XPDS.clear()
-    return this.visit_(fs, fe, ft)
+    return this.visit_(xpd, fs, fe, ft)
 }
 
-fun Stmt.visit (fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
+fun Stmt.visit (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
     XPDS.clear()
-    return this.visit_(fs, fe, ft)
+    return this.visit_(xpd, fs, fe, ft)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 private
-fun Type.visit_ (ft: ((Type)->Unit)?) {
-    if (XPD) {
+fun Type.visit_ (xpd: Boolean, ft: ((Type)->Unit)?) {
+    if (xpd) {
         val ce = this.toce()
         if (XPDS.contains(ce)) {
             return
@@ -29,10 +29,10 @@ fun Type.visit_ (ft: ((Type)->Unit)?) {
         XPDS.add(ce)
     }
     when (this) {
-        is Type.Tuple -> this.vec.forEach { it.visit_(ft) }
-        is Type.Union -> (if (XPD) this.expand() else this.vec).forEach { it.visit_(ft) }
-        is Type.Func  -> { this.inp.visit_(ft) ; this.out.visit_(ft) }
-        is Type.Ptr   -> this.pln.visit_(ft)
+        is Type.Tuple -> this.vec.forEach { it.visit_(xpd,ft) }
+        is Type.Union -> (if (xpd) this.expand() else this.vec).forEach { it.visit_(xpd,ft) }
+        is Type.Func  -> { this.inp.visit_(xpd,ft) ; this.out.visit_(xpd,ft) }
+        is Type.Ptr   -> this.pln.visit_(xpd,ft)
     }
     if (ft != null) {
         ft(this)
@@ -40,20 +40,20 @@ fun Type.visit_ (ft: ((Type)->Unit)?) {
 }
 
 private
-fun Expr.visit_ (fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
-    this.type?.visit_(ft)
+fun Expr.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
+    this.type?.visit_(xpd,ft)
     when (this) {
-        is Expr.TCons -> this.arg.forEach { it.visit_(fs,fe,ft) }
-        is Expr.UCons -> { this.type_?.visit_(ft) ; this.arg.visit_(fs,fe,ft) }
-        is Expr.New   -> this.arg.visit_(fs,fe,ft)
-        is Expr.Dnref -> this.ptr.visit_(fs,fe,ft)
-        is Expr.Upref -> this.pln.visit_(fs,fe,ft)
-        is Expr.TDisc -> this.tup.visit_(fs,fe,ft)
-        is Expr.UDisc -> this.uni.visit_(fs,fe,ft)
-        is Expr.UPred -> this.uni.visit_(fs,fe,ft)
-        is Expr.Call  -> { this.f.visit_(fs,fe,ft) ; this.arg.visit_(fs,fe,ft) }
-        is Expr.Out   -> this.arg.visit_(fs,fe,ft)
-        is Expr.Func  -> { this.type_.visit_(ft) ; this.block.visit(fs,fe,ft) }
+        is Expr.TCons -> this.arg.forEach { it.visit_(xpd,fs,fe,ft) }
+        is Expr.UCons -> { this.type_?.visit_(xpd,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
+        is Expr.New   -> this.arg.visit_(xpd,fs,fe,ft)
+        is Expr.Dnref -> this.ptr.visit_(xpd,fs,fe,ft)
+        is Expr.Upref -> this.pln.visit_(xpd,fs,fe,ft)
+        is Expr.TDisc -> this.tup.visit_(xpd,fs,fe,ft)
+        is Expr.UDisc -> this.uni.visit_(xpd,fs,fe,ft)
+        is Expr.UPred -> this.uni.visit_(xpd,fs,fe,ft)
+        is Expr.Call  -> { this.f.visit_(xpd,fs,fe,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
+        is Expr.Out   -> this.arg.visit_(xpd,fs,fe,ft)
+        is Expr.Func  -> { this.type_.visit_(xpd,ft) ; this.block.visit(xpd,fs,fe,ft) }
     }
     if (fe != null) {
         fe(this)
@@ -61,16 +61,16 @@ fun Expr.visit_ (fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) 
 }
 
 private
-fun Stmt.visit_ (fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
+fun Stmt.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
     when (this) {
-        is Stmt.Var   -> this.type?.visit_(ft)
-        is Stmt.Set   -> { this.dst.visit_(fs,fe,ft) ; this.src.visit_(fs,fe,ft) }
-        is Stmt.SExpr -> this.e.visit_(fs,fe,ft)
-        is Stmt.Seq   -> { this.s1.visit(fs,fe,ft) ; this.s2.visit(fs,fe,ft) }
-        is Stmt.If    -> { this.tst.visit_(fs,fe,ft) ; this.true_.visit(fs,fe,ft) ; this.false_.visit(fs,fe,ft) }
+        is Stmt.Var   -> this.type?.visit_(xpd,ft)
+        is Stmt.Set   -> { this.dst.visit_(xpd,fs,fe,ft) ; this.src.visit_(xpd,fs,fe,ft) }
+        is Stmt.SExpr -> this.e.visit_(xpd,fs,fe,ft)
+        is Stmt.Seq   -> { this.s1.visit(xpd,fs,fe,ft) ; this.s2.visit(xpd,fs,fe,ft) }
+        is Stmt.If    -> { this.tst.visit_(xpd,fs,fe,ft) ; this.true_.visit(xpd,fs,fe,ft) ; this.false_.visit(xpd,fs,fe,ft) }
         //is Stmt.Ret   -> this.e.visit(old,fs,fx,fe,ft)
-        is Stmt.Loop  -> { this.block.visit(fs,fe,ft) }
-        is Stmt.Block -> { this.body.visit(fs,fe,ft) }
+        is Stmt.Loop  -> { this.block.visit(xpd,fs,fe,ft) }
+        is Stmt.Block -> { this.body.visit(xpd,fs,fe,ft) }
     }
     if (fs != null) {
         fs(this)
