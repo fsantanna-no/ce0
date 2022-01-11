@@ -1,12 +1,18 @@
-fun Type.link (up: Any): Type {
+fun Type.link1 (up: Any): Type {
     this.up  = up
     this.env = up.getEnv()
     return this
 }
 
-fun Type.linkAll (up: Any): Type {
+fun Type.link2 (up: Any): Type {
     this.setUps(up)
-    //this.visit { this.env = up.getEnv() }
+    this.visit(false, { this.env = up.getEnv() })
+    return this
+}
+
+fun Type.linkX (up: Any): Type {
+    this.setUps(up)
+    //this.visit(false, { this.env = up.getEnv() })
     return this
 }
 
@@ -64,7 +70,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
             is Type.Rec -> Type.Rec(this.tk_.copy(lin_ = lin, col_ = col))
         }
     }
-    return this.aux(lin,col).linkAll(up)
+    return this.aux(lin,col).linkX(up)
 }
 
 fun Type.isrec (): Boolean {

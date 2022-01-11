@@ -108,7 +108,7 @@ fun check_02_after_tps (s: Stmt) {
                                     acc[scp.lbl].let { if (it == null) null else it[scp.num]!! }
                                 }
                                 if (ret == null) tp else {
-                                    Type.Ptr(tp.tk_, ret, null, aux(tp.pln,dofunc)).link(e)
+                                    Type.Ptr(tp.tk_, ret, null, aux(tp.pln,dofunc))
                                 }
                             }
                             is Type.Func -> if (!dofunc) tp else {
@@ -119,13 +119,13 @@ fun check_02_after_tps (s: Stmt) {
                                         acc[scp.lbl].let { if (it == null) tp.clo1 else it[scp.num]!! }
                                     }
                                 }
-                                Type.Func(tp.tk_, ret, tp.scp1s, aux(tp.inp,dofunc), aux(tp.out,dofunc)).link(e)
+                                Type.Func(tp.tk_, ret, tp.scp1s, aux(tp.inp,dofunc), aux(tp.out,dofunc))
                             }
                         }
                     }
                     Pair (
-                        aux(inp1,false), //.lincol(func,func.tk.lin,func.tk.col),
-                        aux(out1,true)   //.lincol(func,func.tk.lin,func.tk.col)
+                        aux(inp1,false).clone(e,e.tk.lin,e.tk.col),
+                        aux(out1,true).clone(e,e.tk.lin,e.tk.col)
                     )
                 }
 
