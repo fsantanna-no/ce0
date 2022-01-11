@@ -6,7 +6,7 @@ sealed class Type (val tk: Tk, var up: Any?, var env: Any?) {
     data class Tuple (val tk_: Tk.Chr, val vec: Array<Type>): Type(tk_, null, null)
     data class Union (val tk_: Tk.Chr, val isrec: Boolean, val vec: Array<Type>): Type(tk_, null, null)
     data class Func  (val tk_: Tk.Key, val clo1: Tk.Scope?, val scp1s: Array<Tk.Scope>, val inp: Type, val out: Type): Type(tk_, null, null)
-    data class Ptr   (val tk_: Tk.Chr, val scp1: Tk.Scope, val scp2: Scope?, val pln: Type): Type(tk_, null, null)
+    data class Ptr   (val tk_: Tk.Chr, val scp1: Tk.Scope, var scp2: Scope?, val pln: Type): Type(tk_, null, null)
     data class Rec   (val tk_: Tk.Up): Type(tk_, null, null)
 }
 

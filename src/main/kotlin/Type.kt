@@ -8,7 +8,7 @@ fun Type.build (up: Any): Type {
 
 fun Type.buildAll (up: Any): Type {
     this.setUps(up)
-    //it.visit { it.env = up.getEnv() }
+    //this.visit { this.env = up.getEnv() }
     return this
 }
 
@@ -62,7 +62,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
                 this.inp.aux(lin, col),
                 this.out.aux(lin, col)
             )
-            is Type.Ptr -> Type.Ptr(this.tk_.copy(lin_ = lin, col_ = col), this.scp1, null, this.pln.aux(lin, col))
+            is Type.Ptr -> Type.Ptr(this.tk_.copy(lin_ = lin, col_ = col), this.scp1.copy(lin_=lin,col_=col), this.scp2, this.pln.aux(lin, col))
             is Type.Rec -> Type.Rec(this.tk_.copy(lin_ = lin, col_ = col))
         }
     }
@@ -96,34 +96,12 @@ fun Type.Union.expand (): Array<Type> {
     return this.vec.map { aux(it, 1).clone(this,this.tk.lin,this.tk.col) }.toTypedArray()
 }
 
-fun Tk.Scope.scope (up: Any): Scope {
-    val lvl = up.ups_tolist().filter { it is Expr.Func }.count() // level of function nesting
-    return when (this.lbl) { // (... || it is Expr.Func) b/c of arg/ret, otherwise no block up to outer func
-        "global" -> Scope(lvl, null, 0)
-        "local"  -> Scope(lvl, null, up.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
-        else -> {
-            val blk = up.env(this.lbl)
-            /*
-            println(this.lbl)
-            println(up)
-            println(up.env_all())
-             */
-            if (blk != null) {
-                //println(this.lbl)
-                val one = if (blk is Stmt.Block) 1 else 0
-                Scope(lvl, null, one + blk.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
-            } else {    // false = relative to function block
-                Scope(lvl, this.lbl, (this.num ?: 0))
-            }
-        }
-    }
-}
-
 fun Type.scope (): Scope {
     return when {
         this is Type.Ptr -> {
             //print("SCOPE: ") ; println(this)
-            this.scp1.scope(this)
+            //this.scp1.scope(this)
+            this.scp2 ?: this.scp1.scope(this)
         }
         (this is Type.Func) && (this.clo1!=null) -> this.clo1.scope(this)    // body holds pointers in clo
         else -> {

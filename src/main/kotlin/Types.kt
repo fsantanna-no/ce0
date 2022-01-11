@@ -91,3 +91,37 @@ fun Stmt.setTypes () {
     }
     this.visit(null, ::fe, null)
 }
+
+fun Tk.Scope.scope (up: Any): Scope {
+    val lvl = up.ups_tolist().filter { it is Expr.Func }.count() // level of function nesting
+    return when (this.lbl) { // (... || it is Expr.Func) b/c of arg/ret, otherwise no block up to outer func
+        "global" -> Scope(lvl, null, 0)
+        "local"  -> Scope(lvl, null, up.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
+        else -> {
+            val blk = up.env(this.lbl)
+            /*
+            println(this.lbl)
+            println(up)
+            println(up.env_all())
+             */
+            if (blk != null) {
+                //println(this.lbl)
+                val one = if (blk is Stmt.Block) 1 else 0
+                Scope(lvl, null, one + blk.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
+            } else {    // false = relative to function block
+                Scope(lvl, this.lbl, (this.num ?: 0))
+            }
+        }
+    }
+}
+
+fun Stmt.setScopes () {
+    fun ft (tp: Type) {
+        when (tp) {
+            is Type.Ptr -> {
+                tp.scp2 = tp.scp1.scope(tp)
+            }
+        }
+    }
+    this.visit(null, null, ::ft)
+}
