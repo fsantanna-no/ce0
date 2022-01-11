@@ -118,7 +118,7 @@ fun check_01_before_tps (s: Stmt) {
             is Expr.New  -> e.xscp1?.check(e)
             is Expr.Call -> {
                 e.xscp1s.second.let { it?.check(e) }
-                e.xscp1s.first.forEach { it.check(e) }
+                e.xscp1s.first?.forEach { it.check(e) }
             }
         }
     }

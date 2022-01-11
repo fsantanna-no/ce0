@@ -38,7 +38,7 @@ fun Stmt.setScopes () {
                 tp.xscp2 = tp.xscp1.toScp2(tp)
             }
             is Type.Func -> {
-                tp.xscp2s = Pair(tp.xscp1s.first?.toScp2(tp), tp.xscp1s.second.map { it.toScp2(tp) }.toTypedArray())
+                tp.xscp2s = Pair(tp.xscp1s.first?.toScp2(tp), tp.xscp1s.second!!.map { it.toScp2(tp) }.toTypedArray())
             }
         }
     }
@@ -48,7 +48,7 @@ fun Stmt.setScopes () {
                 e.xscp2 = e.xscp1!!.toScp2(e)
             }
             is Expr.Call -> {
-                e.xscp2s = Pair(e.xscp1s.first.map { it.toScp2(e) }.toTypedArray(), e.xscp1s.second?.toScp2(e))
+                e.xscp2s = Pair(e.xscp1s.first!!.map { it.toScp2(e) }.toTypedArray(), e.xscp1s.second?.toScp2(e))
             }
         }
     }

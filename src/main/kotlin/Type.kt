@@ -32,7 +32,7 @@ fun Type.tostr (): String {
         is Type.Ptr   -> this.xscp1.let { "/" + this.pln.tostr() + it.tostr() }
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
-        is Type.Func  -> "func {" + this.xscp1s.first.tostr() + "} -> {" + this.xscp1s.second.map { it.tostr() }.joinToString(",") + "} -> " + this.inp.tostr() + " -> " + this.out.tostr()
+        is Type.Func  -> "func {" + this.xscp1s.first.tostr() + "} -> {" + this.xscp1s.second!!.map { it.tostr() }.joinToString(",") + "} -> " + this.inp.tostr() + " -> " + this.out.tostr()
     }
 }
 
@@ -65,7 +65,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
                 this.tk_.copy(lin_ = lin, col_ = col),
                 Pair (
                     this.xscp1s.first?.copy(lin_ = lin, col_ = col),
-                    this.xscp1s.second.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray()
+                    this.xscp1s.second!!.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray()
                 ),
                 this.xscp2s,
                 this.inp.aux(lin, col),
@@ -101,7 +101,7 @@ fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
                 this.tk_.copy(lin_ = lin, col_ = col),
                 Pair (
                     this.xscp1s.first?.copy(lin_ = lin, col_ = col),
-                    this.xscp1s.second.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray()
+                    this.xscp1s.second!!.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray()
                 ),
                 this.xscp2s,
                 this.inp.aux(lin, col),
