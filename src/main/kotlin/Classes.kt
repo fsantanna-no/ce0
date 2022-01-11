@@ -27,7 +27,7 @@ sealed class Expr (val tk: Tk, var up: Any?, var env: Any?, var type: Type?) {
     data class TDisc (val tk_: Tk.Num, val tup: Expr): Expr(tk_, null, null, null)
     data class UDisc (val tk_: Tk.Num, val uni: Expr): Expr(tk_, null, null, null)
     data class UPred (val tk_: Tk.Num, val uni: Expr): Expr(tk_, null, null, null)
-    data class New   (val tk_: Tk.Key, val scp1: Tk.Scp1, val arg: Expr.UCons): Expr(tk_, null, null, null)
+    data class New   (val tk_: Tk.Key, val scp1: Tk.Scp1, var scp2: Scp2?, val arg: Expr.UCons): Expr(tk_, null, null, null)
     data class Dnref (val tk_: Tk,     val ptr: Expr): Expr(tk_, null, null, null)
     data class Upref (val tk_: Tk.Chr, val pln: Expr): Expr(tk_, null, null, null)
     data class Inp   (val tk_: Tk.Key, val type_: Type, val lib: Tk.Str): Expr(tk_, null, null, type_)

@@ -15,7 +15,7 @@ fun Stmt.setTypes () {
                 }
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.type!! }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
-            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp1!!, e.scp1!!.toScp2(e), e.arg.type!!).clone(e,e.tk.lin,e.tk.col)
+            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp1!!, e.scp2!!, e.arg.type!!).clone(e,e.tk.lin,e.tk.col)
             is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).clone(e,e.tk.lin,e.tk.col)
             is Expr.Call -> {
                 e.f.type.let {
@@ -124,5 +124,12 @@ fun Stmt.setScopes () {
             }
         }
     }
-    this.visit(false, null, null, ::ft)
+    fun fe (e: Expr) {
+        when (e) {
+            is Expr.New -> {
+                e.scp2 = e.scp1.toScp2(e)
+            }
+        }
+    }
+    this.visit(false, null, ::fe, ::ft)
 }

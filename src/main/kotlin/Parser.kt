@@ -158,7 +158,7 @@ fun parser_expr (all: All): Expr {
             } else {
                 Tk.Scp1(TK.XSCOPE, all.tk0.lin, all.tk0.col, "local", null)
             }
-            Expr.New(tk0 as Tk.Key, scp, e as Expr.UCons)
+            Expr.New(tk0 as Tk.Key, scp, null, e as Expr.UCons)
         }
         all.accept(TK.CALL) -> {
             val tk_pre = all.tk0 as Tk.Key
