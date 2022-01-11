@@ -71,15 +71,15 @@ fun check_02_after_tps (s: Stmt) {
                     All_assert_tk(e.tk, scps1.size == e.scp1s.first.size) {
                         "invalid call : scope mismatch"
                     }
-                    scps1.zip(e.scp1s.first).forEach { (ff,ee) ->
+                    scps1.zip(e.scp1s.first.zip(e.xscp2s!!.first)).forEach { (ff,ee) ->
                         val num   = ff.num!!
                         acc[ff.lbl].let {
                             if (it == null) {
-                                acc[ff.lbl] = mutableMapOf(Pair(num,ee))
+                                acc[ff.lbl] = mutableMapOf(Pair(num,ee.first))
                             } else {
-                                val d1 = ee.toScp2(e).depth
+                                val d1 = ee.second.depth // TODO
                                 val ok = it.all {
-                                    val d2 = it.value.toScp2(e).depth
+                                    val d2 = it.value.toScp2(e).depth   // TODO
                                     when {
                                         (it.key == num) -> (d2 == d1)
                                         (it.key > num)  -> (d2 >= d1)
@@ -87,10 +87,10 @@ fun check_02_after_tps (s: Stmt) {
                                         else -> error("bug found")
                                     }
                                 }
-                                All_assert_tk(ee, ok) {
+                                All_assert_tk(ee.first, ok) {
                                     "invalid call : scope mismatch"
                                 }
-                                it[num] = ee
+                                it[num] = ee.first
                             }
                         }
                     }

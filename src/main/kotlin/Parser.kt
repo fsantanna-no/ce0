@@ -184,7 +184,7 @@ fun parser_expr (all: All): Expr {
             } else {
                 Tk.Scp1(TK.XSCOPE, all.tk0.lin, all.tk0.col, "local", null)
             }
-            Expr.Call(tk_pre, f, arg, Pair(iscps.toTypedArray(),oscp))
+            Expr.Call(tk_pre, f, arg, Pair(iscps.toTypedArray(),oscp), null)
         }
         all.accept(TK.INPUT) -> {
             val tk = all.tk0 as Tk.Key
