@@ -1247,7 +1247,7 @@ class TExec {
         assert(out == "<.1 [<.1>,2,<.0>]>\n") { out }
         //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
     }
-    @Test // TODO: esse vai falhar enquanto nao voltar isnullptr
+    @Test
     fun l04_ptr_null () {
         val out = all("""
             var n: _int

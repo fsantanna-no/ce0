@@ -67,9 +67,9 @@ fun check_01_before_tps (s: Stmt) {
                 val ok2 = (tp.xscp1s.second == null) || (tp.xscp1s.second!!
                     .groupBy { it.lbl }             // { "a"=[...], "b"=[...]
                     .all {
-                        it.value                        // [...]
+                        it.value                    // [...]
                             .map { it.num!! }       // [1,2,3,1,...]
-                            .toSet()                    // [1,2,3,...]
+                            .toSet()                // [1,2,3,...]
                             .let { (it.minOrNull() == 1) && (it.maxOrNull() == it.size) }
                     })
                 All_assert_tk(tp.tk, ok2) {
