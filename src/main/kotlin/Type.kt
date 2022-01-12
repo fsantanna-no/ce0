@@ -73,7 +73,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
             )
             is Type.Ptr -> Type.Ptr(
                 this.tk_.copy(lin_ = lin, col_ = col),
-                this.xscp1.copy(lin_=lin,col_=col),
+                this.xscp1?.copy(lin_=lin,col_=col),
                 this.xscp2,
                 this.pln.aux(lin, col)
             )
@@ -107,7 +107,7 @@ fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
                 this.inp.aux(lin, col),
                 this.out.aux(lin, col)
             )
-            is Type.Ptr -> Type.Ptr(this.tk_.copy(lin_ = lin, col_ = col), this.xscp1.copy(lin_=lin,col_=col), this.xscp2, this.pln.aux(lin, col))
+            is Type.Ptr -> Type.Ptr(this.tk_.copy(lin_ = lin, col_ = col), this.xscp1?.copy(lin_=lin,col_=col), this.xscp2, this.pln.aux(lin, col))
             is Type.Rec -> Type.Rec(this.tk_.copy(lin_ = lin, col_ = col))
         }
     }

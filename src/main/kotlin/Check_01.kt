@@ -40,12 +40,12 @@ fun check_01_before_tps (s: Stmt) {
                 }
 
             }
-            is Type.Ptr -> tp.xscp1.check(tp)
+            is Type.Ptr -> tp.xscp1?.check(tp)
             is Type.Func -> {
                 tp.xscp1s.first?.check(tp)
                 val ptrs  = (tp.inp.flatten() + tp.out.flatten()).filter { it is Type.Ptr } as List<Type.Ptr>
                 val ok1 = ptrs.all {
-                    val ptr = it.xscp1
+                    val ptr = it.xscp1!!
                     when {
                         (ptr.lbl == "var") -> error("bug found")
                         (ptr.lbl == "global") -> true

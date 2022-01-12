@@ -2822,4 +2822,15 @@ class TEnv {
         )
         assert(out == "OK") { out }
     }
+    @Test
+    fun p33_no_pool () {
+        val out = inp2env(
+            """
+            var f: func {} -> {@a_1,@b_1} -> /()@a_1 -> /()@b_1
+            call f ()
+        """.trimIndent()
+        )
+        assert(out == "(ln 2, col 1): invalid call : scope mismatch") { out }
+    }
+
 }
