@@ -37,7 +37,7 @@ fun Any.env (id: String): Any? {
     return this.env_first {
         //println(it)
         it is Stmt.Var   && it.tk_.str==id ||
-        it is Stmt.Block && it.xscp1!!.lbl==id ||
+        it is Stmt.Block && it.xscp1?.lbl==id ||
         it is Expr.Func  && (id=="arg" || id=="ret")
     }.let {
         if (it is Expr.Func) {
@@ -117,8 +117,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
         }
         is Stmt.Loop  -> { this.block.setEnvs(env) ; env }
         is Stmt.Block -> {
-            val env_ = if (this.xscp1 == null) env else this
-            this.body.setEnvs(env_)
+            this.body.setEnvs(this) // also include blocks w/o labels b/c of inference
             env
         }
     }
