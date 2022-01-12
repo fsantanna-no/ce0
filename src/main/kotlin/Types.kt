@@ -34,7 +34,7 @@ fun Stmt.setTypes () {
                             // zip [[{@scp1a,@scp1b},{@scp2a,@scp2b}],{@a_1,@b_1}]
                             if (it.xscp1s.second.size != e.xscp1s.first.size) {
                                 // TODO: may fail before check2, return anything
-                                Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).clone(e,e.tk.lin,e.tk.col)
+                                Type.Nat(Tk.Nat(TK.NATIVE, e.tk.lin, e.tk.col, null,"ERR")).clone(e,e.tk.lin,e.tk.col)
                             } else {
                                 val MAP: List<Pair<Tk.Scp1, Pair<Tk.Scp1, Scp2>>> =
                                     it.xscp1s.second.zip(e.xscp1s.first.zip(e.xscp2s!!.first))
