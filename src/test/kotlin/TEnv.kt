@@ -1248,8 +1248,8 @@ class TEnv {
             { @A
                 var v: _int
                 set v = _10: _int
-                var f : func {@A} -> {} -> () -> /_int@A
-                set f = func {@A} -> {} -> () -> /_int@A [v] {
+                var f : func {@A} -> {@a} -> () -> /_int@a
+                set f = func {@A} -> {@a} -> () -> /_int@a [v] {
                     set ret = /v
                 }
                 var p: /_int @LOCAL

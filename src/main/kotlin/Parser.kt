@@ -65,8 +65,7 @@ fun parser_type (all: All): Type {
             all.accept_err(TK.CHAR, '{')
             val scps = mutableListOf<Tk.Scp1>()
             while (all.accept(TK.XSCPVAR)) {
-                val tk = all.tk0 as Tk.Scp1
-                scps.add(tk)
+                scps.add(all.tk0 as Tk.Scp1)
                 if (!all.accept(TK.CHAR, ',')) {
                     break
                 }

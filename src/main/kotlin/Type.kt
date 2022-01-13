@@ -20,7 +20,7 @@ fun Type.linkX (up: Any): Type {
 
 fun Tk.Scp1?.tostr (): String {
     return if (this == null) "" else {
-        "@" + this.lbl + (if (this.num == null) "" else ("_" + this.num))
+        "@" + this.lbl + (this.num?:"")
     }
 }
 
