@@ -1465,19 +1465,19 @@ class TExec {
     fun n08_pool_closure() {
         val out = all(
             """
-            var g: func ({} ->{@a_1}->() -> func ({@a_1}->{@i_1}-> ()->()))
-            set g = func {}->{@a_1}->() -> func ({@a_1}->{@i_1}-> ()->()) {
+            var g: func ({} ->{@a_1}->() -> func ({@a_1}->{}-> ()->()))
+            set g = func {}->{@a_1}->() -> func ({@a_1}->{}-> ()->()) {
                 var x: /</^@a_1>@a_1
                 set x = new <.1 <.0>:/</^@a_1>@a_1>: </^@a_1>: @a_1
-                var f: func ({@a_1}->{@i_1}-> () -> ())
-                set f = func {@a_1} ->{@i_1}->() -> () [x] {
+                var f: func ({@a_1}->{}-> () -> ())
+                set f = func {@a_1} ->{}->() -> () [x] {
                     output std x
                 }
                set ret = f
             }
-            var f: func {@local} -> {@i_1} -> () -> ()
+            var f: func {@local} -> {} -> () -> ()
             set f = call g {@local} ()
-            call f {@local}()
+            call f {}()
         """.trimIndent()
         )
         assert(out == "<.1 <.0>>\n") { out }
