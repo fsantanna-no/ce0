@@ -210,7 +210,6 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("_x:_int"), 2))
         lexer(all)
         val e = parser_expr(all)
-        println(e)
         assert(e is Expr.Nat && e.tk_.src=="x" && e.wtype is Type.Nat)
     }
 

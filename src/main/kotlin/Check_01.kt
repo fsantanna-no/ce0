@@ -32,7 +32,7 @@ fun check_01_before_tps (s: Stmt) {
             is Type.Rec -> {
                 val str = "^".repeat(tp.tk_.up)
                 All_assert_tk(tp.tk, tp.wup is Type.Ptr) {
-                    "invalid `$str´ : expected pointer type"
+                    "invalid `$str´ : expected pointer type"    // must be pointer b/c ups is a vector of void*
                 }
                 val unions = tp.ups_tolist().count { it is Type.Union }
                 All_assert_tk(tp.tk, unions >= tp.tk_.up) {
