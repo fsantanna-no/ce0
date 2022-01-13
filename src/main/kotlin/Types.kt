@@ -3,8 +3,8 @@ fun Stmt.setTypes () {
         e.wtype = when (e) {
             is Expr.Unit, is Expr.Nat, is Expr.UCons, is Expr.Inp, is Expr.Func -> e.wtype!!
             is Expr.Upref -> e.pln.wtype!!.let {
-                val lbl = e.toBaseVar()?.tk_?.str ?: "global"
-                val scp1 = Tk.Scp1(TK.XSCOPE,e.tk.lin,e.tk.col, lbl,null)
+                val lbl = e.toBaseVar()?.tk_?.str ?: "GLOBAL"
+                val scp1 = Tk.Scp1(TK.XSCPCST,e.tk.lin,e.tk.col, lbl.toUpperCase(),null)
                 Type.Ptr(e.tk_, scp1, scp1.toScp2(e), it).clone(e,e.tk.lin,e.tk.col)
             }
             is Expr.Dnref -> e.ptr.wtype.let {
@@ -26,12 +26,12 @@ fun Stmt.setTypes () {
                             // calculates return of "e" call based on "e.f" function type
                             // "e" passes "e.arg" with "e.scp1s.first" scopes which may affect "e.f" return scopes
                             // we want to map these input scopes into "e.f" return scopes
-                            //  var f: func /@a_1 -> /@b_1
+                            //  var f: func /@a1 -> /@b1
                             //              /     /---/
                             //  call f {@scp1,@scp2}  -->  /@scp2
-                            //  f passes two scopes, first goes to @a_1, second goes to @b_1 which is the return
-                            //  so @scp2 maps to @b_1
-                            // zip [[{@scp1a,@scp1b},{@scp2a,@scp2b}],{@a_1,@b_1}]
+                            //  f passes two scopes, first goes to @a1, second goes to @b1 which is the return
+                            //  so @scp2 maps to @b1
+                            // zip [[{@scp1a,@scp1b},{@scp2a,@scp2b}],{@a1,@b1}]
                             if (it.xscp1s.second.size != e.xscp1s.first.size) {
                                 // TODO: may fail before check2, return anything
                                 Type.Nat(Tk.Nat(TK.NATIVE, e.tk.lin, e.tk.col, null,"ERR")).clone(e,e.tk.lin,e.tk.col)

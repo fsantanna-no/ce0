@@ -100,14 +100,30 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("/()"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Ptr && tp.xscp1.lbl=="local")      // error on check
+        assert(tp is Type.Ptr && tp.xscp1.lbl=="LOCAL")      // error on check
+    }
+    @Test
+    fun a09_parser_type_ptr_ok () {
+        val all = All_new(PushbackReader(StringReader("/()@x"), 2))
+        lexer(all)
+        val tp = parser_type(all)
+        assert(tp is Type.Ptr && tp.xscp1.lbl=="x")
     }
     @Test
     fun a09_parser_type_ptr_err2 () {
         val all = All_new(PushbackReader(StringReader("/()@"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Ptr && tp.xscp1.lbl=="")
+        assert(tp is Type.Ptr && tp.xscp1.lbl=="LOCAL")
+        /*
+        try {
+            val s = parser_type(all)
+            println(s)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 3): expected type : have `?´") { e.message!! }
+        }
+         */
     }
     @Test
     fun a10_parser_type_ptr0 () {
@@ -124,14 +140,14 @@ class TParser {
     }
     @Test
     fun a10_parser_type_ptr1 () {
-        val all = All_new(PushbackReader(StringReader("/<[^]>@global"), 2))
+        val all = All_new(PushbackReader(StringReader("/<[^]>@GLOBAL"), 2))
         lexer(all)
         val tp = parser_type(all)
         assert(tp is Type.Ptr)      // error on check
     }
     @Test
     fun a10_parser_type_ptr2 () {
-        val all = All_new(PushbackReader(StringReader("/<[/^@global]>@local"), 2))
+        val all = All_new(PushbackReader(StringReader("/<[/^@GLOBAL]>@LOCAL"), 2))
         lexer(all)
         val tp = parser_type(all)
         assert(tp is Type.Ptr)
@@ -533,10 +549,10 @@ class TParser {
     }
     @Test
     fun c06_parser_stmt_block_scope () {
-        val all = All_new(PushbackReader(StringReader("{ @a }"), 2))
+        val all = All_new(PushbackReader(StringReader("{ @A }"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Block && s.xscp1!!.lbl=="a")
+        assert(s is Stmt.Block && s.xscp1!!.lbl=="A")
     }
 
     // STMT_CALL

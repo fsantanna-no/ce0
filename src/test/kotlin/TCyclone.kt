@@ -29,16 +29,16 @@ class TCyclone {
     fun strcpy_01() {
         val out = all(
             """
-            var scpy:     (func {} ->{@a_1,@b_1}-> [/_char@a_1,/_char@b_1] -> /_char@a_1)
-            set scpy = func {}->{@a_1,@b_1}-> [/_char@a_1,/_char@b_1] -> /_char@a_1 {
+            var scpy:     (func {} ->{@a1,@b1}-> [/_char@a1,/_char@b1] -> /_char@a1)
+            set scpy = func {}->{@a1,@b1}-> [/_char@a1,/_char@b1] -> /_char@a1 {
                 set ret = arg.1
             }
             var s1: /_char
-            set s1 = call scpy {@local,@local} [s1,s1]
+            set s1 = call scpy {@LOCAL,@LOCAL} [s1,s1]
             {
-                var s2: /_char@local
-                set s1 = call scpy {@global,@local} [s1,s2]: @global
-                set s2 = call scpy {@local,@global} [s2,s1]   -- TODO: should be ok @a1/@b1
+                var s2: /_char@LOCAL
+                set s1 = call scpy {@GLOBAL,@LOCAL} [s1,s2]: @GLOBAL
+                set s2 = call scpy {@LOCAL,@GLOBAL} [s2,s1]   -- TODO: should be ok @a1/@b1
             }
             output std ()
         """.trimIndent()
@@ -49,17 +49,17 @@ class TCyclone {
     fun strdup_02() {
         val out = all(
             """
-            var sdup:     (func {} ->{@_1}-> /_char@_1 -> /_char@global)
-            set sdup = func {}->{@_1}-> /_char@_1 -> /_char@global {
-                var xxx: /_char @global -- new ...
+            var sdup:     (func {} ->{@i1}-> /_char@i1 -> /_char@GLOBAL)
+            set sdup = func {}->{@i1}-> /_char@i1 -> /_char@GLOBAL {
+                var xxx: /_char @GLOBAL -- new ...
                 set ret = xxx
             }
             var s1: /_char
-            --set s1 = call sdup s1 @local
+            --set s1 = call sdup s1 @LOCAL
             {
-                var s2: /_char@local
-                --set s1 = call sdup {@local} s2: @global
-                set s2 = call sdup {@global} s1: @global
+                var s2: /_char@LOCAL
+                --set s1 = call sdup {@LOCAL} s2: @GLOBAL
+                set s2 = call sdup {@GLOBAL} s1: @GLOBAL
             }
             output std ()
         """.trimIndent()
@@ -70,20 +70,20 @@ class TCyclone {
     fun fact_03 () {
         val out = all(
             """
-            var fact: (func {} ->{@_1}->[/_int@_1,_int] -> ())
-            set fact = func {}->{@_1} ->[/_int@_1,_int] -> () { @f
+            var fact: (func {} ->{@i1}->[/_int@i1,_int] -> ())
+            set fact = func {}->{@i1} ->[/_int@i1,_int] -> () { @F
                 var x: _int
                 set x = _1: _int
                 var n: _int
                 set n = arg.2
                 if _(n > 1):_int {
-                    call fact {@f} [/x,_(n-1):_int]
+                    call fact {@F} [/x,_(n-1):_int]
                 }
                 set arg.1\ = _(x*n):_int
             }
             var x: _int
             set x = _0: _int
-            call fact {@local} [/x, _6:_int]
+            call fact {@LOCAL} [/x, _6:_int]
             output std x
         """.trimIndent()
         )

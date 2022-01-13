@@ -142,7 +142,7 @@ class TCode {
                 *root = pool;
             }
 
-            Pool** pool_global;
+            Pool** pool_GLOBAL;
 
 
 
@@ -150,8 +150,8 @@ class TCode {
 
             int main (void) {
                 Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
-                pool_global = &pool;
-                Pool** pool_local  = &pool;
+                pool_GLOBAL = &pool;
+                Pool** pool_LOCAL  = &pool;
                 
             }
 

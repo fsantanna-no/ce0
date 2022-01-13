@@ -1,8 +1,8 @@
 fun Tk.Scp1.check (up: Any) {
     val ok = when {
-        (this.lbl == "global") -> true
-        (this.lbl == "local")  -> true
-        (up.ups_first { it is Type.Func } != null) -> true  // (@_1 -> ...)
+        (this.lbl == "GLOBAL") -> true
+        (this.lbl == "LOCAL")  -> true
+        (up.ups_first { it is Type.Func } != null) -> true  // (@i1 -> ...)
         up.env(this.lbl).let {                              // { @aaa ... @aaa }
             /*
             println(this.lbl)
@@ -15,14 +15,13 @@ fun Tk.Scp1.check (up: Any) {
             it is Stmt.Block && this.lbl==it.xscp1!!.lbl && this.num==it.xscp1!!.num ||
             it is Stmt.Var   && this.lbl==it.tk_.str     && this.num==null
         } -> true
-        (up.ups_first {                                     // [@_1, ...] { @_1 }
+        (up.ups_first {                                     // [@i1, ...] { @i1 }
             it is Expr.Func && (it.type.xscp1s.second?.any { it.lbl==this.lbl && it.num==this.num } ?: false)
         } != null) -> true
         else -> false
     }
     All_assert_tk(this, ok) {
-        val n = if (this.num == null) "" else "_${this.num}"
-        "undeclared scope \"@$lbl$n\""
+        "undeclared scope \"@$lbl${this.num?:""}\""
     }
 }
 
@@ -47,12 +46,11 @@ fun check_01_before_tps (s: Stmt) {
                 val ok1 = ptrs.all {
                     val ptr = it.xscp1!!
                     when {
-                        (ptr.lbl == "var") -> error("bug found")
-                        (ptr.lbl == "global") -> true
-                        //(ptr.lbl == "local")  -> true
+                        (ptr.lbl == "GLOBAL") -> true
+                        //(ptr.lbl == "LOCAL")  -> true
                         (
                             tp.xscp1s.first.let  { it!=null && ptr.lbl==it.lbl && ptr.num==it.num } || // {@a} ...@a
-                            tp.xscp1s.second?.any { ptr.lbl==it.lbl && ptr.num==it.num } ?: false      // (@_1 -> ...@_1...)
+                            tp.xscp1s.second?.any { ptr.lbl==it.lbl && ptr.num==it.num } ?: false      // (@i1 -> ...@i1...)
                         ) -> true
                         (tp.ups_first {                     // { @aaa \n ...@aaa... }
                             it is Stmt.Block && it.xscp1.let { it!=null && it.lbl==ptr.lbl && it.num==ptr.num }

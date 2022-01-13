@@ -303,7 +303,7 @@ fun code_fe (e: Expr) {
                     val tpf = e.f.wtype
                     val xxx = if (tpf is Type.Nat && e.arg is Expr.Unit) "" else arg.expr
                     if (tpf is Type.Func && tpf.xscp1s.first!=null) {
-                        // only closures that escape (@a_1)
+                        // only closures that escape (@a1)
                         f.expr + "->f(" + f.expr + "->ups, " + pools + xxx + ")"
                     } else {
                         f.expr + "(" + pools + xxx + ")"
@@ -377,7 +377,7 @@ fun code_fs (s: Stmt) {
             val src = """
             {
                 Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
-                Pool** pool_local = &pool;
+                Pool** pool_LOCAL = &pool;
                 ${if (s.xscp1 == null) "" else "Pool** ${s.xscp1.toce()} = &pool;"}
                 ${it.stmt}
             }
@@ -466,7 +466,7 @@ fun Stmt.code (): String {
             *root = pool;
         }
         
-        Pool** pool_global;
+        Pool** pool_GLOBAL;
 
         ${TPS.map { it.second }.joinToString("")}
         ${TPS.map { it.third  }.joinToString("")}
@@ -474,8 +474,8 @@ fun Stmt.code (): String {
 
         int main (void) {
             Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
-            pool_global = &pool;
-            Pool** pool_local  = &pool;
+            pool_GLOBAL = &pool;
+            Pool** pool_LOCAL  = &pool;
             ${code.stmt}
         }
 

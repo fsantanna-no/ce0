@@ -11,8 +11,8 @@ fun Type.toScp2 (): Scp2 {
 fun Tk.Scp1.toScp2 (up: Any): Scp2 {
     val lvl = up.ups_tolist().filter { it is Expr.Func }.count() // level of function nesting
     return when (this.lbl) { // (... || it is Expr.Func) b/c of arg/ret, otherwise no block up to outer func
-        "global" -> Scp2(lvl, null, 0)
-        "local"  -> Scp2(lvl, null, up.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
+        "GLOBAL" -> Scp2(lvl, null, 0)
+        "LOCAL"  -> Scp2(lvl, null, up.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
         else -> {
             val blk = up.env(this.lbl)
             /*

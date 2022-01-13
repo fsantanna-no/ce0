@@ -61,11 +61,11 @@ fun check_02_after_tps (s: Stmt) {
                 }
 
                 // { [lbl]={1=depth,2=depth} }
-                // { [""]={[1]=@local, [2]=@aaa, ...}
+                // { [""]={[1]=@LOCAL, [2]=@aaa, ...}
                 val acc = mutableMapOf<String,MutableMap<Int,Pair<Tk.Scp1,Scp2>>>()
 
                 // check scopes, build acc
-                // var f: (... -> {@_1,@_2,...} -> ...)
+                // var f: (... -> {@i1,@_2,...} -> ...)
                 // call f {@a,@b,...} ...
                 if (scps1 != null) {
                     All_assert_tk(e.tk, scps1.size == e.xscp1s.first.size) {
@@ -96,7 +96,7 @@ fun check_02_after_tps (s: Stmt) {
                     }
                 }
 
-                // transform inp2, out2 to use scopes from the call @local... (vs arg scopes @a_1...)
+                // transform inp2, out2 to use scopes from the call @LOCAL... (vs arg scopes @a1...)
                 val (inp2,out2) = if (func !is Type.Func) Pair(inp1,out1) else
                 {
                     fun aux (tp: Type, dofunc: Boolean): Type {
