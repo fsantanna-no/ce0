@@ -11,9 +11,9 @@ fun Tk.Scp1.check (up: Any) {
             println(up.env_all())
             println("<<<")
             println(it)
-             */
+            */
             it is Stmt.Block && this.lbl==it.xscp1!!.lbl && this.num==it.xscp1!!.num ||
-            it is Stmt.Var   && this.lbl==it.tk_.str     && this.num==null
+            it is Stmt.Var   && this.lbl==it.tk_.str.toUpperCase() && this.num==null
         } -> true
         (up.ups_first {                                     // [@i1, ...] { @i1 }
             it is Expr.Func && (it.type.xscp1s.second?.any { it.lbl==this.lbl && it.num==this.num } ?: false)

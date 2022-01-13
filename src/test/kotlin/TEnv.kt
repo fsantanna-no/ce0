@@ -566,8 +566,8 @@ class TEnv {
                 var a: ()
             }
         """.trimIndent())
-        //assert(out == "(ln 2, col 9): invalid declaration : \"a\" is already declared (ln 1)") { out }
-        assert(out == "OK") { out }
+        assert(out == "(ln 2, col 9): invalid declaration : \"a\" is already declared (ln 1)") { out }
+        //assert(out == "OK") { out }
     }
     @Test
     fun e05_block_err2 () {
@@ -575,8 +575,8 @@ class TEnv {
             var a: ()
             { @A }
         """.trimIndent())
-        //assert(out == "(ln 2, col 3): invalid pool : \"@A\" is already declared (ln 1)") { out }
-        assert(out == "OK") { out }
+        assert(out == "(ln 2, col 3): invalid pool : \"@A\" is already declared (ln 1)") { out }
+        //assert(out == "OK") { out }
     }
     @Test
     fun e05_block_err3 () {
