@@ -101,8 +101,8 @@ fun check_01_before_tps (s: Stmt) {
                 }
             }
             is Expr.Func -> {
-                val funcs = e.ups_tolist().filter { it is Expr.Func } as List<Expr.Func>
-                for (f in funcs) {
+                val outers = e.ups_tolist().filter { it is Expr.Func } as List<Expr.Func>
+                for (f in outers) {
                     val err = f.type.xscp1s.second?.find { tk2 -> e.type.xscp1s.second!!.any { tk1 -> tk1.lbl==tk2.lbl } }
                     All_assert_tk(e.tk, err==null) {
                         "invalid pool : \"@${err!!.lbl}\" is already declared (ln ${err!!.lin})"
