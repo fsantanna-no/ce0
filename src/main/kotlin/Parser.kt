@@ -53,7 +53,6 @@ fun parser_type (all: All): Type {
         }
         all.accept(TK.FUNC) -> {
             val tk0 = all.tk0 as Tk.Key
-            val par = all.accept(TK.CHAR, '(')
             all.accept_err(TK.CHAR, '{')
             val clo = if (all.accept(TK.XSCPCST) || all.accept(TK.XSCPVAR)) {
                 all.tk0 as Tk.Scp1
@@ -75,7 +74,6 @@ fun parser_type (all: All): Type {
             val inp = parser_type(all)
             all.accept_err(TK.ARROW)
             val out = parser_type(all) // right associative
-            if (par) all.accept_err(TK.CHAR, ')')
             Type.Func(tk0, Pair(clo,scps.toTypedArray()), null, inp, out)
         }
         else -> {

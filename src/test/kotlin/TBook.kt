@@ -33,8 +33,8 @@ val _NumR1 = Num(false, "@r1")
 val NumS1  = Num(true,  "@s1")
 
 val clone = """
-    var clone: (func {}->{@r1,@a1}-> $NumA1 -> $NumR1)
-    set clone = func ({}->{@r1,@a1}-> $NumA1 -> $NumR1) {
+    var clone : func {}->{@r1,@a1}-> $NumA1 -> $NumR1
+    set clone = func {}->{@r1,@a1}-> $NumA1 -> $NumR1 {
         if arg\?0 {
             set ret = <.0>:$NumR1
         } else {
@@ -44,8 +44,8 @@ val clone = """
 """.trimIndent()
 
 val add = """
-    var add: (func {}->{@r1,@a1,@b1}-> [$NumA1,$NumB1] -> $NumR1)
-    set add = func ({}->{@r1,@a1,@b1}-> [$NumA1,$NumB1] -> $NumR1) {
+    var add : func {}->{@r1,@a1,@b1}-> [$NumA1,$NumB1] -> $NumR1
+    set add = func {}->{@r1,@a1,@b1}-> [$NumA1,$NumB1] -> $NumR1 {
         var x: $NumA1
         set x = arg.1
         var y: $NumB1
@@ -59,8 +59,8 @@ val add = """
 """.trimIndent()
 
 val mul = """
-    var mul: (func {}->{@r1,@a1,@b1}-> [$NumA1,$NumB1] -> $NumR1)
-    set mul = func ({}->{@r1,@a1,@b1}-> [$NumA1,$NumB1] -> $NumR1) {
+    var mul : func {}->{@r1,@a1,@b1}-> [$NumA1,$NumB1] -> $NumR1
+    set mul = func {}->{@r1,@a1,@b1}-> [$NumA1,$NumB1] -> $NumR1 {
         var x: $NumA1
         set x = arg.1
         var y: $NumB1
@@ -76,7 +76,7 @@ val mul = """
 """.trimIndent()
 
 val lt = """
-    var lt: (func {}->{@a1,@b1}-> [$NumA1,$NumB1] -> _int)
+    var lt : func {}->{@a1,@b1}-> [$NumA1,$NumB1] -> _int
     set lt = func {}->{@a1,@b1}-> [$NumA1,$NumB1] -> _int {
         if arg.2\?0 {
             set ret = _0:_int
@@ -91,8 +91,8 @@ val lt = """
 """.trimIndent()
 
 val sub = """
-    var sub: (func {}->{@r1,@a1,@b1}-> [$NumA1,$NumB1] -> $NumR1)
-    set sub = func ({}->{@r1,@a1,@b1}-> [$NumA1,$NumB1] -> $NumR1) {
+    var sub : func {}->{@r1,@a1,@b1}-> [$NumA1,$NumB1] -> $NumR1
+    set sub = func {}->{@r1,@a1,@b1}-> [$NumA1,$NumB1] -> $NumR1 {
         var x: $NumA1
         set x = arg.1
         var y: $NumB1
@@ -123,8 +123,8 @@ val mod = """
 """.trimIndent()
 
 val eq = """
-    var eq : func ({}->{@a1,@b1}-> [$NumA1,$NumB1] -> _int)
-    set eq = func ({}->{@a1,@b1}-> [$NumA1,$NumB1] -> _int) {
+    var eq : func {}->{@a1,@b1}-> [$NumA1,$NumB1] -> _int
+    set eq = func {}->{@a1,@b1}-> [$NumA1,$NumB1] -> _int {
         var x: $NumA1
         set x = arg.1
         var y: $NumB1
@@ -142,7 +142,7 @@ val eq = """
 """.trimIndent()
 
 val lte = """
-    var lte : func ({}->{@a1,@b1}-> [$NumA1,$NumB1] -> _int)
+    var lte : func {}->{@a1,@b1}-> [$NumA1,$NumB1] -> _int
     set lte = func {}->{@a1,@b1}-> [$NumA1,$NumB1] -> _int {
         var islt: _int
         set islt = call lt {@a1,@b1} [arg.1\!1,arg.2\!1]
@@ -287,7 +287,7 @@ class TBook {
             $clone
             $add
             $mul
-            var square: func ({}->{@r1,@a1}-> $NumA1 -> $NumR1)
+            var square: func {}->{@r1,@a1}-> $NumA1 -> $NumR1
             set square = func {}->{@r1,@a1}-> $NumA1 -> $NumR1 {
                 set ret = call mul {@r1,@a1,@a1} [arg,arg]: @r1
             }
@@ -303,8 +303,8 @@ class TBook {
             """
             $nums
             $lt
-            var smaller: func ({}->{@a1,@a2}-> [$NumA1,$NumA2] -> $NumA2)
-            set smaller = func ({}->{@a1,@a2}-> [$NumA1,$NumA2] -> $NumA2) {
+            var smaller: func {}->{@a1,@a2}-> [$NumA1,$NumA2] -> $NumA2
+            set smaller = func {}->{@a1,@a2}-> [$NumA1,$NumA2] -> $NumA2 {
                 if call lt {@a1,@a2} arg {
                     set ret = arg.1
                 } else {
@@ -330,7 +330,7 @@ class TBook {
         val out = all(
             """
             $nums
-            var f_three: func ({}->{@r1}-> $NumR1 -> $NumR1)
+            var f_three: func {}->{@r1}-> $NumR1 -> $NumR1
             set f_three = func {}->{@r1}-> $NumR1 -> $NumR1 {
                 set ret = three
             }
@@ -365,7 +365,7 @@ class TBook {
             $clone
             $add
             $mul
-            var multiply: func ({}->{@r1,@a1,@b1}-> [$NumA1,$NumB1] -> $NumR1)
+            var multiply: func {}->{@r1,@a1,@b1}-> [$NumA1,$NumB1] -> $NumR1
             set multiply = func {}->{@r1,@a1,@b1}-> [$NumA1,$NumB1] -> $NumR1 {
                 if arg.1\?0 {
                     set ret = <.0>:${NumR1}
@@ -399,7 +399,7 @@ class TBook {
                     }
                 }
             }
-            var f: func ({@LOCAL}->{}-> $NumTL -> $NumTL)
+            var f: func {@LOCAL}->{}-> $NumTL -> $NumTL
             --var f: ({@r1}->{}-> $NumR1->$NumR1)
             set f = call smallerc {@LOCAL} two: @LOCAL   -- smallerc could keep two in memory as long as smallerc does not live longer than two
             output std call f one
@@ -416,12 +416,12 @@ class TBook {
             $clone
             $add
             $mul
-            var square: func ({}->{@r1,@a1}-> $NumA1 -> $NumR1)
+            var square: func {}->{@r1,@a1}-> $NumA1 -> $NumR1
             set square = func {}->{@r1,@a1}-> $NumA1 -> $NumR1 {
                 set ret = call mul {@r1,@a1,@a1} [arg,arg]: @r1
             }
-            var twice: func ({}->{@r1,@a1}-> [func ({}->{@r1,@a1}-> $NumA1->$NumR1), $NumA1] -> $NumR1)
-            set twice = func {}->{@r1,@a1}-> [func ({}->{@r1,@a1}-> $NumA1->$NumR1), $NumA1] -> $NumR1 {
+            var twice: func {}->{@r1,@a1}-> [func {}->{@r1,@a1}-> $NumA1->$NumR1, $NumA1] -> $NumR1
+            set twice = func {}->{@r1,@a1}-> [func {}->{@r1,@a1}-> $NumA1->$NumR1, $NumA1] -> $NumR1 {
                 set ret = call arg.1 {@r1,@r1} (call arg.1 {@r1,@a1} arg.2: @r1): @r1
             }
             output std call twice {@LOCAL,@LOCAL} [square,two]: @LOCAL
@@ -461,19 +461,19 @@ class TBook {
             $clone
             $add
             $mul
-            var square: func ({}->{@r1,@a1}-> $NumA1 -> $NumR1)
+            var square: func {}->{@r1,@a1}-> $NumA1 -> $NumR1
             set square = func {}->{@r1,@a1}-> $NumA1 -> $NumR1 {
                 set ret = call mul {@r1,@a1,@a1} [arg,arg]: @r1
             }
             var twicec:  func {} -> {} -> (func {}->{@r1,@a1}->$NumA1->$NumR1) -> (func {@GLOBAL}->{@s1,@b1}->$NumB1->$NumS1)
             set twicec = func {} -> {} -> (func {}->{@r1,@a1}->$NumA1->$NumR1) -> (func {@GLOBAL}->{@s1,@b1}->$NumB1->$NumS1) {
-                var f: func ({}->{@r1,@a1}->$NumA1->$NumR1)
+                var f: func {}->{@r1,@a1}->$NumA1->$NumR1
                 set f = arg
-                set ret = func ({@GLOBAL}->{@s1,@b1}->$NumB1->$NumS1) [f] {
+                set ret = func {@GLOBAL}->{@s1,@b1}->$NumB1->$NumS1 [f] {
                     set ret = call f {@s1,@s1} (call f {@s1,@b1} arg)
                 }
             }
-            var quad: func ({@GLOBAL}->{@s1,@b1}->$NumB1->$NumS1)
+            var quad: func {@GLOBAL}->{@s1,@b1}->$NumB1->$NumS1
             set quad = call twicec square
             output std call quad {@LOCAL,@LOCAL} two
         """.trimIndent()
@@ -482,9 +482,9 @@ class TBook {
     }
     @Test
     fun ch_01_04_curry_pg13() {
-        val fadd = "func ({} -> {@r1,@a1,@b1} -> [$NumA1,$NumB1] -> $NumR1)"
-        val ret2 = "func ({@a1}->{@r1,@b1}->$NumB1->$NumR1)"
-        val ret1 = "func ({@GLOBAL} -> {@a1} -> $NumA1 -> $ret2)"
+        val fadd = "func {} -> {@r1,@a1,@b1} -> [$NumA1,$NumB1] -> $NumR1"
+        val ret2 = "func {@a1}->{@r1,@b1}->$NumB1->$NumR1"
+        val ret1 = "func {@GLOBAL} -> {@a1} -> $NumA1 -> $ret2"
         val out = all(
             """
             $nums
@@ -515,10 +515,10 @@ class TBook {
     }
     @Test
     fun ch_01_04_uncurry_pg13() {
-        val fadd  = "func ({} -> {@r1,@a1,@b1} -> [$NumA1,$NumB1] -> $NumR1)"
-        val fadd2 = "func ({@GLOBAL} -> {@r1,@a1,@b1} -> [$NumA1,$NumB1] -> $NumR1)"
-        val ret2  = "func ({@a1}->{@r1,@b1}->$NumB1->$NumR1)"
-        val ret1  = "func ({@GLOBAL} -> {@a1} -> $NumA1 -> $ret2)"
+        val fadd  = "func {} -> {@r1,@a1,@b1} -> [$NumA1,$NumB1] -> $NumR1"
+        val fadd2 = "func {@GLOBAL} -> {@r1,@a1,@b1} -> [$NumA1,$NumB1] -> $NumR1"
+        val ret2  = "func {@a1}->{@r1,@b1}->$NumB1->$NumR1"
+        val ret1  = "func {@GLOBAL} -> {@a1} -> $NumA1 -> $ret2"
         val out = all(
             """
             $nums
@@ -564,8 +564,8 @@ class TBook {
     }
     @Test
     fun ch_01_04_composition_pg15() {
-        val T = "func ({} -> {@r1,@a1} -> $NumA1 -> $NumR1)"
-        val S = "func ({@GLOBAL} -> {@r1,@a1} -> $NumA1 -> $NumR1)"
+        val T = "func {} -> {@r1,@a1} -> $NumA1 -> $NumR1"
+        val S = "func {@GLOBAL} -> {@r1,@a1} -> $NumA1 -> $NumR1"
         val out = all(
             """
             $nums

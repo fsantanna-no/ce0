@@ -255,7 +255,7 @@ class TEnv {
     fun c04_type_func_arg () {
         val out = inp2env("""
             var f : func {} ->{}->[(),()] -> ()
-            set f = func ({}->{}->[(),()] -> ()) { }
+            set f = func {}->{}->[(),()] -> () { }
             call f {} ()
         """.trimIndent())
         assert(out == "(ln 3, col 6): invalid call : type mismatch") { out }
@@ -1082,7 +1082,7 @@ class TEnv {
     fun g01_ptr_func_ok () {
         val out = inp2env("""
             var f : ((func {}->{@i1}->/_int@i1 -> /_int@i1))
-            set f = func ({}->{@i1}->/_int@i1 -> /_int@i1) {
+            set f = func {}->{@i1}->/_int@i1 -> /_int@i1 {
                 set ret = arg
                 return
             }
@@ -1113,8 +1113,8 @@ class TEnv {
     @Test
     fun g02_ptr_func_ok () {
         val out = inp2env("""
-            var f :      (func {}-> {@i1} -> () -> /_int@i1)
-            set f = func ({} -> {@i1} -> () -> /_int@i1) {
+            var f : (func {}-> {@i1} -> () -> /_int@i1)
+            set f = func {} -> {@i1} -> () -> /_int@i1 {
             }
             var p: /_int @LOCAL
             set p = call f {@LOCAL} (): @LOCAL
@@ -1151,7 +1151,7 @@ class TEnv {
     fun g04_ptr_func_err () {
         val out = inp2env("""
             var f : func {}->{@i1}->/_int@i1 -> /_int@i1
-            set f = func ({}->{@i1}->/_int@i1 -> /_int@i1) {
+            set f = func {}->{@i1}->/_int@i1 -> /_int@i1 {
                 var ptr: /_int@LOCAL
                 set ptr = arg
                 set ret = ptr
@@ -2548,7 +2548,7 @@ class TEnv {
             var f: (func {}->{@i1}->() -> ())
             set f = func {}->{@i1}->() -> () {}
             var g: (func {}->{@i1}-> func{}->{@i1}->()->() -> ())
-            set g = func ({}->{@i1}-> func{}->{@i1}->()->() -> ()) {}
+            set g = func {}->{@i1}-> func{}->{@i1}->()->() -> () {}
         """.trimIndent()
         )
         assert(out == "OK") { out }
@@ -2572,7 +2572,7 @@ class TEnv {
             var f:(func {}->{@i1}-> () -> ())
             set f = func {}->{@i1}->() -> () {}
             var g:    (func {}->{@i1}-> (func {}->{@i1}->()->()) -> ())
-            set g = func ({}->{@i1}-> (func {}->{@i1}->()->()) -> ()) {}
+            set g = func {}->{@i1}-> (func {}->{@i1}->()->()) -> () {}
             call g {@LOCAL} f
         """.trimIndent()
         )
@@ -2585,7 +2585,7 @@ class TEnv {
             var f:(func {}->{@i1}-> () -> /()@i1)
             set f = func{}->{@i1}-> () -> /()@i1 {}
             var g: (func {}->{@i1}-> (func {}->{@i1}->()->/()@i1) -> ())
-            set g = func ({}->{@i1}-> (func {}->{@i1}->()->/()@i1) -> ()) {}
+            set g = func {}->{@i1}-> (func {}->{@i1}->()->/()@i1) -> () {}
             call g {@LOCAL} f
         """.trimIndent()
         )
@@ -2796,7 +2796,7 @@ class TEnv {
         val out = inp2env("""
             { @A
                 var pa: /</^ @LOCAL> @LOCAL
-                var f: /func({@A}->{}-> ()->())
+                var f: /func{@A}->{}-> ()->()
                 set f = func{@A}-> {}-> ()->()[pa]{
                     var pf: /</^ @A> @A
                     set pf = new <.1 <.0>: /</^ @A> @A>:</^ @A>: @A
