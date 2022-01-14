@@ -1532,7 +1532,7 @@ class TExec {
     fun n11_pool_closure () {
         val out = all(
             """
-            var cnst:      func ({}->{@i1}-> /_int@i1 -> (func {@i1}->{}-> () -> /_int@i1))
+            var cnst:  func ({}->{@i1}-> /_int@i1 -> (func {@i1}->{}-> () -> /_int@i1))
             set cnst = func {}->{@i1}-> /_int@i1 -> (func {@i1}->{}-> () -> /_int@i1) {
                 var x: /_int@i1
                 set x = arg
