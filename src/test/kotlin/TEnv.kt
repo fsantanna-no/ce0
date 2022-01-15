@@ -729,8 +729,8 @@ class TEnv {
             var f: func {}->{@a1}->[/()@a1]->()
             set f = func {}->{@b1}->[/()@b1]->() {}
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
-        //assert(out == "OK") { out }
+        //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out == "OK") { out }
     }
     @Test
     fun e11_func_err () {
@@ -2849,5 +2849,15 @@ class TEnv {
         )
         assert(out == "(ln 2, col 1): invalid call : scope mismatch") { out }
     }
-
+    @Test
+    fun p34_diff_args () {
+        val out = inp2env(
+            """
+            var f: func {} -> {@a1,@i1,@j1} -> [/</^@a1>@a1,/</^@i1>@i1] -> /</^@j1>@j1
+            var g: func {} -> {@i1,@j1,@k1} -> [/</^@i1>@i1,/</^@j1>@j1] -> /</^@k1>@k1
+            set f = g
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
 }

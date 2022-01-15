@@ -29,6 +29,39 @@ fun Type.isSupOf (sub: Type): Boolean {
     return this.isSupOf_(sub, false, emptyList(), emptyList())
 }
 
+// Convert function signatures to increasing scopes for comparison
+// var g: func {} -> {@i1,@j1,@k1} -> [/</^@i1>@i1,/</^@j1>@j1] -> /</^@k1>@k1
+//      becomes
+// var g: func {} -> {@a1,@b1,@c1} -> [/</^@a1>@a1,/</^@b1>@b1] -> /</^@c1>@c1
+fun Type.Func.mapLabels (up: Any): Type.Func {
+    val MAP = mutableMapOf<String,Char>()
+    var c = ('a'-1)
+    fun aux (tp: Type): Type {
+        return when (tp) {
+            is Type.Unit, is Type.Nat, is Type.Rec -> tp
+            is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { aux(it) }.toTypedArray())
+            is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { aux(it) }.toTypedArray())
+            is Type.Func  -> tp
+            is Type.Ptr   -> {
+                if (tp.xscp1.enu == TK.XSCPCST) {
+                    tp
+                } else {
+                    val old = tp.xscp1
+                    //assert(old.num == 1)
+                    val lbl = if (MAP[old.lbl] != null) MAP[old.lbl] else {
+                        c += 1
+                        MAP[old.lbl] = c
+                        c
+                    }
+                    val new = Tk.Scp1(TK.XSCPCST, old.lin, old.col, lbl.toString(), old.num)
+                    Type.Ptr(tp.tk_, new, new.toScp2(this), aux(tp.pln))
+                }
+            }
+        }
+    }
+    // TODO: xscp1s/xscp2s are not used in supOf, so we ignore them here
+    return Type.Func(this.tk_,this.xscp1s,this.xscp2s, aux(this.inp), aux(this.out)).clone(up,this.tk.lin,this.tk.col) as Type.Func
+}
 fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: List<Type.Union>): Boolean {
     return when {
         (this is Type.Nat  || sub is Type.Nat) -> true
@@ -37,13 +70,17 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
         (sub  is Type.Rec) -> ups2[sub.tk_.up-1].let { this.isSupOf_(it, isproto, ups1,ups2.drop(sub.tk_.up)) }
         (this::class != sub::class) -> false
         (this is Type.Unit && sub is Type.Unit) -> true
-        (this is Type.Func && sub is Type.Func) -> { (
-            this.xscp2s!!.first?.depth == sub.xscp2s!!.first?.depth &&
-            this.inp.isSupOf_(sub.inp,true,ups1,ups2) &&
-            sub.inp.isSupOf_(this.inp,true,ups1,ups2) &&
-            this.out.isSupOf_(sub.out,true,ups1,ups2) &&
-            sub.out.isSupOf_(this.out,true,ups1,ups2)
-        )}
+        (this is Type.Func && sub is Type.Func) -> {
+            val sup2 = this.mapLabels(this.wup!!)
+            val sub2 = sub.mapLabels(sub.wup!!)
+            (
+                sup2.xscp2s!!.first?.depth == sub2.xscp2s!!.first?.depth &&
+                sup2.inp.isSupOf_(sub2.inp,true,ups1,ups2) &&
+                sub2.inp.isSupOf_(sup2.inp,true,ups1,ups2) &&
+                sup2.out.isSupOf_(sub2.out,true,ups1,ups2) &&
+                sub2.out.isSupOf_(sup2.out,true,ups1,ups2)
+            )
+        }
         (this is Type.Ptr && sub is Type.Ptr) -> {
             /*
             println("===")
