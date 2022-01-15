@@ -36,14 +36,27 @@ fun Type.tostr (): String {
     }
 }
 
-fun Type.flatten (): List<Type> {
+/*
+fun Type.flattenRight (): List<Type> {
     // TODO: func/union do not make sense?
     return when (this) {
         is Type.Unit, is Type.Nat, is Type.Rec -> listOf(this)
-        is Type.Tuple -> this.vec.map { it.flatten() }.flatten() + this
-        is Type.Union -> this.vec.map { it.flatten() }.flatten() + this
-        is Type.Func  -> listOf(this) //this.inp.flatten() + this.out.flatten() + this
-        is Type.Ptr   -> this.pln.flatten() + this
+        is Type.Tuple -> this.vec.map { it.flattenRight() }.flatten() + this
+        is Type.Union -> this.vec.map { it.flattenRight() }.flatten() + this
+        is Type.Func  -> listOf(this) //this.inp.flattenRight() + this.out.flattenRight() + this
+        is Type.Ptr   -> this.pln.flattenRight() + this
+    }
+}
+ */
+
+fun Type.flattenLeft (): List<Type> {
+    // TODO: func/union do not make sense?
+    return when (this) {
+        is Type.Unit, is Type.Nat, is Type.Rec -> listOf(this)
+        is Type.Tuple -> listOf(this) + this.vec.map { it.flattenLeft() }.flatten()
+        is Type.Union -> listOf(this) + this.vec.map { it.flattenLeft() }.flatten()
+        is Type.Func  -> listOf(this) //this.inp.flatten() + this.out.flatten()
+        is Type.Ptr   -> listOf(this) + this.pln.flattenLeft()
     }
 }
 

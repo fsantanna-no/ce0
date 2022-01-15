@@ -42,7 +42,7 @@ fun check_01_before_tps (s: Stmt) {
             is Type.Ptr -> tp.xscp1?.check(tp)
             is Type.Func -> {
                 tp.xscp1s.first?.check(tp)
-                val ptrs  = (tp.inp.flatten() + tp.out.flatten()).filter { it is Type.Ptr } as List<Type.Ptr>
+                val ptrs  = (tp.inp.flattenLeft() + tp.out.flattenLeft()).filter { it is Type.Ptr } as List<Type.Ptr>
                 val ok1 = ptrs.all {
                     val ptr = it.xscp1!!
                     when {
@@ -86,7 +86,7 @@ fun check_01_before_tps (s: Stmt) {
             is Expr.Upref -> {
                 var track = false   // start tracking count if crosses UDisc
                 var count = 1       // must remain positive after track (no uprefs)
-                for (ee in e.flatten()) {
+                for (ee in e.flattenRight()) {
                     count = when (ee) {
                         is Expr.UDisc -> { track=true ; 1 }
                         is Expr.Dnref -> count+1

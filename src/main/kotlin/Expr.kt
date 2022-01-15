@@ -1,15 +1,15 @@
-fun Expr.flatten (): List<Expr> {
+fun Expr.flattenRight (): List<Expr> {
     return when (this) {
         is Expr.Unit, is Expr.Var, is Expr.Nat, is Expr.Inp, is Expr.Func -> listOf(this)
-        is Expr.TCons -> this.arg.map { it.flatten() }.flatten() + this
-        is Expr.Call  -> this.f.flatten() + this.arg.flatten() + this
-        is Expr.Out   -> this.arg.flatten() + this
-        is Expr.TDisc -> this.tup.flatten() + this
-        is Expr.UDisc -> this.uni.flatten() + this
-        is Expr.UPred -> this.uni.flatten() + this
-        is Expr.New   -> this.arg.flatten() + this
-        is Expr.Dnref -> this.ptr.flatten() + this
-        is Expr.Upref -> this.pln.flatten() + this
+        is Expr.TCons -> this.arg.map { it.flattenRight() }.flatten() + this
+        is Expr.Call  -> this.f.flattenRight() + this.arg.flattenRight() + this
+        is Expr.Out   -> this.arg.flattenRight() + this
+        is Expr.TDisc -> this.tup.flattenRight() + this
+        is Expr.UDisc -> this.uni.flattenRight() + this
+        is Expr.UPred -> this.uni.flattenRight() + this
+        is Expr.New   -> this.arg.flattenRight() + this
+        is Expr.Dnref -> this.ptr.flattenRight() + this
+        is Expr.Upref -> this.pln.flattenRight() + this
         is Expr.UCons -> TODO(this.toString())
     }
 }
