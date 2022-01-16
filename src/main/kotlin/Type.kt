@@ -25,7 +25,7 @@ fun Tk.Scp1.tostr (): String {
 fun Type.tostr (): String {
     fun Tk.Scp1?.clo (): String {
         return if (this == null) "" else
-            "{" + this.tostr() + "}"
+            this.tostr() + " -> "
     }
     return when (this) {
         is Type.Unit  -> "()"
@@ -34,7 +34,7 @@ fun Type.tostr (): String {
         is Type.Ptr   -> this.xscp1.let { "/" + this.pln.tostr() + (it?.tostr() ?: "")}
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
-        is Type.Func  -> "func " + this.xscp1s.first.clo() + " -> {" + this.xscp1s.second!!.map { it.tostr() }.joinToString(",") + "} -> " + this.inp.tostr() + " -> " + this.out.tostr()
+        is Type.Func  -> "func " + this.xscp1s.first.clo() + "{" + this.xscp1s.second!!.map { it.tostr() }.joinToString(",") + "} -> " + this.inp.tostr() + " -> " + this.out.tostr()
     }
 }
 
