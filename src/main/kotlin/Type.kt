@@ -18,21 +18,23 @@ fun Type.linkX (up: Any): Type {
     return this
 }
 
-fun Tk.Scp1?.tostr (): String {
-    return if (this == null) "" else {
-        "@" + this.lbl + (this.num?:"")
-    }
+fun Tk.Scp1.tostr (): String {
+    return "@" + this.lbl + (this.num?:"")
 }
 
 fun Type.tostr (): String {
+    fun Tk.Scp1?.clo (): String {
+        return if (this == null) "" else
+            "{" + this.tostr() + "}"
+    }
     return when (this) {
         is Type.Unit  -> "()"
         is Type.Nat   -> this.tk_.toce()
         is Type.Rec   -> "^".repeat(this.tk_.up)
-        is Type.Ptr   -> this.xscp1.let { "/" + this.pln.tostr() + it.tostr() }
+        is Type.Ptr   -> this.xscp1.let { "/" + this.pln.tostr() + (it?.tostr() ?: "")}
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
-        is Type.Func  -> "func {" + this.xscp1s.first.tostr() + "} -> {" + this.xscp1s.second!!.map { it.tostr() }.joinToString(",") + "} -> " + this.inp.tostr() + " -> " + this.out.tostr()
+        is Type.Func  -> "func " + this.xscp1s.first.clo() + " -> {" + this.xscp1s.second!!.map { it.tostr() }.joinToString(",") + "} -> " + this.inp.tostr() + " -> " + this.out.tostr()
     }
 }
 
