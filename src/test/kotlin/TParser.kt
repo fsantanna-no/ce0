@@ -54,7 +54,7 @@ class TParser {
     }
     @Test
     fun a06_parser_type_func () {
-        val all = All_new(PushbackReader(StringReader("func {} -> {} -> () -> ()"), 2))
+        val all = All_new(PushbackReader(StringReader("func {} -> () -> ()"), 2))
         lexer(all)
         val tp = parser_type(all)
         assert(tp is Type.Func && tp.inp is Type.Unit && tp.out is Type.Unit)
@@ -587,7 +587,7 @@ class TParser {
     }
     @Test
     fun c07_parser_stmt_call () {
-        val all = All_new(PushbackReader(StringReader("call _printf:func{}->{}->()->() ()"), 2))
+        val all = All_new(PushbackReader(StringReader("call _printf:func{}->()->() ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert(s is Stmt.SExpr && (s.e as Expr.Call).f is Expr.Nat && (s.e as Expr.Call).arg is Expr.Unit)
@@ -613,7 +613,7 @@ class TParser {
 
     @Test
     fun c08_parser_stmt_seq () {
-        val all = All_new(PushbackReader(StringReader("call f() ; call _printf:func{}->{}->()->() () call g()"), 2))
+        val all = All_new(PushbackReader(StringReader("call f() ; call _printf:func{}->()->() () call g()"), 2))
         lexer(all)
         val s = parser_stmts(all, Pair(TK.EOF,null))
         assert (
@@ -675,7 +675,7 @@ class TParser {
     }
     @Test
     fun c13_parser_func () {
-        val all = All_new(PushbackReader(StringReader("set f = func {} -> {} -> () -> () { return }"), 2))
+        val all = All_new(PushbackReader(StringReader("set f = func {} -> () -> () { return }"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert (
@@ -694,7 +694,7 @@ class TParser {
     }
     @Test
     fun c15_parser_func () {
-        val all = All_new(PushbackReader(StringReader("set f = func {} -> {} -> () -> () [a,b] { return }"), 2))
+        val all = All_new(PushbackReader(StringReader("set f = func {} -> () -> () [a,b] { return }"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert (

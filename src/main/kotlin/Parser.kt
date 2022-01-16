@@ -53,14 +53,13 @@ fun parser_type (all: All): Type {
         }
         all.accept(TK.FUNC) -> {
             val tk0 = all.tk0 as Tk.Key
-            all.accept_err(TK.CHAR, '{')
             val clo = if (all.accept(TK.XSCPCST) || all.accept(TK.XSCPVAR)) {
-                all.tk0 as Tk.Scp1
+                val tk = all.tk0 as Tk.Scp1
+                all.accept_err(TK.ARROW)
+                tk
             } else {
                 null
             }
-            all.accept_err(TK.CHAR, '}')
-            all.accept_err(TK.ARROW)
             all.accept_err(TK.CHAR, '{')
             val scps = mutableListOf<Tk.Scp1>()
             while (all.accept(TK.XSCPVAR)) {
