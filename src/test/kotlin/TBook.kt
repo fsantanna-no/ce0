@@ -5,18 +5,18 @@ import org.junit.jupiter.api.TestMethodOrder
 import java.io.File
 
 val nums = """
-    var zero: /</^ @LOCAL>
+    var zero: /</^ @LOCAL>@LOCAL
     set zero = <.0>: /</^ @LOCAL> @LOCAL
-    var one: /</^ @LOCAL>
+    var one: /</^ @LOCAL>@LOCAL
     set one = new <.1 zero>:</^ @LOCAL>: @LOCAL
-    var two: /</^>
+    var two: /</^@LOCAL>@LOCAL
     set two = new <.1 one>:</^ @LOCAL>: @LOCAL
-    var three: /</^ @LOCAL>
-    set three = new <.1 two>:</^>: @LOCAL
-    var four: /</^ @LOCAL>
-    set four = new <.1 three>:</^>: @LOCAL
-    var five: /</^ @LOCAL>
-    set five = new <.1 four>:</^>: @LOCAL
+    var three: /</^ @LOCAL>@LOCAL
+    set three = new <.1 two>:</^@LOCAL>: @LOCAL
+    var four: /</^ @LOCAL>@LOCAL
+    set four = new <.1 three>:</^@LOCAL>: @LOCAL
+    var five: /</^ @LOCAL>@LOCAL
+    set five = new <.1 four>:</^@LOCAL>: @LOCAL
 """.trimIndent()
 
 fun Num (ptr: Boolean, scope: String): String {
@@ -192,12 +192,12 @@ class TBook {
     fun pre_01_nums() {
         val out = all(
             """
-            var zero: /</^ @LOCAL>
-            set zero = <.0>: /</^> @LOCAL
-            var one: </^>
+            var zero: /</^ @LOCAL>@LOCAL
+            set zero = <.0>: /</^@LOCAL> @LOCAL
+            var one: </^@LOCAL>
             set one = <.1 zero>: </^ @LOCAL>
-            var two: </^>
-            set two = <.1 /one>: </^>
+            var two: </^@LOCAL>
+            set two = <.1 /one>: </^@LOCAL>
             output std /two
         """.trimIndent()
         )

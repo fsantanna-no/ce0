@@ -6,12 +6,8 @@ fun parser_type (all: All): Type {
         all.accept(TK.CHAR, '/') -> {
             val tk0 = all.tk0 as Tk.Chr
             val pln = parser_type(all)
-            val scp = if (all.accept(TK.XSCPCST) || all.accept(TK.XSCPVAR)) {
-                all.tk0 as Tk.Scp1
-            } else {
-                Tk.Scp1(TK.XSCPCST, all.tk0.lin, all.tk0.col, "LOCAL", null)
-            }
-            Type.Ptr(tk0, scp, null, pln)
+            all.accept(TK.XSCPCST) || all.accept_err(TK.XSCPVAR)
+            Type.Ptr(tk0, all.tk0 as Tk.Scp1, null, pln)
         }
         all.accept(TK.CHAR, '(') -> {
             val tp = parser_type(all)

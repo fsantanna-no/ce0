@@ -33,7 +33,7 @@ class TCyclone {
             set scpy = func {@a1,@b1}-> [/_char@a1,/_char@b1] -> /_char@a1 {
                 set ret = arg.1
             }
-            var s1: /_char
+            var s1: /_char@LOCAL
             set s1 = call scpy {@LOCAL,@LOCAL} [s1,s1]
             {
                 var s2: /_char@LOCAL
@@ -54,7 +54,7 @@ class TCyclone {
                 var xxx: /_char @GLOBAL -- new ...
                 set ret = xxx
             }
-            var s1: /_char
+            var s1: /_char@LOCAL
             --set s1 = call sdup s1 @LOCAL
             {
                 var s2: /_char@LOCAL
