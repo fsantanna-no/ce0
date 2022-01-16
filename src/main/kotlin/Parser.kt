@@ -144,13 +144,9 @@ fun parser_expr (all: All): Expr {
             all.assert_tk(tk0, e is Expr.UCons) {
                 "invalid `new` : expected constructor"
             }
-            val scp = if (all.accept(TK.CHAR, ':')) {
-                all.accept(TK.XSCPCST) || all.accept_err(TK.XSCPVAR)
-                all.tk0 as Tk.Scp1
-            } else {
-                Tk.Scp1(TK.XSCPCST, all.tk0.lin, all.tk0.col, "LOCAL", null)
-            }
-            Expr.New(tk0 as Tk.Key, scp, null, e as Expr.UCons)
+            all.accept_err(TK.CHAR, ':')
+            all.accept(TK.XSCPCST) || all.accept_err(TK.XSCPVAR)
+            Expr.New(tk0 as Tk.Key, all.tk0 as Tk.Scp1, null, e as Expr.UCons)
         }
         all.accept(TK.CALL) -> {
             val tk_pre = all.tk0 as Tk.Key

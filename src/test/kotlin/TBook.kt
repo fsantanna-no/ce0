@@ -8,15 +8,15 @@ val nums = """
     var zero: /</^ @LOCAL>
     set zero = <.0>: /</^ @LOCAL> @LOCAL
     var one: /</^ @LOCAL>
-    set one = new <.1 zero>:</^ @LOCAL>
+    set one = new <.1 zero>:</^ @LOCAL>: @LOCAL
     var two: /</^>
-    set two = new <.1 one>:</^ @LOCAL>
+    set two = new <.1 one>:</^ @LOCAL>: @LOCAL
     var three: /</^ @LOCAL>
-    set three = new <.1 two>:</^>
+    set three = new <.1 two>:</^>: @LOCAL
     var four: /</^ @LOCAL>
-    set four = new <.1 three>:</^>
+    set four = new <.1 three>:</^>: @LOCAL
     var five: /</^ @LOCAL>
-    set five = new <.1 four>:</^>
+    set five = new <.1 four>:</^>: @LOCAL
 """.trimIndent()
 
 fun Num (ptr: Boolean, scope: String): String {

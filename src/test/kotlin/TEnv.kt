@@ -159,7 +159,7 @@ class TEnv {
     fun b13_user_empty_ok () {
         val out = inp2env("""
             var l: </^ @LOCAL>
-            set l = new <.1 <.0>:/</^>>:</^>
+            set l = new <.1 <.0>:/</^>>:</^>: @LOCAL
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
@@ -167,7 +167,7 @@ class TEnv {
     fun b14_user_empty_ok () {
         val out = inp2env("""
             var l: /</^>
-            set l = new <.1 <.0>:/</^>>:</^>
+            set l = new <.1 <.0>:/</^>>:</^>: @LOCAL
             output std l\!0
         """.trimIndent())
         assert(out == "OK") { out }
@@ -1522,7 +1522,7 @@ class TEnv {
             var p: /</^ @LOCAL> @LOCAL
             {
                 var l: /</^ @LOCAL> @LOCAL
-                set l = new <.1 (new <.1 <.0>:/</^@LOCAL> @LOCAL>:</^@LOCAL>)>:</^@LOCAL>
+                set l = new <.1 (new <.1 <.0>:/</^@LOCAL> @LOCAL>:</^@LOCAL>: @LOCAL)>:</^@LOCAL>: @LOCAL
                 set p = l   -- err: p<l
             }
             output std p
@@ -1548,7 +1548,7 @@ class TEnv {
             var p: /</^ @LOCAL> @LOCAL
             {
                 var l: [/</^ @LOCAL> @LOCAL]
-                set l = [new <.1 (new <.1 <.0>:/</^@LOCAL>@LOCAL>:</^@LOCAL>)>:</^@LOCAL>: @LOCAL]
+                set l = [new <.1 (new <.1 <.0>:/</^@LOCAL>@LOCAL>:</^@LOCAL>: @LOCAL)>:</^@LOCAL>: @LOCAL]
                 set p = l.1     -- err: p<l
             }
             output std p
@@ -1584,7 +1584,7 @@ class TEnv {
     fun i06_uni_rec_ok1 () {
         val out = inp2env("""
             var xxx: /<(),/</^^ @LOCAL,/^ @LOCAL> @LOCAL> @LOCAL
-            set xxx = new <.1()>:<(),/</^^ @LOCAL,/^ @LOCAL> @LOCAL>
+            set xxx = new <.1()>:<(),/</^^ @LOCAL,/^ @LOCAL> @LOCAL>: @LOCAL
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1602,7 +1602,7 @@ class TEnv {
     fun i08_mutual () {
         val out = inp2env("""
             var e: /<(), <(),/^^ @LOCAL>> @LOCAL
-            set e = new <.2 <.1()>:<(),/<(), <(),/^^ @LOCAL>> @LOCAL>>:<(), <(),/^^ @LOCAL>>
+            set e = new <.2 <.1()>:<(),/<(), <(),/^^ @LOCAL>> @LOCAL>>:<(), <(),/^^ @LOCAL>>: @LOCAL
             var s: /<(), <(),/^^ @LOCAL>> @LOCAL
             set s = e\!2!2
         """.trimIndent())
@@ -1622,7 +1622,7 @@ class TEnv {
     fun i10_mutual () {
         val out = inp2env("""
             var e: /<</^^ @LOCAL,()>, ()> @LOCAL
-            set e = new <.1 new <.2()>:</<</^^ @LOCAL,()>, ()> @LOCAL,()>>:<</^^ @LOCAL,()>, ()>
+            set e = new <.1 new <.2()>:</<</^^ @LOCAL,()>, ()> @LOCAL,()>: @LOCAL>:<</^^ @LOCAL,()>, ()>: @LOCAL
                -- err: ~new~ <.2>
         """.trimIndent())
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
@@ -1718,7 +1718,7 @@ class TEnv {
     fun j10_rec_tup () {
         val out = inp2env("""
             var x: /<(),[/^ @LOCAL]> @LOCAL
-            set x = new <.2 [new <.1()>:<(),[/^ @LOCAL]> ]>:<(),[/^ @LOCAL]>
+            set x = new <.2 [new <.1()>:<(),[/^ @LOCAL]>: @LOCAL ]>:<(),[/^ @LOCAL]>: @LOCAL
         """.trimIndent())
         assert(out == "OK") { out }
     }

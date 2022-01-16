@@ -839,7 +839,7 @@ class TExec {
     fun j02_list_new_err_dst () {
         val out = all("""
             var l: /</^ @LOCAL> @LOCAL
-            set l = new <.1 <.0>: /</^>>:</^>
+            set l = new <.1 <.0>: /</^>>:</^>: @LOCAL
             output std l
         """.trimIndent())
         //assert(out == "(ln 1, col 21): invalid assignment : type mismatch") { out }
@@ -868,7 +868,7 @@ class TExec {
     fun j02_list_new_ok () {
         val out = all("""
             var l: /</^ @LOCAL> @LOCAL
-            set l = new <.1 <.0>: /</^ @LOCAL>>:</^ @LOCAL>
+            set l = new <.1 <.0>: /</^ @LOCAL>>:</^ @LOCAL>: @LOCAL
             output std l
         """.trimIndent())
         assert(out == "<.1 <.0>>\n") { out }
@@ -1011,7 +1011,7 @@ class TExec {
             var z: /</^ @LOCAL> @LOCAL
             set z = <.0>: /</^ @LOCAL> @LOCAL
             var one: /</^ @LOCAL> @LOCAL
-            set one = new <.1 z>:</^ @LOCAL>
+            set one = new <.1 z>:</^ @LOCAL>: @LOCAL
 
             var n: </</^ @LOCAL> @LOCAL>
             set n = <.1 one>:</</^ @LOCAL> @LOCAL>
@@ -1025,10 +1025,10 @@ class TExec {
             var z: /</^ @LOCAL> @LOCAL
             set z = <.0>: /</^ @LOCAL> @LOCAL
             var one: /</^ @LOCAL> @LOCAL
-            set one = new <.1 z>:</^ @LOCAL>
+            set one = new <.1 z>:</^ @LOCAL>: @LOCAL
 
             var x: /</^ @LOCAL> @LOCAL
-            set x = new <.1 one>:</^ @LOCAL>
+            set x = new <.1 one>:</^ @LOCAL>: @LOCAL
             var y: //</^ @LOCAL> @LOCAL @LOCAL
             set y = /x
             output std y\
@@ -1041,10 +1041,10 @@ class TExec {
             var z: /</^ @LOCAL> @LOCAL
             set z = <.0>: /</^ @LOCAL> @LOCAL
             var one: /</^ @LOCAL> @LOCAL
-            set one = new <.1 z>:</^ @LOCAL>
+            set one = new <.1 z>:</^ @LOCAL>: @LOCAL
 
             var x: /</^ @LOCAL> @LOCAL
-            set x = new <.1 one>:</^ @LOCAL>
+            set x = new <.1 one>:</^ @LOCAL>: @LOCAL
             var y: //</^ @LOCAL> @LOCAL @LOCAL
             set y = /x --!1
             output std y\
@@ -1064,7 +1064,7 @@ class TExec {
     fun j09_tup_list_err () {
         val out = all("""
             var t: [_int,/</^ @LOCAL> @LOCAL]
-            set t = [_10:_int, new <.1 <.0>:/</^ @LOCAL> @LOCAL>:</^ @LOCAL>]
+            set t = [_10:_int, new <.1 <.0>:/</^ @LOCAL> @LOCAL>:</^ @LOCAL>: @LOCAL]
             output std /t
         """.trimIndent())
         assert(out == "[10,<.1 <.0>>]\n") { out }
@@ -1099,7 +1099,7 @@ class TExec {
     fun j11_tup_copy_ok () {
         val out = all("""
             var l: /</^ @LOCAL> @LOCAL
-            set l = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>
+            set l = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>: @LOCAL
             var t1: [/</^ @LOCAL> @LOCAL]
             set t1 = [l]
             var t2: [/</^ @LOCAL> @LOCAL]
@@ -1123,7 +1123,7 @@ class TExec {
     fun j15_tup_copy_ok () {
         val out = all("""
             var l1: /</^ @LOCAL> @LOCAL
-            set l1 = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>
+            set l1 = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>: @LOCAL
             var l2: /</^ @LOCAL> @LOCAL
             set l2 = l1
             output std l2
@@ -1136,9 +1136,9 @@ class TExec {
             var l1: /</^ @LOCAL> @LOCAL
             set l1 = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>: @LOCAL
             var l2: /</^ @LOCAL> @LOCAL
-            set l2 = new <.1 l1>:</^ @LOCAL>
+            set l2 = new <.1 l1>:</^ @LOCAL>: @LOCAL
             var t3: [(),/</^ @LOCAL> @LOCAL]
-            set t3 = [(), new <.1 l2\!1>:</^ @LOCAL>]
+            set t3 = [(), new <.1 l2\!1>:</^ @LOCAL>: @LOCAL]
             output std l1
             output std /t3
         """.trimIndent())
@@ -1222,7 +1222,7 @@ class TExec {
             set z = <.0>: /< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL
             var o: <(),/< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL>
             set o = <.1()>: <(),/< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL>
-            set x = new <.1 [o,_1:_int,new <.1 [o,_2:_int,z]>:< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]>]>:< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]>
+            set x = new <.1 [o,_1:_int,new <.1 [o,_2:_int,z]>:< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]>: @LOCAL]>:< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]>: @LOCAL
             set x\!1.3\!1.1 = <.2 x>: <(),/< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL>
             set x\!1.1 = <.2 x\!1.3>: <(),/< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL>
             output std x\!1.3\!1.2
@@ -1294,7 +1294,7 @@ class TExec {
             }
             {
                 var x: /</^ @LOCAL> @LOCAL
-                set x = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>
+                set x = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>: @LOCAL
                 call f {@LOCAL} x
             }
         """.trimIndent())
@@ -1309,7 +1309,7 @@ class TExec {
             }
             {
                 var x: /</^ @LOCAL> @LOCAL
-                set x = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>
+                set x = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>: @LOCAL
                 call f {@LOCAL} x
                 output std x
             }
@@ -1326,7 +1326,7 @@ class TExec {
             }
             {
                 var x: /</^ @LOCAL> @LOCAL
-                set x = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>
+                set x = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>: @LOCAL
                 call f {@LOCAL,@LOCAL} [x,x]
                 output std x
             }
@@ -1342,7 +1342,7 @@ class TExec {
             }
             {
                 var x: /</^ @LOCAL> @LOCAL
-                set x = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>
+                set x = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>: @LOCAL
                 call f {@LOCAL} x
                 output std x
             }
@@ -1490,7 +1490,7 @@ class TExec {
             set g = func{@i1}-> () -> func{@i1}-> ()->() {
                 var f: /func{@a1}-> () -> ()
                 var x: /</^@LOCAL>@LOCAL
-                set x = new <.1 <.0>:/</^@LOCAL>@LOCAL>: </^@LOCAL>
+                set x = new <.1 <.0>:/</^@LOCAL>@LOCAL>: </^@LOCAL>: @LOCAL
                 set f = func{@a1}-> () -> () {
                     output std x    -- f uses x in @LOCAL
                 }
@@ -1656,9 +1656,9 @@ class TExec {
     fun z06_type_complex () {
         val out = all("""
             var x: /<[(),/^ @LOCAL]> @LOCAL
-            set x = new <.1 [(),<.0>: /<[(),/^ @LOCAL]>@LOCAL]>:<[(),/^ @LOCAL]>
+            set x = new <.1 [(),<.0>: /<[(),/^ @LOCAL]>@LOCAL]>:<[(),/^ @LOCAL]>: @LOCAL
             var y: [(),/<[(),/^ @LOCAL]> @LOCAL]
-            set y = [(), new <.1 [(),<.0>: /<[(),/^ @LOCAL]>@LOCAL]>:<[(),/^ @LOCAL]>]
+            set y = [(), new <.1 [(),<.0>: /<[(),/^ @LOCAL]>@LOCAL]>:<[(),/^ @LOCAL]>: @LOCAL]
             var z: [(),//<[(),/^ @LOCAL]> @LOCAL @LOCAL]
             set z = [(), /x]
             output std z.2\\!1.2\!0
@@ -1700,7 +1700,7 @@ class TExec {
     fun z08_type_complex () {
         val out = all("""
             var y: [(),/<[(),/^ @LOCAL]> @LOCAL]
-            set y = [(), new <.1 [(),<.0>:/<[(),/^ @LOCAL]> @LOCAL]>:<[(),/^ @LOCAL]>]
+            set y = [(), new <.1 [(),<.0>:/<[(),/^ @LOCAL]> @LOCAL]>:<[(),/^ @LOCAL]>: @LOCAL]
             output std /y
         """.trimIndent())
         assert(out == "[(),<.1 [(),<.0>]>]\n") { out }
@@ -1716,7 +1716,7 @@ class TExec {
             set x2 = /x1
             var z2: _int
             set z2 = x2\\?1
-            set x2\ = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>
+            set x2\ = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>: @LOCAL
             var f: func{@i1}-> //</^@i1>@i1@i1->_int
             set f = func{@i1}-> //</^@i1>@i1@i1->_int {
                 set ret = arg\\?1
