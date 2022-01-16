@@ -43,21 +43,21 @@ A block delimits the scope of variables between curly braces:
 ... x ...           -- `x` is not visible here
 ```
 
-A block may contain a label to identify its memory region:
+A block may contain an uppercase label to identify its memory region:
 
 ```
-{ @myblock          -- `@myblock` can be referenced in allocations
+{ @MYBLOCK          -- `@MYBLOCK` can be referenced in allocations
     ...
 }
 ```
 
-The label `@global` corresponds to the outermost scope of the program.
-The label `@local`  corresponds to the current scope.
+The label `@GLOBAL` corresponds to the outermost block of the program.
+The label `@LOCAL`  corresponds to the current block.
 
 ## Variable Declaration
 
 A variable declaration introduces an identifier of the given type in the
-current scope:
+current block:
 
 ```
 var x: ()           -- `x` is of unit type `()`
@@ -172,21 +172,13 @@ Native type identifiers start with an underscore.
 ## Pointer
 
 A pointer type can be applied to any other type with the prefix slash `/` and
-holds a pointer to another value:
+holds a pointer to another value.
+A pointer must also specify the block in which its data is held:
 
 ```
-/_int           -- pointer to _int
-/[_int,()]      -- pointer to tuple
+/_int @LOCAL        -- pointer to _int held in current block
+/[_int,()] @S       -- pointer to tuple held in block `@S`
 ```
-
-A pointer can specify the scope in which it is attached:
-
-```
-/_int @myblock      -- pointer attached to `@myblock`
-/[_int,()] @global  -- pointer attached to the global scope
-```
-
-If not specified, a pointer is attached to `@local` by default.
 
 ## Tuple
 
@@ -215,7 +207,7 @@ angle brackets `<` and `>`:
 A recursive union is always a pointer with a caret subtype pointing upwards:
 
 ```
-/<[_int, /^]>       -- a linked list of `_int`
+/<[_int, /^@S]>@S   -- a linked list of `_int` held at block `@S`
 ```
 
 The pointer caret `/^` indicates recursion and refers to the enclosing
@@ -226,8 +218,8 @@ union pointer type.
 The pointer caret can be expanded resulting in equivalent types:
 
 ```
-/<[_int, /^]>           -- a linked list of `_int`
-/<[_int, /<[_int,/^]>>  -- a linked list of `_int` expanded
+/<[_int, /^@S]>@S               -- a linked list of `_int`
+/<[_int, /<[_int,/^@S]>@S>@S    -- a linked list of `_int` expanded
 ```
 
 ## Function
@@ -288,7 +280,7 @@ with the sufix backslash `\`:
 
 ```
 var x: _int
-var y: /_int
+var y: /_int@LOCAL
 set y = /x          -- acquires a pointer to `x`
 output std y\       -- recovers the value of `x`
 ```
@@ -327,38 +319,30 @@ an argument, followed by the explicit complete union type:
 <.2 [_10,_0]: <(),[_int,_int]>  -- subcase `.2` holds a tuple
 ```
 
-A recursive union always includes a null pointer constructor `<.0 ()>` that
+### Null Pointer Constructor
+
+A recursive union always includes a null pointer constructor `<.0>` that
 represents data termination:
 
 ```
-var x: /<[_int,/^]>             -- a linked list of `_int`
-set x = <.0 ()>: /<[_int,/^]>   -- empty linked list
-```
-
-The unit argument `()` of a unit subtype is optional:
-
-```
-<.1>: <(),()>
-<.0>: /<[_int,/^]>
+var x: /<[_int,/^@S]>@S         -- a linked list of `_int`
+set x = <.0>: /<[_int,/^@S]>@S  -- an empty linked list
 ```
 
 ### Allocation
 
-A recursive union constructor uses the `new` operation for dynamic allocation:
+A recursive union constructor uses the `new` operation for dynamic allocation.
+It returns a pointer of the type as result of the allocation.
+It receives a constructor of the plain type sufixed by a colon `:` with the
+block to allocate the data:
 
 ```
-var z: /<[_int,/^]>
-set z = <.0>: /<[_int,/^]>      -- null
+var z: /</^@S>@S
+set z = <.0>: /</^@S>@S             -- null
 
-var x: /<[_int,/^]>             -- 10 -> null
-set x = new <.1 [_10, z]>>: <[_int,/<[_int,/^]>]>
+var x: /</^@S>@S
+set x = new (<.1 z>:</^@S>): @S     -- () -> null, allocated in block `@S`
 ```
-
-The `new` operation receives a constructor of the plain type and returns a
-pointer of the type as result of the allocation.
-Note that unlike the result, the type of the constructor is not a pointer.
-For this reason, the caret needs to expand to remain pointing to an enclosing
-pointer.
 
 ### Discriminator
 
@@ -368,11 +352,11 @@ exclamation mark `!`:
 
 ```
 var x: <(),_int>
-... x!1                 -- yields ()
+... x!1                     -- yields ()
 
-var y: /<[_int,/^]>
-... x\!1.1              -- yields an `_int`
-... x\!1.2\!0           -- yields ()
+var y: /<[_int,/^@S]>@S
+... x\!1.1                  -- yields an `_int`
+... x\!1.2\!0               -- yields ()
 ```
 
 If the discriminated subcase does not match the actual value, the attempted
@@ -386,10 +370,10 @@ mark `?`:
 
 ```
 var x: <(),_int>
-... x?1                 -- checks if `x` is subcase `1`
+... x?1                     -- checks if `x` is subcase `1`
 
-var y: /<[_int,/^]>
-... x\?1                -- checks if list is not empty
+var y: /<[_int,/^@S]>@S
+... x\?1                    -- checks if list is not empty
 ```
 
 The result of a predicate is an `_int` value (`_1` if success, `_0` otherwise)
@@ -405,11 +389,11 @@ call (id) x             -- id  receives variable x
 call add [x,y]          -- add receives tuple    [x,y]
 ```
 
-Calls may also specify input (between brackets `{` and `}`) and output scopes
-(after colon `:` sufix):
+Calls may also specify blocks for pointer input (between brackets `{` and `}`)
+and output (after colon `:` sufix):
 
 ```
-call f {@a} ptr: @LOCAL
+call f {@S} ptr: @LOCAL     -- calls `f` passing `ptr` at `@S` and return at `@LOCAL`
 ```
 
 They are further documented with functions.
@@ -484,7 +468,7 @@ The following symbols are valid:
     [   ]       -- tuple delimiter
     <   >       -- union delimiter
     ;           -- sequence separator
-    :           -- type and scope specification
+    :           -- type and block specification
     ->          -- function type signature
     =           -- variable assignment
     /           -- pointer type, upref operation
@@ -494,7 +478,7 @@ The following symbols are valid:
     !           -- union discriminator
     ?           -- union predicate
     ^           -- recursive union
-    @           -- scope identifier
+    @           -- block identifier
 ```
 
 ## Variable Identifier
@@ -544,49 +528,45 @@ _(1 + 1)     _{2 * (1+1)}
 # 5. SYNTAX
 
 ```
-Stmt ::= { Stmt [`;`] }
-         `var´ VAR `:´ Type                 -- variable declaration     var x: () = ()
-            `=´ ([X] Expr | `?´)
-      |  `type´ [`@rec´ [`@ptr`]] USER `{`  -- user type declaration    type @rec List {
-            { USER `:´ Type [`;´] }         --    subcases                 Cons: List
-         `}´                                                        }
-      |  `type´ `@pre´ `@rec` [`@ptr`] USER -- type pre declaration     type @pre @rec List
-      |  `set´ Expr `=´ [X] Expr            -- assignment               set x = 1
-      |  (`call´ | `input´ |` output´)      -- call                     call f()
-            (VAR|NAT) [Expr]                -- input & output           input std ; output std 10
-      |  `if´ Expr `{´ Stmt `}´             -- conditional              if x { call f() } else { call g() }
-         [`else´ `{´ Stmt `}´]
-      |  `loop´ `{´ Stmt `}´                -- loop                     loop { break }
-      |  `break´                            -- break                    break
-      |  `func´ VAR `:´ Type `{´            -- function                 func f : ()->() { return () }
-            Stmt
-         `}´
-      |  `return´ [[X] Expr]                -- function return          return ()
-      |  { Stmt [`;´] }                     -- sequence                 call f() ; call g()
-      |  `{´ Stmt `}´                       -- block                    { call f() ; call g() }
-      |  `native´ [`pre´] `{´ ... `}´       -- native                   native { printf("hi"); }
+Stmt ::= { Stmt [`;`] }                             -- sequence                 call f() ; call g()
+         `{´ Stmt `}´                               -- block                    { call f() ; call g() }
+      |  `var´ VAR `:´ Type                         -- variable declaration     var x: ()
+      |  `set´ Expr `=´ Expr                        -- assignment               set x = _1
+      |  `native´ NAT                               -- native                   native _{ printf("hi"); }
+      |  (`call´ | `input´ |` output´) ...          -- call, input, output      call f ()
+                                                    -- (see in Expr)
+      |  `if´ Expr `{´ Stmt `}´ `else´ `{´ Stmt `}´ -- conditional              if x { ... } else { ... }
+      |  `loop´ `{´ Stmt `}´                        -- loop                     loop { ... }
+      |  `break´                                    -- loop break               break
+      |  `return´                                   -- function return          return
 
-Expr ::= `(´ `)´                            -- unit value               ()
-      |  NAT                                -- native expression        _printf
-      |  VAR                                -- variable identifier      i
-      |  `\´ Expr                           -- upref                    \x
-      |  `/´ Expr                           -- dnref                    /x
-      |  `[´ [X] Expr {`,´ [X] Expr} `]´    -- tuple constructor        [x,()]
-      |  `<´ `.´ NUM [[X] Expr] `>´         -- union constructor        <.1 ()>
-      |  [`call´ | `input´ | `output´]      -- call                     f(x)
-            (VAR|NAT) [[X] Expr]            -- input & output           input std ; output std 10
-      |  Expr `.´ NUM                       -- tuple discriminator      x.1
-      |  Expr `!´ NUM                       -- union discriminator      x!1
-      |  Expr `?´ NUM                       -- union predicate          x?0
-      |  `(´ Expr `)´                       -- group                    (x)
+Expr ::= `(´ Expr `)´                               -- group                    (x)
+      |  `(´ `)´                                    -- unit                     ()
+      |  NAT                                        -- native expression        _printf
+      |  VAR                                        -- variable identifier      i
+      |  `/´ Expr                                   -- upref                    /x
+      |  Expr `\´                                   -- dnref                    x\
+      |  `[´ Expr {`,´ Expr} `]´                    -- tuple constructor        [x,()]
+      |  Expr `.´ NUM                               -- tuple discriminator      x.1
+      |  `<´ `.´ NUM Expr `>´ `:´ Type              -- union constructor        <.1 ()>: <(),()>
+      |  `<´ `.´ 0 `>´ `:´ Type                     -- union null pointer       <.0>: /</?>
+      | `new´ Expr.Union `:´ BLOCK                  -- union allocation         new <...>: @LOCAL
+      |  Expr `!´ NUM                               -- union discriminator      x!1
+      |  Expr `?´ NUM                               -- union predicate          x?0
+      |  `input´ VAR `:´ Type                       -- data input               input std: _int
+      |  `output´ VAR Expr                          -- data output              output std [(),_10]
+      | `call´ Expr Blocks Expr [`:´ BLOCK]         -- function call            call f {@S} x: @LOCAL
+      | Type.Func [Upvals] Stmt.Block               -- function body            func ()->() { ... }
+            Upvals ::= `[´ VAR {`,´ VAR} `]´
 
-X ::= `borrow´ | `copy´ | `move´ | `new´
+Type ::= `(´ Type `)´                               -- group                    (func ()->())
+      |  `(´ `)´                                    -- unit                     ()
+      |  NAT                                        -- native type              _char
+      | `^´ { `^´ }                                 -- recursive type           ^^
+      |  `/` Type BLOCK                             -- pointer                  /_int@S
+      |  `[´ Type {`,´ Type} `]´                    -- tuple                    [(),()]
+      |  `<´ Type {`,´ Type} `>´                    -- union                    <(),/^@S>
+      |  `func´ [BLOCK] Blocks `->´ Type `->´ Type  -- function                 func f : ()->() { return () }
 
-Type ::= `(´ `)´                            -- unit                     ()
-      |  NAT                                -- native type              _char
-      | `^` { `^` }                         -- recursive type           ^
-      |  `\` Type                           -- pointer                  \_int
-      |  `[´ Type {`,´ Type} `]´            -- tuple                    [(),()]
-      |  `<´ Type {`,´ Type} `>´            -- union                    <^,()>
-      |  Type `->´ Type                     -- function                 () -> ()
+Blocks ::= `{´ [BLOCK {`,´ BLOCK}] `}´              -- list of scopes           {@LOCAL,@a1}
 ```
