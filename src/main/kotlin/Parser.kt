@@ -126,25 +126,22 @@ fun parser_expr (all: All): Expr {
             all.accept_err(TK.CHAR, '.')
             all.accept_err(TK.XNUM)
             val tk0 = all.tk0 as Tk.Num
-            val cons = try {
-                parser_expr(all)
-            } catch (e: Throwable) {
-                assert(!all.consumed(tk0)) {
-                    e.message!!
-                }
-                Expr.Unit(Tk.Sym(TK.UNIT, all.tk1.lin, all.tk1.col, "()"))
-            }
+            val cons = if (tk0.num == 0) null else parser_expr(all)
             all.accept_err(TK.CHAR, '>')
             all.accept_err(TK.CHAR, ':')
             val tp = parser_type(all)
-            All_assert_tk(tp.tk, tp is Type.Union || (tp is Type.Ptr && tp.pln is Type.Union)) { "invalid type : expected union"}
-            Expr.UCons(tk0, tp, cons)
+            if (tk0.num == 0) {
+                All_assert_tk(tp.tk, (tp is Type.Ptr && tp.pln is Type.Union)) { "invalid type : expected pointer to union"}
+                Expr.UNull(tk0, tp)
+            } else {
+                All_assert_tk(tp.tk, tp is Type.Union) { "invalid type : expected union"}
+                Expr.UCons(tk0, tp, cons!!)
+            }
         }
         all.accept(TK.NEW) -> {
             val tk0 = all.tk0
             val e = parser_expr(all)
-            all.assert_tk(tk0, e is Expr.UCons && e.tk_.num != 0) {
-                //"invalid `new` : unexpected <.0>"
+            all.assert_tk(tk0, e is Expr.UCons) {
                 "invalid `new` : expected constructor"
             }
             val scp = if (all.accept(TK.CHAR, ':')) {
@@ -230,7 +227,7 @@ fun parser_expr (all: All): Expr {
         } else {
             all.accept_err(TK.XNUM)
             val num = all.tk0 as Tk.Num
-            all.assert_tk(all.tk0, e !is Expr.TCons && e !is Expr.UCons) {
+            all.assert_tk(all.tk0, e !is Expr.TCons && e !is Expr.UCons && e !is Expr.UNull) {
                 "invalid discriminator : unexpected constructor"
             }
             if (chr.chr=='?' || chr.chr=='!') {

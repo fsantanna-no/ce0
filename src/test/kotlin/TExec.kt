@@ -357,7 +357,7 @@ class TExec {
     fun f01_bool () {
         val out = all("""
             var b : <(),()>
-            set b = <.1>:<(),()>
+            set b = <.1()>:<(),()>
             output std /b
         """.trimIndent())
         assert(out == "<.1>\n") { out }
@@ -392,7 +392,7 @@ class TExec {
     fun f06_user_big () {
         val out = all("""
             var x: <[<()>,<()>]>
-            set x = <.1 [<.1>:<()>,<.1>:<()>]>:<[<()>,<()>]>
+            set x = <.1 [<.1()>:<()>,<.1()>:<()>]>:<[<()>,<()>]>
             output std /x
         """.trimIndent())
         assert(out == "<.1 [<.1>,<.1>]>\n") { out }
@@ -401,7 +401,7 @@ class TExec {
     fun f07_user_pred () {
         val out = all("""
             var z: <()>
-            set z = <.1>: <()>
+            set z = <.1()>: <()>
             output std z?1
         """.trimIndent())
         assert(out == "1\n") { out }
@@ -419,7 +419,7 @@ class TExec {
     fun f11_user_disc_err () {
         val out = all("""
             var z: <(),()>
-            set z = <.2>: <(),()>
+            set z = <.2()>: <(),()>
             output std z!1
         """.trimIndent())
         assert(out == "out.exe: out.c:82: main: Assertion `z.tag == 1' failed.\n") { out }
@@ -428,7 +428,7 @@ class TExec {
     fun f12_user_disc_pred_idx () {
         val out = all("""
             var v: <[<()>,()]>
-            set v = <.1 [<.1>:<()>,()]>: <[<()>,()]>
+            set v = <.1 [<.1()>:<()>,()]>: <[<()>,()]>
             output std v!1.1?1
         """.trimIndent())
         assert(out == "1\n") { out }
@@ -443,7 +443,7 @@ class TExec {
     @Test
     fun f14_user_dots_err () {
         val out = all("""
-            var x: <<<()>>>; set x = <.1 <.1 <.1>:<()>>:<<()>>>:<<<()>>>
+            var x: <<<()>>>; set x = <.1 <.1 <.1()>:<()>>:<<()>>>:<<<()>>>
             output std x!1!2
         """.trimIndent())
         assert(out == "(ln 2, col 16): invalid discriminator : out of bounds")
@@ -452,7 +452,7 @@ class TExec {
     fun f15_user_dots () {
         val out = all("""
             var x: <<<()>>>
-            set x = <.1 <.1 <.1>:<()>>:<<()>>>:<<<()>>>
+            set x = <.1 <.1 <.1()>:<()>>:<<()>>>:<<<()>>>
             output std x!1!1!1
         """.trimIndent())
         assert(out == "()\n") { out }
@@ -464,7 +464,7 @@ class TExec {
     fun g01_if () {
         val out = all("""
             var x: <(),()>
-            set x = <.2>: <(),()>
+            set x = <.2()>: <(),()>
             if x?1 { } else { output std () }
         """.trimIndent())
         assert(out == "()\n") { out }
@@ -473,7 +473,7 @@ class TExec {
     fun g02_if_pred () {
         val out = all("""
             var x: <(),()>
-            set x = <.2>: <(),()>
+            set x = <.2()>: <(),()>
             if x?2 { output std () } else { }
         """.trimIndent())
         assert(out == "()\n") { out }
@@ -1221,7 +1221,7 @@ class TExec {
             var z: /< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL
             set z = <.0>: /< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL
             var o: <(),/< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL>
-            set o = <.1>: <(),/< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL>
+            set o = <.1()>: <(),/< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL>
             set x = new <.1 [o,_1:_int,new <.1 [o,_2:_int,z]>:< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]>]>:< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]>
             set x\!1.3\!1.1 = <.2 x>: <(),/< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL>
             set x\!1.1 = <.2 x\!1.3>: <(),/< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL>
@@ -1238,7 +1238,7 @@ class TExec {
             var z: /< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]> @LOCAL
             set z = <.0>: /< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]> @LOCAL
             var o: <(),//< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]> @LOCAL @LOCAL>
-            set o = <.1>: <(),//< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]> @LOCAL @LOCAL>
+            set o = <.1()>: <(),//< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]> @LOCAL @LOCAL>
 
             var x: /< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]> @LOCAL
             set x = new <.1 [o,_2:_int,z]>:< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]>: @LOCAL
@@ -1583,13 +1583,13 @@ class TExec {
         var inv : (func{}-> <(),()> -> <(),()>)
         set inv = func{}-> <(),()> -> <(),()> {
             if arg?1 {
-                set ret = <.2>:<(),()>
+                set ret = <.2()>:<(),()>
             } else {
-                set ret = <.1>:<(),()>
+                set ret = <.1()>:<(),()>
             }
         }
         var a: <(),()>
-        set a = <.2>: <(),()>
+        set a = <.2()>: <(),()>
         var b: <(),()>
         set b = call inv a
         output std /b
@@ -1807,7 +1807,7 @@ class TExec {
     fun z15_acc_move_sub () {
         val out = all("""
             var x: /<(),/^ @LOCAL> @LOCAL
-            set x = new <.2 new <.1>:<(),/^ @LOCAL>: @LOCAL>:<(),/^ @LOCAL>: @LOCAL
+            set x = new <.2 new <.1()>:<(),/^ @LOCAL>: @LOCAL>:<(),/^ @LOCAL>: @LOCAL
             var y: /<(),/^ @LOCAL> @LOCAL
             set y = x\!2
             output std x

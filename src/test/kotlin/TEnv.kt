@@ -139,7 +139,7 @@ class TEnv {
     fun b11_user_empty_err () {
         val out = inp2env("""
             var l: <()>
-            set l = <.1>:<()>
+            set l = <.1 ()>:<()>
             output std l!2
         """.trimIndent())
         assert(out == "(ln 3, col 14): invalid discriminator : out of bounds") { out }
@@ -442,29 +442,29 @@ class TEnv {
     @Test
     fun c19_uni_disc_err () {
         val out = inp2env("""
-            output std <.1>:<()>!2
+            output std <.1()>:<()>!2
         """.trimIndent())
-        assert(out == "(ln 1, col 22): invalid discriminator : unexpected constructor") { out }
+        assert(out == "(ln 1, col 24): invalid discriminator : unexpected constructor") { out }
     }
     @Test
     fun c19_uni_pred_err () {
         val out = inp2env("""
-            output std <.1>:<()>?1
+            output std <.1()>:<()>?1
         """.trimIndent())
-        assert(out == "(ln 1, col 22): invalid discriminator : unexpected constructor") { out }
+        assert(out == "(ln 1, col 24): invalid discriminator : unexpected constructor") { out }
     }
     @Test
     fun c20_uni_disc_err () {
         val out = inp2env("""
-            output std <.2>:<(),()>!2
+            output std <.2()>:<(),()>!2
         """.trimIndent())
-        assert(out == "(ln 1, col 25): invalid discriminator : unexpected constructor") { out }
+        assert(out == "(ln 1, col 27): invalid discriminator : unexpected constructor") { out }
     }
     @Test
     fun c21_uni_disc_err () {
         val out = inp2env("""
             var x: <()>
-            set x = <.2>:<(),()>
+            set x = <.2()>:<(),()>
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
     }
@@ -483,7 +483,8 @@ class TEnv {
             set x = <.0 [()]>:<()>
         """.trimIndent())
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
-        assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
+        //assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
+        assert(out == "(ln 2, col 13): expected `>´ : have `[´") { out }
     }
     @Test
     fun c23_list_zero_err2 () {
@@ -492,7 +493,8 @@ class TEnv {
             set x = <.0 [()]>:<()>
         """.trimIndent())
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
-        assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
+        //assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
+        assert(out == "(ln 2, col 13): expected `>´ : have `[´") { out }
     }
 
     // POINTERS / SCOPE / @GLOBAL
@@ -1557,7 +1559,7 @@ class TEnv {
     fun i03_list () {
         val out = inp2env("""
             var xxx: <[_int,</^ @LOCAL>]>
-            set xxx = <.1>:<()>
+            set xxx = <.1()>:<()>
         """.trimIndent())
         assert(out == "(ln 2, col 9): invalid assignment : type mismatch") { out }
     }
@@ -1565,7 +1567,7 @@ class TEnv {
     fun i04_uni_rec_err () {
         val out = inp2env("""
             var xxx: <(),</^^ @LOCAL,/^ @LOCAL>>
-            set xxx  = <.1>:<(),</^^ @LOCAL,/^ @LOCAL>>
+            set xxx  = <.1()>:<(),</^^ @LOCAL,/^ @LOCAL>>
         """.trimIndent())
         //assert(out == "(ln 2, col 14): invalid constructor : expected `new`") { out }
         assert(out == "OK") { out }
@@ -1574,7 +1576,7 @@ class TEnv {
     fun i05_uni_rec_ok () {
         val out = inp2env("""
             var xxx: /<(),</^^ @LOCAL,/^ @LOCAL>> @LOCAL
-            set xxx = new <.1>:<(),</^^ @LOCAL,/^ @LOCAL>>: @LOCAL
+            set xxx = new <.1()>:<(),</^^ @LOCAL,/^ @LOCAL>>: @LOCAL
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1582,7 +1584,7 @@ class TEnv {
     fun i06_uni_rec_ok1 () {
         val out = inp2env("""
             var xxx: /<(),/</^^ @LOCAL,/^ @LOCAL> @LOCAL> @LOCAL
-            set xxx = new <.1>:<(),/</^^ @LOCAL,/^ @LOCAL> @LOCAL>
+            set xxx = new <.1()>:<(),/</^^ @LOCAL,/^ @LOCAL> @LOCAL>
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1593,13 +1595,14 @@ class TEnv {
             set xxx = <.0>:</^ @LOCAL>
         """.trimIndent())
         //assert(out == "(ln 2, col 9): invalid assignment : type mismatch") { out }
-        assert(out == "(ln 2, col 13): invalid constructor : type mismatch") { out }
+        //assert(out == "(ln 2, col 13): invalid constructor : type mismatch") { out }
+        assert(out == "(ln 2, col 16): invalid type : expected pointer to union") { out }
     }
     @Test
     fun i08_mutual () {
         val out = inp2env("""
             var e: /<(), <(),/^^ @LOCAL>> @LOCAL
-            set e = new <.2 <.1>:<(),/<(), <(),/^^ @LOCAL>> @LOCAL>>:<(), <(),/^^ @LOCAL>>
+            set e = new <.2 <.1()>:<(),/<(), <(),/^^ @LOCAL>> @LOCAL>>:<(), <(),/^^ @LOCAL>>
             var s: /<(), <(),/^^ @LOCAL>> @LOCAL
             set s = e\!2!2
         """.trimIndent())
@@ -1609,7 +1612,7 @@ class TEnv {
     fun i09_mutual () {
         val out = inp2env("""
             var e: /<</^^ @LOCAL,()>, ()> @LOCAL
-            set e = new <.1 <.2>:</<</^^ @LOCAL,()>, ()> @LOCAL,()>>:<</^^ @LOCAL,()>, ()>: @LOCAL
+            set e = new <.1 <.2()>:</<</^^ @LOCAL,()>, ()> @LOCAL,()>>:<</^^ @LOCAL,()>, ()>: @LOCAL
             var s: /<</^^ @LOCAL,()>, ()> @LOCAL
             set s = e\!1!1
         """.trimIndent())
@@ -1619,7 +1622,7 @@ class TEnv {
     fun i10_mutual () {
         val out = inp2env("""
             var e: /<</^^ @LOCAL,()>, ()> @LOCAL
-            set e = new <.1 new <.2>:</<</^^ @LOCAL,()>, ()> @LOCAL,()>>:<</^^ @LOCAL,()>, ()>
+            set e = new <.1 new <.2()>:</<</^^ @LOCAL,()>, ()> @LOCAL,()>>:<</^^ @LOCAL,()>, ()>
                -- err: ~new~ <.2>
         """.trimIndent())
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
@@ -1715,7 +1718,7 @@ class TEnv {
     fun j10_rec_tup () {
         val out = inp2env("""
             var x: /<(),[/^ @LOCAL]> @LOCAL
-            set x = new <.2 [new <.1>:<(),[/^ @LOCAL]> ]>:<(),[/^ @LOCAL]>
+            set x = new <.2 [new <.1()>:<(),[/^ @LOCAL]> ]>:<(),[/^ @LOCAL]>
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1946,7 +1949,7 @@ class TEnv {
     fun j29_rec_mutual () {
         val out = inp2env("""
             var e: /<(),<(),/^^ @LOCAL>> @LOCAL
-            set e = new <.2 <.1>:<(),/<(),<(),/^^ @LOCAL>> @LOCAL>>:<(),<(),/^^ @LOCAL>>: @LOCAL
+            set e = new <.2 <.1()>:<(),/<(),<(),/^^ @LOCAL>> @LOCAL>>:<(),<(),/^^ @LOCAL>>: @LOCAL
         """.trimIndent())
         assert(out == "OK") { out }
     }
@@ -1954,7 +1957,7 @@ class TEnv {
     fun j30_rec_mutual_err () {
         val out = inp2env("""
             var e: <(),/<(),/^ @LOCAL> @LOCAL>
-            set e = new <.2 new <.1>:<(),/^ @LOCAL>: @LOCAL>:<(),/<(),/^ @LOCAL> @LOCAL>: @LOCAL
+            set e = new <.2 new <.1()>:<(),/^ @LOCAL>: @LOCAL>:<(),/<(),/^ @LOCAL> @LOCAL>: @LOCAL
         """.trimIndent())
         //assert(out == "(ln 1, col 29): unexpected `new` : expected recursive type") { out }
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
@@ -2275,10 +2278,10 @@ class TEnv {
     fun m02_borrow_err () {
         val out = inp2env("""
             var x: <()>
-            set x = <.1>:<()>
+            set x = <.1()>:<()>
             var y: /<()> @LOCAL
             set y = /x --!1
-            set x = <.1>:<()>
+            set x = <.1()>:<()>
         """.trimIndent())
         assert(out == "OK") { out }
         //assert(out == "(ln 3, col 7): invalid assignment of \"x\" : borrowed in line 2") { out }
@@ -2292,7 +2295,8 @@ class TEnv {
             output std /l
         """.trimIndent())
         //assert(out == "(ln 2, col 11): unexpected <.0> : not a pointer") { out }
-        assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
+        //assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
+        assert(out == "(ln 2, col 14): invalid type : expected pointer to union") { out }
     }
     @Test
     fun m06_pred_notunion () {

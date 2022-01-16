@@ -44,6 +44,7 @@ fun check_02_after_tps (s: Stmt) {
                     "invalid constructor : type mismatch"
                 }
             }
+
             is Expr.New -> {
                 All_assert_tk(e.tk, e.arg.wtype is Type.Union && e.arg.tk_.num>0) {
                     "invalid `new` : expected constructor" // TODO: remove?

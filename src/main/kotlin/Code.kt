@@ -264,15 +264,12 @@ fun code_fe (e: Expr) {
             )
         }
         is Expr.UCons -> CODE.removeFirst().let {
-            if (e.tk_.num == 0) {
-                Code(it.type,it.stmt,"NULL")
-            } else {
-                val ID  = "_tmp_" + e.hashCode().absoluteValue
-                val sup = "struct " + xp.toce()
-                val pre = "$sup $ID = (($sup) { ${e.tk_.num} , ._${e.tk_.num} = ${it.expr} });\n"
-                Code(it.type, it.stmt + pre, ID)
-            }
+            val ID  = "_tmp_" + e.hashCode().absoluteValue
+            val sup = "struct " + xp.toce()
+            val pre = "$sup $ID = (($sup) { ${e.tk_.num} , ._${e.tk_.num} = ${it.expr} });\n"
+            Code(it.type, it.stmt + pre, ID)
         }
+        is Expr.UNull -> Code("","","NULL")
         is Expr.Inp -> {
             Code("", "", "input_${e.lib.str}_${e.wtype!!.toce()}()")
         }

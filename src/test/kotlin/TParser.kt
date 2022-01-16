@@ -354,7 +354,7 @@ class TParser {
 
     @Test
     fun b14_parser_expr_cons_err_1 () {
-        val all = All_new(PushbackReader(StringReader("<.0 ("), 2))
+        val all = All_new(PushbackReader(StringReader("<.1 ("), 2))
         lexer(all)
         try {
             parser_expr(all)
@@ -365,18 +365,18 @@ class TParser {
     }
     @Test
     fun b15_parser_expr_cons_err () {
-        val all = All_new(PushbackReader(StringReader("<.0 ()>"), 2))
+        val all = All_new(PushbackReader(StringReader("<.0>"), 2))
         lexer(all)
         try {
             parser_expr(all)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 8): expected `:´ : have end of file") { e.message!! }
+            assert(e.message == "(ln 1, col 5): expected `:´ : have end of file") { e.message!! }
         }
     }
     @Test
     fun b15_parser_expr_cons_err2 () {
-        val all = All_new(PushbackReader(StringReader("<.0 ()>:()"), 2))
+        val all = All_new(PushbackReader(StringReader("<.1 ()>:()"), 2))
         lexer(all)
         try {
             parser_expr(all)
@@ -387,7 +387,7 @@ class TParser {
     }
     @Test
     fun b16_parser_expr_cons () {
-        val all = All_new(PushbackReader(StringReader("<.1>:<()>"), 2))
+        val all = All_new(PushbackReader(StringReader("<.1 ()>:<()>"), 2))
         lexer(all)
         val e = parser_expr(all)
         assert(e is Expr.UCons && e.tk_.num==1 && e.arg is Expr.Unit)
@@ -650,18 +650,18 @@ class TParser {
     }
     @Test
     fun c11_parser_stmt_if_err () {
-        val all = All_new(PushbackReader(StringReader("if <.2>:<()> {}"), 2))
+        val all = All_new(PushbackReader(StringReader("if <.2()>:<()> {}"), 2))
         lexer(all)
         try {
             parser_stmts(all, Pair(TK.EOF,null))
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 16): expected `else` : have end of file") { e.message!! }
+            assert(e.message == "(ln 1, col 18): expected `else` : have end of file") { e.message!! }
         }
     }
     @Test
     fun c11_parser_stmt_if () {
-        val all = All_new(PushbackReader(StringReader("if <.2>:<()> {} else {}"), 2))
+        val all = All_new(PushbackReader(StringReader("if <.2()>:<()> {} else {}"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert (

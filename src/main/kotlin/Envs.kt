@@ -69,6 +69,7 @@ fun Expr.setEnvs (env: Any?) {
             this.xtype?.visit(false, ::ft)
             this.arg.setEnvs(env)
         }
+        is Expr.UNull -> this.xtype?.visit(false, ::ft)
         is Expr.New   -> this.arg.setEnvs(env)
         is Expr.Dnref -> this.ptr.setEnvs(env)
         is Expr.Upref -> this.pln.setEnvs(env)

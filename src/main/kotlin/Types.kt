@@ -1,7 +1,7 @@
 fun Stmt.setTypes () {
     fun fe (e: Expr) {
         e.wtype = when (e) {
-            is Expr.Unit, is Expr.Nat, is Expr.UCons, is Expr.Inp, is Expr.Func -> e.wtype!!
+            is Expr.Unit, is Expr.Nat, is Expr.UCons, is Expr.UNull, is Expr.Inp, is Expr.Func -> e.wtype!!
             is Expr.Upref -> e.pln.wtype!!.let {
                 val lbl = e.toBaseVar()?.tk_?.str ?: "GLOBAL"
                 val scp1 = Tk.Scp1(TK.XSCPCST,e.tk.lin,e.tk.col, lbl,null)

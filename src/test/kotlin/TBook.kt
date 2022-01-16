@@ -633,7 +633,7 @@ class TBook {
         var and: func {} -> [$B,$B] -> $B
         set and = func {} -> [$B,$B] -> $B {
             if arg.1?1 {
-                set ret = <.1>:<(),()>
+                set ret = <.1()>:<(),()>
             } else {
                 set ret = arg.2
             }
@@ -643,7 +643,7 @@ class TBook {
         var or: func {} -> [$B,$B] -> $B
         set or = func {} -> [$B,$B] -> $B {
             if arg.1?2 {
-                set ret = <.2>:<(),()>
+                set ret = <.2()>:<(),()>
             } else {
                 set ret = arg.2
             }
@@ -653,9 +653,9 @@ class TBook {
         var not: func {} -> <(),()> -> <(),()>
         set not = func {} -> <(),()> -> <(),()> {
             if arg?1 {
-                set ret = <.2>:<(),()>
+                set ret = <.2()>:<(),()>
             } else {
-                set ret = <.1>:<(),()>
+                set ret = <.1()>:<(),()>
             }
         }        
     """.trimIndent()
@@ -675,9 +675,9 @@ class TBook {
         var ntob: func {} -> _int -> $B
         set ntob = func {} -> _int -> $B {
             if arg {
-                set ret = <.2>:$B
+                set ret = <.2()>:$B
             } else {
-                set ret = <.1>:$B
+                set ret = <.1()>:$B
             } 
         }
     """.trimIndent()
@@ -700,13 +700,13 @@ class TBook {
             var not: func {} -> <(),()> -> <(),()>
             set not = func {} -> <(),()> -> <(),()> {
                 if arg?1 {
-                    set ret = <.2>:<(),()>
+                    set ret = <.2()>:<(),()>
                 } else {
-                    set ret = <.1>:<(),()>
+                    set ret = <.1()>:<(),()>
                 }
             }
             var xxx: <(),()>
-            set xxx = call not <.1>:<(),()>
+            set xxx = call not <.1()>:<(),()>
             output std /xxx
         """.trimIndent()
         )
@@ -720,15 +720,15 @@ class TBook {
             var and: func {} -> [$B,$B] -> $B
             set and = func {} -> [$B,$B] -> $B {
                 if arg.1?1 {
-                    set ret = <.1>:<(),()>
+                    set ret = <.1()>:<(),()>
                 } else {
                     set ret = arg.2
                 }
             }
             var xxx: <(),()>
-            set xxx = call and [<.1>:<(),()>,<.2>:<(),()>]
+            set xxx = call and [<.1()>:<(),()>,<.2()>:<(),()>]
             output std /xxx
-            set xxx = call and [<.2>:<(),()>,<.2>:<(),()>]
+            set xxx = call and [<.2()>:<(),()>,<.2()>:<(),()>]
             output std /xxx
         """.trimIndent()
         )
@@ -741,17 +741,17 @@ class TBook {
             var or: func {} -> [$B,$B] -> $B
             set or = func {} -> [$B,$B] -> $B {
                 if arg.1?2 {
-                    set ret = <.2>:<(),()>
+                    set ret = <.2()>:<(),()>
                 } else {
                     set ret = arg.2
                 }
             }
             var xxx: <(),()>
-            set xxx = call or [<.1>:<(),()>,<.2>:<(),()>]
+            set xxx = call or [<.1()>:<(),()>,<.2()>:<(),()>]
             output std /xxx
-            set xxx = call or [<.2>:<(),()>,<.1>:<(),()>]
+            set xxx = call or [<.2()>:<(),()>,<.1()>:<(),()>]
             output std /xxx
-            set xxx = call or [<.1>:<(),()>,<.1>:<(),()>]
+            set xxx = call or [<.1()>:<(),()>,<.1()>:<(),()>]
             output std /xxx
         """.trimIndent()
         )
@@ -773,11 +773,11 @@ class TBook {
                 set ret = call not call eq arg 
             }
             var xxx: <(),()>
-            set xxx = call eq [<.1>:<(),()>,<.2>:<(),()>]
+            set xxx = call eq [<.1()>:<(),()>,<.2()>:<(),()>]
             output std /xxx
-            set xxx = call neq [<.2>:<(),()>,<.1>:<(),()>]
+            set xxx = call neq [<.2()>:<(),()>,<.1()>:<(),()>]
             output std /xxx
-            set xxx = call eq [<.1>:<(),()>,<.1>:<(),()>]
+            set xxx = call eq [<.1()>:<(),()>,<.1()>:<(),()>]
             output std /xxx
         """.trimIndent()
         )
@@ -885,21 +885,21 @@ class TBook {
                 var xy: $NumTL
                 set xy = call add {@LOCAL,@a1,@b1} [arg.1,arg.2]
                 if call lte {@LOCAL,@c1} [xy,arg.3] {
-                    set ret = <.1>:$Tri
+                    set ret = <.1()>:$Tri
                     return
                 } else {}
                 if call eq {@a1,@c1} [arg.1,arg.3] {
-                    set ret = <.2>:$Tri
+                    set ret = <.2()>:$Tri
                     return
                 } else {}
                 if call bton (call or [
                     call ntob (call eq {@a1,@b1} [arg.1,arg.2]),
                     call ntob (call eq {@b1,@c1} [arg.2,arg.3])
                 ]) {
-                    set ret = <.3>:$Tri
+                    set ret = <.3()>:$Tri
                     return
                 } else {}
-                set ret = <.4>:$Tri
+                set ret = <.4()>:$Tri
             }
             var n10: $NumTL
             set n10 = call mul {@LOCAL,@LOCAL,@LOCAL} [five,two]
