@@ -31,8 +31,8 @@ val x: Player.Warrior = ["Arthur", 32, [10,"arcane"]]
 # Tasks
 
 - either assignable or anonymous
-    - assignable: remains in scope memory even after termination
-    - anonymous: reclaimed on termination
+    - assignable `var`: remains in scope memory even after termination
+    - anonymous `pool`: reclaimed on termination
 - state:
     - unborn:   expecting spawn & arguments
     - running:  running up to await
@@ -40,6 +40,9 @@ val x: Player.Warrior = ["Arthur", 32, [10,"arcane"]]
     - paused:   from tk.pause, do not resume
     - dead:     finished execution, no resume, holds return
 - broadcast
+    - all & first
+    - up & down
+    - receives scope
     - resumes task hierarchy, skips paused
     - passes event value
 
@@ -49,14 +52,16 @@ pool tks: task () -> ()     -- anonymous
 
 set tk = task () -> () {
     ...
-    e = await
+    e = await e / ()
     ...
 }
 spawn  tk (...) 
 kill   tk
 status tk
 pause  tk
-resume tk
+resume [tk,e]
+broadcast up tk e
+broadcast down scp e
 ```
 
 finalize/every/pool

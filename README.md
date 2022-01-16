@@ -397,8 +397,6 @@ to be compatible with conditional statements.
 
 ## Call
 
-`TODO: scope inps/out`
-
 A call invokes a function with the given argument:
 
 ```
@@ -406,6 +404,15 @@ call f ()               -- f   receives unit     ()
 call (id) x             -- id  receives variable x
 call add [x,y]          -- add receives tuple    [x,y]
 ```
+
+Calls may also specify input (between brackets `{` and `}`) and output scopes
+(after colon `:` sufix):
+
+```
+call f {@a} ptr: @LOCAL
+```
+
+They are further documented with functions.
 
 ## Input & Output
 
@@ -532,4 +539,54 @@ In this case, a native token can contain any other characters:
 
 ```
 _(1 + 1)     _{2 * (1+1)}
+```
+
+# 5. SYNTAX
+
+```
+Stmt ::= { Stmt [`;`] }
+         `var´ VAR `:´ Type                 -- variable declaration     var x: () = ()
+            `=´ ([X] Expr | `?´)
+      |  `type´ [`@rec´ [`@ptr`]] USER `{`  -- user type declaration    type @rec List {
+            { USER `:´ Type [`;´] }         --    subcases                 Cons: List
+         `}´                                                        }
+      |  `type´ `@pre´ `@rec` [`@ptr`] USER -- type pre declaration     type @pre @rec List
+      |  `set´ Expr `=´ [X] Expr            -- assignment               set x = 1
+      |  (`call´ | `input´ |` output´)      -- call                     call f()
+            (VAR|NAT) [Expr]                -- input & output           input std ; output std 10
+      |  `if´ Expr `{´ Stmt `}´             -- conditional              if x { call f() } else { call g() }
+         [`else´ `{´ Stmt `}´]
+      |  `loop´ `{´ Stmt `}´                -- loop                     loop { break }
+      |  `break´                            -- break                    break
+      |  `func´ VAR `:´ Type `{´            -- function                 func f : ()->() { return () }
+            Stmt
+         `}´
+      |  `return´ [[X] Expr]                -- function return          return ()
+      |  { Stmt [`;´] }                     -- sequence                 call f() ; call g()
+      |  `{´ Stmt `}´                       -- block                    { call f() ; call g() }
+      |  `native´ [`pre´] `{´ ... `}´       -- native                   native { printf("hi"); }
+
+Expr ::= `(´ `)´                            -- unit value               ()
+      |  NAT                                -- native expression        _printf
+      |  VAR                                -- variable identifier      i
+      |  `\´ Expr                           -- upref                    \x
+      |  `/´ Expr                           -- dnref                    /x
+      |  `[´ [X] Expr {`,´ [X] Expr} `]´    -- tuple constructor        [x,()]
+      |  `<´ `.´ NUM [[X] Expr] `>´         -- union constructor        <.1 ()>
+      |  [`call´ | `input´ | `output´]      -- call                     f(x)
+            (VAR|NAT) [[X] Expr]            -- input & output           input std ; output std 10
+      |  Expr `.´ NUM                       -- tuple discriminator      x.1
+      |  Expr `!´ NUM                       -- union discriminator      x!1
+      |  Expr `?´ NUM                       -- union predicate          x?0
+      |  `(´ Expr `)´                       -- group                    (x)
+
+X ::= `borrow´ | `copy´ | `move´ | `new´
+
+Type ::= `(´ `)´                            -- unit                     ()
+      |  NAT                                -- native type              _char
+      | `^` { `^` }                         -- recursive type           ^
+      |  `\` Type                           -- pointer                  \_int
+      |  `[´ Type {`,´ Type} `]´            -- tuple                    [(),()]
+      |  `<´ Type {`,´ Type} `>´            -- union                    <^,()>
+      |  Type `->´ Type                     -- function                 () -> ()
 ```
