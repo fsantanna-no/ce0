@@ -337,14 +337,11 @@ fun parser_stmt (all: All): Stmt {
             Stmt.SExpr(tk0, e)
         }
         all.accept(TK.IF) -> {
-            val tk0 = all.tk0 as Tk.Key
-            val tst = parser_expr(all)
-            val true_ = parser_block(all)
-            val false_ = if (all.accept(TK.ELSE)) {
-                parser_block(all)
-            } else {
-                Stmt.Block(Tk.Chr(TK.CHAR,all.tk1.lin,all.tk1.col,'{'),null, Stmt.Nop(all.tk0))
-            }
+            val tk0    = all.tk0 as Tk.Key
+            val tst    = parser_expr(all)
+            val true_  = parser_block(all)
+            all.accept_err(TK.ELSE)
+            val false_ = parser_block(all)
             Stmt.If(tk0, tst, true_, false_)
         }
         all.accept(TK.RETURN) -> Stmt.Ret(all.tk0 as Tk.Key)

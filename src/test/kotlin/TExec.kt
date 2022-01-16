@@ -1606,7 +1606,7 @@ class TExec {
             set i = _(i + 1): _int
             if _(i > 5): _int {
                 break
-            }
+            } else {}
         }
         output std n
         """.trimIndent())

@@ -78,7 +78,7 @@ class TCyclone {
                 set n = arg.2
                 if _(n > 1):_int {
                     call fact {@F} [/x,_(n-1):_int]
-                }
+                } else {}
                 set arg.1\ = _(x*n):_int
             }
             var x: _int

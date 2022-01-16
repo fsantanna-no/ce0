@@ -887,18 +887,18 @@ class TBook {
                 if call lte {@LOCAL,@c1} [xy,arg.3] {
                     set ret = <.1>:$Tri
                     return
-                }
+                } else {}
                 if call eq {@a1,@c1} [arg.1,arg.3] {
                     set ret = <.2>:$Tri
                     return
-                }
+                } else {}
                 if call bton (call or [
                     call ntob (call eq {@a1,@b1} [arg.1,arg.2]),
                     call ntob (call eq {@b1,@c1} [arg.2,arg.3])
                 ]) {
                     set ret = <.3>:$Tri
                     return
-                }
+                } else {}
                 set ret = <.4>:$Tri
             }
             var n10: $NumTL

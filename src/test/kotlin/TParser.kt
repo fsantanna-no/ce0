@@ -649,13 +649,24 @@ class TParser {
         )
     }
     @Test
-    fun c11_parser_stmt_if () {
+    fun c11_parser_stmt_if_err () {
         val all = All_new(PushbackReader(StringReader("if <.2>:<()> {}"), 2))
+        lexer(all)
+        try {
+            parser_stmts(all, Pair(TK.EOF,null))
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 16): expected `else` : have end of file") { e.message!! }
+        }
+    }
+    @Test
+    fun c11_parser_stmt_if () {
+        val all = All_new(PushbackReader(StringReader("if <.2>:<()> {} else {}"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert (
             s is Stmt.If && s.tst is Expr.UCons &&
-            s.true_.body is Stmt.Nop && s.false_.body is Stmt.Nop
+                    s.true_.body is Stmt.Nop && s.false_.body is Stmt.Nop
         )
     }
 

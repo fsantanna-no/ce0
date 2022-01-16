@@ -56,6 +56,7 @@ fun TK.toErr (chr: Char?): String {
         TK.XNUM   -> "number"
         TK.ARROW  -> "`->´"
         TK.XSCPCST, TK.XSCPVAR -> "`@´"
+        TK.ELSE   -> "`else`"
         else -> TODO(this.toString())
     }
 }
