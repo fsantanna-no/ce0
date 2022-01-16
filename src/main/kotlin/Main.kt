@@ -21,9 +21,10 @@ fun ce2c (ce: String): Pair<Boolean,String> {
     }
 }
 
-fun c2exe (c: String): Pair<Boolean,String> {
+fun c2exe (c: String, args: String): Pair<Boolean,String> {
     File("out.c").writeText(c)
-    return exec("gcc out.c -o out.exe")
+    // cannot leave leading space or exec fails to split command
+    return exec("gcc out.c -o out.exe" + args.let { if (it.length==0) "" else " "+it })
 }
 
 fun exe2run (): Pair<Boolean,String> {
@@ -32,13 +33,24 @@ fun exe2run (): Pair<Boolean,String> {
 }
 
 fun main (args: Array<String>) {
-    val inp = File(args[0]).readText()
+    var xinp: String? = null
+    var xcc = ""
+    var i = 0
+    while (i < args.size) {
+        when {
+            (args[i] == "-cc") -> xcc  = args[++i]
+            else               -> xinp = args[i]
+        }
+        i++
+    }
+
+    val inp = File(xinp).readText()
     val (ok1,out1) = ce2c(inp)
     if (!ok1) {
         println(out1)
         return
     }
-    val (ok2,out2) = c2exe(out1)
+    val (ok2,out2) = c2exe(out1, xcc)
     if (!ok2) {
         println(out2)
         return
