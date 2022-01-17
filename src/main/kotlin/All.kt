@@ -104,12 +104,16 @@ inline fun All.assert_tk (tk: Tk, value: Boolean, lazyMessage: () -> String = {"
     }
 }
 
-fun exec (cmd: String): Pair<Boolean,String> {
-    val p = ProcessBuilder(cmd.split(' '))
+fun exec (cmds: List<String>): Pair<Boolean,String> {
+    val p = ProcessBuilder(cmds)
         //.redirectOutput(ProcessBuilder.Redirect.PIPE)
         .redirectErrorStream(true)
         .start()
     val ret = p.waitFor()
     val str = p.inputStream.bufferedReader().readText()
     return Pair(ret==0, str)
+}
+
+fun exec (cmd: String): Pair<Boolean,String> {
+    return exec(cmd.split(' '))
 }
