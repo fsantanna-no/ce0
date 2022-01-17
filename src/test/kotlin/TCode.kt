@@ -109,7 +109,7 @@ class TCode {
             #include <stdio.h>
             #include <stdlib.h>
             
-            #define input_std_int()      ({ int _x ; scanf("%d",&x) ; x ; })
+            #define input_std_int(x)     ({ int _x ; scanf("%d",&_x) ; _x ; })
             #define output_std_Unit_(x)  printf("()")
             #define output_std_Unit(x)   (output_std_Unit_(x), puts(""))
             #define output_std_int_(x)   printf("%d",x)
