@@ -350,6 +350,17 @@ class TExec {
         """.trimIndent())
         assert(out == "10\n") { out }
     }
+    //@Disabled   // needs user input
+    @Test
+    fun e05_inp () {
+        val out = all("""
+            var x: _int
+            var y: </_int@LOCAL>
+            set x = input std y: _int
+            output std x
+        """.trimIndent())
+        assert(out == "10\n") { out }
+    }
 
     // USER
 
