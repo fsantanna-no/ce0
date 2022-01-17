@@ -36,8 +36,8 @@ fun Any.env (id: String): Any? {
     //print(">>> ") ; println(id)
     return this.env_first {
         //println(it)
-        it is Stmt.Var   && it.tk_.str==id.toLowerCase() ||
-        it is Stmt.Block && it.xscp1?.lbl==id.toUpperCase() ||
+        it is Stmt.Var   && it.tk_.str.toLowerCase()==id.toLowerCase() ||
+        it is Stmt.Block && it.xscp1?.lbl?.toUpperCase()==id.toUpperCase() ||
         it is Expr.Func  && (id=="arg" || id=="ret")
     }.let {
         if (it is Expr.Func) {
