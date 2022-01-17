@@ -25,6 +25,14 @@ fun Tk.Scp1.check (up: Any) {
     }
 }
 
+fun Expr.UCons.check () {
+    val uni = this.xtype as Type.Union
+    val ok = (uni.vec.size >= this.tk_.num)
+    All_assert_tk(this.tk, ok) {
+        "invalid constructor : out of bounds"
+    }
+}
+
 fun check_01_before_tps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
@@ -98,6 +106,7 @@ fun check_01_before_tps (s: Stmt) {
                     "invalid operand to `/´ : union discriminator"
                 }
             }
+            is Expr.UCons -> if (e.xtype != null) e.check()
             is Expr.Func -> {
                 val outers = e.ups_tolist().filter { it is Expr.Func } as List<Expr.Func>
                 for (f in outers) {

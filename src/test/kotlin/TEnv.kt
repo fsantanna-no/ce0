@@ -496,6 +496,13 @@ class TEnv {
         //assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
         assert(out == "(ln 2, col 13): expected `>´ : have `[´") { out }
     }
+    @Test
+    fun c24_ucons () {
+        val out = inp2env("""
+            output std <.2 ()>: <()>
+        """.trimIndent())
+        assert(out == "(ln 1, col 14): invalid constructor : out of bounds") { out }
+    }
 
     // POINTERS / SCOPE / @GLOBAL
 

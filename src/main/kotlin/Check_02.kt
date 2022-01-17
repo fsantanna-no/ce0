@@ -31,16 +31,9 @@ fun check_02_after_tps (s: Stmt) {
             }
 
             is Expr.UCons -> {
-                val ok = when (e.xtype) {
-                    is Type.Ptr -> {
-                        (e.tk_.num == 0) && e.arg is Expr.Unit && (e.xtype.pln is Type.Rec || e.xtype.pln.isrec())
-                    }
-                    is Type.Union -> {
-                        (e.tk_.num > 0) && (e.xtype.vec.size >= e.tk_.num) && e.xtype.expand()[e.tk_.num - 1].isSupOf(e.arg.wtype!!)
-                    }
-                    else -> error("bug found")
-                }
-                All_assert_tk(e.tk, ok) {
+                e.check()
+                val uni = e.xtype as Type.Union
+                All_assert_tk(e.tk, uni.expand()[e.tk_.num - 1].isSupOf(e.arg.wtype!!)) {
                     "invalid constructor : type mismatch"
                 }
             }
