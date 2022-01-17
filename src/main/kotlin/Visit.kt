@@ -53,6 +53,7 @@ fun Expr.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((T
         is Expr.UDisc -> this.uni.visit_(xpd,fs,fe,ft)
         is Expr.UPred -> this.uni.visit_(xpd,fs,fe,ft)
         is Expr.Call  -> { this.f.visit_(xpd,fs,fe,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
+        is Expr.Inp   -> this.arg.visit_(xpd,fs,fe,ft)
         is Expr.Out   -> this.arg.visit_(xpd,fs,fe,ft)
         is Expr.Func  -> { this.type.visit_(xpd,ft) ; this.block.visit(xpd,fs,fe,ft) }
     }

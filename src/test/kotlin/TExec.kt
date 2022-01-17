@@ -345,7 +345,7 @@ class TExec {
     fun e04_inp () {
         val out = all("""
             var x: _int
-            set x = input std: _int
+            set x = input std (): _int
             output std x
         """.trimIndent())
         assert(out == "10\n") { out }

@@ -63,7 +63,6 @@ fun Expr.setEnvs (env: Any?) {
     when (this) {
         is Expr.Unit  -> this.wtype?.visit(false, ::ft)
         is Expr.Nat   -> this.xtype?.visit(false, ::ft)
-        is Expr.Inp   -> this.xtype?.visit(false, ::ft)
         is Expr.TCons -> this.arg.forEachIndexed { _,e -> e.setEnvs(env) }
         is Expr.UCons -> {
             this.xtype?.visit(false, ::ft)
@@ -76,6 +75,7 @@ fun Expr.setEnvs (env: Any?) {
         is Expr.TDisc -> this.tup.setEnvs(env)
         is Expr.UDisc -> this.uni.setEnvs(env)
         is Expr.UPred -> this.uni.setEnvs(env)
+        is Expr.Inp   -> { this.arg.setEnvs(env) ; this.xtype?.visit(false, ::ft) }
         is Expr.Out   -> this.arg.setEnvs(env)
         is Expr.Call  -> {
             this.f.setEnvs(env)

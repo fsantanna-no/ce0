@@ -41,7 +41,6 @@ fun Expr.setUps (up: Any) {
     this.wup = up
     when (this) {
         is Expr.Nat -> this.xtype?.setUps(this)
-        is Expr.Inp -> this.xtype?.setUps(this)
         is Expr.TCons -> this.arg.forEach { it.setUps(this) }
         is Expr.UCons -> { this.xtype?.setUps(this) ; this.arg.setUps(this) }
         is Expr.UNull -> this.xtype?.setUps(this)
@@ -51,6 +50,7 @@ fun Expr.setUps (up: Any) {
         is Expr.TDisc -> this.tup.setUps(this)
         is Expr.UDisc -> this.uni.setUps(this)
         is Expr.UPred -> this.uni.setUps(this)
+        is Expr.Inp   -> { this.arg.setUps(this) ; this.xtype?.setUps(this) }
         is Expr.Out   -> this.arg.setUps(this)
         is Expr.Call  -> {
             this.f.setUps(this)

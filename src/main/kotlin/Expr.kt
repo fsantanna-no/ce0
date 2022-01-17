@@ -1,8 +1,9 @@
 fun Expr.flattenRight (): List<Expr> {
     return when (this) {
-        is Expr.Unit, is Expr.Var, is Expr.Nat, is Expr.Inp, is Expr.Func -> listOf(this)
+        is Expr.Unit, is Expr.Var, is Expr.Nat, is Expr.Func -> listOf(this)
         is Expr.TCons -> this.arg.map { it.flattenRight() }.flatten() + this
         is Expr.Call  -> this.f.flattenRight() + this.arg.flattenRight() + this
+        is Expr.Inp   -> this.arg.flattenRight() + this
         is Expr.Out   -> this.arg.flattenRight() + this
         is Expr.TDisc -> this.tup.flattenRight() + this
         is Expr.UDisc -> this.uni.flattenRight() + this

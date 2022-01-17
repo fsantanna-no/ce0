@@ -271,7 +271,8 @@ fun code_fe (e: Expr) {
         }
         is Expr.UNull -> Code("","","NULL")
         is Expr.Inp -> {
-            Code("", "", "input_${e.lib.str}_${e.wtype!!.toce()}()")
+            val arg = CODE.removeFirst()
+            Code(arg.type, arg.stmt, "input_${e.lib.str}_${e.wtype!!.toce()}(${arg.expr})")
         }
         is Expr.Out  -> {
             val arg = CODE.removeFirst()
@@ -430,7 +431,7 @@ fun Stmt.code (): String {
         #include <stdio.h>
         #include <stdlib.h>
         
-        #define input_std_int()      ({ int _x ; scanf("%d",&x) ; x ; })
+        #define input_std_int(x)     ({ int _x ; scanf("%d",&_x) ; _x ; })
         #define output_std_Unit_(x)  printf("()")
         #define output_std_Unit(x)   (output_std_Unit_(x), puts(""))
         #define output_std_int_(x)   printf("%d",x)
