@@ -7,10 +7,10 @@ allocated data structures.
 
 An allocated data is always attached to a specific block and cannot move.
 When a block terminates, all attached allocations are automatically released.
-**This prevents memory leaks.**
+This prevents memory leaks.
 A pointer is also attached to a specific block and cannot point to data
 allocated in nested blocks.
-**This prevents dangling pointer dereferencing.**
+This prevents dangling pointer dereferencing.
 These ideas have been successfully adopted in Cyclone:
 https://cyclone.thelanguage.org/
 
