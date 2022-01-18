@@ -625,4 +625,23 @@ least the same as the block specified in the pointer.
 }
 ```
 
-Dynamic allocation must also specify
+Just like with pointers, a dynamic allocation operation with `new` must also
+statically specify a block to which the data becomes attached.
+The operation returns a pointer with the same block of the allocation.
+*Ce* verifies if the same rules for pointer assignments apply to dynamic data:
+
+```
+{ @A
+    -- cannot assign `x` to any pointer with blocks outside @B
+    { @B
+        var x: /</^@A>@A
+        set x = new <.1 <.0>:T1>:T2: @A  -- newly allocated data is attached to @A
+                                         -- (T1 & T2 are the ommited types of the constructors)                                         
+        { @C
+            -- can assign `x` to any pointer with blocks inside @B
+        }
+    }
+}
+```
+
+`TODO: functions, calls, closures`
