@@ -562,19 +562,19 @@ Expr ::= `(´ Expr `)´                               -- group                  
       |  Expr `.´ NUM                               -- tuple discriminator      x.1
       |  `<´ `.´ NUM Expr `>´ `:´ Type              -- union constructor        <.1 ()>: <(),()>
       |  `<´ `.´ 0 `>´ `:´ Type                     -- union null pointer       <.0>: /</?>
-      | `new´ Expr.Union `:´ BLOCK                  -- union allocation         new <...>: @LOCAL
+      |  `new´ Expr.Union `:´ BLOCK                 -- union allocation         new <...>: @LOCAL
       |  Expr `!´ NUM                               -- union discriminator      x!1
       |  Expr `?´ NUM                               -- union predicate          x?0
       |  `input´ VAR Expr `:´ Type                  -- data input               input std (): _int
       |  `output´ VAR Expr                          -- data output              output std [(),_10]
-      | `call´ Expr Blocks Expr [`:´ BLOCK]         -- function call            call f {@S} x: @LOCAL
-      | Type.Func [Upvals] Stmt.Block               -- function body            func ()->() { ... }
+      |  `call´ Expr Blocks Expr [`:´ BLOCK]        -- function call            call f {@S} x: @LOCAL
+      |  Type.Func [Upvals] Stmt.Block              -- function body            func ()->() { ... }
             Upvals ::= `[´ VAR {`,´ VAR} `]´
 
 Type ::= `(´ Type `)´                               -- group                    (func ()->())
       |  `(´ `)´                                    -- unit                     ()
       |  NAT                                        -- native type              _char
-      | `^´ { `^´ }                                 -- recursive type           ^^
+      |  `^´ { `^´ }                                -- recursive type           ^^
       |  `/´ Type BLOCK                             -- pointer                  /_int@S
       |  `[´ Type {`,´ Type} `]´                    -- tuple                    [(),()]
       |  `<´ Type {`,´ Type} `>´                    -- union                    <(),/^@S>
