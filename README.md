@@ -83,7 +83,7 @@ The `call`, `input` & `output` statements invoke the respective operations:
 
 ```
 call f _0           -- calls `f` passing `_0`
-input std: _int     -- reads a native `_int` value from stdin
+input std (): _int  -- reads a native `_int` value from stdin
 output std _10      -- outputs native `_10` to stdout
 ```
 
@@ -91,23 +91,25 @@ They are further documented as expressions.
 
 ## Sequence
 
-A sequence of statements execute one after the other:
+A sequence of statements separated by blanks or semicolons `;` execute one after the other:
 
 ```
 var x: _int                 -- first declares `x`
-set x = input std: _int     -- then assigns `_int` input to `x`
+set x = input std (): _int  -- then assigns `_int` input to `x`
 output std x                -- finally outputs `x`
 ```
 
 ## Conditional
 
-An `if` tests an `_int` value and executes one of the branches depending on the
-result:
+An `if` tests an `_int` value and executes one of the *true* or *false* branches depending
+on the result:
 
 ```
 if x {
+    -- true branch
     call f ()       -- calls `f` if `x` is nonzero
 } else {
+    -- false branch
     call g ()       -- calls `g` otherwise
 }
 ```
@@ -121,14 +123,14 @@ statement:
 loop {
     ...             -- repeats this command indefinitely
     if ... {        -- until this condition is met
-        break
+        break       -- escapes the loop
     }
 }
 ```
 
 ## Native
 
-A native statement executes a block of code in the host language:
+A native statement executes a block of code in the host language *C*:
 
 ```
 native _{
@@ -149,35 +151,35 @@ set f = func () -> () {
 }
 ```
 
-*Note that a function declaration is actually a `func` expression assigned to
-a variable.*
+Function declarations are further documented as expressions, since they  are
+actually `func` expressions assigned to variables.
 
 # 2. TYPES
 
 ## Unit
 
-The unit type `()` has only the single unit value `()`.
+The unit type `()` represents absence of information and has only the single
+unit value `()`.
 
 ## Native
 
-A native type holds external values from the host language, i.e., values which
-*Ce* does not create or manipulate directly:
+A native type holds external values from *C*, i.e., values which *Ce* does
+not create or manipulate directly.
+A native type identifier always starts with an underscore `_`:
 
 ```
 _char     _int    _{FILE*}
 ```
 
-Native type identifiers start with an underscore.
-
 ## Pointer
 
-A pointer type can be applied to any other type with the prefix slash `/` and
-holds a pointer to another value.
-A pointer must also specify the block in which its data is held:
+A pointer type holds a pointer to another value and can be applied to
+any other type with the prefix slash `/`.
+A pointer must also specify the block in which its pointed data is held:
 
 ```
-/_int @LOCAL        -- pointer to _int held in current block
-/[_int,()] @S       -- pointer to tuple held in block `@S`
+/_int @LOCAL        -- a pointer to an `_int` held in then current block
+/[_int,()] @S       -- a pointer to a tuple held in block `@S`
 ```
 
 ## Tuple
@@ -204,14 +206,14 @@ angle brackets `<` and `>`:
 
 ### Recursive Union Pointer
 
-A recursive union is always a pointer with a caret subtype pointing upwards:
+A recursive union is a pointer with a caret subtype pointing upwards:
 
 ```
 /<[_int, /^@S]>@S   -- a linked list of `_int` held at block `@S`
 ```
 
 The pointer caret `/^` indicates recursion and refers to the enclosing
-recursive union pointer type.
+recursive union type.
 Multiple `n` carets, e.g. `/^^`, refer to the `n` outer enclosing recursive
 union pointer type.
 
@@ -226,12 +228,12 @@ The pointer caret can be expanded resulting in equivalent types:
 
 `TODO: closure, scopes`
 
-A function type holds a function value and is composed of an input and output
-types separated by an arrow `->`:
+A function type holds a function value and is composed of the prefix `func`
+and input and output types separated by an arrow `->`:
 
 ```
-() -> _int          -- input is unit and output is `_int`
-[_int,_int] -> ()   -- input is a pair of `_int` and output is unit
+func () -> _int          -- input is unit and output is `_int`
+func [_int,_int] -> ()   -- input is a pair of `_int` and output is unit
 ```
 
 # 3. EXPRESSIONS
@@ -250,13 +252,13 @@ A variable holds a value of its type:
 
 ```
 var x: _int
-set x = _10
-output std x        -- variable `x` holds native `_10`
+set x = _10         -- variable `x` holds native `_10`
+output std x
 ```
 
 ## Native
 
-A native expression holds a value of the host language:
+A native expression holds a value from *C*:
 
 ```
 _printf    _(2+2)     _{f(x,y)}
@@ -273,10 +275,10 @@ output std _(x + 10)    -- outputs 20
 ## Pointer Upref & Dnref
 
 A pointer points to a variable holding a value.
-An *upref* (up reference or reference) acquires a pointer to a variable with
-the prefix slash `/`.
-A *dnref* (down reference or dereference) recovers the value given a pointer
-with the sufix backslash `\`:
+An *upref* (*up reference* or *reference*) acquires a pointer to a variable
+with the prefix slash `/`.
+A *dnref* (*down reference* or *dereference*) recovers a pointed value
+given a pointer with the sufix backslash `\`:
 
 ```
 var x: _int
@@ -285,7 +287,7 @@ set y = /x          -- acquires a pointer to `x`
 output std y\       -- recovers the value of `x`
 ```
 
-## Tuple Constructor and Discriminator
+## Tuple: Constructor and Discriminator
 
 ### Constructor
 
@@ -298,8 +300,8 @@ A tuple holds a fixed number of values:
 
 ### Discriminator
 
-A tuple discriminator suffixes a tuple with a dot `.` and a number to evaluate
-the value at the given position:
+A tuple discriminator suffixes a tuple with a dot `.` and an numeric
+index to evaluate the value at the given position:
 
 ```
 var tup: [(),_int]
@@ -307,7 +309,7 @@ set tup = [(),_10]
 output std tup.2    -- outputs `10`
 ```
 
-## Union Constructor, Allocation, Discriminator & Predicate
+## Union: Constructor, Allocation, Discriminator & Predicate
 
 ### Constructor
 
@@ -346,9 +348,8 @@ set x = new (<.1 z>:</^@S>): @S     -- () -> null, allocated in block `@S`
 
 ### Discriminator
 
-A discriminator accesses the value of a union type as one of its subcases.
-A discriminator expression suffixes the value to access with an index and an
-exclamation mark `!`:
+A union discriminator suffixes a union with an exclamation `!` and a
+numeric index to access the value as one of its subcases:
 
 ```
 var x: <(),_int>
@@ -364,9 +365,8 @@ access raises a runtime error.
 
 ### Predicate
 
-A predicate evaluates if the value of a union type is of the given subcase.
-A predicate expression suffixes the value to test with an index and a question
-mark `?`:
+A union predicate suffixes a union with a question `?` and a
+numeric index to check if the value is of the given subcase:
 
 ```
 var x: <(),_int>
@@ -389,39 +389,41 @@ call (id) x             -- id  receives variable x
 call add [x,y]          -- add receives tuple    [x,y]
 ```
 
-Calls may also specify blocks for pointer input (between brackets `{` and `}`)
-and output (after colon `:` sufix):
+Calls may also specify blocks for pointer input and output:
 
 ```
 call f {@S} ptr: @LOCAL     -- calls `f` passing `ptr` at `@S` and return at `@LOCAL`
 ```
 
-They are further documented with functions.
+Pointer inputs go in between brackets `{` and `}` before the argument.
+Pointer output goes after a colon `:` suffix after the argument.
+
+Calls are further documented with functions.
 
 ## Input & Output
 
 Input and output expressions communicate with external I/O devices.
-The special device `std` works for the standard input & output device and
-accepts any value as argument:
+They receive a device to communicate, and an argument to pass to the device:
 
 ```
-input std: _int         -- reads an `_int` from stdio
+input std (): _int      -- reads an `_int` from stdio
 output std [_0,_0]      -- outputs "[0,0]" to stdio
 ```
 
-An `output` receives the device to communicate and an argument.
-The result is always `()`.
-An `input` receives no argument but needs to specify the result type
-explicitly.
+An `output` always evaluates to unit `()`.
+An `input` evaluates to the explicit type that must be given.
 
+The special device `std` works for the standard input & output device and
+accepts any value as argument.
+
+`TODO: input std should only accept :_(char*)`
 `TODO: custom devices`
 
-The host declarations for the I/O devices must prefix their identifiers with
+*C* declarations for the I/O devices must prefix their identifiers with
 `input_` or `output_`:
 
 ```
-func output_xxx: XXX -> ()
-{
+void output_xxx: (XXX v) {
     ...
 }
 ```
@@ -434,7 +436,8 @@ func output_xxx: XXX -> ()
 
 ## Comment
 
-A comment starts with a double hyphen `--` and runs until the end of the line:
+A comment starts with a double hyphen `--` and ignores everything
+until the end of the line:
 
 ```
 -- this is a single line comment
@@ -448,12 +451,12 @@ The following keywords are reserved:
     break       -- escape loop statement
     call        -- function invocation
     else        -- conditional statement
-    func        -- function declaration
+    func        -- function type
     if          -- conditional statement
     input       -- input invocation
     loop        -- loop statement
     native      -- native statement
-    new         -- new recursive operation
+    new         -- allocation operation
     output      -- output invocation
     return      -- function return
     set         -- assignment statement
@@ -463,7 +466,7 @@ The following keywords are reserved:
 The following symbols are valid:
 
 ```
-    {   }       -- block delimeter
+    {   }       -- block delimeter, block labels
     (   )       -- unit type, unit value, group type & expression
     [   ]       -- tuple delimiter
     <   >       -- union delimiter
@@ -478,7 +481,7 @@ The following symbols are valid:
     !           -- union discriminator
     ?           -- union predicate
     ^           -- recursive union
-    @           -- block identifier
+    @           -- block label
 ```
 
 ## Variable Identifier
@@ -490,13 +493,15 @@ digits, and underscores:
 i    myCounter    x_10          -- variable identifiers
 ```
 
-## Scope Identifier
+## Block Label
 
-`TODO`
+A constant block label starts with at `@` and contains only uppercase letters.
+A parameter block label starts with at `@` and contains only lowercase letters
+with an option numeric suffix:
 
-### Block
-
-### Function Parameter
+```
+@GLOBAL    @MYBLOCK    @a    @a1
+```
 
 ## Number
 
@@ -553,7 +558,7 @@ Expr ::= `(´ Expr `)´                               -- group                  
       | `new´ Expr.Union `:´ BLOCK                  -- union allocation         new <...>: @LOCAL
       |  Expr `!´ NUM                               -- union discriminator      x!1
       |  Expr `?´ NUM                               -- union predicate          x?0
-      |  `input´ VAR `:´ Type                       -- data input               input std: _int
+      |  `input´ VAR Expr `:´ Type                  -- data input               input std (): _int
       |  `output´ VAR Expr                          -- data output              output std [(),_10]
       | `call´ Expr Blocks Expr [`:´ BLOCK]         -- function call            call f {@S} x: @LOCAL
       | Type.Func [Upvals] Stmt.Block               -- function body            func ()->() { ... }
