@@ -91,7 +91,8 @@ They are further documented as expressions.
 
 ## Sequence
 
-A sequence of statements separated by blanks or semicolons `;` execute one after the other:
+A sequence of statements separated by blanks or semicolons `;` execute one
+after the other:
 
 ```
 var x: _int                 -- first declares `x`
@@ -101,8 +102,8 @@ output std x                -- finally outputs `x`
 
 ## Conditional
 
-An `if` tests an `_int` value and executes one of the *true* or *false* branches depending
-on the result:
+An `if` tests an `_int` value and executes one of the *true* or *false*
+branches depending on the result:
 
 ```
 if x {
@@ -228,7 +229,7 @@ The pointer caret can be expanded resulting in equivalent types:
 
 ## Function
 
-`TODO: closure, scopes`
+`TODO: closure, blocks scopes`
 
 A function type holds a function value and is composed of the prefix `func`
 and input and output types separated by an arrow `->`:
@@ -260,10 +261,12 @@ output std x
 
 ## Native
 
-A native expression holds a value from *C*:
+A native expression holds a value from *C*.
+The expression must specify its type with a colon `:` sufix:
 
 ```
-_printf    _(2+2)     _{f(x,y)}
+_(2+2): _int            -- _(2+2) has type _int
+_{f(x,y)}: _(char*)     -- f returns a C string
 ```
 
 Symbols defined in *Ce* can also be accessed inside native expressions:
@@ -316,7 +319,7 @@ output std tup.2    -- outputs `10`
 ### Constructor
 
 A union constructor creates a value of a union type given a subcase index,
-an argument, followed by the explicit complete union type:
+an argument, followed by a colon `:` with the explicit complete union type:
 
 ```
 <.1 ()>: <(),()>                -- subcase `.1` of `<(),()>` holds unit
@@ -326,7 +329,9 @@ an argument, followed by the explicit complete union type:
 ### Null Pointer Constructor
 
 A recursive union always includes a null pointer constructor `<.0>` that
-represents data termination:
+represents data termination.
+The null constructor must also include a colon sufix `:` with the explicit
+complete union type: 
 
 ```
 var x: /<[_int,/^@S]>@S         -- a linked list of `_int`
@@ -536,7 +541,7 @@ _(1 + 1)     _{2 * (1+1)}
 
 ```
 Stmt ::= { Stmt [`;`] }                             -- sequence                 call f() ; call g()
-         `{´ Stmt `}´                               -- block                    { call f() ; call g() }
+         `{´ BLOCK Stmt `}´                         -- block                    { @A call f() ; call g() }
       |  `var´ VAR `:´ Type                         -- variable declaration     var x: ()
       |  `set´ Expr `=´ Expr                        -- assignment               set x = _1
       |  `native´ NAT                               -- native                   native _{ printf("hi"); }
@@ -549,7 +554,7 @@ Stmt ::= { Stmt [`;`] }                             -- sequence                 
 
 Expr ::= `(´ Expr `)´                               -- group                    (x)
       |  `(´ `)´                                    -- unit                     ()
-      |  NAT                                        -- native expression        _printf
+      |  NAT `:´ Type                               -- native expression        _10: _int
       |  VAR                                        -- variable identifier      i
       |  `/´ Expr                                   -- upref                    /x
       |  Expr `\´                                   -- dnref                    x\
