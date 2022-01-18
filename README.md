@@ -1,6 +1,6 @@
 # Ce0 - Core
 
-*Ce* is simple language with algebraic data types, pointers, first-class
+*Ce* is a simple language with algebraic data types, pointers, first-class
 functions, and region-based memory management.
 The main goal of *Ce* is to support safe memory management for dynamically
 allocated data structures.
@@ -16,6 +16,8 @@ https://cyclone.thelanguage.org/
 
 *Ce0* is the most basic core version of *Ce* with no extensions (syntax sugar,
 type inference, etc).
+
+See also *Ce1*: https://github.com/fsantanna/ce1
 
 # INSTALL & RUN
 
