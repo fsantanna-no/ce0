@@ -143,11 +143,13 @@ native _{
 A function declaration abstracts a block of statements that can be invoked with
 arguments.
 The argument can be accessed through the identifier `arg`.
-The `return` statement exits a function with a value:
+The result can be assigned to the identifier `ret`.
+The `return` statement exits a function::
 
 ```
 set f = func () -> () {
-    return arg      -- `f` receives and returns `()`
+    set ret = arg   -- assigns arg to the result
+    return          -- exits function
 }
 ```
 
@@ -538,7 +540,7 @@ Stmt ::= { Stmt [`;`] }                             -- sequence                 
       |  `var´ VAR `:´ Type                         -- variable declaration     var x: ()
       |  `set´ Expr `=´ Expr                        -- assignment               set x = _1
       |  `native´ NAT                               -- native                   native _{ printf("hi"); }
-      |  (`call´ | `input´ |` output´) ...          -- call, input, output      call f ()
+      |  (`call´ | `input´ |`output´) ...           -- call, input, output      call f ()
                                                     -- (see in Expr)
       |  `if´ Expr `{´ Stmt `}´ `else´ `{´ Stmt `}´ -- conditional              if x { ... } else { ... }
       |  `loop´ `{´ Stmt `}´                        -- loop                     loop { ... }
@@ -568,7 +570,7 @@ Type ::= `(´ Type `)´                               -- group                  
       |  `(´ `)´                                    -- unit                     ()
       |  NAT                                        -- native type              _char
       | `^´ { `^´ }                                 -- recursive type           ^^
-      |  `/` Type BLOCK                             -- pointer                  /_int@S
+      |  `/´ Type BLOCK                             -- pointer                  /_int@S
       |  `[´ Type {`,´ Type} `]´                    -- tuple                    [(),()]
       |  `<´ Type {`,´ Type} `>´                    -- union                    <(),/^@S>
       |  `func´ [BLOCK] Blocks `->´ Type `->´ Type  -- function                 func f : ()->() { return () }
