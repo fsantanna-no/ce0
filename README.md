@@ -2,15 +2,15 @@
 
 *Ce* is simple language with algebraic data types, pointers, first-class
 functions, and region-based memory management.
+The main goal of *Ce* is to support safe memory management for dynamically
+allocated data structures.
 
-The main goal of *Ce* is to support safe memory management for dynamic data
-structures.
-Pointers hold allocated data which are attached to lexical blocks known as
-regions.
+An allocated data is always attached to a specific block and cannot move.
 When a block terminates, all attached allocations are automatically released.
-This prevents memory leaks.
-Pointers cannot be reassigned to pointers in outer blocks.
-This prevents dereferencing dangling pointers.
+**This prevents memory leaks.**
+A pointer is also attached to a specific block and cannot point to data
+allocated in nested blocks.
+**This prevents dangling pointer dereferencing.**
 These ideas have been successfully adopted in Cyclone:
 https://cyclone.thelanguage.org/
 
@@ -577,3 +577,52 @@ Type ::= `(´ Type `)´                               -- group                  
 
 Blocks ::= `{´ [BLOCK {`,´ BLOCK}] `}´              -- list of scopes           {@LOCAL,@a1}
 ```
+
+# A. Memory Management
+
+*Ce* relies on the concept of hierarchical blocks to manage memory.
+*Ce* guarantees that the scope and lifetime of a given piece of data
+coincide and are always attached to a single fixed block.
+The scope refers to the visibility of the data, i.e., the ability to
+refer to it directly or indirectly through identifiers or pointers.
+The lifetime refers to the memory allocation, i.e., the period in
+which the data remains in memory.
+When the scope and lifetime coincide, access to memory is always safe,
+and programs prevent memory leaks and dangling pointer dereferencing.
+
+In the next example, a variable `x` that holds an integer is attached
+to an explicit block:
+
+```
+{
+    var x: _int     -- scope and lifetime of `x` is attached to enclosing block
+}
+-- `x` is no longer in memory (lifetime), but neither can be referred (scope)
+```
+
+A pointer in *Ce* must statically specify a block, which restricts the data
+it can point to.
+A pointer can only point to data that is attached to a block that lives at
+least the same as the block specified in the pointer.
+*Ce* verifies that the pointer assignments respect this rule at compile time:
+
+```
+{ @A
+    var ptrA: /_int @A          -- `ptrA` is restricted to @A
+    { @B
+        var x: _int             -- `x` is attached to @B
+        var ptrB: /_int @B      -- `ptrB` is restricted to @B
+        { @C
+            var ptrC: /_int @C  -- `ptrC` is restricted to @C
+            set ptrA = /x       -- ERROR: `ptrA` lives longer than @B 
+            set ptrB = /x       -- OK: `ptrB` lives the same as @B
+            set ptrC = /x       -- OK: `ptrC` lives shorter than @B
+            ... ptrC\ ...       -- OK: dereference ok
+        }
+        ... ptrB\ ...           -- OK: dereference ok
+    }
+    ... ptrA\ ...               -- ERROR: dangling dereference if error was not detected  
+}
+```
+
+Dynamic allocation must also specify
