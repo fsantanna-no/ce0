@@ -38,4 +38,19 @@ class TTask {
         """.trimIndent())
         assert(out == "1\n2\n") { out }
     }
+    @Test
+    fun a02_output () {
+        val out = all("""
+            var f: task @[]->()->()
+            set f = task @[]->()->() {
+                output std _1:_int
+                await
+                output std _3:_int
+            }
+            spawn f ()
+            output std _2:_int
+            awake f
+        """.trimIndent())
+        assert(out == "1\n2\n3\n") { out }
+    }
 }

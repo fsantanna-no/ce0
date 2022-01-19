@@ -46,6 +46,8 @@ sealed class Stmt (val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Nat   (val tk_: Tk.Nat) : Stmt(tk_, null, null)
     data class SCall (val tk_: Tk.Key, val e: Expr.Call): Stmt(tk_, null, null)
     data class Spawn (val tk_: Tk.Key, val e: Expr.Call): Stmt(tk_, null, null)
+    data class Await (val tk_: Tk.Key): Stmt(tk_, null, null)
+    data class Awake (val tk_: Tk.Key, val e: Expr): Stmt(tk_, null, null)
     data class Inp   (val tk_: Tk.Key, val xtype: Type, val lib: Tk.Str, val arg: Expr): Stmt(tk_, null, null)
     data class Out   (val tk_: Tk.Key, val lib: Tk.Str, val arg: Expr): Stmt(tk_, null, null)
     data class Seq   (val tk_: Tk, val s1: Stmt, val s2: Stmt) : Stmt(tk_, null, null)

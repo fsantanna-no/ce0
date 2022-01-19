@@ -67,12 +67,13 @@ fun Expr.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((T
 private
 fun Stmt.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
     when (this) {
-        is Stmt.Nop, is Stmt.Nat, is Stmt.Break, is Stmt.Ret -> {}
+        is Stmt.Nop, is Stmt.Nat, is Stmt.Break, is Stmt.Ret, is Stmt.Await -> {}
         is Stmt.Var   -> this.xtype?.visit_(xpd,ft)
         is Stmt.SSet  -> { this.dst.visit_(xpd,fs,fe,ft) ; this.src.visit_(xpd,fs,fe,ft) }
         is Stmt.ESet  -> { this.dst.visit_(xpd,fs,fe,ft) ; this.src.visit_(xpd,fs,fe,ft) }
         is Stmt.SCall -> this.e.visit_(xpd,fs,fe,ft)
         is Stmt.Spawn -> this.e.visit_(xpd,fs,fe,ft)
+        is Stmt.Awake -> this.e.visit_(xpd,fs,fe,ft)
         is Stmt.Inp   -> this.arg.visit_(xpd,fs,fe,ft)
         is Stmt.Out   -> this.arg.visit_(xpd,fs,fe,ft)
         is Stmt.Seq   -> { this.s1.visit(xpd,fs,fe,ft) ; this.s2.visit(xpd,fs,fe,ft) }

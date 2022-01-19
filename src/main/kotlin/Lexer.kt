@@ -3,10 +3,12 @@ enum class TK {
     XVAR, XNAT, XNUM, XUP, XSCPCST, XSCPVAR,
     UNIT, ARROW, ATBRACK,
     BREAK, CALL, ELSE, FUNC,
-    IF, INPUT, LOOP, NATIVE, NEW, OUTPUT, RETURN, SET, SPAWN, TASK, VAR,
+    AWAIT, AWAKE, IF, INPUT, LOOP, NATIVE, NEW, OUTPUT, RETURN, SET, SPAWN, TASK, VAR,
 }
 
 val key2tk: HashMap<String, TK> = hashMapOf (
+    "await"  to TK.AWAIT,
+    "awake"  to TK.AWAKE,
     "break"  to TK.BREAK,
     "call"   to TK.CALL,
     "else"   to TK.ELSE,

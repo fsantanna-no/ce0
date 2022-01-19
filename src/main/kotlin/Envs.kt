@@ -94,7 +94,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
         tp.wenv = env
     }
     return when (this) {
-        is Stmt.Nop, is Stmt.Nat, is Stmt.Ret, is Stmt.Break -> env
+        is Stmt.Nop, is Stmt.Nat, is Stmt.Ret, is Stmt.Break, is Stmt.Await -> env
         is Stmt.Var -> {
             this.xtype?.visit(false, ::ft)
             this
@@ -111,6 +111,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
         }
         is Stmt.SCall -> { this.e.setEnvs(env) ; env }
         is Stmt.Spawn -> { this.e.setEnvs(env) ; env }
+        is Stmt.Awake -> { this.e.setEnvs(env) ; env }
         is Stmt.Inp   -> { this.arg.setEnvs(env) ; this.xtype?.visit(false, ::ft) ; env }
         is Stmt.Out   -> { this.arg.setEnvs(env) ; env }
         is Stmt.Seq -> {
