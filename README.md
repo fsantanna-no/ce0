@@ -79,17 +79,43 @@ set tup.1 = n       -- changes the tuple index value
 set ptr\  = v       -- dereferences pointer `ptr` and assigns `v`
 ```
 
-## Call, Input & Output
+The value to be assigned can be an `input` statement or any expression.
 
-The `call`, `input` & `output` statements invoke the respective operations:
+## Call
+
+The `call` statement invoke the respective expression:
 
 ```
 call f _0           -- calls `f` passing `_0`
-input std (): _int  -- reads a native `_int` value from stdin
-output std _10      -- outputs native `_10` to stdout
 ```
 
-They are further documented as expressions.
+## Input & Output
+
+Input and output statements communicate with external I/O devices.
+They receive a device to communicate, and an argument to pass to the device:
+
+```
+output std [_0,_0]                  -- outputs "[0,0]" to stdio
+var x: _int = input std (): _int    -- reads an `_int` from stdio
+```
+
+An `input` can be used in assignments and evaluates to the required explicit
+type.
+
+The special device `std` works for the standard input & output device and
+accepts any value as argument.
+
+`TODO: input std should only accept :_(char*)`
+`TODO: custom devices`
+
+*C* declarations for the I/O devices must prefix their identifiers with
+`input_` or `output_`:
+
+```
+void output_xxx: (XXX v) {
+    ...
+}
+```
 
 ## Sequence
 
@@ -401,41 +427,13 @@ call add [x,y]          -- add receives tuple    [x,y]
 Calls may also specify blocks for pointer input and output:
 
 ```
-call f {@S} ptr: @LOCAL     -- calls `f` passing `ptr` at `@S` and return at `@LOCAL`
+call f @[@S] ptr: @LOCAL    -- calls `f` passing `ptr` at `@S` and return at `@LOCAL`
 ```
 
-Pointer inputs go in between brackets `{` and `}` before the argument.
+Pointer inputs go in between brackets `@[` and `]` before the argument.
 Pointer output goes after a colon `:` suffix after the argument.
 
 Calls are further documented with functions.
-
-## Input & Output
-
-Input and output expressions communicate with external I/O devices.
-They receive a device to communicate, and an argument to pass to the device:
-
-```
-input std (): _int      -- reads an `_int` from stdio
-output std [_0,_0]      -- outputs "[0,0]" to stdio
-```
-
-An `output` always evaluates to unit `()`.
-An `input` evaluates to the explicit type that must be given.
-
-The special device `std` works for the standard input & output device and
-accepts any value as argument.
-
-`TODO: input std should only accept :_(char*)`
-`TODO: custom devices`
-
-*C* declarations for the I/O devices must prefix their identifiers with
-`input_` or `output_`:
-
-```
-void output_xxx: (XXX v) {
-    ...
-}
-```
 
 ## Function
 
@@ -490,7 +488,7 @@ The following symbols are valid:
     !           -- union discriminator
     ?           -- union predicate
     ^           -- recursive union
-    @           -- block label
+    @           -- block labels
 ```
 
 ## Variable Identifier
@@ -545,10 +543,11 @@ _(1 + 1)     _{2 * (1+1)}
 Stmt ::= { Stmt [`;`] }                             -- sequence                 call f() ; call g()
          `{´ BLOCK Stmt `}´                         -- block                    { @A call f() ; call g() }
       |  `var´ VAR `:´ Type                         -- variable declaration     var x: ()
-      |  `set´ Expr `=´ Expr                        -- assignment               set x = _1
+      |  `set´ Expr `=´ (Expr|Stmt)                 -- assignment               set x = _1
       |  `native´ NAT                               -- native                   native _{ printf("hi"); }
-      |  (`call´ | `input´ |`output´) ...           -- call, input, output      call f ()
-                                                    -- (see in Expr)
+      |  `call´ Expr                                -- call                     call f ()
+      |  `input´ VAR Expr `:´ Type                  -- data input               input std (): _int
+      |  `output´ VAR Expr                          -- data output              output std [(),_10]
       |  `if´ Expr `{´ Stmt `}´ `else´ `{´ Stmt `}´ -- conditional              if x { ... } else { ... }
       |  `loop´ `{´ Stmt `}´                        -- loop                     loop { ... }
       |  `break´                                    -- loop break               break
@@ -567,9 +566,7 @@ Expr ::= `(´ Expr `)´                               -- group                  
       |  `new´ Expr.Union `:´ BLOCK                 -- union allocation         new <...>: @LOCAL
       |  Expr `!´ NUM                               -- union discriminator      x!1
       |  Expr `?´ NUM                               -- union predicate          x?0
-      |  `input´ VAR Expr `:´ Type                  -- data input               input std (): _int
-      |  `output´ VAR Expr                          -- data output              output std [(),_10]
-      |  `call´ Expr Blocks Expr [`:´ BLOCK]        -- function call            call f {@S} x: @LOCAL
+      |  Expr Blocks Expr [`:´ BLOCK]               -- function call            f @[@S] x: @LOCAL
       |  Type.Func [Upvals] Stmt.Block              -- function body            func ()->() { ... }
             Upvals ::= `[´ VAR {`,´ VAR} `]´
 
@@ -582,7 +579,7 @@ Type ::= `(´ Type `)´                               -- group                  
       |  `<´ Type {`,´ Type} `>´                    -- union                    <(),/^@S>
       |  `func´ [BLOCK] Blocks `->´ Type `->´ Type  -- function                 func f : ()->() { return () }
 
-Blocks ::= `{´ [BLOCK {`,´ BLOCK}] `}´              -- list of scopes           {@LOCAL,@a1}
+Blocks ::= `@[´ [BLOCK {`,´ BLOCK}] `]´             -- list of scopes           @[@LOCAL,@a1]
 ```
 
 # A. Memory Management
