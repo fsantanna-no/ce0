@@ -1,7 +1,7 @@
 enum class TK {
     ERR, EOF, CHAR,
     XVAR, XNAT, XNUM, XUP, XSCPCST, XSCPVAR,
-    UNIT, ARROW,
+    UNIT, ARROW, ATBRACK,
     BREAK, CALL, ELSE, FUNC,
     IF, INPUT, LOOP, NATIVE, NEW, OUTPUT, RETURN, SET, VAR,
 }
@@ -49,14 +49,15 @@ fun Tk.Nat.toce (): String {
 
 fun TK.toErr (chr: Char?): String {
     return when (this) {
-        TK.EOF    -> "end of file"
-        TK.CHAR   -> "`" + chr!! + "´"
-        TK.XNAT   -> "`_´"
-        TK.XVAR   -> "variable identifier"
-        TK.XNUM   -> "number"
-        TK.ARROW  -> "`->´"
+        TK.EOF     -> "end of file"
+        TK.CHAR    -> "`" + chr!! + "´"
+        TK.XNAT    -> "`_´"
+        TK.XVAR    -> "variable identifier"
+        TK.XNUM    -> "number"
+        TK.ARROW   -> "`->´"
+        TK.ATBRACK -> "`@[´"
         TK.XSCPCST, TK.XSCPVAR -> "`@´"
-        TK.ELSE   -> "`else`"
+        TK.ELSE    -> "`else`"
         else -> TODO(this.toString())
     }
 }
@@ -124,42 +125,46 @@ fun token (all: All) {
             all.tk1 = Tk.Up(TK.XUP, LIN, COL, n)
         }
         (x1 == '@') -> {
-            var lbl = ""
             all.read().let { c1=it.first ; x1=it.second }
 
-            all.tk1 = when {
-                // @LABEL
-                x1.isUpperCase() -> {
-                    do {
-                        lbl += x1
-                        all.read().let { c1=it.first ; x1=it.second }
-                    } while (x1.isUpperCase())
-                    all.unread(c1)
-                    Tk.Scp1(TK.XSCPCST, LIN, COL, lbl, null)
-                }
-
-                // @labelDD
-                x1.isLowerCase() -> {
-                    do {
-                        lbl += x1
-                        all.read().let { c1=it.first ; x1=it.second }
-                    } while (x1.isLowerCase())
-
-                    var num: Int? = null
-                    var num_ = ""
-                    while (x1.isDigit()) {
-                        num_ += x1
-                        num = num_.toInt()
-                        all.read().let { c1=it.first ; x1=it.second }
+            if (x1 == '[') {
+                all.tk1 = Tk.Sym(TK.ATBRACK, LIN, COL, "@[")
+            } else {
+                var lbl = ""
+                all.tk1 = when {
+                    // @LABEL
+                    x1.isUpperCase() -> {
+                        do {
+                            lbl += x1
+                            all.read().let { c1 = it.first; x1 = it.second }
+                        } while (x1.isUpperCase())
+                        all.unread(c1)
+                        Tk.Scp1(TK.XSCPCST, LIN, COL, lbl, null)
                     }
 
-                    all.unread(c1)
-                    Tk.Scp1(TK.XSCPVAR, LIN, COL, lbl, num?:1)
-                }
+                    // @labelDD
+                    x1.isLowerCase() -> {
+                        do {
+                            lbl += x1
+                            all.read().let { c1 = it.first; x1 = it.second }
+                        } while (x1.isLowerCase())
 
-                else -> {
-                    all.unread(c1)
-                    Tk.Err(TK.ERR, LIN, COL, "@")
+                        var num: Int? = null
+                        var num_ = ""
+                        while (x1.isDigit()) {
+                            num_ += x1
+                            num = num_.toInt()
+                            all.read().let { c1 = it.first; x1 = it.second }
+                        }
+
+                        all.unread(c1)
+                        Tk.Scp1(TK.XSCPVAR, LIN, COL, lbl, num ?: 1)
+                    }
+
+                    else -> {
+                        all.unread(c1)
+                        Tk.Err(TK.ERR, LIN, COL, "@")
+                    }
                 }
             }
         }

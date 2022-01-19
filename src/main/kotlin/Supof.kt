@@ -30,9 +30,9 @@ fun Type.isSupOf (sub: Type): Boolean {
 }
 
 // Convert function signatures to increasing scopes for comparison
-// var g: func {} -> {@i1,@j1,@k1} -> [/</^@i1>@i1,/</^@j1>@j1] -> /</^@k1>@k1
+// var g: func @[] -> {@i1,@j1,@k1} -> [/</^@i1>@i1,/</^@j1>@j1] -> /</^@k1>@k1
 //      becomes
-// var g: func {} -> {@a1,@b1,@c1} -> [/</^@a1>@a1,/</^@b1>@b1] -> /</^@c1>@c1
+// var g: func @[] -> {@a1,@b1,@c1} -> [/</^@a1>@a1,/</^@b1>@b1] -> /</^@c1>@c1
 fun Type.Func.mapLabels (up: Any): Type.Func {
     val MAP = mutableMapOf<String,Char>()
     var c = ('a'-1)

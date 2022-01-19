@@ -56,7 +56,7 @@ fun parser_type (all: All): Type {
             } else {
                 null
             }
-            all.accept_err(TK.CHAR, '{')
+            all.accept_err(TK.ATBRACK)
             val scps = mutableListOf<Tk.Scp1>()
             while (all.accept(TK.XSCPVAR)) {
                 scps.add(all.tk0 as Tk.Scp1)
@@ -64,7 +64,7 @@ fun parser_type (all: All): Type {
                     break
                 }
             }
-            all.accept_err(TK.CHAR, '}')
+            all.accept_err(TK.CHAR, ']')
             all.accept_err(TK.ARROW)
             val inp = parser_type(all)
             all.accept_err(TK.ARROW)
@@ -144,30 +144,6 @@ fun parser_expr (all: All): Expr {
             all.accept(TK.XSCPCST) || all.accept_err(TK.XSCPVAR)
             Expr.New(tk0 as Tk.Key, all.tk0 as Tk.Scp1, null, e as Expr.UCons)
         }
-        all.accept(TK.CALL) -> {
-            val tk_pre = all.tk0 as Tk.Key
-            val f = parser_expr(all)
-
-            val iscps = mutableListOf<Tk.Scp1>()
-            if (all.accept(TK.CHAR, '{')) {
-                while (all.accept(TK.XSCPCST) || all.accept(TK.XSCPVAR)) {
-                    val tk = all.tk0 as Tk.Scp1
-                    iscps.add(tk)
-                    if (!all.accept(TK.CHAR, ',')) {
-                        break
-                    }
-                }
-                all.accept_err(TK.CHAR, '}')
-            }
-
-            val arg = parser_expr(all)
-
-            val oscp = if (!all.accept(TK.CHAR, ':')) null else {
-                all.accept(TK.XSCPCST) || all.accept_err(TK.XSCPVAR)
-                all.tk0 as Tk.Scp1
-            }
-            Expr.Call(tk_pre, f, arg, Pair(iscps.toTypedArray(),oscp), null)
-        }
         all.check(TK.FUNC) -> {
             val tk = all.tk1 as Tk.Key
             val tp = parser_type(all) as Type.Func
@@ -219,6 +195,30 @@ fun parser_expr (all: All): Expr {
                 else -> error("impossible case")
             }
         }
+    }
+
+    // call
+    val isexpr = all.check(TK.CHAR,'(') || all.check(TK.UNIT) || all.check(TK.XVAR) || all.check(TK.XNAT)
+              || all.check(TK.CHAR,'[') || all.check(TK.CHAR,'<') || all.check(TK.NEW)
+              || all.check(TK.CHAR,'/') || all.check(TK.FUNC)
+    if (isexpr || all.check(TK.ATBRACK)) {
+        val iscps = mutableListOf<Tk.Scp1>()
+        if (all.accept(TK.ATBRACK)) {
+            while (all.accept(TK.XSCPCST) || all.accept(TK.XSCPVAR)) {
+                val tk = all.tk0 as Tk.Scp1
+                iscps.add(tk)
+                if (!all.accept(TK.CHAR, ',')) {
+                    break
+                }
+            }
+            all.accept_err(TK.CHAR, ']')
+        }
+        val arg = parser_expr(all)
+        val oscp = if (!all.accept(TK.CHAR, ':')) null else {
+            all.accept(TK.XSCPCST) || all.accept_err(TK.XSCPVAR)
+            all.tk0 as Tk.Scp1
+        }
+        e = Expr.Call(e.tk, e, arg, Pair(iscps.toTypedArray(),oscp), null)
     }
 
     return e
@@ -310,9 +310,10 @@ fun parser_stmt (all: All): Stmt {
             all.accept_err(TK.XNAT)
             Stmt.Nat(all.tk0 as Tk.Nat)
         }
-        all.check(TK.CALL) -> {
-            val tk0 = all.tk1 as Tk.Key
+        all.accept(TK.CALL) -> {
+            val tk0 = all.tk0 as Tk.Key
             val e = parser_expr(all)
+            All_assert_tk(tk0, e is Expr.Call) { "expected call expression" }
             Stmt.SCall(tk0, e as Expr.Call)
         }
         all.accept(TK.INPUT) -> {
