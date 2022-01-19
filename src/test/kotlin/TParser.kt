@@ -776,4 +776,21 @@ class TParser {
         parser_expr(all)
         //assert(s is Stmt.Var && s.src.e is Expr.TDisc)
     }
+
+    // TASKS
+
+    @Test
+    fun d01_type_task () {
+        val all = All_new(PushbackReader(StringReader("task @[]->()->() {}"), 2))
+        lexer(all)
+        val tp = parser_type(all)
+        assert(tp is Type.Func && tp.tk.enu==TK.TASK)
+    }
+    @Test
+    fun d02_stmt_spawn () {
+        val all = All_new(PushbackReader(StringReader("spawn f ()"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.Spawn && s.e is Expr.Call && s.e.f is Expr.Var)
+    }
 }

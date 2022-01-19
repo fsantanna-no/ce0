@@ -79,6 +79,7 @@ fun Stmt.setUps (up: Any?) {
             this.src.setUps(this)
         }
         is Stmt.SCall -> this.e.setUps(this)
+        is Stmt.Spawn -> this.e.setUps(this)
         is Stmt.Inp   -> { this.arg.setUps(this) ; this.xtype?.setUps(this) }
         is Stmt.Out   -> this.arg.setUps(this)
         is Stmt.Seq -> {

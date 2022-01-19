@@ -47,7 +47,7 @@ fun parser_type (all: All): Type {
                 Type.Union(tk0, isrec, vec)
             }
         }
-        all.accept(TK.FUNC) -> {
+        all.accept(TK.FUNC) || all.accept(TK.TASK) -> {
             val tk0 = all.tk0 as Tk.Key
             val clo = if (all.accept(TK.XSCPCST) || all.accept(TK.XSCPVAR)) {
                 val tk = all.tk0 as Tk.Scp1
@@ -144,7 +144,7 @@ fun parser_expr (all: All): Expr {
             all.accept(TK.XSCPCST) || all.accept_err(TK.XSCPVAR)
             Expr.New(tk0 as Tk.Key, all.tk0 as Tk.Scp1, null, e as Expr.UCons)
         }
-        all.check(TK.FUNC) -> {
+        all.check(TK.FUNC) || all.check(TK.TASK) -> {
             val tk = all.tk1 as Tk.Key
             val tp = parser_type(all) as Type.Func
 
@@ -313,6 +313,12 @@ fun parser_stmt (all: All): Stmt {
             val e = parser_expr(all)
             All_assert_tk(tk0, e is Expr.Call) { "expected call expression" }
             Stmt.SCall(tk0, e as Expr.Call)
+        }
+        all.accept(TK.SPAWN) -> {
+            val tk0 = all.tk0 as Tk.Key
+            val e = parser_expr(all)
+            All_assert_tk(tk0, e is Expr.Call) { "expected call expression" }
+            Stmt.Spawn(tk0, e as Expr.Call)
         }
         all.accept(TK.INPUT) -> {
             val tk = all.tk0 as Tk.Key

@@ -363,6 +363,7 @@ fun code_fs (s: Stmt) {
         is Stmt.Break -> Code("", "break;\n", "")
         is Stmt.Ret   -> Code("", "return ret;\n", "")
         is Stmt.SCall -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
+        is Stmt.Spawn -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
         is Stmt.Inp   -> CODE.removeFirst().let {
             if (s.wup is Stmt.SSet) {
                 Code(it.type, it.stmt, "input_${s.lib.str}_${s.xtype!!.toce()}(${it.expr})")
