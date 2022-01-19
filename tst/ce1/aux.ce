@@ -1,7 +1,0 @@
-#define Env List(\\Stmt_Var)
-#define Stmt_Expr <\\Stmt,\\Expr>
-
-var@ ups: List([Stmt_Expr, Stmt_Expr])
-
-var aux_stmt: \\Stmt->() = func \\Stmt->() {
-}
