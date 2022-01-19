@@ -198,10 +198,8 @@ fun parser_expr (all: All): Expr {
     }
 
     // call
-    val isexpr = all.check(TK.CHAR,'(') || all.check(TK.UNIT) || all.check(TK.XVAR) || all.check(TK.XNAT)
-              || all.check(TK.CHAR,'[') || all.check(TK.CHAR,'<') || all.check(TK.NEW)
-              || all.check(TK.CHAR,'/') || all.check(TK.FUNC)
-    if (isexpr || all.check(TK.ATBRACK)) {
+
+    if (all.checkExpr() || all.check(TK.ATBRACK)) {
         val iscps = mutableListOf<Tk.Scp1>()
         if (all.accept(TK.ATBRACK)) {
             while (all.accept(TK.XSCPCST) || all.accept(TK.XSCPVAR)) {
