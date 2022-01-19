@@ -63,10 +63,6 @@ fun All.check (enu: TK, chr: Char? = null): Boolean {
     }
 }
 
-fun All.consumed (tk: Tk): Boolean {
-    return (tk.lin!=this.tk0.lin || tk.col!=this.tk0.col)
-}
-
 fun All.err_expected (str: String) {
     fun Tk.toPay (): String {
         return when {

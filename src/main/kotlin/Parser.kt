@@ -366,18 +366,11 @@ fun parser_stmts (all: All, opt: Pair<TK,Char?>): Stmt {
     var ret: Stmt = Stmt.Nop(all.tk0)
     while (true) {
         all.accept(TK.CHAR, ';')
-        val tk_bef = all.tk0
-        try {
+        val isend = all.check(TK.CHAR,'}') || all.check(TK.EOF)
+        if (!isend) {
             val s = parser_stmt(all)
             ret = enseq(ret,s)
-        } catch (e: Throwable) {
-            //throw e
-            assert(!all.consumed(tk_bef)) {
-                e.message!!
-            }
-            assert(all.check(opt.first, opt.second)) {
-                e.message!!
-            }
+        } else {
             break
         }
     }
