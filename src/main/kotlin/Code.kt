@@ -11,7 +11,7 @@ fun Type.pos (): String {
         is Type.Nat   -> this.tk_.src
         is Type.Tuple -> "struct " + this.toce()
         is Type.Union -> "struct " + this.toce()
-        is Type.Func  -> this.toce() + "*"
+        is Type.Func  -> this.toce() //+ "*"
     }
 }
 
@@ -49,13 +49,17 @@ fun code_ft (tp: Type) {
             val pools = tp.xscp1s.second.let { if (it.size == 0) "" else
                 it.map { "Pool**" }.joinToString(",") + ","
             }
-            val ret = if (tp.xscp1s.first == null) {
+            val ret = if (tp.xscp1s.first == null && (tp.tk.enu == TK.FUNC)) {
                 "${tp.out.pos()} ${tp.toce()} ($pools ${tp.inp.pos()})"
+                //"${tp.out.pos()} ${tp.toce()} $fid ($pc $ups $pools ${e.type.inp.pos()})"
             } else {
+                val pc  = if (tp.tk.enu == TK.FUNC) "" else "int* pc, "
+                val ups = if (tp.xscp1s.first == null) "" else "void** ups,"
                 """
                     struct {
-                        ${tp.out.pos()} (*f) (void** ups, $pools ${tp.inp.pos()});
-                        void** ups;     // pool + up1 + ...
+                        ${tp.out.pos()} (*f) ($pc $ups $pools ${tp.inp.pos()});
+                        ${if (pc == "") "" else "int pc;"}
+                        ${if (ups == "") "" else "void** ups;"}   // pool + up1 + ...
                     } ${tp.toce()}
                 """.trimIndent()
             }
@@ -287,19 +291,24 @@ fun code_fe (e: Expr) {
                 } else {
                     val tpf = e.f.wtype
                     val xxx = if (tpf is Type.Nat && e.arg is Expr.Unit) "" else arg.expr
-                    if (tpf is Type.Func && tpf.xscp1s.first!=null) {
-                        // only closures that escape (@a1)
-                        f.expr + "->f(" + f.expr + "->ups, " + pools + xxx + ")"
-                    } else {
-                        f.expr + "(" + pools + xxx + ")"
+                    when {
+                        (tpf is Type.Func && tpf.xscp1s.first!=null) -> {
+                            // only closures that escape (@a1)
+                            f.expr + "->f(" + f.expr + "->ups, " + pools + xxx + ")"
+                        }
+                        (tpf is Type.Func && tpf.tk.enu==TK.TASK) -> {
+                            f.expr + ".f(&" + f.expr + ".pc, " + pools + xxx + ")"
+                        }
+                        else -> f.expr + "(" + pools + xxx + ")"
                     }
                 }
             Code(f.type+arg.type, f.stmt+arg.stmt, snd)
         }
         is Expr.Func  -> CODE.removeFirst().let {
             val ID  = "_func_" + e.hashCode().absoluteValue
-            val fid = if (e.ups.size == 0) ID else ID+"_f"
+            val pc  = if (e.type.tk.enu == TK.FUNC) "" else "int* pc, "
             val ups = if (e.ups.size == 0) "" else "void** ups,"
+            val fid = if (pc=="" && ups=="") ID else ID+"_f"
             val pools = e.type.xscp1s.second.let { if (it.size == 0) "" else
                 it.map { "Pool** ${it.toce()}" }.joinToString(",") + ","
             }
@@ -315,15 +324,19 @@ fun code_fe (e: Expr) {
                 pool_push($pool, $ID);
                 *$ID = (${e.type.toce()}) { $fid, ups }; 
             """.trimIndent()
+            val task = if (pc == "") "" else "${e.type.pos()} $ID = { $fid, 0 };\n"
             val pre = """
-                ${e.type.out.pos()} $fid ($ups $pools ${e.type.inp.pos()} arg) {
+                // int f (int* pc, void** ups, int arg);
+                ${e.type.out.pos()} $fid ($pc $ups $pools ${e.type.inp.pos()} arg) {
                     ${e.type.out.pos()} ret;
+                    ${if (pc == "") "" else "switch (*pc) {\ncase 0:\n"}                    
                     ${it.stmt}
+                    ${if (pc == "") "" else "}"}                    
                     return ret;
                 }
 
             """.trimIndent()
-            Code(it.type+pre, clo, ID)
+            Code(it.type+pre, clo+task, ID)
         }
     })
 }
@@ -364,8 +377,20 @@ fun code_fs (s: Stmt) {
         is Stmt.Ret   -> Code("", "return ret;\n", "")
         is Stmt.SCall -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
         is Stmt.Spawn -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
-        is Stmt.Await -> Code("", "return 0;\n", "")
-        is Stmt.Awake -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+"(0);\n", "") }
+        is Stmt.Await -> {
+            val N = s.hashCode()
+            val src = """
+                *pc = $N;    // next awake
+                return 0;   // await
+                case $N:     // awake here
+                
+            """.trimIndent()
+            Code("", src, "")
+        }
+        is Stmt.Awake -> CODE.removeFirst().let {
+            val call = it.expr + ".f(&" + it.expr + ".pc, 0);\n"
+            Code(it.type, it.stmt+call, "")
+        }
         is Stmt.Inp   -> CODE.removeFirst().let {
             if (s.wup is Stmt.SSet) {
                 Code(it.type, it.stmt, "input_${s.lib.str}_${s.xtype!!.toce()}(${it.expr})")
