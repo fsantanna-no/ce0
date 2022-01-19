@@ -29,10 +29,12 @@ fun Any.ups_first (f: (Any)->Boolean): Any? {
 fun Type.setUps (up: Any) {
     this.wup = up
     when (this) {
+        is Type.Unit, is Type.Nat, is Type.Rec -> {}
         is Type.Tuple -> this.vec.forEach { it.setUps(this) }
         is Type.Union -> this.vec.forEach { it.setUps(this) }
         is Type.Func  -> { this.inp.setUps(this) ; this.out.setUps(this) }
         is Type.Ptr   -> this.pln.setUps(this)
+        else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }
 }
 
@@ -40,7 +42,8 @@ fun Type.setUps (up: Any) {
 fun Expr.setUps (up: Any) {
     this.wup = up
     when (this) {
-        is Expr.Nat -> this.xtype?.setUps(this)
+        is Expr.Unit, is Expr.Var -> {}
+        is Expr.Nat   -> this.xtype?.setUps(this)
         is Expr.TCons -> this.arg.forEach { it.setUps(this) }
         is Expr.UCons -> { this.xtype?.setUps(this) ; this.arg.setUps(this) }
         is Expr.UNull -> this.xtype?.setUps(this)
@@ -50,8 +53,6 @@ fun Expr.setUps (up: Any) {
         is Expr.TDisc -> this.tup.setUps(this)
         is Expr.UDisc -> this.uni.setUps(this)
         is Expr.UPred -> this.uni.setUps(this)
-        is Expr.Inp   -> { this.arg.setUps(this) ; this.xtype?.setUps(this) }
-        is Expr.Out   -> this.arg.setUps(this)
         is Expr.Call  -> {
             this.f.setUps(this)
             this.arg.setUps(this)
@@ -60,18 +61,26 @@ fun Expr.setUps (up: Any) {
             this.type.setUps(this)
             this.block.setUps(this)
         }
+        else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }
 }
 
 fun Stmt.setUps (up: Any?) {
     this.wup = up
     when (this) {
+        is Stmt.Nop, is Stmt.Nat, is Stmt.Break, is Stmt.Ret -> {}
         is Stmt.Var -> this.xtype?.setUps(this)
-        is Stmt.Set -> {
+        is Stmt.SSet -> {
             this.dst.setUps(this)
             this.src.setUps(this)
         }
-        is Stmt.SExpr -> this.e.setUps(this)
+        is Stmt.ESet -> {
+            this.dst.setUps(this)
+            this.src.setUps(this)
+        }
+        is Stmt.SCall -> this.e.setUps(this)
+        is Stmt.Inp   -> { this.arg.setUps(this) ; this.xtype?.setUps(this) }
+        is Stmt.Out   -> this.arg.setUps(this)
         is Stmt.Seq -> {
             this.s1.setUps(this)
             this.s2.setUps(this)
@@ -83,5 +92,6 @@ fun Stmt.setUps (up: Any?) {
         }
         is Stmt.Loop  -> this.block.setUps(this)
         is Stmt.Block -> this.body.setUps(this)
+        else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }
 }

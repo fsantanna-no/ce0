@@ -1,7 +1,7 @@
 fun Stmt.setTypes () {
     fun fe (e: Expr) {
         e.wtype = when (e) {
-            is Expr.Unit, is Expr.Nat, is Expr.UCons, is Expr.UNull, is Expr.Inp, is Expr.Func -> e.wtype!!
+            is Expr.Unit, is Expr.Nat, is Expr.UCons, is Expr.UNull, is Expr.Func -> e.wtype!!
             is Expr.Upref -> e.pln.wtype!!.let {
                 val lbl = e.toBaseVar()?.tk_?.str ?: "GLOBAL"
                 val scp1 = Tk.Scp1(TK.XSCPCST,e.tk.lin,e.tk.col, lbl,null)
@@ -17,7 +17,6 @@ fun Stmt.setTypes () {
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.wtype!! }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
             is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.xscp1!!, e.xscp2!!, e.arg.wtype!!).clone(e,e.tk.lin,e.tk.col)
-            is Expr.Out   -> Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).clone(e,e.tk.lin,e.tk.col)
             is Expr.Call -> {
                 e.f.wtype.let {
                     when (it) {

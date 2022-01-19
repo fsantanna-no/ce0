@@ -270,19 +270,6 @@ fun code_fe (e: Expr) {
             Code(it.type, it.stmt + pre, ID)
         }
         is Expr.UNull -> Code("","","NULL")
-        is Expr.Inp -> {
-            val arg = CODE.removeFirst()
-            Code(arg.type, arg.stmt, "input_${e.lib.str}_${e.wtype!!.toce()}(${arg.expr})")
-        }
-        is Expr.Out  -> {
-            val arg = CODE.removeFirst()
-            val call = if (e.lib.str == "std") {
-                e.arg.wtype!!.output("", arg.expr)
-            } else {
-                "output_${e.lib.str}(${arg.expr})"
-            }
-            Code(arg.type, arg.stmt, call)
-        }
         is Expr.Call  -> {
             val arg = CODE.removeFirst()
             val f   = CODE.removeFirst()
@@ -346,7 +333,12 @@ fun code_fs (s: Stmt) {
         is Stmt.Nop -> Code("","","")
         is Stmt.Nat  -> Code("", s.tk_.src + "\n", "")
         is Stmt.Seq  -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; Code(s1.type+s2.type, s1.stmt+s2.stmt, "") }
-        is Stmt.Set  -> {
+        is Stmt.SSet  -> {
+            val src = CODE.removeFirst()
+            val dst = CODE.removeFirst()
+            Code(dst.type+src.type, dst.stmt+src.stmt + dst.expr+" = "+src.expr + ";\n", "")
+        }
+        is Stmt.ESet  -> {
             val src = CODE.removeFirst()
             val dst = CODE.removeFirst()
             Code(dst.type+src.type, dst.stmt+src.stmt + dst.expr+" = "+src.expr + ";\n", "")
@@ -370,7 +362,22 @@ fun code_fs (s: Stmt) {
         }
         is Stmt.Break -> Code("", "break;\n", "")
         is Stmt.Ret   -> Code("", "return ret;\n", "")
-        is Stmt.SExpr -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
+        is Stmt.SCall -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
+        is Stmt.Inp   -> CODE.removeFirst().let {
+            if (s.wup is Stmt.SSet) {
+                Code(it.type, it.stmt, "input_${s.lib.str}_${s.xtype!!.toce()}(${it.expr})")
+            } else {
+                Code(it.type, it.stmt + "input_${s.lib.str}_${s.xtype!!.toce()}(${it.expr});\n", "")
+            }
+        }
+        is Stmt.Out -> CODE.removeFirst().let {
+            val call = if (s.lib.str == "std") {
+                s.arg.wtype!!.output("", it.expr)
+            } else {
+                "output_${s.lib.str}(${it.expr});\n"
+            }
+            Code(it.type, it.stmt+call, "")
+        }
         is Stmt.Block -> CODE.removeFirst().let {
             val src = """
             {

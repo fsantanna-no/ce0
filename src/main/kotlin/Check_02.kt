@@ -157,7 +157,7 @@ fun check_02_after_tps (s: Stmt) {
                     "invalid condition : type mismatch"
                 }
             }
-            is Stmt.Set -> {
+            is Stmt.ESet -> {
                 val dst = s.dst.wtype!!
                 val src = s.src.wtype!!
                 //println(">>> SET") ; println(s.dst) ; println(s.src) ; println(dst.tostr()) ; println(src.tostr())

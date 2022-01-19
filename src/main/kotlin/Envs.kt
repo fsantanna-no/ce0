@@ -61,6 +61,7 @@ fun Expr.setEnvs (env: Any?) {
         tp.wenv = env
     }
     when (this) {
+        is Expr.Var -> {}
         is Expr.Unit  -> this.wtype?.visit(false, ::ft)
         is Expr.Nat   -> this.xtype?.visit(false, ::ft)
         is Expr.TCons -> this.arg.forEachIndexed { _,e -> e.setEnvs(env) }
@@ -75,8 +76,6 @@ fun Expr.setEnvs (env: Any?) {
         is Expr.TDisc -> this.tup.setEnvs(env)
         is Expr.UDisc -> this.uni.setEnvs(env)
         is Expr.UPred -> this.uni.setEnvs(env)
-        is Expr.Inp   -> { this.arg.setEnvs(env) ; this.xtype?.visit(false, ::ft) }
-        is Expr.Out   -> this.arg.setEnvs(env)
         is Expr.Call  -> {
             this.f.setEnvs(env)
             this.arg.setEnvs(env)
@@ -85,6 +84,7 @@ fun Expr.setEnvs (env: Any?) {
             this.type?.visit(false, ::ft)
             this.block.setEnvs(this)
         }
+        else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }
 }
 
@@ -99,12 +99,19 @@ fun Stmt.setEnvs (env: Any?): Any? {
             this.xtype?.visit(false, ::ft)
             this
         }
-        is Stmt.Set -> {
+        is Stmt.SSet -> {
             this.dst.setEnvs(env)
             this.src.setEnvs(env)
             env
         }
-        is Stmt.SExpr -> { this.e.setEnvs(env) ; env }
+        is Stmt.ESet -> {
+            this.dst.setEnvs(env)
+            this.src.setEnvs(env)
+            env
+        }
+        is Stmt.SCall -> { this.e.setEnvs(env) ; env }
+        is Stmt.Inp   -> { this.arg.setEnvs(env) ; this.xtype?.visit(false, ::ft) ; env }
+        is Stmt.Out   -> { this.arg.setEnvs(env) ; env }
         is Stmt.Seq -> {
             val e1 = this.s1.setEnvs(env)
             val e2 = this.s2.setEnvs(e1)
@@ -121,5 +128,6 @@ fun Stmt.setEnvs (env: Any?): Any? {
             this.body.setEnvs(this) // also include blocks w/o labels b/c of inference
             env
         }
+        else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }
 }

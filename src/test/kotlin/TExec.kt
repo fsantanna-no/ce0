@@ -350,7 +350,7 @@ class TExec {
         """.trimIndent())
         assert(out == "10\n") { out }
     }
-    //@Disabled   // needs user input
+    @Disabled   // needs user input
     @Test
     fun e05_inp () {
         val out = all("""
