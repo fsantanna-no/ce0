@@ -60,8 +60,17 @@ fun code_ft (tp: Type) {
             } else {
                 val xfdata = if (isnone) "" else "struct ${tp.toce()}* fdata,"
                 """
+                    ${if (!istk) "" else """
+                        typedef union { ${tp.inp.pos()} arg; int evt; } ARGEVT_${tp.toce()};
+                        
+                    """.trimIndent()}
+                    
                     typedef struct ${tp.toce()} {
-                        ${tp.out.pos()} (*f) ($xfdata $xpools ${tp.inp.pos()});
+                        ${tp.out.pos()} (*f) (
+                            $xfdata
+                            $xpools
+                            ${if (!istk) "${tp.inp.pos()}" else "ARGEVT_${tp.toce()}"}
+                        );
                         ${if (!istk) "" else "int pc;"}
                         ${if (!isclo) "" else """
                             Pool* pool;
@@ -210,11 +219,12 @@ fun code_fe (e: Expr) {
         is Expr.Unit -> Code("", "", "0")
         is Expr.Nat -> Code("", "", e.tk_.src)
         is Expr.Var -> {
-            val mem = e.ups_first { it is Expr.Func && (it.ups.any { it.str==e.tk_.str } || it.type.tk.enu==TK.TASK) }
-            if (mem != null) {
-                Code("", "", "(fdata->mem.${e.tk_.str})")
-            } else {
-                Code("", "", e.tk_.str)
+            when {
+                (e.tk_.str in arrayOf("arg","ret","evt")) -> Code("", "", e.tk_.str)
+                (e.ups_first {  // found as variable inside task
+                    it is Expr.Func && (it.ups.any { it.str==e.tk_.str } || it.type.tk.enu==TK.TASK)
+                } != null) -> Code("", "", "(fdata->mem.${e.tk_.str})")
+                else -> Code("", "", e.tk_.str)
             }
         }
         is Expr.Upref -> CODE.removeFirst().let {
@@ -304,6 +314,13 @@ fun code_fe (e: Expr) {
                         val isnone = !isclo && !istk
                         if (isnone) {
                             f.expr + "(" + pools + arg.expr + ")"
+                        } else if (istk) {
+                            val argret = when (e.getUp()) {
+                                is Stmt.Spawn -> "(ARGEVT_${tpf.toce()}) {.arg=${arg.expr}}"
+                                is Stmt.Awake -> "(ARGEVT_${tpf.toce()}) {.evt=${arg.expr}}"
+                                else -> error("bug found")
+                            }
+                            f.expr + "->f(" + f.expr + ", " + pools + argret + ")"
                         } else {
                             f.expr + "->f(" + f.expr + ", " + pools + arg.expr + ")"
                         }
@@ -392,7 +409,11 @@ fun code_fe (e: Expr) {
                 ${if (isnone) "" else {
                     """
                     $fstruct {
-                        ${e.type.out.pos()} (*f) ($xfdata $xpools ${e.type.inp.pos()});
+                        ${e.type.out.pos()} (*f) (
+                            $xfdata
+                            $xpools
+                            ${if (!istk) "${e.type.inp.pos()} arg" else "ARGEVT_${e.type.toce()} argevt"}
+                        );
                         ${if (!istk) "" else "int pc;"}
                         Pool** pool;
                         struct {
@@ -405,7 +426,12 @@ fun code_fe (e: Expr) {
                 }}
                 
                 // int f (XXX* fdata, Pools**, int arg);
-                ${e.type.out.pos()} ${if (isnone) fvar else fvar+"_f"} ($xfdata $xpools ${e.type.inp.pos()} arg) {
+                ${e.type.out.pos()} ${if (isnone) fvar else fvar+"_f"} (
+                    $xfdata
+                    $xpools
+                    ${if (!istk) "${e.type.inp.pos()} arg" else "ARGEVT_${e.type.toce()} argevt"}
+                ) {
+                    ${if (!istk) "" else "${e.type.inp.pos()} arg = argevt.arg;"}
                     ${e.type.out.pos()} ret;
                     ${if (!istk) "" else "switch (fdata->pc) {\ncase 0:\n"}                    
                     ${it.stmt}
@@ -461,12 +487,13 @@ fun code_fs (s: Stmt) {
                 fdata->pc = $N; // next awake
                 return 0;       // await
                 case $N:        // awake here
+                evt = argevt.evt;
                 
             """.trimIndent()
             Code("", src, "")
         }
         is Stmt.Awake -> CODE.removeFirst().let {
-            val call = it.expr + "->f(" + it.expr + ", 0);\n"
+            val call = it.expr + ";\n"
             Code(it.type, it.stmt+call, "")
         }
         is Stmt.Inp   -> CODE.removeFirst().let {
@@ -499,13 +526,13 @@ fun code_fs (s: Stmt) {
         is Stmt.Var -> {
             val src = "${s.xtype!!.pos()} ${s.tk_.str};\n"
             when {
-                // globals, go outside main
+                // globals: declare outside main
                 (s.ups_first { it is Stmt.Block } == null) -> Code(src, "", "")
 
-                // task var, ignore here, do to task struct
+                // task var: declare in task struct
                 ((s.ups_first { it is Expr.Func } as Expr.Func?).let { it!=null && it.type.tk.enu==TK.TASK }) -> Code("", "", "")
 
-                // otherwise, declare here
+                // normal var: declare here
                 else -> Code("", src, "")
             }
         }
@@ -554,8 +581,8 @@ fun Stmt.code (): String {
         #define output_std_Unit(x)   (output_std_Unit_(x), puts(""))
         #define output_std_int_(x)   printf("%d",x)
         #define output_std_int(x)    (output_std_int_(x), puts(""))
-        #define output_std_char__(x) printf("\"%s\"",x)
-        #define output_std_char_(x)  (output_std_int_(x), puts(""))
+        #define output_std_char__(x) printf("%s",x)
+        #define output_std_char_(x)  (output_std_char__(x), puts(""))
         #define output_std_Ptr_(x)   printf("%p",x)
         #define output_std_Ptr(x)    (output_std_Ptr_(x), puts(""))
         
@@ -583,6 +610,7 @@ fun Stmt.code (): String {
         }
         
         Pool** pool_GLOBAL;
+        int evt;
 
         ${TPS.map { it.second }.joinToString("")}
         ${TPS.map { it.third  }.joinToString("")}

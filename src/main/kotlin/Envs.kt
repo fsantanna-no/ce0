@@ -38,10 +38,15 @@ fun Any.env (id: String): Any? {
         //println(it)
         it is Stmt.Var   && it.tk_.str.toLowerCase()==id.toLowerCase() ||
         it is Stmt.Block && it.xscp1?.lbl?.toUpperCase()==id.toUpperCase() ||
-        it is Expr.Func  && (id=="arg" || id=="ret")
+        it is Expr.Func  && (id=="arg" || id=="ret" || id=="evt")
     }.let {
         if (it is Expr.Func) {
-            if (id=="arg") it.type.inp else it.type.out
+            when (id) {
+                "arg" -> it.type.inp
+                "ret" -> it.type.out
+                "evt" -> Type.Nat(Tk.Nat(TK.XNAT, it.tk.lin, it.tk.col, null, "int")).clone(it,it.tk.lin,it.tk.col)
+                else  -> error("bug found")
+            }
     } else {
             it
         }

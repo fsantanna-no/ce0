@@ -92,4 +92,21 @@ class TTask {
         """.trimIndent())
         assert(out == "10\n20\n") { out }
     }
+    @Test
+    fun a05_args () {
+        val out = all("""
+            var f: task @[]->_(char*)->()
+            set f = task @[]->_(char*)->() {
+                output std arg
+                await
+                output std evt
+                await
+                output std evt
+            }
+            spawn f _("hello"):_(char*)
+            awake f _10:_int
+            awake f _20:_int
+        """.trimIndent())
+        assert(out == "hello\n10\n20\n") { out }
+    }
 }

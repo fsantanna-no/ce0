@@ -63,6 +63,11 @@ class TExec {
         assert(out == "10\n") { out }
     }
     @Test
+    fun a07_output_string () {
+        val out = all("output std _(\"hello\"):_(char*)")
+        assert(out == "hello\n") { out }
+    }
+    @Test
     fun a07_syntax_error () {
         val out = all("""
             native {

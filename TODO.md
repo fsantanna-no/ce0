@@ -59,9 +59,10 @@ spawn  tk (...)
 kill   tk
 status tk
 pause  tk
-resume [tk,e]
+awake [tk,e]
 broadcast up tk e
 broadcast down scp e
+await _int  // condition using evt
 ```
 
 finalize/every/pool
