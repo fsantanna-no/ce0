@@ -46,20 +46,28 @@ fun code_ft (tp: Type) {
 
     when (tp) {
         is Type.Func -> {
-            val pools = tp.xscp1s.second.let { if (it.size == 0) "" else
+            val isclo  = (tp.xscp1s.first != null)
+            val istk   = (tp.tk.enu == TK.TASK)
+            val isnone = !isclo && !istk
+
+            val xpools = tp.xscp1s.second.let { if (it.size == 0) "" else
                 it.map { "Pool**" }.joinToString(",") + ","
             }
-            val ret = if (tp.xscp1s.first == null && (tp.tk.enu == TK.FUNC)) {
-                "typedef ${tp.out.pos()} ${tp.toce()} ($pools ${tp.inp.pos()});\n"
+
+            val ret = if (isnone) {
+                "typedef ${tp.out.pos()} ${tp.toce()} ($xpools ${tp.inp.pos()});\n"
                 //"${tp.out.pos()} ${tp.toce()} $fid ($pc $ups $pools ${e.type.inp.pos()})"
             } else {
-                val pc  = if (tp.tk.enu == TK.FUNC) "" else "int* pc, "
-                val ups = if (tp.xscp1s.first == null) "" else "struct ${tp.toce()}* clo,"
+                val xfdata = if (isnone) "" else "struct ${tp.toce()}* fdata,"
                 """
                     typedef struct ${tp.toce()} {
-                        ${tp.out.pos()} (*f) ($pc $ups $pools ${tp.inp.pos()});
-                        ${if (pc == "") "" else "int pc;"}
-                        ${if (ups == "") "" else "Pool* pool;\nvoid* ups;\n"}
+                        ${tp.out.pos()} (*f) ($xfdata $xpools ${tp.inp.pos()});
+                        ${if (!istk) "" else "int pc;"}
+                        ${if (!isclo) "" else """
+                            Pool* pool;
+                            void* ups;
+                            
+                        """.trimIndent()}
                     } ${tp.toce()};
                     
                 """.trimIndent()
@@ -204,7 +212,7 @@ fun code_fe (e: Expr) {
         is Expr.Var -> {
             val up = e.ups_first { it is Expr.Func && it.ups.any { it.str==e.tk_.str } }
             if (up != null) {
-                Code("", "", "(clo->ups.${e.tk_.str})")
+                Code("", "", "(fdata->ups.${e.tk_.str})")
             } else {
                 Code("", "", e.tk_.str)
             }
@@ -248,7 +256,7 @@ fun code_fe (e: Expr) {
             val ptr = e.wtype as Type.Ptr
 
             val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==ptr.xscp1.lbl && it.num==ptr.xscp1.num } }
-            val pool = if (up == null) ptr.xscp1.toce() else "(clo->pool)"
+            val pool = if (up == null) ptr.xscp1.toce() else "(fdata->pool)"
 
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
@@ -281,7 +289,7 @@ fun code_fe (e: Expr) {
 
             val pools = e.xscp1s.first.let { if (it.size == 0) "" else (it.map { out ->
                 val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==out.lbl && it.num==out.num } }
-                if (up == null) out.toce() else "(clo->pool)"
+                if (up == null) out.toce() else "(fdata->pool)"
             }.joinToString(",") + ",") }
 
             val snd =
@@ -290,62 +298,81 @@ fun code_fe (e: Expr) {
                     e.arg.wtype!!.output("", arg.expr)
                 } else {
                     val tpf = e.f.wtype
-                    val xxx = if (tpf is Type.Nat && e.arg is Expr.Unit) "" else arg.expr
-                    when {
-                        (tpf is Type.Func && tpf.xscp1s.first!=null) -> {
-                            // only closures that escape (@a1)
-                            f.expr + "->f(" + f.expr + ", " + pools + xxx + ")"
+                    if (tpf is Type.Func) {
+                        val isclo  = (tpf.xscp1s.first != null)
+                        val istk   = (tpf.tk.enu == TK.TASK)
+                        val isnone = !isclo && !istk
+                        if (isnone) {
+                            f.expr + "(" + pools + arg.expr + ")"
+                        } else {
+                            f.expr + "->f(" + f.expr + ", " + pools + arg.expr + ")"
                         }
-                        (tpf is Type.Func && tpf.tk.enu==TK.TASK) -> {
-                            f.expr + ".f(&" + f.expr + ".pc, " + pools + xxx + ")"
-                        }
-                        else -> f.expr + "(" + pools + xxx + ")"
+                    } else {
+                        f.expr + "(" + pools + (if (e.arg is Expr.Unit) "" else arg.expr) + ")"
                     }
                 }
             Code(f.type+arg.type, f.stmt+arg.stmt, snd)
         }
         is Expr.Func  -> CODE.removeFirst().let {
-            val hash = e.hashCode().absoluteValue
-            val ID  = "_func_$hash"
-            val pc  = if (e.type.tk.enu == TK.FUNC) "" else "int* pc, "
-            val clo = if (e.ups.size == 0) "" else "struct ${e.type.toce()}_$hash* clo,"
-            val fid = if (pc=="" && clo=="") ID else ID+"_f"
-            val pools = e.type.xscp1s.second.let { if (it.size == 0) "" else
+            val isclo  = (e.type.xscp1s.first != null)
+            val istk   = (e.type.tk.enu == TK.TASK)
+            val isnone = !isclo && !istk
+
+            val hash    = e.hashCode().absoluteValue
+            val fstruct = "struct ${e.type.toce()}_$hash"
+            val fvar    = "_func_$hash"
+
+            val src = if (isnone) "" else """
+                $fstruct* $fvar = malloc(sizeof($fstruct));
+                assert($fvar!=NULL && "not enough memory");
+                $fvar->f = ${fvar}_f;
+                ${if (!isclo) "" else {
+                    val pool = e.type.xscp1s.first!!.toce()
+                    """
+                    $fvar->pool = $pool;
+                    ${e.ups.map { "$fvar->ups.${it.str} = ${it.str};\n" }.joinToString("")}
+                    pool_push($pool, $fvar);
+
+                    """.trimIndent()}
+                }
+                ${if (!istk) "" else """
+                    $fvar->pc = 0;
+                    
+                """.trimIndent()}
+                
+            """.trimIndent()
+
+            val xfdata = if (isnone) "" else "$fstruct* fdata,"
+            val xpools = e.type.xscp1s.second.let { if (it.size == 0) "" else
                 it.map { "Pool** ${it.toce()}" }.joinToString(",") + ","
             }
-            val st = """
-                struct ${e.type.toce()}_$hash {
-                    ${e.type.out.pos()} (*f) ($pc $clo $pools ${e.type.inp.pos()});
-                    Pool** pool;
-                    struct {
-                        ${e.ups.map { "${e.env(it.str)!!.toType().pos()} ${it.str};\n" }.joinToString("")}
-                    } ups;
-                };
-                
-            """.trimIndent()
-            val pool = e.type.xscp1s.first?.toce()
-            val src = if (e.type.xscp1s.first == null) "" else """
-                struct ${e.type.toce()}_$hash* $ID = malloc(sizeof(struct ${e.type.toce()}_$hash));
-                assert($ID!=NULL && "not enough memory");
-                $ID->f = $fid;
-                $ID->pool = $pool;
-                ${e.ups.map { "$ID->ups.${it.str} = ${it.str};\n" }.joinToString("")}
-                pool_push($pool, $ID);
-                
-            """.trimIndent()
-            val task = if (pc == "") "" else "${e.type.pos()} $ID = { $fid, 0 };\n"
+
             val pre = """
-                // int f (int* pc, XXX* clo, int arg);
-                ${e.type.out.pos()} $fid ($pc $clo $pools ${e.type.inp.pos()} arg) {
+                ${if (isnone) "" else {
+                    """
+                    $fstruct {
+                        ${e.type.out.pos()} (*f) ($xfdata $xpools ${e.type.inp.pos()});
+                        ${if (!istk) "" else "int pc;"}
+                        Pool** pool;
+                        struct {
+                            ${e.ups.map { "${e.env(it.str)!!.toType().pos()} ${it.str};\n" }.joinToString("")}
+                        } ups;
+                    };
+                        
+                    """.trimIndent()
+                }}
+                
+                // int f (XXX* fdata, Pools**, int arg);
+                ${e.type.out.pos()} ${if (isnone) fvar else fvar+"_f"} ($xfdata $xpools ${e.type.inp.pos()} arg) {
                     ${e.type.out.pos()} ret;
-                    ${if (pc == "") "" else "switch (*pc) {\ncase 0:\n"}                    
+                    ${if (!istk) "" else "switch (fdata->pc) {\ncase 0:\n"}                    
                     ${it.stmt}
-                    ${if (pc == "") "" else "}"}                    
+                    ${if (!istk) "" else "}"}                    
                     return ret;
                 }
 
             """.trimIndent()
-            Code(it.type+st+pre, src+task, "((${e.type.toce()}*)$ID)")
+            Code(it.type+pre, src, "((${e.type.toce()}*)$fvar)")
         }
     })
 }
@@ -389,15 +416,15 @@ fun code_fs (s: Stmt) {
         is Stmt.Await -> {
             val N = s.hashCode()
             val src = """
-                *pc = $N;    // next awake
-                return 0;   // await
-                case $N:     // awake here
+                fdata->pc = $N; // next awake
+                return 0;       // await
+                case $N:        // awake here
                 
             """.trimIndent()
             Code("", src, "")
         }
         is Stmt.Awake -> CODE.removeFirst().let {
-            val call = it.expr + ".f(&" + it.expr + ".pc, 0);\n"
+            val call = it.expr + "->f(" + it.expr + ", 0);\n"
             Code(it.type, it.stmt+call, "")
         }
         is Stmt.Inp   -> CODE.removeFirst().let {
