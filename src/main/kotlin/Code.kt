@@ -581,7 +581,7 @@ fun Stmt.code (): String {
         #define output_std_Unit(x)   (output_std_Unit_(x), puts(""))
         #define output_std_int_(x)   printf("%d",x)
         #define output_std_int(x)    (output_std_int_(x), puts(""))
-        #define output_std_char__(x) printf("%s",x)
+        #define output_std_char__(x) printf("\"%s\"",x)
         #define output_std_char_(x)  (output_std_char__(x), puts(""))
         #define output_std_Ptr_(x)   printf("%p",x)
         #define output_std_Ptr(x)    (output_std_Ptr_(x), puts(""))

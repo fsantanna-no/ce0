@@ -49,7 +49,7 @@ class TTask {
             }
             spawn f ()
             output std _2:_int
-            awake f
+            awake f _0:_int
         """.trimIndent())
         assert(out == "1\n2\n3\n") { out }
     }
@@ -64,7 +64,7 @@ class TTask {
                 output std x
             }
             spawn f ()
-            awake f
+            awake f _0:_int
         """.trimIndent())
         assert(out == "10\n") { out }
     }
@@ -87,8 +87,8 @@ class TTask {
                 }
             }
             spawn f ()
-            awake f
-            awake f
+            awake f _0:_int
+            awake f _0:_int
         """.trimIndent())
         assert(out == "10\n20\n") { out }
     }
@@ -107,6 +107,6 @@ class TTask {
             awake f _10:_int
             awake f _20:_int
         """.trimIndent())
-        assert(out == "hello\n10\n20\n") { out }
+        assert(out == "\"hello\"\n10\n20\n") { out }
     }
 }

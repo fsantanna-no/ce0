@@ -65,7 +65,7 @@ class TExec {
     @Test
     fun a07_output_string () {
         val out = all("output std _(\"hello\"):_(char*)")
-        assert(out == "hello\n") { out }
+        assert(out == "\"hello\"\n") { out }
     }
     @Test
     fun a07_syntax_error () {
@@ -438,7 +438,7 @@ class TExec {
             set z = <.2()>: <(),()>
             output std z!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:82: main: Assertion `z.tag == 1' failed.\n") { out }
+        assert(out == "out.exe: out.c:83: main: Assertion `z.tag == 1' failed.\n") { out }
     }
     @Test
     fun f12_user_disc_pred_idx () {
@@ -919,7 +919,7 @@ class TExec {
             set l = <.0>: /</^ @LOCAL> @LOCAL
             output std l\!1
         """.trimIndent())
-        assert(out == "out.exe: out.c:82: main: Assertion `&(*l) != NULL' failed.\n") { out }
+        assert(out == "out.exe: out.c:83: main: Assertion `&(*l) != NULL' failed.\n") { out }
     }
     @Test
     fun j06_list_1 () {
