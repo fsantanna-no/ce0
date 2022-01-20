@@ -39,7 +39,7 @@ class TTask {
         assert(out == "1\n2\n") { out }
     }
     @Test
-    fun a02_output () {
+    fun a02_await () {
         val out = all("""
             var f: task @[]->()->()
             set f = task @[]->()->() {
@@ -52,5 +52,20 @@ class TTask {
             awake f
         """.trimIndent())
         assert(out == "1\n2\n3\n") { out }
+    }
+    @Test
+    fun a03_var () {
+        val out = all("""
+            var f: task @[]->()->()
+            set f = task @[]->()->() {
+                var x: _int
+                set x = _10:_int
+                await
+                output std x
+            }
+            spawn f ()
+            awake f
+        """.trimIndent())
+        assert(out == "10\n") { out }
     }
 }

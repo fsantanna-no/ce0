@@ -65,7 +65,7 @@ fun code_ft (tp: Type) {
                         ${if (!istk) "" else "int pc;"}
                         ${if (!isclo) "" else """
                             Pool* pool;
-                            void* ups;
+                            void* mem;
                             
                         """.trimIndent()}
                     } ${tp.toce()};
@@ -212,7 +212,7 @@ fun code_fe (e: Expr) {
         is Expr.Var -> {
             val up = e.ups_first { it is Expr.Func && it.ups.any { it.str==e.tk_.str } }
             if (up != null) {
-                Code("", "", "(fdata->ups.${e.tk_.str})")
+                Code("", "", "(fdata->mem.${e.tk_.str})")
             } else {
                 Code("", "", e.tk_.str)
             }
@@ -330,7 +330,7 @@ fun code_fe (e: Expr) {
                     val pool = e.type.xscp1s.first!!.toce()
                     """
                     $fvar->pool = $pool;
-                    ${e.ups.map { "$fvar->ups.${it.str} = ${it.str};\n" }.joinToString("")}
+                    ${e.ups.map { "$fvar->mem.${it.str} = ${it.str};\n" }.joinToString("")}
                     pool_push($pool, $fvar);
 
                     """.trimIndent()}
@@ -356,7 +356,7 @@ fun code_fe (e: Expr) {
                         Pool** pool;
                         struct {
                             ${e.ups.map { "${e.env(it.str)!!.toType().pos()} ${it.str};\n" }.joinToString("")}
-                        } ups;
+                        } mem;
                     };
                         
                     """.trimIndent()
