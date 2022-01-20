@@ -210,8 +210,8 @@ fun code_fe (e: Expr) {
         is Expr.Unit -> Code("", "", "0")
         is Expr.Nat -> Code("", "", e.tk_.src)
         is Expr.Var -> {
-            val up = e.ups_first { it is Expr.Func && it.ups.any { it.str==e.tk_.str } }
-            if (up != null) {
+            val mem = e.ups_first { it is Expr.Func && (it.ups.any { it.str==e.tk_.str } || it.type.tk.enu==TK.TASK) }
+            if (mem != null) {
                 Code("", "", "(fdata->mem.${e.tk_.str})")
             } else {
                 Code("", "", e.tk_.str)
@@ -347,6 +347,47 @@ fun code_fe (e: Expr) {
                 it.map { "Pool** ${it.toce()}" }.joinToString(",") + ","
             }
 
+            fun Stmt.mem_vars (): String {
+                return when (this) {
+                    is Stmt.Nop, is Stmt.SSet, is Stmt.ESet, is Stmt.Nat,
+                    is Stmt.SCall, is Stmt.Spawn, is Stmt.Await, is Stmt.Awake,
+                    is Stmt.Inp, is Stmt.Out, is Stmt.Ret, is Stmt.Break -> ""
+
+                    is Stmt.Var -> "${this.xtype!!.pos()} ${this.tk_.str};\n"
+                    is Stmt.Loop -> this.block.mem_vars()
+
+                    is Stmt.Block -> """
+                        struct {
+                            ${this.body.mem_vars()}
+                        };
+                        
+                    """.trimIndent()
+
+                    is Stmt.If -> """
+                        union {
+                            ${this.true_.mem_vars()}
+                            ${this.false_.mem_vars()}
+                        };
+                            
+                    """.trimIndent()
+
+                    is Stmt.Seq -> {
+                        if (this.s1 !is Stmt.Block) {
+                            this.s1.mem_vars() + this.s2.mem_vars()
+                        } else {
+                            """
+                                union {
+                                    ${this.s1.mem_vars()}
+                                    struct {
+                                        ${this.s2.mem_vars()}
+                                    };
+                                };
+                            """.trimIndent()
+                        }
+                    }
+                }
+            }
+
             val pre = """
                 ${if (isnone) "" else {
                     """
@@ -356,6 +397,7 @@ fun code_fe (e: Expr) {
                         Pool** pool;
                         struct {
                             ${e.ups.map { "${e.env(it.str)!!.toType().pos()} ${it.str};\n" }.joinToString("")}
+                            ${e.block.mem_vars()}
                         } mem;
                     };
                         
@@ -456,10 +498,15 @@ fun code_fs (s: Stmt) {
         }
         is Stmt.Var -> {
             val src = "${s.xtype!!.pos()} ${s.tk_.str};\n"
-            if (s.ups_first { it is Stmt.Block } == null) {
-                Code(src, "", "")   // globals go outside main
-            } else {
-                Code("", src, "")
+            when {
+                // globals, go outside main
+                (s.ups_first { it is Stmt.Block } == null) -> Code(src, "", "")
+
+                // task var, ignore here, do to task struct
+                ((s.ups_first { it is Expr.Func } as Expr.Func?).let { it!=null && it.type.tk.enu==TK.TASK }) -> Code("", "", "")
+
+                // otherwise, declare here
+                else -> Code("", src, "")
             }
         }
     })
