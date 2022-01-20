@@ -71,12 +71,9 @@ fun code_ft (tp: Type) {
                             $xpools
                             ${if (!istk) "${tp.inp.pos()}" else "ARGEVT_${tp.toce()}"}
                         );
-                        ${if (!istk) "" else "int pc;"}
-                        ${if (!isclo) "" else """
-                            Pool* pool;
-                            void* mem;
-                            
-                        """.trimIndent()}
+                        ${if (!istk)  "" else "int pc;"}
+                        ${if (!isclo) "" else "Pool* pool;"}
+                        void* mem;
                     } ${tp.toce()};
                     
                 """.trimIndent()
@@ -414,8 +411,8 @@ fun code_fe (e: Expr) {
                             $xpools
                             ${if (!istk) "${e.type.inp.pos()} arg" else "ARGEVT_${e.type.toce()} argevt"}
                         );
-                        ${if (!istk) "" else "int pc;"}
-                        Pool** pool;
+                        ${if (!istk)  "" else "int pc;"}
+                        ${if (!isclo) "" else "Pool** pool;"}
                         struct {
                             ${e.ups.map { "${e.env(it.str)!!.toType().pos()} ${it.str};\n" }.joinToString("")}
                             ${e.block.mem_vars()}

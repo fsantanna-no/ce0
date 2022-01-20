@@ -109,4 +109,53 @@ class TTask {
         """.trimIndent())
         assert(out == "\"hello\"\n10\n20\n") { out }
     }
+    @Test
+    fun a06_par () {
+        val out = all("""
+            var build : func @[] -> () -> task @[]->()->()
+            set build = func @[] -> () -> task @[]->()->() {
+                set ret = task @[]->()->() {
+                    output std _1:_int
+                    await
+                    output std _2:_int
+                }
+            }
+            var f: task @[]->()->()
+            set f = build ()
+            var g: task @[]->()->()
+            set g = build ()
+            output std _10:_int
+            spawn f ()
+            output std _11:_int
+            spawn g ()
+            awake f _0:_int
+            awake g _0:_int
+            output std _12:_int
+        """.trimIndent())
+        assert(out == "10\n1\n11\n1\n2\n2\n12\n") { out }
+    }
+    @Test
+    fun a07_bcast () {
+        val out = all("""
+            var f: task @[]->()->()
+            set f = task @[]->()->() {
+                await
+                output std _(evt+0):_int
+            }
+            spawn f ()
+            
+            var g: task @[]->()->()
+            set g = task @[]->()->() {
+                await
+                output std _(evt+10):_int
+                await
+                output std _(evt+10):_int
+            }
+            spawn g ()
+            
+            broadcast @GLOBAL _1
+            broadcast @GLOBAL _2
+        """.trimIndent())
+        assert(out == "1\n11\n12\n") { out }
+    }
 }
