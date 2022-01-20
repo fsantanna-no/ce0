@@ -11,7 +11,7 @@ fun Type.pos (): String {
         is Type.Nat   -> this.tk_.src
         is Type.Tuple -> "struct " + this.toce()
         is Type.Union -> "struct " + this.toce()
-        is Type.Func  -> this.toce() //+ "*"
+        is Type.Func  -> this.toce() + "*"
     }
 }
 
@@ -50,22 +50,23 @@ fun code_ft (tp: Type) {
                 it.map { "Pool**" }.joinToString(",") + ","
             }
             val ret = if (tp.xscp1s.first == null && (tp.tk.enu == TK.FUNC)) {
-                "${tp.out.pos()} ${tp.toce()} ($pools ${tp.inp.pos()})"
+                "typedef ${tp.out.pos()} ${tp.toce()} ($pools ${tp.inp.pos()});\n"
                 //"${tp.out.pos()} ${tp.toce()} $fid ($pc $ups $pools ${e.type.inp.pos()})"
             } else {
                 val pc  = if (tp.tk.enu == TK.FUNC) "" else "int* pc, "
-                val ups = if (tp.xscp1s.first == null) "" else "void** ups,"
+                val ups = if (tp.xscp1s.first == null) "" else "struct ${tp.toce()}* clo,"
                 """
-                    struct {
+                    typedef struct ${tp.toce()} {
                         ${tp.out.pos()} (*f) ($pc $ups $pools ${tp.inp.pos()});
                         ${if (pc == "") "" else "int pc;"}
-                        ${if (ups == "") "" else "void** ups;"}   // pool + up1 + ...
-                    } ${tp.toce()}
+                        ${if (ups == "") "" else "Pool* pool;\nvoid* ups;\n"}
+                    } ${tp.toce()};
+                    
                 """.trimIndent()
             }
             TYPES.add(Triple(
                 Pair(tp.toce(), deps(setOf(tp.inp,tp.out))),
-                "typedef $ret;\n",
+                ret,
                 ""
             ))
         }
@@ -203,8 +204,7 @@ fun code_fe (e: Expr) {
         is Expr.Var -> {
             val up = e.ups_first { it is Expr.Func && it.ups.any { it.str==e.tk_.str } }
             if (up != null) {
-                val idx = (up as Expr.Func).ups.indexOfFirst { it.str==e.tk_.str }
-                Code("", "", "((${xp.pos()})ups[${1+idx}])")    // +1 skips pool
+                Code("", "", "(clo->ups.${e.tk_.str})")
             } else {
                 Code("", "", e.tk_.str)
             }
@@ -248,7 +248,7 @@ fun code_fe (e: Expr) {
             val ptr = e.wtype as Type.Ptr
 
             val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==ptr.xscp1.lbl && it.num==ptr.xscp1.num } }
-            val pool = if (up == null) ptr.xscp1.toce() else "((Pool**)ups[0])"
+            val pool = if (up == null) ptr.xscp1.toce() else "(clo->pool)"
 
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
@@ -281,7 +281,7 @@ fun code_fe (e: Expr) {
 
             val pools = e.xscp1s.first.let { if (it.size == 0) "" else (it.map { out ->
                 val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==out.lbl && it.num==out.num } }
-                if (up == null) out.toce() else "((Pool**)ups[0])"
+                if (up == null) out.toce() else "(clo->pool)"
             }.joinToString(",") + ",") }
 
             val snd =
@@ -294,7 +294,7 @@ fun code_fe (e: Expr) {
                     when {
                         (tpf is Type.Func && tpf.xscp1s.first!=null) -> {
                             // only closures that escape (@a1)
-                            f.expr + "->f(" + f.expr + "->ups, " + pools + xxx + ")"
+                            f.expr + "->f(" + f.expr + ", " + pools + xxx + ")"
                         }
                         (tpf is Type.Func && tpf.tk.enu==TK.TASK) -> {
                             f.expr + ".f(&" + f.expr + ".pc, " + pools + xxx + ")"
@@ -305,29 +305,38 @@ fun code_fe (e: Expr) {
             Code(f.type+arg.type, f.stmt+arg.stmt, snd)
         }
         is Expr.Func  -> CODE.removeFirst().let {
-            val ID  = "_func_" + e.hashCode().absoluteValue
+            val hash = e.hashCode().absoluteValue
+            val ID  = "_func_$hash"
             val pc  = if (e.type.tk.enu == TK.FUNC) "" else "int* pc, "
-            val ups = if (e.ups.size == 0) "" else "void** ups,"
-            val fid = if (pc=="" && ups=="") ID else ID+"_f"
+            val clo = if (e.ups.size == 0) "" else "struct ${e.type.toce()}_$hash* clo,"
+            val fid = if (pc=="" && clo=="") ID else ID+"_f"
             val pools = e.type.xscp1s.second.let { if (it.size == 0) "" else
                 it.map { "Pool** ${it.toce()}" }.joinToString(",") + ","
             }
+            val st = """
+                struct ${e.type.toce()}_$hash {
+                    ${e.type.out.pos()} (*f) ($pc $clo $pools ${e.type.inp.pos()});
+                    Pool** pool;
+                    struct {
+                        ${e.ups.map { "${e.env(it.str)!!.toType().pos()} ${it.str};\n" }.joinToString("")}
+                    } ups;
+                };
+                
+            """.trimIndent()
             val pool = e.type.xscp1s.first?.toce()
-            val clo = if (e.type.xscp1s.first == null) "" else """
-                void** ups = malloc(${e.ups.size+1} * sizeof(void*));   // +1 pool
-                assert(ups!=NULL && "not enough memory");
-                pool_push($pool, ups);
-                ups[0] = $pool;
-                ${e.ups.mapIndexed { i,up -> "ups[${i+1}] = ${up.str};\n" }.joinToString("")}
-                ${e.type.pos()} $ID = malloc(sizeof(*$ID));
-                // closure needs to go into the pool b/c it has to be a pointer and go into other closures
+            val src = if (e.type.xscp1s.first == null) "" else """
+                struct ${e.type.toce()}_$hash* $ID = malloc(sizeof(struct ${e.type.toce()}_$hash));
+                assert($ID!=NULL && "not enough memory");
+                $ID->f = $fid;
+                $ID->pool = $pool;
+                ${e.ups.map { "$ID->ups.${it.str} = ${it.str};\n" }.joinToString("")}
                 pool_push($pool, $ID);
-                *$ID = (${e.type.toce()}) { $fid, ups }; 
+                
             """.trimIndent()
             val task = if (pc == "") "" else "${e.type.pos()} $ID = { $fid, 0 };\n"
             val pre = """
-                // int f (int* pc, void** ups, int arg);
-                ${e.type.out.pos()} $fid ($pc $ups $pools ${e.type.inp.pos()} arg) {
+                // int f (int* pc, XXX* clo, int arg);
+                ${e.type.out.pos()} $fid ($pc $clo $pools ${e.type.inp.pos()} arg) {
                     ${e.type.out.pos()} ret;
                     ${if (pc == "") "" else "switch (*pc) {\ncase 0:\n"}                    
                     ${it.stmt}
@@ -336,7 +345,7 @@ fun code_fe (e: Expr) {
                 }
 
             """.trimIndent()
-            Code(it.type+pre, clo+task, ID)
+            Code(it.type+st+pre, src+task, "((${e.type.toce()}*)$ID)")
         }
     })
 }

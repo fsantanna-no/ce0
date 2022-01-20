@@ -1494,6 +1494,24 @@ class TExec {
         assert(out == "<.1 <.0>>\n") { out }
     }
     @Test
+    fun n08_clo_int () {
+        val out = all("""
+            { @A
+                var x: _int
+                set x = _10:_int
+                var f: (func @A->@[]->()->_int)
+                set f = func @A->@[]->()->_int [x] {
+                    set ret = x
+                }
+                set x = _20:_int
+                output std x
+                set x = f ()
+                output std x
+            }
+        """.trimIndent())
+        assert(out == "20\n10\n") { out }
+    }
+    @Test
     fun n09_pool_closure_err() {
         val out = all(
             """
