@@ -183,4 +183,30 @@ class TTask {
         """.trimIndent())
         assert(out == "11\n12\n") { out }
     }
+    @Test
+    fun a09_nest () {
+        val out = all("""
+            var f: task @[]->()->()
+            set f = task @[]->()->() {
+                output std _1:_int
+                await
+                var g: task @[]->()->()
+                set g = task @[]->()->() {
+                    output std _2:_int
+                    await
+                    output std _3:_int
+                }
+                spawn g ()
+                await
+                output std _4:_int
+            }
+            spawn f ()
+            output std _10:_int
+            bcast @GLOBAL _0:_int
+            output std _11:_int
+            bcast @GLOBAL _0:_int
+            output std _12:_int
+        """.trimIndent())
+        assert(out == "1\n10\n2\n11\n3\n4\n12") { out }
+    }
 }

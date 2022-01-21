@@ -539,7 +539,7 @@ fun code_fs (s: Stmt) {
             }
             val src = """
             {
-                Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
+                Pool* pool  /*__attribute__((__cleanup__(pool_free)))*/ = NULL;
                 Block block = { &pool, {NULL,NULL,NULL} };
 
                 $prv
@@ -687,7 +687,7 @@ fun Stmt.code (): String {
                 // 1.2. awake current task  (it is blocked after inner block. but before next task)
                 // 1.3. awake next task
                 assert(taskf->task.links.block != NULL);
-                //bcast(taskf->task.links.block, evt);        // 1.1
+                bcast(taskf->task.links.block, evt);        // 1.1
                 if (taskf->task.state == TASK_AWAITING) {
                     taskf->f(taskf, evt);                   // 1.2
                 }
@@ -710,7 +710,7 @@ fun Stmt.code (): String {
         ${code.type}
 
         int main (void) {
-            Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
+            Pool* pool  /*__attribute__((__cleanup__(pool_free)))*/ = NULL;
             Block block = { &pool, {NULL,NULL,NULL} };
             GLOBAL = &block;
             Block* LOCAL = &block;
