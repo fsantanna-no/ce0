@@ -259,7 +259,7 @@ fun code_fe (e: Expr) {
             Code(it.type, it.stmt, pos)
         }
         is Expr.New  -> CODE.removeFirst().let {
-            val ID  = "__tmp_" + e.hashCode().absoluteValue
+            val ID  = "__tmp_" + e.n
             val ptr = e.wtype as Type.Ptr
 
             val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==ptr.xscp1.lbl && it.num==ptr.xscp1.num } }
@@ -283,7 +283,7 @@ fun code_fe (e: Expr) {
             )
         }
         is Expr.UCons -> CODE.removeFirst().let {
-            val ID  = "_tmp_" + e.hashCode().absoluteValue
+            val ID  = "_tmp_" + e.n
             val sup = "struct " + xp.toce()
             val pre = "$sup $ID = (($sup) { ${e.tk_.num} , ._${e.tk_.num} = ${it.expr} });\n"
             Code(it.type, it.stmt + pre, ID)
@@ -332,9 +332,8 @@ fun code_fe (e: Expr) {
             val istk   = (e.type.tk.enu == TK.TASK)
             val isnone = !isclo && !istk
 
-            val hash    = e.hashCode().absoluteValue
-            val fstruct = "struct ${e.type.toce()}_$hash"
-            val fvar    = "_func_$hash"
+            val fstruct = "struct ${e.type.toce()}_${e.n}"
+            val fvar    = "_func_${e.n}"
 
             val src = if (isnone) "" else """
                 $fstruct* $fvar = malloc(sizeof($fstruct));
@@ -492,12 +491,11 @@ fun code_fs (s: Stmt) {
         is Stmt.SCall -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
         is Stmt.Spawn -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
         is Stmt.Await -> {
-            val N = s.hashCode()
             val src = """
-                fdata->task.pc = $N;    // next awake
+                fdata->task.pc = ${s.n};    // next awake
                 fdata->task.state = TASK_AWAITING;
-                return 0;               // await
-                case $N:                // awake here
+                return 0;                   // await
+                case ${s.n}:                // awake here
                 fdata->task.state = TASK_RUNNING;
                 evt = argevt.evt;
                 
