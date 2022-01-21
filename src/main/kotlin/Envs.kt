@@ -117,6 +117,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
         is Stmt.SCall -> { this.e.setEnvs(env) ; env }
         is Stmt.Spawn -> { this.e.setEnvs(env) ; env }
         is Stmt.Awake -> { this.e.setEnvs(env) ; env }
+        is Stmt.Bcast -> { this.e.setEnvs(env) ; env }
         is Stmt.Inp   -> { this.arg.setEnvs(env) ; this.xtype?.visit(false, ::ft) ; env }
         is Stmt.Out   -> { this.arg.setEnvs(env) ; env }
         is Stmt.Seq -> {

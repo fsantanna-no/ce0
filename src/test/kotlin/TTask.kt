@@ -153,8 +153,8 @@ class TTask {
             }
             spawn g ()
             
-            broadcast @GLOBAL _1
-            broadcast @GLOBAL _2
+            bcast _1:_int
+            bcast _2:_int
         """.trimIndent())
         assert(out == "1\n11\n12\n") { out }
     }

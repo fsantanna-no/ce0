@@ -63,6 +63,25 @@ awake [tk,e]
 broadcast up tk e
 broadcast down scp e
 await _int  // condition using evt
+
+task f {
+    defer {
+        ...
+    }
+    ...
+    spawn h ()
+    ...
+    catch cnd {
+        defer {
+            ...
+        }
+        ...
+        spawn g()       <--- 1. g awakes from bcast and throws cond
+        await ...
+    }
+                        <--- 2. catch/defer awakes
+                        <--- 3. defer awakes
+}
 ```
 
 finalize/every/pool

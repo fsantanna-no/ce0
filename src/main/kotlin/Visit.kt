@@ -74,6 +74,7 @@ fun Stmt.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((T
         is Stmt.SCall -> this.e.visit_(xpd,fs,fe,ft)
         is Stmt.Spawn -> this.e.visit_(xpd,fs,fe,ft)
         is Stmt.Awake -> this.e.visit_(xpd,fs,fe,ft)
+        is Stmt.Bcast -> this.e.visit_(xpd,fs,fe,ft)
         is Stmt.Inp   -> this.arg.visit_(xpd,fs,fe,ft)
         is Stmt.Out   -> this.arg.visit_(xpd,fs,fe,ft)
         is Stmt.Seq   -> { this.s1.visit(xpd,fs,fe,ft) ; this.s2.visit(xpd,fs,fe,ft) }

@@ -329,6 +329,11 @@ fun parser_stmt (all: All): Stmt {
             All_assert_tk(tk0, e is Expr.Call) { "expected call expression" }
             Stmt.Awake(tk0, e as Expr.Call)
         }
+        all.accept(TK.BCAST) -> {
+            val tk0 = all.tk0 as Tk.Key
+            val e = parser_expr(all)
+            Stmt.Bcast(tk0, e)
+        }
         all.accept(TK.INPUT) -> {
             val tk = all.tk0 as Tk.Key
             all.accept_err(TK.XVAR)

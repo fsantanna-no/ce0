@@ -71,7 +71,7 @@ fun code_ft (tp: Type) {
                             $xpools
                             ${if (!istk) "${tp.inp.pos()}" else "ARGEVT_${tp.toce()}"}
                         );
-                        ${if (!istk)  "" else "int pc;"}
+                        ${if (!istk)  "" else "Task task;"}
                         ${if (!isclo) "" else "Pool* pool;"}
                         void* mem;
                     } ${tp.toce()};
@@ -350,8 +350,22 @@ fun code_fe (e: Expr) {
                     """.trimIndent()}
                 }
                 ${if (!istk) "" else """
-                    $fvar->pc = 0;
-                    
+                    $fvar->task.pc = 0;
+                    $fvar->task.state = TASK_UNBORN;
+                    {
+                        Task_F* old = fdata->task.lnks[LINK_INN_LST];
+                        if (old == NULL) {
+                            fdata->task.lnks[LINK_INN_FST] = (Task_F*) $fvar;
+                        } else {
+                            old->task.lnks[LINK_NXT] = (Task_F*) $fvar;
+                        }
+                        fdata->task.lnks[LINK_INN_LST] = (Task_F*) $fvar;
+                        $fvar->task.lnks[LINK_PRV] = old;                        
+                        $fvar->task.lnks[LINK_NXT] = NULL;
+                        $fvar->task.lnks[LINK_INN_FST] = NULL;
+                        $fvar->task.lnks[LINK_INN_LST] = NULL;
+                    }
+                                        
                 """.trimIndent()}
                 
             """.trimIndent()
@@ -364,7 +378,7 @@ fun code_fe (e: Expr) {
             fun Stmt.mem_vars (): String {
                 return when (this) {
                     is Stmt.Nop, is Stmt.SSet, is Stmt.ESet, is Stmt.Nat,
-                    is Stmt.SCall, is Stmt.Spawn, is Stmt.Await, is Stmt.Awake,
+                    is Stmt.SCall, is Stmt.Spawn, is Stmt.Await, is Stmt.Awake, is Stmt.Bcast,
                     is Stmt.Inp, is Stmt.Out, is Stmt.Ret, is Stmt.Break -> ""
 
                     is Stmt.Var -> "${this.xtype!!.pos()} ${this.tk_.str};\n"
@@ -411,7 +425,7 @@ fun code_fe (e: Expr) {
                             $xpools
                             ${if (!istk) "${e.type.inp.pos()} arg" else "ARGEVT_${e.type.toce()} argevt"}
                         );
-                        ${if (!istk)  "" else "int pc;"}
+                        ${if (!istk)  "" else "Task task;"}
                         ${if (!isclo) "" else "Pool** pool;"}
                         struct {
                             ${e.ups.map { "${e.env(it.str)!!.toType().pos()} ${it.str};\n" }.joinToString("")}
@@ -430,7 +444,7 @@ fun code_fe (e: Expr) {
                 ) {
                     ${if (!istk) "" else "${e.type.inp.pos()} arg = argevt.arg;"}
                     ${e.type.out.pos()} ret;
-                    ${if (!istk) "" else "switch (fdata->pc) {\ncase 0:\n"}                    
+                    ${if (!istk) "" else "switch (fdata->task.pc) {\ncase 0:\n"}                    
                     ${it.stmt}
                     ${if (!istk) "" else "}"}                    
                     return ret;
@@ -481,9 +495,11 @@ fun code_fs (s: Stmt) {
         is Stmt.Await -> {
             val N = s.hashCode()
             val src = """
-                fdata->pc = $N; // next awake
-                return 0;       // await
-                case $N:        // awake here
+                fdata->task.pc = $N;    // next awake
+                fdata->task.state = TASK_AWAITING;
+                return 0;               // await
+                case $N:                // awake here
+                fdata->task.state = TASK_RUNNING;
                 evt = argevt.evt;
                 
             """.trimIndent()
@@ -492,6 +508,10 @@ fun code_fs (s: Stmt) {
         is Stmt.Awake -> CODE.removeFirst().let {
             val call = it.expr + ";\n"
             Code(it.type, it.stmt+call, "")
+        }
+        is Stmt.Bcast -> CODE.removeFirst().let {
+            val bcast = "bcast(&_fdata_, ${it.expr});\n"
+            Code(it.type, it.stmt+bcast, "")
         }
         is Stmt.Inp   -> CODE.removeFirst().let {
             if (s.wup is Stmt.SSet) {
@@ -521,16 +541,16 @@ fun code_fs (s: Stmt) {
             Code(it.type, src, "")
         }
         is Stmt.Var -> {
-            val src = "${s.xtype!!.pos()} ${s.tk_.str};\n"
+            val dcl = "${s.xtype!!.pos()} ${s.tk_.str};\n"
             when {
-                // globals: declare outside main
-                (s.ups_first { it is Stmt.Block } == null) -> Code(src, "", "")
+                // var is global? declare outside main
+                (s.ups_first { it is Stmt.Block } == null) -> Code(dcl, "", "")
 
-                // task var: declare in task struct
+                // var is inside task? declare in task struct
                 ((s.ups_first { it is Expr.Func } as Expr.Func?).let { it!=null && it.type.tk.enu==TK.TASK }) -> Code("", "", "")
 
-                // normal var: declare here
-                else -> Code("", src, "")
+                // var is normal? declare here
+                else -> Code("", dcl, "")
             }
         }
     })
@@ -583,6 +603,8 @@ fun Stmt.code (): String {
         #define output_std_Ptr_(x)   printf("%p",x)
         #define output_std_Ptr(x)    (output_std_Ptr_(x), puts(""))
         
+        ///
+        
         typedef struct Pool {
             void* val;
             struct Pool* nxt;
@@ -606,8 +628,46 @@ fun Stmt.code (): String {
             *root = pool;
         }
         
+        ///
+        
+        typedef enum {
+            TASK_UNBORN, TASK_RUNNING, TASK_AWAITING, TASK_PAUSED, TASK_DEAD
+        } TASK_STATE;
+        
+        typedef enum {
+            LINK_PRV=0, LINK_NXT, LINK_INN_FST, LINK_INN_LST
+        } TASK_LINK;
+        
+        struct Task_F;
+        typedef struct Task {
+            struct Task_F* lnks[3];   // prv, nst, nxt
+            TASK_STATE state;
+            int  pc;
+        } Task;
+        
+        typedef struct Task_F {
+            void (*f) (void* x, int evt);
+            Task task;
+        } Task_F;
+        
+        void bcast (Task_F* taskf, int evt) {
+            if (taskf->task.lnks[LINK_INN_FST] != NULL) {
+                bcast(taskf->task.lnks[LINK_INN_FST], evt);
+            }
+            if (taskf->task.state == TASK_AWAITING) {
+                taskf->f(taskf, evt);
+            }
+            if (taskf->task.lnks[LINK_NXT] != NULL) {
+                bcast(taskf->task.lnks[LINK_NXT], evt);
+            }            
+        }
+        
+        ///
+        
         Pool** pool_GLOBAL;
         int evt;
+        Task_F _fdata_ = { NULL, { {NULL,NULL,NULL}, TASK_UNBORN, 0 } };
+        Task_F*  fdata  = &_fdata_;
 
         ${TPS.map { it.second }.joinToString("")}
         ${TPS.map { it.third  }.joinToString("")}
