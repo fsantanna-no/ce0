@@ -153,9 +153,34 @@ class TTask {
             }
             spawn g ()
             
-            bcast _1:_int
-            bcast _2:_int
+            bcast @GLOBAL _1:_int
+            bcast @GLOBAL _2:_int
         """.trimIndent())
         assert(out == "1\n11\n12\n") { out }
+    }
+    @Test
+    fun a08_bcast_block () {
+        val out = all("""
+            var f: task @[]->()->()
+            set f = task @[]->()->() {
+                await
+                output std _(evt+0):_int
+            }
+            spawn f ()
+            
+            {
+                var g: task @[]->()->()
+                set g = task @[]->()->() {
+                    await
+                    output std _(evt+10):_int
+                    await
+                    output std _(evt+10):_int
+                }
+                spawn g ()
+                bcast @LOCAL _1:_int
+                bcast @LOCAL _2:_int
+            }            
+        """.trimIndent())
+        assert(out == "11\n12\n") { out }
     }
 }

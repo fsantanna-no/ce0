@@ -353,17 +353,16 @@ fun code_fe (e: Expr) {
                     $fvar->task.pc = 0;
                     $fvar->task.state = TASK_UNBORN;
                     {
-                        Task_F* old = fdata->task.lnks[LINK_INN_LST];
-                        if (old == NULL) {
-                            fdata->task.lnks[LINK_INN_FST] = (Task_F*) $fvar;
+                        Task_F* last = LOCAL->links.last;
+                        if (last == NULL) {
+                            assert(LOCAL->links.first == NULL);
+                            LOCAL->links.first = (Task_F*) $fvar;
                         } else {
-                            old->task.lnks[LINK_NXT] = (Task_F*) $fvar;
+                            last->task.links.next = (Task_F*) $fvar;
                         }
-                        fdata->task.lnks[LINK_INN_LST] = (Task_F*) $fvar;
-                        $fvar->task.lnks[LINK_PRV] = old;                        
-                        $fvar->task.lnks[LINK_NXT] = NULL;
-                        $fvar->task.lnks[LINK_INN_FST] = NULL;
-                        $fvar->task.lnks[LINK_INN_LST] = NULL;
+                        LOCAL->links.last = (Task_F*) $fvar;
+                        $fvar->task.links.next  = NULL;
+                        $fvar->task.links.block = NULL;
                     }
                                         
                 """.trimIndent()}
@@ -510,7 +509,7 @@ fun code_fs (s: Stmt) {
             Code(it.type, it.stmt+call, "")
         }
         is Stmt.Bcast -> CODE.removeFirst().let {
-            val bcast = "bcast(&_fdata_, ${it.expr});\n"
+            val bcast = "bcast(${s.scp1.toce()}, ${it.expr});\n"
             Code(it.type, it.stmt+bcast, "")
         }
         is Stmt.Inp   -> CODE.removeFirst().let {
@@ -529,10 +528,23 @@ fun code_fs (s: Stmt) {
             Code(it.type, it.stmt+call, "")
         }
         is Stmt.Block -> CODE.removeFirst().let {
+            val (prv,fst) = s.ups_first { it is Expr.Func || it is Stmt.Block }.let {
+                when {
+                    // GLOBAL has no previous LOCAL
+                    (it is Stmt.Block) -> Pair("LOCAL->links.block = &block;", "")
+                    // task points to first task block
+                    (it is Expr.Func && it.tk.enu == TK.TASK) -> Pair("", "fdata->task.links.block = &block;")
+                    else -> Pair("","")
+                }
+            }
             val src = """
             {
                 Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
-                Block block = { { NULL, { {NULL,NULL,NULL}, TASK_UNBORN, 0 } }, &pool };
+                Block block = { &pool, {NULL,NULL,NULL} };
+
+                $prv
+                $fst
+
                 Block* LOCAL = &block;
                 ${if (s.xscp1 == null) "" else "Block* ${s.xscp1.toce()} = &block;"}
                 ${it.stmt}
@@ -631,19 +643,20 @@ fun Stmt.code (): String {
         
         ///
         
+        struct Block;
+        struct Task_F;
+        
         typedef enum {
             TASK_UNBORN, TASK_RUNNING, TASK_AWAITING, TASK_PAUSED, TASK_DEAD
         } TASK_STATE;
         
-        typedef enum {
-            LINK_PRV=0, LINK_NXT, LINK_INN_FST, LINK_INN_LST
-        } TASK_LINK;
-        
-        struct Task_F;
         typedef struct Task {
-            struct Task_F* lnks[3];   // prv, nst, nxt
             TASK_STATE state;
-            int  pc;
+            int pc;
+            struct {
+                struct Task_F* next;    // next Task in the same block
+                struct Block*  block;   // first nested block inside me
+            } links;
         } Task;
         
         typedef struct Task_F {
@@ -651,28 +664,44 @@ fun Stmt.code (): String {
             Task task;
         } Task_F;
         
-        void bcast (Task_F* taskf, int evt) {
-            if (taskf->task.lnks[LINK_INN_FST] != NULL) {
-                bcast(taskf->task.lnks[LINK_INN_FST], evt);
-            }
-            if (taskf->task.state == TASK_AWAITING) {
-                taskf->f(taskf, evt);
-            }
-            if (taskf->task.lnks[LINK_NXT] != NULL) {
-                bcast(taskf->task.lnks[LINK_NXT], evt);
-            }            
-        }
-        
         ///
         
-        typedef struct {
-            Task_F task;
+        typedef struct Block {
             Pool** pool;
+            struct {
+                struct Task_F* first;   // first Task inside me
+                struct Task_F* last;    // current last Task inside me
+                struct Block*  block;   // current nested Block inside me 
+            } links;
         } Block;
         
         ///
         
-        Block _GLOBAL_;
+        // 1. awake my inner tasks  (they started before the nested block)
+        // 2. awake my nested block (it started after the inner tasks)            
+        void bcast (Block* block, int evt) {
+            // 1. awake my inner tasks
+            Task_F* taskf = block->links.first;
+            while (taskf != NULL) {
+                // 1.1. awake tasks in inner block in current task
+                // 1.2. awake current task  (it is blocked after inner block. but before next task)
+                // 1.3. awake next task
+                assert(taskf->task.links.block != NULL);
+                //bcast(taskf->task.links.block, evt);        // 1.1
+                if (taskf->task.state == TASK_AWAITING) {
+                    taskf->f(taskf, evt);                   // 1.2
+                }
+                taskf = taskf->task.links.next;             // 1.3
+            }
+            
+            // 2. awake my nested block
+            if (block->links.block != NULL) {
+                bcast(block->links.block, evt);
+            }
+        }
+        
+        ///
+        
         Block* GLOBAL;
         int evt;
 
@@ -682,7 +711,7 @@ fun Stmt.code (): String {
 
         int main (void) {
             Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
-            Block block = { { NULL, { {NULL,NULL,NULL}, TASK_UNBORN, 0 } }, &pool };
+            Block block = { &pool, {NULL,NULL,NULL} };
             GLOBAL = &block;
             Block* LOCAL = &block;
             ${code.stmt}
