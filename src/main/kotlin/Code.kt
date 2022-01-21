@@ -569,7 +569,7 @@ fun code_fs (s: Stmt) {
             val dcl = if (intask) {
                 ""
             } else {
-                "Block block_${s.n};\n"
+                "Block block_${s.n} __attribute__((__cleanup__(block_free)));\n"
             }
             val src = """
             {

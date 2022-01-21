@@ -209,4 +209,36 @@ class TTask {
         """.trimIndent())
         assert(out == "1\n10\n2\n11\n3\n4\n12\n") { out }
     }
+    @Test
+    fun a10_block_out () {
+        val out = all("""
+            var f: task @[]->()->()
+            set f = task @[]->()->() {
+                output std _10:_int
+                await
+                output std _11:_int
+            }
+            spawn f ()
+            {
+                var g: task @[]->()->()
+                set g = task @[]->()->() {
+                    output std _20:_int
+                    await
+                    output std _21:_int
+                }
+                spawn g ()
+                await
+            }
+            var h: task @[]->()->()
+            set h = task @[]->()->() {
+                output std _30:_int
+                await
+                output std _31:_int
+            }
+            spawn h ()
+            bcast @GLOBAL _0:_int
+            bcast @GLOBAL _0:_int
+        """.trimIndent())
+        assert(out == "1\n10\n2\n11\n3\n4\n12\n") { out }
+    }
 }
