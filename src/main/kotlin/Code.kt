@@ -290,13 +290,13 @@ fun code_fe (e: Expr) {
             val ptr = e.wtype as Type.Ptr
 
             val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==ptr.xscp1.lbl && it.num==ptr.xscp1.num } }
-            val pool = (if (up == null) ptr.xscp1.toce(ptr)+"->pool" else "fdata->block->pool")
+            val blk = (if (up == null) ptr.xscp1.toce(ptr) else "fdata->block")
 
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
                 *$ID = ${it.expr};
-                pool_push(&$pool, $ID);
+                block_push($blk, $ID);
 
             """.trimIndent()
             Code(it.type, it.stmt+pre, ID)
@@ -372,7 +372,7 @@ fun code_fe (e: Expr) {
                     """
                     $fvar->block = $blk;
                     ${e.ups.map { "$fvar->mem.${it.str} = ${it.str};\n" }.joinToString("")}
-                    pool_push(&$blk->pool, $fvar);
+                    block_push($blk, $fvar);
 
                     """.trimIndent()}
                 }
@@ -653,26 +653,6 @@ fun Stmt.code (): String {
             struct Pool* nxt;
         } Pool;
         
-        void pool_free (Pool** pool) {
-            while (*pool != NULL) {
-                Pool* cur = *pool;
-                *pool = cur->nxt;
-                free(cur->val);
-                free(cur);
-            }
-            *pool = NULL;
-        }
-        
-        void pool_push (Pool** root, void* val) {
-            Pool* pool = malloc(sizeof(Pool));
-            assert(pool!=NULL && "not enough memory");
-            pool->val = val;
-            pool->nxt = *root;
-            *root = pool;
-        }
-        
-        ///
-        
         struct Block;
         struct Task_F;
         
@@ -694,8 +674,6 @@ fun Stmt.code (): String {
             Task task;
         } Task_F;
         
-        ///
-        
         typedef struct Block {
             Pool* pool;
             struct {
@@ -704,6 +682,26 @@ fun Stmt.code (): String {
                 struct Block*  block;   // current nested Block inside me 
             } links;
         } Block;
+        
+        ///
+        
+        void block_free (Block* block) {
+            while (block->pool != NULL) {
+                Pool* cur = block->pool;
+                block->pool = cur->nxt;
+                free(cur->val);
+                free(cur);
+            }
+            block->pool = NULL;
+        }
+        
+        void block_push (Block* block, void* val) {
+            Pool* pool = malloc(sizeof(Pool));
+            assert(pool!=NULL && "not enough memory");
+            pool->val = val;
+            pool->nxt = block->pool;
+            block->pool = pool;
+        }
         
         ///
         
@@ -740,7 +738,7 @@ fun Stmt.code (): String {
         ${code.type}
 
         int main (void) {
-            Block block_0 = { NULL, {NULL,NULL,NULL} };
+            Block block_0 __attribute__((__cleanup__(block_free))) = { NULL, {NULL,NULL,NULL} };
             GLOBAL = &block_0;
             ${code.stmt}
         }
