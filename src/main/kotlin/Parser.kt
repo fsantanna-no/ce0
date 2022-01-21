@@ -331,8 +331,10 @@ fun parser_stmt (all: All): Stmt {
         }
         all.accept(TK.BCAST) -> {
             val tk0 = all.tk0 as Tk.Key
+            all.accept(TK.XSCPCST) || all.accept_err(TK.XSCPVAR)
+            val scp = all.tk0 as Tk.Scp1
             val e = parser_expr(all)
-            Stmt.Bcast(tk0, e)
+            Stmt.Bcast(tk0, scp, e)
         }
         all.accept(TK.INPUT) -> {
             val tk = all.tk0 as Tk.Key

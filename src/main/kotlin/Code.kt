@@ -50,12 +50,12 @@ fun code_ft (tp: Type) {
             val istk   = (tp.tk.enu == TK.TASK)
             val isnone = !isclo && !istk
 
-            val xpools = tp.xscp1s.second.let { if (it.size == 0) "" else
-                it.map { "Pool**" }.joinToString(",") + ","
+            val xblocks = tp.xscp1s.second.let { if (it.size == 0) "" else
+                it.map { "Block*" }.joinToString(",") + ","
             }
 
             val ret = if (isnone) {
-                "typedef ${tp.out.pos()} ${tp.toce()} ($xpools ${tp.inp.pos()});\n"
+                "typedef ${tp.out.pos()} ${tp.toce()} ($xblocks ${tp.inp.pos()});\n"
                 //"${tp.out.pos()} ${tp.toce()} $fid ($pc $ups $pools ${e.type.inp.pos()})"
             } else {
                 val xfdata = if (isnone) "" else "struct ${tp.toce()}* fdata,"
@@ -68,11 +68,11 @@ fun code_ft (tp: Type) {
                     typedef struct ${tp.toce()} {
                         ${tp.out.pos()} (*f) (
                             $xfdata
-                            $xpools
+                            $xblocks
                             ${if (!istk) "${tp.inp.pos()}" else "ARGEVT_${tp.toce()}"}
                         );
                         ${if (!istk)  "" else "Task task;"}
-                        ${if (!isclo) "" else "Pool* pool;"}
+                        ${if (!isclo) "" else "Block* block;"}
                         void* mem;
                     } ${tp.toce()};
                     
@@ -207,7 +207,7 @@ data class Code (val type: String, val stmt: String, val expr: String)
 val CODE = ArrayDeque<Code>()
 
 fun Tk.Scp1.toce (): String {
-    return "pool_" + this.lbl + (if (this.num==null) "" else ("_"+this.num))
+    return this.lbl + (if (this.num==null) "" else ("_"+this.num))
 }
 
 fun code_fe (e: Expr) {
@@ -263,13 +263,13 @@ fun code_fe (e: Expr) {
             val ptr = e.wtype as Type.Ptr
 
             val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==ptr.xscp1.lbl && it.num==ptr.xscp1.num } }
-            val pool = if (up == null) ptr.xscp1.toce() else "(fdata->pool)"
+            val blk = (if (up == null) ptr.xscp1.toce() else "fdata->block")
 
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
                 *$ID = ${it.expr};
-                pool_push($pool, $ID);
+                pool_push($blk->pool, $ID);
 
             """.trimIndent()
             Code(it.type, it.stmt+pre, ID)
@@ -294,9 +294,9 @@ fun code_fe (e: Expr) {
             val f   = CODE.removeFirst()
             //val ff  = e.f as? Expr.Dnref
 
-            val pools = e.xscp1s.first.let { if (it.size == 0) "" else (it.map { out ->
+            val blks = e.xscp1s.first.let { if (it.size == 0) "" else (it.map { out ->
                 val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==out.lbl && it.num==out.num } }
-                if (up == null) out.toce() else "(fdata->pool)"
+                if (up == null) out.toce() else "(fdata->block)"
             }.joinToString(",") + ",") }
 
             val snd =
@@ -310,19 +310,19 @@ fun code_fe (e: Expr) {
                         val istk   = (tpf.tk.enu == TK.TASK)
                         val isnone = !isclo && !istk
                         if (isnone) {
-                            f.expr + "(" + pools + arg.expr + ")"
+                            f.expr + "(" + blks + arg.expr + ")"
                         } else if (istk) {
                             val argret = when (e.getUp()) {
                                 is Stmt.Spawn -> "(ARGEVT_${tpf.toce()}) {.arg=${arg.expr}}"
                                 is Stmt.Awake -> "(ARGEVT_${tpf.toce()}) {.evt=${arg.expr}}"
                                 else -> error("bug found")
                             }
-                            f.expr + "->f(" + f.expr + ", " + pools + argret + ")"
+                            f.expr + "->f(" + f.expr + ", " + blks + argret + ")"
                         } else {
-                            f.expr + "->f(" + f.expr + ", " + pools + arg.expr + ")"
+                            f.expr + "->f(" + f.expr + ", " + blks + arg.expr + ")"
                         }
                     } else {
-                        f.expr + "(" + pools + (if (e.arg is Expr.Unit) "" else arg.expr) + ")"
+                        f.expr + "(" + blks + (if (e.arg is Expr.Unit) "" else arg.expr) + ")"
                     }
                 }
             Code(f.type+arg.type, f.stmt+arg.stmt, snd)
@@ -341,11 +341,11 @@ fun code_fe (e: Expr) {
                 assert($fvar!=NULL && "not enough memory");
                 $fvar->f = ${fvar}_f;
                 ${if (!isclo) "" else {
-                    val pool = e.type.xscp1s.first!!.toce()
+                    val blk = e.type.xscp1s.first!!.toce()
                     """
-                    $fvar->pool = $pool;
+                    $fvar->block = $blk;
                     ${e.ups.map { "$fvar->mem.${it.str} = ${it.str};\n" }.joinToString("")}
-                    pool_push($pool, $fvar);
+                    pool_push($blk->pool, $fvar);
 
                     """.trimIndent()}
                 }
@@ -371,8 +371,8 @@ fun code_fe (e: Expr) {
             """.trimIndent()
 
             val xfdata = if (isnone) "" else "$fstruct* fdata,"
-            val xpools = e.type.xscp1s.second.let { if (it.size == 0) "" else
-                it.map { "Pool** ${it.toce()}" }.joinToString(",") + ","
+            val blocks = e.type.xscp1s.second.let { if (it.size == 0) "" else
+                it.map { "Block* ${it.toce()}" }.joinToString(",") + ","
             }
 
             fun Stmt.mem_vars (): String {
@@ -422,11 +422,11 @@ fun code_fe (e: Expr) {
                     $fstruct {
                         ${e.type.out.pos()} (*f) (
                             $xfdata
-                            $xpools
+                            $blocks
                             ${if (!istk) "${e.type.inp.pos()} arg" else "ARGEVT_${e.type.toce()} argevt"}
                         );
                         ${if (!istk)  "" else "Task task;"}
-                        ${if (!isclo) "" else "Pool** pool;"}
+                        ${if (!isclo) "" else "Block* block;"}
                         struct {
                             ${e.ups.map { "${e.env(it.str)!!.toType().pos()} ${it.str};\n" }.joinToString("")}
                             ${e.block.mem_vars()}
@@ -439,7 +439,7 @@ fun code_fe (e: Expr) {
                 // int f (XXX* fdata, Pools**, int arg);
                 ${e.type.out.pos()} ${if (isnone) fvar else fvar+"_f"} (
                     $xfdata
-                    $xpools
+                    $blocks
                     ${if (!istk) "${e.type.inp.pos()} arg" else "ARGEVT_${e.type.toce()} argevt"}
                 ) {
                     ${if (!istk) "" else "${e.type.inp.pos()} arg = argevt.arg;"}
@@ -532,8 +532,9 @@ fun code_fs (s: Stmt) {
             val src = """
             {
                 Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
-                Pool** pool_LOCAL = &pool;
-                ${if (s.xscp1 == null) "" else "Pool** ${s.xscp1.toce()} = &pool;"}
+                Block block = { { NULL, { {NULL,NULL,NULL}, TASK_UNBORN, 0 } }, &pool };
+                Block* LOCAL = &block;
+                ${if (s.xscp1 == null) "" else "Block* ${s.xscp1.toce()} = &block;"}
                 ${it.stmt}
             }
             
@@ -664,10 +665,16 @@ fun Stmt.code (): String {
         
         ///
         
-        Pool** pool_GLOBAL;
+        typedef struct {
+            Task_F task;
+            Pool** pool;
+        } Block;
+        
+        ///
+        
+        Block _GLOBAL_;
+        Block* GLOBAL;
         int evt;
-        Task_F _fdata_ = { NULL, { {NULL,NULL,NULL}, TASK_UNBORN, 0 } };
-        Task_F*  fdata  = &_fdata_;
 
         ${TPS.map { it.second }.joinToString("")}
         ${TPS.map { it.third  }.joinToString("")}
@@ -675,8 +682,9 @@ fun Stmt.code (): String {
 
         int main (void) {
             Pool* pool  __attribute__((__cleanup__(pool_free))) = NULL;
-            pool_GLOBAL = &pool;
-            Pool** pool_LOCAL  = &pool;
+            Block block = { { NULL, { {NULL,NULL,NULL}, TASK_UNBORN, 0 } }, &pool };
+            GLOBAL = &block;
+            Block* LOCAL = &block;
             ${code.stmt}
         }
 
