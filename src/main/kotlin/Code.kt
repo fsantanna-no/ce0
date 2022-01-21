@@ -285,7 +285,7 @@ fun code_fe (e: Expr) {
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
                 *$ID = ${it.expr};
-                pool_push($pool, $ID);
+                pool_push(&$pool, $ID);
 
             """.trimIndent()
             Code(it.type, it.stmt+pre, ID)
@@ -361,7 +361,7 @@ fun code_fe (e: Expr) {
                     """
                     $fvar->block = $blk;
                     ${e.ups.map { "$fvar->mem.${it.str} = ${it.str};\n" }.joinToString("")}
-                    pool_push($blk->pool, $fvar);
+                    pool_push(&$blk->pool, $fvar);
 
                     """.trimIndent()}
                 }
@@ -554,8 +554,7 @@ fun code_fs (s: Stmt) {
             }
             val src = """
             {
-                Pool* pool  /*__attribute__((__cleanup__(pool_free)))*/ = NULL;
-                Block block_${s.n} = { &pool, {NULL,NULL,NULL} };
+                Block block_${s.n} = { NULL, {NULL,NULL,NULL} };
                 $prv
                 $fst
                 ${it.stmt}
@@ -678,7 +677,7 @@ fun Stmt.code (): String {
         ///
         
         typedef struct Block {
-            Pool** pool;
+            Pool* pool;
             struct {
                 struct Task_F* first;   // first Task inside me
                 struct Task_F* last;    // current last Task inside me
@@ -721,8 +720,7 @@ fun Stmt.code (): String {
         ${code.type}
 
         int main (void) {
-            Pool* pool  /*__attribute__((__cleanup__(pool_free)))*/ = NULL;
-            Block block_0 = { &pool, {NULL,NULL,NULL} };
+            Block block_0 = { NULL, {NULL,NULL,NULL} };
             GLOBAL = &block_0;
             ${code.stmt}
         }
