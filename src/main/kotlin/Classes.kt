@@ -1,4 +1,4 @@
-private var N = 0
+private var N = 1
 
 sealed class Type (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Unit  (val tk_: Tk.Sym): Type(N++, tk_, null, null)

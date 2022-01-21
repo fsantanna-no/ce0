@@ -206,8 +206,24 @@ fun code_ft (tp: Type) {
 data class Code (val type: String, val stmt: String, val expr: String)
 val CODE = ArrayDeque<Code>()
 
-fun Tk.Scp1.toce (): String {
-    return this.lbl + (if (this.num==null) "" else ("_"+this.num))
+fun Tk.Scp1.toce (up: Any): String {
+    return when {
+        (this.enu == TK.XSCPVAR) -> this.lbl + "_" + this.num
+        (this.lbl == "GLOBAL")   -> "GLOBAL"
+        (this.lbl == "LOCAL")    -> up.local()
+        else -> {
+            val blk = up.env(this.lbl) as Stmt.Block
+            "(&block_" + blk.n + ")"
+        }
+    }
+}
+
+fun Any.local (): String {
+    return this.ups_first { it is Stmt.Block }.let {
+        if (it == null) "GLOBAL" else {
+            "(&block_" + (it as Stmt.Block).n + ")"
+        }
+    }
 }
 
 fun code_fe (e: Expr) {
@@ -263,13 +279,13 @@ fun code_fe (e: Expr) {
             val ptr = e.wtype as Type.Ptr
 
             val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==ptr.xscp1.lbl && it.num==ptr.xscp1.num } }
-            val blk = (if (up == null) ptr.xscp1.toce() else "fdata->block")
+            val pool = (if (up == null) ptr.xscp1.toce(ptr)+"->pool" else "fdata->block->pool")
 
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
                 *$ID = ${it.expr};
-                pool_push($blk->pool, $ID);
+                pool_push($pool, $ID);
 
             """.trimIndent()
             Code(it.type, it.stmt+pre, ID)
@@ -296,7 +312,7 @@ fun code_fe (e: Expr) {
 
             val blks = e.xscp1s.first.let { if (it.size == 0) "" else (it.map { out ->
                 val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==out.lbl && it.num==out.num } }
-                if (up == null) out.toce() else "(fdata->block)"
+                if (up == null) out.toce(e) else "(fdata->block)"
             }.joinToString(",") + ",") }
 
             val snd =
@@ -334,13 +350,14 @@ fun code_fe (e: Expr) {
 
             val fstruct = "struct ${e.type.toce()}_${e.n}"
             val fvar    = "_func_${e.n}"
+            val local   = e.local()
 
             val src = if (isnone) "" else """
                 $fstruct* $fvar = malloc(sizeof($fstruct));
                 assert($fvar!=NULL && "not enough memory");
                 $fvar->f = ${fvar}_f;
                 ${if (!isclo) "" else {
-                    val blk = e.type.xscp1s.first!!.toce()
+                    val blk = e.type.xscp1s.first!!.toce(e)
                     """
                     $fvar->block = $blk;
                     ${e.ups.map { "$fvar->mem.${it.str} = ${it.str};\n" }.joinToString("")}
@@ -352,14 +369,14 @@ fun code_fe (e: Expr) {
                     $fvar->task.pc = 0;
                     $fvar->task.state = TASK_UNBORN;
                     {
-                        Task_F* last = LOCAL->links.last;
+                        Task_F* last = $local->links.last;
                         if (last == NULL) {
-                            assert(LOCAL->links.first == NULL);
-                            LOCAL->links.first = (Task_F*) $fvar;
+                            assert($local->links.first == NULL);
+                            $local->links.first = (Task_F*) $fvar;
                         } else {
                             last->task.links.next = (Task_F*) $fvar;
                         }
-                        LOCAL->links.last = (Task_F*) $fvar;
+                        $local->links.last = (Task_F*) $fvar;
                         $fvar->task.links.next  = NULL;
                         $fvar->task.links.block = NULL;
                     }
@@ -370,7 +387,7 @@ fun code_fe (e: Expr) {
 
             val xfdata = if (isnone) "" else "$fstruct* fdata,"
             val blocks = e.type.xscp1s.second.let { if (it.size == 0) "" else
-                it.map { "Block* ${it.toce()}" }.joinToString(",") + ","
+                it.map { "Block* ${it.toce(e)}" }.joinToString(",") + ","
             }
 
             fun Stmt.mem_vars (): String {
@@ -507,7 +524,7 @@ fun code_fs (s: Stmt) {
             Code(it.type, it.stmt+call, "")
         }
         is Stmt.Bcast -> CODE.removeFirst().let {
-            val bcast = "bcast(${s.scp1.toce()}, ${it.expr});\n"
+            val bcast = "bcast(${s.scp1.toce(s)}, ${it.expr});\n"
             Code(it.type, it.stmt+bcast, "")
         }
         is Stmt.Inp   -> CODE.removeFirst().let {
@@ -529,22 +546,18 @@ fun code_fs (s: Stmt) {
             val (prv,fst) = s.ups_first { it is Expr.Func || it is Stmt.Block }.let {
                 when {
                     // GLOBAL has no previous LOCAL
-                    (it is Stmt.Block) -> Pair("LOCAL->links.block = &block;", "")
+                    (it is Stmt.Block) -> Pair("${s.local()}->links.block = &block_${s.n};", "")
                     // task points to first task block
-                    (it is Expr.Func && it.tk.enu == TK.TASK) -> Pair("", "fdata->task.links.block = &block;")
+                    (it is Expr.Func && it.tk.enu == TK.TASK) -> Pair("", "fdata->task.links.block = &block_${s.n};")
                     else -> Pair("","")
                 }
             }
             val src = """
             {
                 Pool* pool  /*__attribute__((__cleanup__(pool_free)))*/ = NULL;
-                Block block = { &pool, {NULL,NULL,NULL} };
-
+                Block block_${s.n} = { &pool, {NULL,NULL,NULL} };
                 $prv
                 $fst
-
-                Block* LOCAL = &block;
-                ${if (s.xscp1 == null) "" else "Block* ${s.xscp1.toce()} = &block;"}
                 ${it.stmt}
             }
             
@@ -709,9 +722,8 @@ fun Stmt.code (): String {
 
         int main (void) {
             Pool* pool  /*__attribute__((__cleanup__(pool_free)))*/ = NULL;
-            Block block = { &pool, {NULL,NULL,NULL} };
-            GLOBAL = &block;
-            Block* LOCAL = &block;
+            Block block_0 = { &pool, {NULL,NULL,NULL} };
+            GLOBAL = &block_0;
             ${code.stmt}
         }
 
