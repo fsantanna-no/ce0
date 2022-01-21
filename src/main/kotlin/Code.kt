@@ -206,6 +206,15 @@ fun code_ft (tp: Type) {
 data class Code (val type: String, val stmt: String, val expr: String)
 val CODE = ArrayDeque<Code>()
 
+fun String.mem (up: Any): String {
+    val intask = (up.ups_first { it is Expr.Func && it.type.tk.enu==TK.TASK } != null)
+    return if (intask) {
+        "(fdata->mem.$this)"
+    } else {
+        this
+    }
+}
+
 fun Tk.Scp1.toce (up: Any): String {
     return when {
         (this.enu == TK.XSCPVAR) -> this.lbl + "_" + this.num
@@ -213,7 +222,8 @@ fun Tk.Scp1.toce (up: Any): String {
         (this.lbl == "LOCAL")    -> up.local()
         else -> {
             val blk = up.env(this.lbl) as Stmt.Block
-            "(&block_" + blk.n + ")"
+            val mem = ("block_" + blk.n).mem(up)
+            "(&" + mem + ")"
         }
     }
 }
@@ -221,7 +231,8 @@ fun Tk.Scp1.toce (up: Any): String {
 fun Any.local (): String {
     return this.ups_first { it is Stmt.Block }.let {
         if (it == null) "GLOBAL" else {
-            "(&block_" + (it as Stmt.Block).n + ")"
+            val mem = ("block_" + (it as Stmt.Block).n).mem(this)
+            "(&" + mem + ")"
         }
     }
 }
@@ -401,6 +412,7 @@ fun code_fe (e: Expr) {
 
                     is Stmt.Block -> """
                         struct {
+                            Block block_${this.n};
                             ${this.body.mem_vars()}
                         };
                         
@@ -544,24 +556,32 @@ fun code_fs (s: Stmt) {
         }
         is Stmt.Block -> CODE.removeFirst().let {
             val (prv,fst) = s.ups_first { it is Expr.Func || it is Stmt.Block }.let {
+                val blk = "block_${s.n}".mem(s)
                 when {
                     // GLOBAL has no previous LOCAL
-                    (it is Stmt.Block) -> Pair("${s.local()}->links.block = &block_${s.n};", "")
+                    (it is Stmt.Block) -> Pair("${s.local()}->links.block = &$blk;", "")
                     // task points to first task block
-                    (it is Expr.Func && it.tk.enu == TK.TASK) -> Pair("", "fdata->task.links.block = &block_${s.n};")
+                    (it is Expr.Func && it.tk.enu == TK.TASK) -> Pair("", "fdata->task.links.block = &$blk;")
                     else -> Pair("","")
                 }
             }
+            val intask = (s.ups_first { it is Expr.Func } as Expr.Func?).let { it!=null && it.type.tk.enu==TK.TASK }
+            val dcl = if (intask) {
+                ""
+            } else {
+                "Block block_${s.n};\n"
+            }
             val src = """
             {
-                Block block_${s.n} = { NULL, {NULL,NULL,NULL} };
+                ${"block_${s.n}".mem(s)} = (Block) { NULL, {NULL,NULL,NULL} };
                 $prv
                 $fst
                 ${it.stmt}
             }
             
             """.trimIndent()
-            Code(it.type, src, "")
+
+            Code(it.type, dcl+src, "")
         }
         is Stmt.Var -> {
             val dcl = "${s.xtype!!.pos()} ${s.tk_.str};\n"
