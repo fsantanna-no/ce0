@@ -781,7 +781,7 @@ class TParser {
 
     @Test
     fun d01_type_task () {
-        val all = All_new(PushbackReader(StringReader("task @[]->()->() {}"), 2))
+        val all = All_new(PushbackReader(StringReader("task @LOCAL->@[]->()->() {}"), 2))
         lexer(all)
         val tp = parser_type(all)
         assert(tp is Type.Func && tp.tk.enu==TK.TASK)

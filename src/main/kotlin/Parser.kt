@@ -49,7 +49,7 @@ fun parser_type (all: All): Type {
         }
         all.accept(TK.FUNC) || all.accept(TK.TASK) -> {
             val tk0 = all.tk0 as Tk.Key
-            val clo = if (all.accept(TK.XSCPCST) || all.accept(TK.XSCPVAR)) {
+            val clo = if (all.accept(TK.XSCPCST) || (tk0.enu==TK.TASK && all.accept_err(TK.XSCPVAR)) || all.accept(TK.XSCPVAR)) {
                 val tk = all.tk0 as Tk.Scp1
                 all.accept_err(TK.ARROW)
                 tk

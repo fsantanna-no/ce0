@@ -29,8 +29,8 @@ class TTask {
     @Test
     fun a01_output () {
         val out = all("""
-            var f: task @[]->()->()
-            set f = task @[]->()->() {
+            var f: task @LOCAL->@[]->()->()
+            set f = task @LOCAL->@[]->()->() {
                 output std _1:_int
             }
             spawn f ()
@@ -41,8 +41,8 @@ class TTask {
     @Test
     fun a02_await () {
         val out = all("""
-            var f: task @[]->()->()
-            set f = task @[]->()->() {
+            var f: task @LOCAL->@[]->()->()
+            set f = task @LOCAL->@[]->()->() {
                 output std _1:_int
                 await
                 output std _3:_int
@@ -56,8 +56,8 @@ class TTask {
     @Test
     fun a03_var () {
         val out = all("""
-            var f: task @[]->()->()
-            set f = task @[]->()->() {
+            var f: task @LOCAL->@[]->()->()
+            set f = task @LOCAL->@[]->()->() {
                 var x: _int
                 set x = _10:_int
                 await
@@ -71,8 +71,8 @@ class TTask {
     @Test
     fun a04_vars () {
         val out = all("""
-            var f: task @[]->()->()
-            set f = task @[]->()->() {
+            var f: task @LOCAL->@[]->()->()
+            set f = task @LOCAL->@[]->()->() {
                 {
                     var x: _int
                     set x = _10:_int
@@ -95,8 +95,8 @@ class TTask {
     @Test
     fun a05_args () {
         val out = all("""
-            var f: task @[]->_(char*)->()
-            set f = task @[]->_(char*)->() {
+            var f: task @LOCAL->@[]->_(char*)->()
+            set f = task @LOCAL->@[]->_(char*)->() {
                 output std arg
                 await
                 output std evt
@@ -110,20 +110,34 @@ class TTask {
         assert(out == "\"hello\"\n10\n20\n") { out }
     }
     @Test
-    fun a06_par () {
+    fun a06_par_err () {
         val out = all("""
-            var build : func @[] -> () -> task @[]->()->()
-            set build = func @[] -> () -> task @[]->()->() {
-                set ret = task @[]->()->() {
+            var build : func @[] -> () -> task @LOCAL->@[]->()->()
+            set build = func @[] -> () -> task @LOCAL->@[]->()->() {
+                set ret = task @LOCAL->@[]->()->() {    -- ERR: not the same @LOCAL
                     output std _1:_int
                     await
                     output std _2:_int
                 }
             }
-            var f: task @[]->()->()
-            set f = build ()
-            var g: task @[]->()->()
-            set g = build ()
+        """.trimIndent())
+        assert(out == "(ln 3, col 13): invalid return : type mismatch") { out }
+    }
+    @Test
+    fun a06_par () {
+        val out = all("""
+            var build : func @[@r1] -> () -> task @r1->@[]->()->()
+            set build = func @[@r1] -> () -> task @r1->@[]->()->() {
+                set ret = task @r1->@[]->()->() {
+                    output std _1:_int
+                    await
+                    output std _2:_int
+                }
+            }
+            var f: task @LOCAL->@[]->()->()
+            set f = build @[@LOCAL] ()
+            var g: task @LOCAL->@[]->()->()
+            set g = build @[@LOCAL] ()
             output std _10:_int
             spawn f ()
             output std _11:_int
@@ -137,15 +151,15 @@ class TTask {
     @Test
     fun a07_bcast () {
         val out = all("""
-            var f: task @[]->()->()
-            set f = task @[]->()->() {
+            var f: task @LOCAL->@[]->()->()
+            set f = task @LOCAL->@[]->()->() {
                 await
                 output std _(evt+0):_int
             }
             spawn f ()
             
-            var g: task @[]->()->()
-            set g = task @[]->()->() {
+            var g: task @LOCAL->@[]->()->()
+            set g = task @LOCAL->@[]->()->() {
                 await
                 output std _(evt+10):_int
                 await
@@ -161,16 +175,16 @@ class TTask {
     @Test
     fun a08_bcast_block () {
         val out = all("""
-            var f: task @[]->()->()
-            set f = task @[]->()->() {
+            var f: task @LOCAL->@[]->()->()
+            set f = task @LOCAL->@[]->()->() {
                 await
                 output std _(evt+0):_int
             }
             spawn f ()
             
             {
-                var g: task @[]->()->()
-                set g = task @[]->()->() {
+                var g: task @LOCAL->@[]->()->()
+                set g = task @LOCAL->@[]->()->() {
                     await
                     output std _(evt+10):_int
                     await
@@ -186,12 +200,12 @@ class TTask {
     @Test
     fun a09_nest () {
         val out = all("""
-            var f: task @[]->()->()
-            set f = task @[]->()->() {
+            var f: task @LOCAL->@[]->()->()
+            set f = task @LOCAL->@[]->()->() {
                 output std _1:_int
                 await
-                var g: task @[]->()->()
-                set g = task @[]->()->() {
+                var g: task @LOCAL->@[]->()->()
+                set g = task @LOCAL->@[]->()->() {
                     output std _2:_int
                     await
                     output std _3:_int
@@ -212,12 +226,12 @@ class TTask {
     @Test
     fun a10_block_out () {
         val out = all("""
-            var f: task @[]->()->()
-            set f = task @[]->()->() {
+            var f: task @LOCAL->@[]->()->()
+            set f = task @LOCAL->@[]->()->() {
                 output std _10:_int
                 {
-                    var g: task @[]->()->()
-                    set g = task @[]->()->() {
+                    var g: task @LOCAL->@[]->()->()
+                    set g = task @LOCAL->@[]->()->() {
                         output std _20:_int
                         await
                         output std _21:_int
@@ -228,8 +242,8 @@ class TTask {
                     await
                 }
                 output std _11:_int
-                var h: task @[]->()->()
-                set h = task @[]->()->() {
+                var h: task @LOCAL->@[]->()->()
+                set h = task @LOCAL->@[]->()->() {
                     output std _30:_int
                     await
                     output std _31:_int

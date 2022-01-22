@@ -1203,8 +1203,8 @@ class TEnv {
     @Test
     fun g08_ptr_arg_err () {
         val out = inp2env("""
-            var f: func@[@i1]->_int -> /_int@i1
-            set f = func@[@i1]->_int -> /_int@i1
+            var f : func @[@i1] -> _int -> /_int@i1
+            set f = func @[@i1] -> _int -> /_int@i1
             {
                 set ret = /arg
             }
@@ -2819,6 +2819,28 @@ class TEnv {
             }
         """.trimIndent())
         assert(out == "(ln 7, col 16): invalid assignment : cannot modify an upalue") { out }
+    }
+    @Test
+    fun p30_closure_ok0 () {
+        val out = inp2env("""
+            {
+                var f: func @LOCAL -> @[] -> () -> ()
+                var g: func @LOCAL -> @[] -> () -> ()
+                set f = g
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun p30_closure_ok1 () {
+        val out = inp2env("""
+            {
+                var x: ()
+                var f : func @LOCAL -> @[] -> () -> ()
+                set f = func @LOCAL -> @[] -> () -> () [x] { set ret = x }
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
     }
     @Test
     fun p30_closure_ok () {

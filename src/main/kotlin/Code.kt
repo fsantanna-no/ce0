@@ -365,25 +365,25 @@ fun code_fe (e: Expr) {
 
             val fstruct = "struct ${e.type.toce()}_${e.n}"
             val fvar    = "_func_${e.n}"
-            val local   = e.local()
+
+            val blk = if (isclo) e.type.xscp1s.first!!.toce(e) else e.local()
 
             val src = if (isnone) "" else """
-                $fstruct* $fvar = malloc(sizeof($fstruct));
+                $fstruct* $fvar = malloc(sizeof($fstruct));     // TODO: malloc only if it escapes
                 assert($fvar!=NULL && "not enough memory");
                 $fvar->f = ${fvar}_f;
-                ${if (!isclo) "" else {
-                    val blk = e.type.xscp1s.first!!.toce(e)
+                ${if (isnone) "" else {
                     """
-                    $fvar->block = $blk;
+                    $fvar->block = $blk;                        // TODO: only if it escapes?
                     ${e.ups.map { "$fvar->mem.${it.str} = ${it.str};\n" }.joinToString("")}
-                    block_push($blk, $fvar);
+                    block_push($blk, $fvar);                    // TODO: only if escapes
 
                     """.trimIndent()}
                 }
                 ${if (!istk) "" else """
                     $fvar->task.pc = 0;
                     $fvar->task.state = TASK_UNBORN;
-                    task_link($local, (Task_F*) $fvar);
+                    task_link($blk, (Task_F*) $fvar);
                                         
                 """.trimIndent()}
                 
@@ -446,7 +446,9 @@ fun code_fe (e: Expr) {
                             ${if (!istk) "${e.type.inp.pos()} arg" else "ARGEVT_${e.type.toce()} argevt"}
                         );
                         ${if (!istk)  "" else "Task task;"}
-                        ${if (!isclo) "" else "Block* block;"}
+                        ${if (isnone) "" else "Block* block;"}
+                          // closure block: save at runtime b/c it is implicit after return and closure might
+                          // want to `new` to it since it is its wider scope
                         struct {
                             ${e.ups.map { "${e.env(it.str)!!.toType().pos()} ${it.str};\n" }.joinToString("")}
                             ${e.block.mem_vars()}

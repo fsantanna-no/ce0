@@ -10,9 +10,13 @@ fun Type.toScp2 (): Scp2 {
 
 fun Tk.Scp1.toScp2 (up: Any): Scp2 {
     val lvl = up.ups_tolist().filter { it is Expr.Func }.count() // level of function nesting
-    return when (this.lbl) { // (... || it is Expr.Func) b/c of arg/ret, otherwise no block up to outer func
+    return when (this.lbl) { // 2xExpr.Func, otherwise no level between outer/arg/body
         "GLOBAL" -> Scp2(lvl, null, 0)
-        "LOCAL"  -> Scp2(lvl, null, up.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
+        "LOCAL"  -> {
+            // umn=-2: @LOCAL must be clo annotation, so remove further 2*Expr.Func
+            val umn = if (up is Type.Func && up.wup is Expr.Func) -2 else 0
+            Scp2(lvl, null, umn + up.ups_tolist().let { it.count{it is Stmt.Block} + 2*it.count{it is Expr.Func} })
+        }
         else -> {
             val blk = up.env(this.lbl)
             /*
@@ -21,10 +25,12 @@ fun Tk.Scp1.toScp2 (up: Any): Scp2 {
             println(up.env_all())
              */
             if (blk != null) {
-                //println(this.lbl)
+                // @A, @x, ...
                 val one = if (blk is Stmt.Block) 1 else 0
-                Scp2(lvl, null, one + blk.ups_tolist().let { it.count { it is Stmt.Block || it is Expr.Func } })
-            } else {    // false = relative to function block
+                val umn = if (this.lbl=="arg")   1 else 0   // "arg" is in between Func-arg-Block
+                Scp2(lvl, null, one - umn + blk.ups_tolist().let { it.count{it is Stmt.Block} + 2*it.count{it is Expr.Func} })
+            } else {
+                // @a1, @i2, ...
                 Scp2(lvl, this.lbl, (this.num ?: 0))
             }
         }
