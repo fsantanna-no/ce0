@@ -1,5 +1,3 @@
-import kotlin.math.absoluteValue
-
 val TYPEX = mutableSetOf<String>()
 val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 
@@ -23,6 +21,12 @@ fun Type.output (c: String, arg: String): String {
             if (c == "_") "putchar('_');\n" else "puts(\"_\");\n"
         }
         else -> "output_std_${this.toce()}$c($arg);\n"
+    }
+}
+
+fun Any.intk (): Boolean {
+    return (this.ups_first { it is Expr.Func } as Expr.Func?).let {
+        it!=null && it.type.tk.enu==TK.TASK
     }
 }
 
@@ -511,7 +515,12 @@ fun code_fs (s: Stmt) {
             Code(it.type, "while (1) { ${it.stmt} }", "")
         }
         is Stmt.Break -> Code("", "break;\n", "")
-        is Stmt.Ret   -> Code("", "return ret;\n", "")
+        is Stmt.Ret   -> {
+            val src = if (!s.intk()) "" else {
+                "fdata->task.state = TASK_DEAD;\n"
+            }
+            Code("", src+"return ret;\n", "")
+        }
         is Stmt.SCall -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
         is Stmt.Spawn -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
         is Stmt.Await -> {
@@ -550,28 +559,32 @@ fun code_fs (s: Stmt) {
             Code(it.type, it.stmt+call, "")
         }
         is Stmt.Block -> CODE.removeFirst().let {
-            val (prv,fst) = s.ups_first { it is Expr.Func || it is Stmt.Block }.let {
-                val blk = "block_${s.n}".mem(s)
+            val blk = "block_${s.n}".mem(s)
+
+            // link/unlink block with enclosing block/task
+            val (fst,prv,unl) = s.ups_first { it is Expr.Func || it is Stmt.Block }.let {
                 when {
-                    // GLOBAL has no previous LOCAL
-                    (it is Stmt.Block) -> Pair("${s.local()}->links.block = &$blk;", "")
-                    // task points to first task block
-                    (it is Expr.Func && it.tk.enu == TK.TASK) -> Pair("", "fdata->task.links.block = &$blk;")
-                    else -> Pair("","")
+                    // found block: link as nested block, unlink as nested block
+                    (it is Stmt.Block) -> Triple("", "${s.local()}->links.block = &$blk;", "${s.local()}->links.block = NULL;")
+                    // found task: link as first block
+                    (it is Expr.Func && it.tk.enu == TK.TASK) -> Triple("fdata->task.links.block = &$blk;", "", "")
+                    // GLOBAL: nothing to link
+                    else -> Triple("","","")
                 }
             }
-            val intask = (s.ups_first { it is Expr.Func } as Expr.Func?).let { it!=null && it.type.tk.enu==TK.TASK }
-            val dcl = if (intask) {
+            val intk = s.intk()
+            val dcl = if (intk) {
                 ""
             } else {
                 "Block block_${s.n} __attribute__((__cleanup__(block_free)));\n"
             }
             val src = """
             {
-                ${"block_${s.n}".mem(s)} = (Block) { NULL, {NULL,NULL,NULL} };
-                $prv
-                $fst
+                $blk = (Block) { NULL, {NULL,NULL,NULL} };
+                $prv    // link enclosing block to myself (I'm the only active block)
+                $fst    // link enclosing task  to myself (I'm the only active block)
                 ${it.stmt}
+                $unl
             }
             
             """.trimIndent()
