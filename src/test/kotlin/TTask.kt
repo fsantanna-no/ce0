@@ -215,30 +215,33 @@ class TTask {
             var f: task @[]->()->()
             set f = task @[]->()->() {
                 output std _10:_int
-                await
+                {
+                    var g: task @[]->()->()
+                    set g = task @[]->()->() {
+                        output std _20:_int
+                        await
+                        output std _21:_int
+                        await
+                        output std _22:_int     // can't execute this one
+                    }
+                    spawn g ()
+                    await
+                }
                 output std _11:_int
+                var h: task @[]->()->()
+                set h = task @[]->()->() {
+                    output std _30:_int
+                    await
+                    output std _31:_int
+                }
+                spawn h ()
+                await
+                output std _12:_int
             }
             spawn f ()
-            {
-                var g: task @[]->()->()
-                set g = task @[]->()->() {
-                    output std _20:_int
-                    await
-                    output std _21:_int
-                }
-                spawn g ()
-                await
-            }
-            var h: task @[]->()->()
-            set h = task @[]->()->() {
-                output std _30:_int
-                await
-                output std _31:_int
-            }
-            spawn h ()
             bcast @GLOBAL _0:_int
             bcast @GLOBAL _0:_int
         """.trimIndent())
-        assert(out == "1\n10\n2\n11\n3\n4\n12\n") { out }
+        assert(out == "10\n20\n21\n11\n30\n31\n12\n") { out }
     }
 }

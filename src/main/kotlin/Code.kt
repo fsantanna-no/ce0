@@ -379,18 +379,7 @@ fun code_fe (e: Expr) {
                 ${if (!istk) "" else """
                     $fvar->task.pc = 0;
                     $fvar->task.state = TASK_UNBORN;
-                    {
-                        Task_F* last = $local->links.last;
-                        if (last == NULL) {
-                            assert($local->links.first == NULL);
-                            $local->links.first = (Task_F*) $fvar;
-                        } else {
-                            last->task.links.next = (Task_F*) $fvar;
-                        }
-                        $local->links.last = (Task_F*) $fvar;
-                        $fvar->task.links.next  = NULL;
-                        $fvar->task.links.block = NULL;
-                    }
+                    task_link($local, (Task_F*) $fvar);
                                         
                 """.trimIndent()}
                 
@@ -703,6 +692,21 @@ fun Stmt.code (): String {
             block->pool = pool;
         }
         
+        ///
+        
+        void task_link (Block* block, Task_F* taskf) {
+            Task_F* last = block->links.last;
+            if (last == NULL) {
+                assert(block->links.first == NULL);
+                block->links.first = taskf;
+            } else {
+                last->task.links.next = taskf;
+            }
+            block->links.last = taskf;
+            taskf->task.links.next  = NULL;
+            taskf->task.links.block = NULL;
+        }
+
         ///
         
         // 1. awake my inner tasks  (they started before the nested block)
