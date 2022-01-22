@@ -222,7 +222,7 @@ class TTask {
                         await
                         output std _21:_int
                         await
-                        output std _22:_int     // can't execute this one
+                        output std _22:_int     -- can't execute this one
                     }
                     spawn g ()
                     await

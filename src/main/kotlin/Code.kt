@@ -462,7 +462,13 @@ fun code_fe (e: Expr) {
                     ${e.type.out.pos()} ret;
                     ${if (!istk) "" else "switch (fdata->task.pc) {\ncase 0:\n"}                    
                     ${it.stmt}
-                    ${if (!istk) "" else "}"}                    
+                    ${if (!istk) "" else """
+                            fdata->task.state = TASK_DEAD;
+                            return 0;
+                        default:
+                            assert(0 && "invalid PC");
+                        }
+                    """.trimIndent()}                    
                     return ret;
                 }
 
