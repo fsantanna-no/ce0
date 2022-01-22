@@ -576,7 +576,7 @@ fun code_fs (s: Stmt) {
             val dcl = if (intk) {
                 ""
             } else {
-                "Block block_${s.n} __attribute__((__cleanup__(block_free)));\n"
+                "Block block_${s.n};\n"
             }
             val src = """
             {
@@ -585,6 +585,7 @@ fun code_fs (s: Stmt) {
                 $fst    // link enclosing task  to myself (I'm the only active block)
                 ${it.stmt}
                 $unl
+                kill(&$blk);
             }
             
             """.trimIndent()
@@ -751,6 +752,33 @@ fun Stmt.code (): String {
             }
         }
         
+        // Kill in reverse order
+        // 2. kill my nested block (it started before the inner tasks)            
+        // 1. kill my inner tasks  (they started after the nested block)
+        // 0. free myself
+        void kill (Block* block) {
+            // 2. kill my nested block
+            if (block->links.block != NULL) {
+                kill(block->links.block);
+            }
+
+            // 1. kill my inner tasks
+            void aux (Task_F* taskf) {
+                if (taskf == NULL) return;
+                
+                // 1.2. kill next task
+                // 1.1. kill tasks in inner block in current task
+                
+                aux(taskf->task.links.next);                // 1.2
+                assert(taskf->task.links.block != NULL);
+                kill(taskf->task.links.block);              // 1.1
+            }            
+            aux(block->links.first);
+            
+            // 0. free myself
+            block_free(block);
+        }
+
         ///
         
         Block* GLOBAL;
@@ -761,9 +789,10 @@ fun Stmt.code (): String {
         ${code.type}
 
         int main (void) {
-            Block block_0 __attribute__((__cleanup__(block_free))) = { NULL, {NULL,NULL,NULL} };
+            Block block_0 = { NULL, {NULL,NULL,NULL} };
             GLOBAL = &block_0;
             ${code.stmt}
+            block_free(&block_0);
         }
 
     """).trimIndent()
