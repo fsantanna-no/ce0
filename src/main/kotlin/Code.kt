@@ -59,10 +59,11 @@ fun code_ft (tp: Type) {
             }
 
             val ret = if (isnone) {
-                "typedef ${tp.out.pos()} ${tp.toce()} (Stack* stack, $xblocks ${tp.inp.pos()});\n"
+                "typedef ${tp.out.pos()} ${tp.toce()} (Stack* stack, Block* fblock, $xblocks ${tp.inp.pos()});\n"
                 //"${tp.out.pos()} ${tp.toce()} $fid ($pc $ups $pools ${e.type.inp.pos()})"
             } else {
-                val xfdata = if (isnone) "" else "struct ${tp.toce()}* fdata,"
+                val xfdata  = if (isnone) "" else "struct ${tp.toce()}* fdata,"
+                val xfblock = if (istk)   "" else "Block* fblock,"
                 """
                     ${if (!istk) "" else """
                         typedef union { ${tp.inp.pos()} arg; int evt; } ARGEVT_${tp.toce()};
@@ -72,6 +73,7 @@ fun code_ft (tp: Type) {
                     typedef struct ${tp.toce()} {
                         ${tp.out.pos()} (*f) (
                             Stack* stack,
+                            $xfblock
                             $xfdata
                             $xblocks
                             ${if (!istk) "${tp.inp.pos()}" else "ARGEVT_${tp.toce()}"}
@@ -212,7 +214,7 @@ data class Code (val type: String, val stmt: String, val expr: String)
 val CODE = ArrayDeque<Code>()
 
 fun String.mem (up: Any): String {
-    val intask = (up.ups_first { it is Expr.Func && it.type.tk.enu==TK.TASK } != null)
+    val intask = (up.ups_first { it is Expr.Func }.let { it!=null && (it as Expr.Func).type.tk.enu==TK.TASK })
     return if (intask) {
         "(fdata->mem.$this)"
     } else {
@@ -336,36 +338,33 @@ fun code_fe (e: Expr) {
                 //if (ff!=null && ff.ptr is Expr.Var && ff.ptr.tk_.str=="output_std") {
                     Pair(e.arg.wtype!!.output_std("", arg.expr), "")
                 } else {
-                    val x = "x_${e.n}"
                     val tpf = e.f.wtype
                     if (tpf is Type.Func) {
                         val isclo  = (tpf.xscp1s.first != null)
                         val istk   = (tpf.tk.enu == TK.TASK)
                         val isnone = !isclo && !istk
+                        val blk = e.local()
                         val cll = if (isnone) {
-                            f.expr + "(NULL, " + blks + arg.expr + ")"
+                            f.expr + "(&stk_${e.n}, " + blk + "," + blks + arg.expr + ")"
                         } else if (istk) {
                             val argret = when (e.getUp()) {
                                 is Stmt.Spawn -> "(ARGEVT_${tpf.toce()}) {.arg=${arg.expr}}"
                                 is Stmt.Awake -> "(ARGEVT_${tpf.toce()}) {.evt=${arg.expr}}"
                                 else -> error("bug found")
                             }
-                            f.expr + "->f(NULL, " + f.expr + ", " + blks + argret + ")"
+                            f.expr + "->f(&stk_${e.n}, " + f.expr + ", " + blks + argret + ")"
                         } else {
-                            f.expr + "->f(NULL, " + f.expr + ", " + blks + arg.expr + ")"
+                            f.expr + "->f(&stk_${e.n}, " + blk + "," + f.expr + ", " + blks + arg.expr + ")"
                         }
                         val pre = """
-                            typeof($cll) $x;
-                            {
-                                Stack stk = { stack, ${e.local()} };
-                                $x = $cll;
-                                if (stk.block == NULL) {
-                                    return ret;
-                                }
+                            Stack stk_${e.n} = { stack, ${e.local()} };
+                            typeof($cll) x_${e.n} = $cll;
+                            if (stk_${e.n}.block == NULL) {
+                                return ret;
                             }
                             
                         """.trimIndent()
-                        Pair(pre, x)
+                        Pair(pre, "x_${e.n}")
                     } else {
                         val cll = f.expr + "(" + blks + (if (e.arg is Expr.Unit) "" else arg.expr) + ")"
                         Pair("", cll)
@@ -404,7 +403,8 @@ fun code_fe (e: Expr) {
                 
             """.trimIndent()
 
-            val xfdata = if (isnone) "" else "$fstruct* fdata,"
+            val xfdata  = if (isnone) "" else "$fstruct* fdata,"
+            val xfblock = if (istk)   "" else "Block* fblock,"
             val blocks = e.type.xscp1s.second.let { if (it.size == 0) "" else
                 it.map { "Block* ${it.toce(e)}" }.joinToString(",") + ","
             }
@@ -457,6 +457,7 @@ fun code_fe (e: Expr) {
                     $fstruct {
                         ${e.type.out.pos()} (*f) (
                             Stack* stack,
+                            $xfblock
                             $xfdata
                             $blocks
                             ${if (!istk) "${e.type.inp.pos()} arg" else "ARGEVT_${e.type.toce()} argevt"}
@@ -477,6 +478,7 @@ fun code_fe (e: Expr) {
                 // int f (XXX* fdata, Pools**, int arg);
                 ${e.type.out.pos()} ${if (isnone) fvar else fvar+"_f"} (
                     Stack* stack,
+                    $xfblock
                     $xfdata
                     $blocks
                     ${if (!istk) "${e.type.inp.pos()} arg" else "ARGEVT_${e.type.toce()} argevt"}
@@ -514,9 +516,15 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
             )
             // found task: link as first block, unlink as first block
             // link enclosing task  to myself (I'm the only active block)
-            (it is Expr.Func && it.tk.enu == TK.TASK) -> Pair (
+            (it is Expr.Func && it.tk.enu==TK.TASK) -> Pair (
                 "fdata->task.links.block = &$blk;\n",
                 "fdata->task.links.block = NULL;\n"
+            )
+            // found func: link as first block, unlink as first block
+            // link enclosing task  to myself (I'm the only active block)
+            (it is Expr.Func && it.tk.enu==TK.FUNC) -> Pair (
+                "fblock->links.block = &$blk;\n",
+                "fblock->links.block = NULL;\n"
             )
             // GLOBAL: nothing to link
             else -> Pair("","")
