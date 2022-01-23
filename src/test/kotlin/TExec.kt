@@ -132,9 +132,9 @@ class TExec {
             var x: [(),()]
             set x = [(),()]
             var y: (); set y = x.1
-            call _output_std_Unit:func@[]->()->() y
+            native _{ output_std_Unit(y); }
         """.trimIndent())
-        assert(out == "()\n")
+        assert(out == "()\n") { out }
     }
     @Test
     fun b02_tuple_idx () {
@@ -339,8 +339,11 @@ class TExec {
     @Test
     fun e03_out () {
         val out = all("""
-            var output_f: (func@[]-> _int -> ())
-            set output_f = func@[]-> _int -> () { output std arg }
+            native _{
+                void output_f (int x) {
+                    output_std_int(x);
+                }
+            }
             output f _10: _int
         """.trimIndent())
         assert(out == "10\n") { out }

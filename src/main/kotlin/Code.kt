@@ -59,7 +59,7 @@ fun code_ft (tp: Type) {
             }
 
             val ret = if (isnone) {
-                "typedef ${tp.out.pos()} ${tp.toce()} ($xblocks ${tp.inp.pos()});\n"
+                "typedef ${tp.out.pos()} ${tp.toce()} (Stack* stack, $xblocks ${tp.inp.pos()});\n"
                 //"${tp.out.pos()} ${tp.toce()} $fid ($pc $ups $pools ${e.type.inp.pos()})"
             } else {
                 val xfdata = if (isnone) "" else "struct ${tp.toce()}* fdata,"
@@ -71,6 +71,7 @@ fun code_ft (tp: Type) {
                     
                     typedef struct ${tp.toce()} {
                         ${tp.out.pos()} (*f) (
+                            Stack* stack,
                             $xfdata
                             $xblocks
                             ${if (!istk) "${tp.inp.pos()}" else "ARGEVT_${tp.toce()}"}
@@ -341,16 +342,16 @@ fun code_fe (e: Expr) {
                         val istk   = (tpf.tk.enu == TK.TASK)
                         val isnone = !isclo && !istk
                         if (isnone) {
-                            f.expr + "(" + blks + arg.expr + ")"
+                            f.expr + "(NULL, " + blks + arg.expr + ")"
                         } else if (istk) {
                             val argret = when (e.getUp()) {
                                 is Stmt.Spawn -> "(ARGEVT_${tpf.toce()}) {.arg=${arg.expr}}"
                                 is Stmt.Awake -> "(ARGEVT_${tpf.toce()}) {.evt=${arg.expr}}"
                                 else -> error("bug found")
                             }
-                            f.expr + "->f(" + f.expr + ", " + blks + argret + ")"
+                            f.expr + "->f(NULL, " + f.expr + ", " + blks + argret + ")"
                         } else {
-                            f.expr + "->f(" + f.expr + ", " + blks + arg.expr + ")"
+                            f.expr + "->f(NULL, " + f.expr + ", " + blks + arg.expr + ")"
                         }
                     } else {
                         f.expr + "(" + blks + (if (e.arg is Expr.Unit) "" else arg.expr) + ")"
@@ -441,6 +442,7 @@ fun code_fe (e: Expr) {
                     """
                     $fstruct {
                         ${e.type.out.pos()} (*f) (
+                            Stack* stack,
                             $xfdata
                             $blocks
                             ${if (!istk) "${e.type.inp.pos()} arg" else "ARGEVT_${e.type.toce()} argevt"}
@@ -460,6 +462,7 @@ fun code_fe (e: Expr) {
                 
                 // int f (XXX* fdata, Pools**, int arg);
                 ${e.type.out.pos()} ${if (isnone) fvar else fvar+"_f"} (
+                    Stack* stack,
                     $xfdata
                     $blocks
                     ${if (!istk) "${e.type.inp.pos()} arg" else "ARGEVT_${e.type.toce()} argevt"}
@@ -664,6 +667,15 @@ fun Stmt.code (): String {
             struct Pool* nxt;
         } Pool;
         
+        // When a block K terminates, it traverses the stack and sets to NULL
+        // all matching blocks K in the stack.
+        // All call/spawn/awake/bcast operations need to test if its enclosing
+        // block is still alive before continuing.
+        typedef struct Stack {
+            struct Stack* prv;
+            void* block;
+        } Stack;
+        
         struct Block;
         struct Task_F;
         
@@ -681,7 +693,7 @@ fun Stmt.code (): String {
         } Task;
         
         typedef struct Task_F {
-            void (*f) (void* x, int evt);
+            void (*f) (Stack* stack, void* x, int evt);
             Task task;
         } Task_F;
         
@@ -743,7 +755,7 @@ fun Stmt.code (): String {
                 assert(taskf->task.links.block != NULL);
                 bcast(taskf->task.links.block, evt);        // 1.1
                 if (taskf->task.state == TASK_AWAITING) {
-                    taskf->f(taskf, evt);                   // 1.2
+                    taskf->f(NULL, taskf, evt);             // 1.2
                 }
                 taskf = taskf->task.links.next;             // 1.3
             }
