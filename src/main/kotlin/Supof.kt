@@ -73,7 +73,7 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
         (this is Type.Func && sub is Type.Func) -> {
             val sup2 = this.mapLabels(this.wup!!)
             val sub2 = sub.mapLabels(sub.wup!!)
-            println(sup2.xscp2s!!.first?.depth.toString() + " <- " + sub2.xscp2s!!.first?.depth)
+            //println(sup2.xscp2s!!.first?.depth.toString() + " <- " + sub2.xscp2s!!.first?.depth)
             (
                 sup2.xscp2s!!.first?.depth == sub2.xscp2s!!.first?.depth &&
                 sup2.inp.isSupOf_(sub2.inp,true,ups1,ups2) &&
