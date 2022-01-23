@@ -331,6 +331,7 @@ fun code_fe (e: Expr) {
                 if (up == null) out.toce(e) else "(fdata->block)"
             }.joinToString(",") + ",") }
 
+            val x = "x_${e.n}"
             val snd =
                 if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
                 //if (ff!=null && ff.ptr is Expr.Var && ff.ptr.tk_.str=="output_std") {
@@ -357,7 +358,8 @@ fun code_fe (e: Expr) {
                         f.expr + "(" + blks + (if (e.arg is Expr.Unit) "" else arg.expr) + ")"
                     }
                 }
-            Code(f.type+arg.type, f.stmt+arg.stmt, snd)
+            val dcl = "typeof($snd) $x = $snd;\n"
+            Code(f.type+arg.type, f.stmt+arg.stmt+dcl, x)
         }
         is Expr.Func  -> CODE.removeFirst().let {
             val isclo  = (e.type.xscp1s.first != null)
