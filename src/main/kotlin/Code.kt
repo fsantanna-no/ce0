@@ -13,7 +13,7 @@ fun Type.pos (): String {
     }
 }
 
-fun Type.output (c: String, arg: String): String {
+fun Type.output_std (c: String, arg: String): String {
     val tupuni = this is Type.Ptr && (this.pln is Type.Tuple || this.pln is Type.Union)
     return when {
         tupuni -> "output_std_${(this as Type.Ptr).pln.toce()}$c($arg);\n"
@@ -123,7 +123,7 @@ fun code_ft (tp: Type) {
                                 is Type.Union, is Type.Tuple -> "&v->_${i + 1}"
                                 else -> "v->_${i + 1}"
                             }
-                            sub.output("_", s)
+                            sub.output_std("_", s)
                         }
                         .joinToString("putchar(',');\n")
                     }
@@ -184,8 +184,8 @@ fun code_ft (tp: Type) {
                             .mapIndexed { i,sub ->
                                 val s = when (sub) {
                                     is Type.Unit -> ""
-                                    is Type.Union, is Type.Tuple -> "putchar(' ');\n" + sub.output("_", "&v->_${i+1}")
-                                    else -> "putchar(' ');\n" + sub.output("_", "v->_${i+1}")
+                                    is Type.Union, is Type.Tuple -> "putchar(' ');\n" + sub.output_std("_", "&v->_${i+1}")
+                                    else -> "putchar(' ');\n" + sub.output_std("_", "v->_${i+1}")
                                 }
                                 """
                                 case ${i+1}:
@@ -331,18 +331,18 @@ fun code_fe (e: Expr) {
                 if (up == null) out.toce(e) else "(fdata->block)"
             }.joinToString(",") + ",") }
 
-            val x = "x_${e.n}"
-            val snd =
+            val (pre,pos) =
                 if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
                 //if (ff!=null && ff.ptr is Expr.Var && ff.ptr.tk_.str=="output_std") {
-                    e.arg.wtype!!.output("", arg.expr)
+                    Pair(e.arg.wtype!!.output_std("", arg.expr), "")
                 } else {
+                    val x = "x_${e.n}"
                     val tpf = e.f.wtype
                     if (tpf is Type.Func) {
                         val isclo  = (tpf.xscp1s.first != null)
                         val istk   = (tpf.tk.enu == TK.TASK)
                         val isnone = !isclo && !istk
-                        if (isnone) {
+                        val cll = if (isnone) {
                             f.expr + "(NULL, " + blks + arg.expr + ")"
                         } else if (istk) {
                             val argret = when (e.getUp()) {
@@ -354,12 +354,24 @@ fun code_fe (e: Expr) {
                         } else {
                             f.expr + "->f(NULL, " + f.expr + ", " + blks + arg.expr + ")"
                         }
+                        val pre = """
+                            typeof($cll) $x;
+                            {
+                                Stack stk = { stack, ${e.local()} };
+                                $x = $cll;
+                                if (stk.block == NULL) {
+                                    return ret;
+                                }
+                            }
+                            
+                        """.trimIndent()
+                        Pair(pre, x)
                     } else {
-                        f.expr + "(" + blks + (if (e.arg is Expr.Unit) "" else arg.expr) + ")"
+                        val cll = f.expr + "(" + blks + (if (e.arg is Expr.Unit) "" else arg.expr) + ")"
+                        Pair("", cll)
                     }
                 }
-            val dcl = "typeof($snd) $x = $snd;\n"
-            Code(f.type+arg.type, f.stmt+arg.stmt+dcl, x)
+            Code(f.type+arg.type, f.stmt+arg.stmt+pre, pos)
         }
         is Expr.Func  -> CODE.removeFirst().let {
             val isclo  = (e.type.xscp1s.first != null)
@@ -547,7 +559,16 @@ fun code_fs (s: Stmt) {
             Code(it.type, it.stmt+call, "")
         }
         is Stmt.Bcast -> CODE.removeFirst().let {
-            val bcast = "bcast(${s.scp1.toce(s)}, ${it.expr});\n"
+            val bcast = """
+                {
+                    Stack stk = { stack, ${s.local()} };
+                    bcast(&stk, ${s.scp1.toce(s)}, ${it.expr});
+                    if (stk.block == NULL) {
+                        return ret;
+                    }
+                }
+                
+            """.trimIndent()
             Code(it.type, it.stmt+bcast, "")
         }
         is Stmt.Inp   -> CODE.removeFirst().let {
@@ -559,7 +580,7 @@ fun code_fs (s: Stmt) {
         }
         is Stmt.Out -> CODE.removeFirst().let {
             val call = if (s.lib.str == "std") {
-                s.arg.wtype!!.output("", it.expr)
+                s.arg.wtype!!.output_std("", it.expr)
             } else {
                 "output_${s.lib.str}(${it.expr});\n"
             }
@@ -592,7 +613,7 @@ fun code_fs (s: Stmt) {
                 $fst    // link enclosing task  to myself (I'm the only active block)
                 ${it.stmt}
                 $unl
-                kill(&$blk);
+                kill(stack, &$blk);
             }
             
             """.trimIndent()
@@ -747,7 +768,7 @@ fun Stmt.code (): String {
         
         // 1. awake my inner tasks  (they started before the nested block)
         // 2. awake my nested block (it started after the inner tasks)            
-        void bcast (Block* block, int evt) {
+        void bcast (Stack* stack, Block* block, int evt) {
             // 1. awake my inner tasks
             Task_F* taskf = block->links.first;
             while (taskf != NULL) {
@@ -755,27 +776,36 @@ fun Stmt.code (): String {
                 // 1.2. awake current task  (it is blocked after inner block. but before next task)
                 // 1.3. awake next task
                 assert(taskf->task.links.block != NULL);
-                bcast(taskf->task.links.block, evt);        // 1.1
+                bcast(stack, taskf->task.links.block, evt); // 1.1
                 if (taskf->task.state == TASK_AWAITING) {
-                    taskf->f(NULL, taskf, evt);             // 1.2
+                    taskf->f(stack, taskf, evt);            // 1.2
                 }
                 taskf = taskf->task.links.next;             // 1.3
             }
             
             // 2. awake my nested block
             if (block->links.block != NULL) {
-                bcast(block->links.block, evt);
+                bcast(stack, block->links.block, evt);
             }
         }
         
         // Kill in reverse order
+        // X. clear stack from myself
         // 2. kill my nested block (it started before the inner tasks)            
         // 1. kill my inner tasks  (they started after the nested block)
         // 0. free myself
-        void kill (Block* block) {
+        void kill (Stack* stack, Block* block) {
+            Stack* s = stack;
+            while (s != NULL) {
+                if (s->block == block) {
+                    s->block = NULL;
+                }
+                s = s->prv;
+            }
+            
             // 2. kill my nested block
             if (block->links.block != NULL) {
-                kill(block->links.block);
+                kill(stack, block->links.block);
             }
 
             // 1. kill my inner tasks
@@ -787,7 +817,7 @@ fun Stmt.code (): String {
                 
                 aux(taskf->task.links.next);                // 1.2
                 assert(taskf->task.links.block != NULL);
-                kill(taskf->task.links.block);              // 1.1
+                kill(stack, taskf->task.links.block);       // 1.1
             }            
             aux(block->links.first);
             
@@ -807,6 +837,9 @@ fun Stmt.code (): String {
         int main (void) {
             Block block_0 = { NULL, {NULL,NULL,NULL} };
             GLOBAL = &block_0;
+            int ret;
+            Stack _stack_ = { NULL, &block_0 };
+            Stack* stack = &_stack_;
             ${code.stmt}
             block_free(&block_0);
         }

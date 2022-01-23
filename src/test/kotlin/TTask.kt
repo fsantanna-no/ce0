@@ -282,6 +282,6 @@ class TTask {
             bcast @GLOBAL _0:_int
             output std _6:_int
        """.trimIndent())
-        assert(out == "10\n20\n21\n11\n30\n31\n12\n") { out }
+        assert(out == "0\n1\n2\n3\n4\n5\n6\n") { out }
     }
 }
