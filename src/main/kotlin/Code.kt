@@ -590,14 +590,22 @@ fun code_fs (s: Stmt) {
             val blk = "block_${s.n}".mem(s)
 
             // link/unlink block with enclosing block/task
-            val (fst,prv,unl) = s.ups_first { it is Expr.Func || it is Stmt.Block }.let {
+            val (lnk,unl) = s.ups_first { it is Expr.Func || it is Stmt.Block }.let {
                 when {
                     // found block: link as nested block, unlink as nested block
-                    (it is Stmt.Block) -> Triple("", "${s.local()}->links.block = &$blk;", "${s.local()}->links.block = NULL;")
-                    // found task: link as first block
-                    (it is Expr.Func && it.tk.enu == TK.TASK) -> Triple("fdata->task.links.block = &$blk;", "", "")
+                    // link enclosing block to myself (I'm the only active block)
+                    (it is Stmt.Block) -> Pair (
+                        "${s.local()}->links.block = &$blk;",
+                        "${s.local()}->links.block = NULL;"
+                    )
+                    // found task: link as first block, unlink as first block
+                    // link enclosing task  to myself (I'm the only active block)
+                    (it is Expr.Func && it.tk.enu == TK.TASK) -> Pair (
+                        "fdata->task.links.block = &$blk;",
+                        "fdata->task.links.block = NULL;"
+                    )
                     // GLOBAL: nothing to link
-                    else -> Triple("","","")
+                    else -> Pair("","")
                 }
             }
             val intk = s.intk()
@@ -609,8 +617,7 @@ fun code_fs (s: Stmt) {
             val src = """
             {
                 $blk = (Block) { NULL, {NULL,NULL,NULL} };
-                $prv    // link enclosing block to myself (I'm the only active block)
-                $fst    // link enclosing task  to myself (I'm the only active block)
+                $lnk
                 ${it.stmt}
                 $unl
                 kill(stack, &$blk);
@@ -776,11 +783,17 @@ fun Stmt.code (): String {
                 // 1.2. awake current task  (it is blocked after inner block. but before next task)
                 // 1.3. awake next task
                 assert(taskf->task.links.block != NULL);
-                bcast(stack, taskf->task.links.block, evt); // 1.1
-                if (taskf->task.state == TASK_AWAITING) {
-                    taskf->f(stack, taskf, evt);            // 1.2
+                {
+                    Stack stk = { stack, taskf->task.links.block };
+                    bcast(&stk, taskf->task.links.block, evt);  // 1.1
+                    if (stk.block == NULL) return;
+                    if (stack->block == NULL) return;
                 }
-                taskf = taskf->task.links.next;             // 1.3
+                if (taskf->task.state == TASK_AWAITING) {
+                    taskf->f(stack, taskf, evt);                // 1.2
+                    if (stack->block == NULL) return;
+                }
+                taskf = taskf->task.links.next;                 // 1.3
             }
             
             // 2. awake my nested block
@@ -816,8 +829,10 @@ fun Stmt.code (): String {
                 // 1.1. kill tasks in inner block in current task
                 
                 aux(taskf->task.links.next);                // 1.2
-                assert(taskf->task.links.block != NULL);
-                kill(stack, taskf->task.links.block);       // 1.1
+                //assert(taskf->task.links.block != NULL);
+                if (taskf->task.links.block != NULL) {      // maybe unlinked by natural termination
+                    kill(stack, taskf->task.links.block);   // 1.1
+                }
             }            
             aux(block->links.first);
             
@@ -841,7 +856,7 @@ fun Stmt.code (): String {
             Stack _stack_ = { NULL, &block_0 };
             Stack* stack = &_stack_;
             ${code.stmt}
-            block_free(&block_0);
+            kill(stack, &block_0);
         }
 
     """).trimIndent()
