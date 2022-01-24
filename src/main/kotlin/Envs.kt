@@ -99,7 +99,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
         tp.wenv = env
     }
     return when (this) {
-        is Stmt.Nop, is Stmt.Nat, is Stmt.Ret, is Stmt.Break -> env
+        is Stmt.Nop, is Stmt.Nat, is Stmt.Ret, is Stmt.Break, is Stmt.Throw -> env
         is Stmt.Var -> {
             this.xtype?.visit(false, ::ft)
             this

@@ -51,6 +51,7 @@ sealed class Stmt (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Await (val tk_: Tk.Key, val e: Expr): Stmt(N++, tk_, null, null)
     data class Awake (val tk_: Tk.Key, val e: Expr.Call): Stmt(N++, tk_, null, null)
     data class Bcast (val tk_: Tk.Key, val scp1: Tk.Scp1, val e: Expr): Stmt(N++, tk_, null, null)
+    data class Throw (val tk_: Tk.Key): Stmt(N++, tk_, null, null)
     data class Inp   (val tk_: Tk.Key, val xtype: Type, val lib: Tk.Str, val arg: Expr): Stmt(N++, tk_, null, null)
     data class Out   (val tk_: Tk.Key, val lib: Tk.Str, val arg: Expr): Stmt(N++, tk_, null, null)
     data class Seq   (val tk_: Tk, val s1: Stmt, val s2: Stmt) : Stmt(N++, tk_, null, null)

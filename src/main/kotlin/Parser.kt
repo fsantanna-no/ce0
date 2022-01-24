@@ -338,6 +338,9 @@ fun parser_stmt (all: All): Stmt {
             val e = parser_expr(all)
             Stmt.Bcast(tk0, scp, e)
         }
+        all.accept(TK.THROW) -> {
+            Stmt.Throw(all.tk0 as Tk.Key)
+        }
         all.accept(TK.INPUT) -> {
             val tk = all.tk0 as Tk.Key
             all.accept_err(TK.XVAR)

@@ -412,7 +412,7 @@ fun code_fe (e: Expr) {
             fun Stmt.mem_vars (): String {
                 return when (this) {
                     is Stmt.Nop, is Stmt.SSet, is Stmt.ESet, is Stmt.Nat,
-                    is Stmt.SCall, is Stmt.Spawn, is Stmt.Await, is Stmt.Awake, is Stmt.Bcast,
+                    is Stmt.SCall, is Stmt.Spawn, is Stmt.Await, is Stmt.Awake, is Stmt.Bcast, is Stmt.Throw,
                     is Stmt.Inp, is Stmt.Out, is Stmt.Ret, is Stmt.Break -> ""
 
                     is Stmt.Var -> "${this.xtype!!.pos()} ${this.tk_.str};\n"
@@ -492,7 +492,7 @@ fun code_fe (e: Expr) {
                     ${it.stmt}
                     ${if (!istk) "" else """
                             fdata->task.state = TASK_DEAD;
-                            return 0;
+                            return 1;
                         default:
                             assert(0 && "invalid PC");
                         }
@@ -604,7 +604,7 @@ fun code_fs (s: Stmt) {
             Code(it.type, it.stmt+call, "")
         }
         is Stmt.Bcast -> CODE.removeFirst().let {
-            val bcast = """
+            val src = """
                 {
                     Stack stk = { stack, ${s.local()} };
                     block_bcast(&stk, ${s.scp1.toce(s)}, 0, 0, ${it.expr});
@@ -614,7 +614,20 @@ fun code_fs (s: Stmt) {
                 }
                 
             """.trimIndent()
-            Code(it.type, it.stmt+bcast, "")
+            Code(it.type, it.stmt+src, "")
+        }
+        is Stmt.Throw -> {
+            val src = """
+                {
+                    Stack stk = { stack, ${s.local()} };
+                    block_bcast(&stk, GLOBAL, 1, 1, EVENT_THROW);
+                    if (stk.block == NULL) {
+                        return ret;
+                    }
+                }
+                
+            """.trimIndent()
+            Code("", src, "")
         }
         is Stmt.Inp   -> CODE.removeFirst().let {
             if (s.wup is Stmt.SSet) {
@@ -824,7 +837,9 @@ fun Stmt.code (): String {
                 if (taskf == NULL) return 0;
                 
                 if (up) {
-                    aux(taskf->task.links.next);                                // 1.3
+                    if (aux(taskf->task.links.next) && first) {                                // 1.3
+                        return 1;
+                    }
                     //assert(taskf->task.links.block != NULL);
                     if (taskf->task.links.block != NULL) { // maybe unlinked by natural termination
                         if (block_bcast(stack, taskf->task.links.block, up, first, evt) && first) { // 1.1
