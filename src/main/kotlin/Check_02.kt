@@ -152,6 +152,11 @@ fun check_02_after_tps (s: Stmt) {
     }
     fun fs (s: Stmt) {
         when (s) {
+            is Stmt.Await -> {
+                All_assert_tk(s.tk, s.e.wtype is Type.Nat) {
+                    "invalid condition : type mismatch"
+                }
+            }
             is Stmt.If -> {
                 All_assert_tk(s.tk, s.tst.wtype is Type.Nat) {
                     "invalid condition : type mismatch"

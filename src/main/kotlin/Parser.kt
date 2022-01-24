@@ -321,7 +321,9 @@ fun parser_stmt (all: All): Stmt {
             Stmt.Spawn(tk0, e as Expr.Call)
         }
         all.accept(TK.AWAIT) -> {
-            Stmt.Await(all.tk0 as Tk.Key)
+            val tk0 = all.tk0 as Tk.Key
+            val e = parser_expr(all)
+            Stmt.Await(tk0, e)
         }
         all.accept(TK.AWAKE) -> {
             val tk0 = all.tk0 as Tk.Key

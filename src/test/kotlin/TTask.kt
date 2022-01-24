@@ -17,8 +17,8 @@ class TTask {
         if (!ok2) {
             return out2
         }
-        //val (_,out3) = exec("./out.exe")
-        val (_,out3) = exec("valgrind ./out.exe")
+        val (_,out3) = exec("./out.exe")
+        //val (_,out3) = exec("valgrind ./out.exe")
             // search in tests output for
             //  - "definitely lost"
             //  - "Invalid read of size"
@@ -39,12 +39,19 @@ class TTask {
         assert(out == "1\n2\n") { out }
     }
     @Test
+    fun a02_await_err2 () {
+        val out = all("""
+            await ()
+        """.trimIndent())
+        assert(out == "(ln 1, col 1): invalid condition : type mismatch") { out }
+    }
+    @Test
     fun a02_await () {
         val out = all("""
             var f: task @LOCAL->@[]->()->()
             set f = task @LOCAL->@[]->()->() {
                 output std _1:_int
-                await
+                await _1:_int
                 output std _3:_int
             }
             spawn f ()
@@ -59,7 +66,7 @@ class TTask {
             var f: task @LOCAL->@[]->()->()
             set f = task @LOCAL->@[]->()->() {
                 output std _1:_int
-                await
+                await _1:_int
                 output std _3:_int
             }
             spawn f ()
@@ -76,7 +83,7 @@ class TTask {
             set f = task @LOCAL->@[]->()->() {
                 var x: _int
                 set x = _10:_int
-                await
+                await _1:_int
                 output std x
             }
             spawn f ()
@@ -92,13 +99,13 @@ class TTask {
                 {
                     var x: _int
                     set x = _10:_int
-                    await
+                    await _1:_int
                     output std x
                 }
                 {
                     var y: _int
                     set y = _20:_int
-                    await
+                    await _1:_int
                     output std y
                 }
             }
@@ -114,9 +121,9 @@ class TTask {
             var f: task @LOCAL->@[]->_(char*)->()
             set f = task @LOCAL->@[]->_(char*)->() {
                 output std arg
-                await
+                await _1:_int
                 output std evt
-                await
+                await _1:_int
                 output std evt
             }
             spawn f _("hello"):_(char*)
@@ -132,7 +139,7 @@ class TTask {
             set build = func @[] -> () -> task @LOCAL->@[]->()->() {
                 set ret = task @LOCAL->@[]->()->() {    -- ERR: not the same @LOCAL
                     output std _1:_int
-                    await
+                    await _1:_int
                     output std _2:_int
                 }
             }
@@ -146,7 +153,7 @@ class TTask {
             set build = func @[@r1] -> () -> task @r1->@[]->()->() {
                 set ret = task @r1->@[]->()->() {
                     output std _1:_int
-                    await
+                    await _1:_int
                     output std _2:_int
                 }
             }
@@ -169,16 +176,16 @@ class TTask {
         val out = all("""
             var f : task @LOCAL->@[]->()->()
             set f = task @LOCAL->@[]->()->() {
-                await
+                await _1:_int
                 output std _(evt+0):_int
             }
             spawn f ()
             
             var g : task @LOCAL->@[]->()->()
             set g = task @LOCAL->@[]->()->() {
-                await
+                await _1:_int
                 output std _(evt+10):_int
-                await
+                await _1:_int
                 output std _(evt+10):_int
             }
             spawn g ()
@@ -193,7 +200,7 @@ class TTask {
         val out = all("""
             var f: task @LOCAL->@[]->()->()
             set f = task @LOCAL->@[]->()->() {
-                await
+                await _1:_int
                 output std _(evt+0):_int    -- only on kill
             }
             spawn f ()
@@ -201,9 +208,9 @@ class TTask {
             {
                 var g: task @LOCAL->@[]->()->()
                 set g = task @LOCAL->@[]->()->() {
-                    await
+                    await _1:_int
                     output std _(evt+10):_int
-                    await
+                    await _1:_int
                     output std _(evt+10):_int
                 }
                 spawn g ()
@@ -219,15 +226,15 @@ class TTask {
             var f: task @LOCAL->@[]->()->()
             set f = task @LOCAL->@[]->()->() {
                 output std _1:_int
-                await
+                await _1:_int
                 var g: task @LOCAL->@[]->()->()
                 set g = task @LOCAL->@[]->()->() {
                     output std _2:_int
-                    await
+                    await _1:_int
                     output std _3:_int
                 }
                 spawn g ()
-                await
+                await _1:_int
                 output std _4:_int
             }
             spawn f ()
@@ -249,9 +256,9 @@ class TTask {
                     var g: task @LOCAL->@[]->()->()
                     set g = task @LOCAL->@[]->()->() {
                         output std _20:_int
-                        await
+                        await _1:_int
                         output std _21:_int
-                        await
+                        await _1:_int
                         if _(evt == 0):_int {
                             output std _0:_int      -- only on kill
                         } else {
@@ -259,17 +266,17 @@ class TTask {
                         }
                     }
                     spawn g ()
-                    await
+                    await _1:_int
                 }
                 output std _11:_int
                 var h: task @LOCAL->@[]->()->()
                 set h = task @LOCAL->@[]->()->() {
                     output std _30:_int
-                    await
+                    await _1:_int
                     output std _31:_int
                 }
                 spawn h ()
-                await
+                await _1:_int
                 output std _12:_int
             }
             spawn f ()
@@ -286,14 +293,14 @@ class TTask {
                 var f : task @LOCAL->@[]->()->()
                 set f = task @LOCAL->@[]->()->() {
                     output std _1:_int
-                    await
+                    await _1:_int
                     output std _4:_int
                     bcast @GLOBAL _1:_int
                     output std _999:_int
                 }
                 spawn f ()
                 output std _2:_int
-                await
+                await _1:_int
                 output std _5:_int
             }
             output std _0:_int
@@ -312,7 +319,7 @@ class TTask {
                 var f : task @LOCAL->@[]->()->()
                 set f = task @LOCAL->@[]->()->() {
                     output std _1:_int
-                    await
+                    await _1:_int
                     output std _4:_int
                     var kkk : func @[]->()->()
                     set kkk = func @[]->()->() {
@@ -323,7 +330,7 @@ class TTask {
                 }
                 spawn f ()
                 output std _2:_int
-                await
+                await _1:_int
                 output std _5:_int
             }
             output std _0:_int
@@ -344,17 +351,12 @@ class TTask {
             set f = task @LOCAL->@[]->()->() {
                 var defer : task @LOCAL->@[]->()->()
                 set defer = task @LOCAL->@[]->()->() {
-                    loop {
-                        await
-                        if _(evt == 0):_int {
-                            break
-                        } else {}
-                    }
+                    await _(evt == 0):_int
                     output std _2:_int
                 }
                 spawn defer ()
                 output std _0:_int
-                await
+                await _1:_int
                 output std _1:_int
             }
             spawn f ()
@@ -370,17 +372,12 @@ class TTask {
                 {
                     var defer : task @LOCAL->@[]->()->()
                     set defer = task @LOCAL->@[]->()->() {
-                        loop {
-                            await
-                            if _(evt == 0):_int {
-                                break
-                            } else {}
-                        }
+                        await _(evt == 0):_int
                         output std _2:_int
                     }
                     spawn defer ()
                     output std _0:_int
-                    await
+                    await _1:_int
                 }
                 output std _1:_int
             }
@@ -424,8 +421,8 @@ class TTask {
                     await (any catch/try) break
                 }
             }
-                -- acordar em ordem inversa evt=[1,n]
                 -- vai precisar bcast first
+                -- vai precisar bcast return int
                 
                 -- nao precisa nada disso aqui embaixo
                 -- transformar kill em bcast reverso

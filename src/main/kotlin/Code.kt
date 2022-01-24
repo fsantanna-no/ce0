@@ -580,13 +580,17 @@ fun code_fs (s: Stmt) {
         }
         is Stmt.SCall -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
         is Stmt.Spawn -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
-        is Stmt.Await -> {
+        is Stmt.Await -> CODE.removeFirst().let {
             val src = """
                 fdata->task.pc = ${s.n};    // next awake
                 fdata->task.state = TASK_AWAITING;
                 return 0;                   // await
                 case ${s.n}:                // awake here
                 assert(fdata->task.state == TASK_AWAITING);
+                evt = argevt.evt;
+                if (!${it.expr}) {
+                    return 0;
+                }
                 fdata->task.state = TASK_RUNNING;
                 evt = argevt.evt;
                 
