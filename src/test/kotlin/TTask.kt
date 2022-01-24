@@ -314,4 +314,28 @@ class TTask {
        """.trimIndent())
         assert(out == "0\n1\n2\n3\n4\n5\n6\n") { out }
     }
+
+    // DEFER
+
+    @Test
+    fun b01_defer () {
+        val out = all("""
+            var f: task @LOCAL->@[]->()->()
+            set f = task @LOCAL->@[]->()->() {
+                var defer : task @LOCAL->@[]->()->()
+                set defer = task @LOCAL->@[]->()->() {
+                    await ()
+                    output std _2:_int
+                }
+                spawn f ()
+                output std _0:_int
+                await
+                output std _1:_int
+            }
+            spawn f ()
+            awake f _0:_int
+        """.trimIndent())
+        assert(out == "0\n1\n2\n") { out }
+    }
+
 }

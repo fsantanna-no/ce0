@@ -530,7 +530,7 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
             else -> Pair("","")
         }
     }
-    return Triple(link, unlink, "kill(stack, &$blk);\n")
+    return Triple(link, unlink, "block_kill(stack, &$blk);\n")
 }
 
 fun code_fs (s: Stmt) {
@@ -598,7 +598,7 @@ fun code_fs (s: Stmt) {
             val bcast = """
                 {
                     Stack stk = { stack, ${s.local()} };
-                    bcast(&stk, ${s.scp1.toce(s)}, ${it.expr});
+                    block_bcast(&stk, ${s.scp1.toce(s)}, ${it.expr});
                     if (stk.block == NULL) {
                         return ret;
                     }
@@ -791,7 +791,7 @@ fun Stmt.code (): String {
         
         // 1. awake my inner tasks  (they started before the nested block)
         // 2. awake my nested block (it started after the inner tasks)            
-        void bcast (Stack* stack, Block* block, int evt) {
+        void block_bcast (Stack* stack, Block* block, int evt) {
             // 1. awake my inner tasks
             Task_F* taskf = block->links.first;
             while (taskf != NULL) {
@@ -801,7 +801,7 @@ fun Stmt.code (): String {
                 //assert(taskf->task.links.block != NULL);
                 if (taskf->task.links.block != NULL) {      // maybe unlinked by natural termination
                     Stack stk = { stack, taskf->task.links.block };
-                    bcast(&stk, taskf->task.links.block, evt);  // 1.1
+                    block_bcast(&stk, taskf->task.links.block, evt);  // 1.1
                     if (stk.block == NULL) return;
                     if (stack->block == NULL) return;
                 }
@@ -814,7 +814,7 @@ fun Stmt.code (): String {
             
             // 2. awake my nested block
             if (block->links.block != NULL) {
-                bcast(stack, block->links.block, evt);
+                block_bcast(stack, block->links.block, evt);
             }
         }
         
@@ -823,7 +823,7 @@ fun Stmt.code (): String {
         // 2. kill my nested block (it started before the inner tasks)            
         // 1. kill my inner tasks  (they started after the nested block)
         // 0. free myself
-        void kill (Stack* stack, Block* block) {
+        void block_kill (Stack* stack, Block* block) {
             Stack* s = stack;
             while (s != NULL) {
                 if (s->block == block) {
@@ -834,7 +834,7 @@ fun Stmt.code (): String {
             
             // 2. kill my nested block
             if (block->links.block != NULL) {
-                kill(stack, block->links.block);
+                block_kill(stack, block->links.block);
             }
 
             // 1. kill my inner tasks
@@ -847,7 +847,7 @@ fun Stmt.code (): String {
                 aux(taskf->task.links.next);                // 1.2
                 //assert(taskf->task.links.block != NULL);
                 if (taskf->task.links.block != NULL) {      // maybe unlinked by natural termination
-                    kill(stack, taskf->task.links.block);   // 1.1
+                    block_kill(stack, taskf->task.links.block);   // 1.1
                 }
             }            
             aux(block->links.first);
@@ -872,7 +872,7 @@ fun Stmt.code (): String {
             Stack _stack_ = { NULL, &block_0 };
             Stack* stack = &_stack_;
             ${code.stmt}
-            kill(stack, &block_0);
+            block_kill(stack, &block_0);
         }
 
     """).trimIndent()
