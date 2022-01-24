@@ -483,9 +483,11 @@ fun code_fe (e: Expr) {
                     $blocks
                     ${if (!istk) "${e.type.inp.pos()} arg" else "ARGEVT_${e.type.toce()} argevt"}
                 ) {
+                    ${if (!istk) "" else "assert(fdata->task.state==TASK_UNBORN || fdata->task.state==TASK_AWAITING);"}
                     ${if (!istk) "" else "${e.type.inp.pos()} arg = argevt.arg;"}
                     ${e.type.out.pos()} ret;
                     ${if (!istk) "" else "switch (fdata->task.pc) {\ncase 0:\n"}                    
+                    ${if (!istk) "" else "assert(fdata->task.state == TASK_UNBORN);"}
                     ${it.stmt}
                     ${if (!istk) "" else """
                             fdata->task.state = TASK_DEAD;
@@ -584,6 +586,7 @@ fun code_fs (s: Stmt) {
                 fdata->task.state = TASK_AWAITING;
                 return 0;                   // await
                 case ${s.n}:                // awake here
+                assert(fdata->task.state == TASK_AWAITING);
                 fdata->task.state = TASK_RUNNING;
                 evt = argevt.evt;
                 
@@ -841,13 +844,18 @@ fun Stmt.code (): String {
             void aux (Task_F* taskf) {
                 if (taskf == NULL) return;
                 
-                // 1.2. kill next task
+                // 1.3. kill next task
                 // 1.1. kill tasks in inner block in current task
+                // 1.2. kill current task
                 
-                aux(taskf->task.links.next);                // 1.2
+                aux(taskf->task.links.next);                    // 1.3
                 //assert(taskf->task.links.block != NULL);
-                if (taskf->task.links.block != NULL) {      // maybe unlinked by natural termination
-                    block_kill(stack, taskf->task.links.block);   // 1.1
+                if (taskf->task.links.block != NULL) {          // maybe unlinked by natural termination
+                    block_kill(stack, taskf->task.links.block); // 1.1
+                }
+                if (taskf->task.state == TASK_AWAITING) {
+                    taskf->f(stack, taskf, 0);                  // 1.2
+                    taskf->task.state = TASK_DEAD;
                 }
             }            
             aux(block->links.first);

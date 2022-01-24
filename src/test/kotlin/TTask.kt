@@ -49,7 +49,7 @@ class TTask {
             }
             spawn f ()
             output std _2:_int
-            awake f _0:_int
+            awake f _1:_int
         """.trimIndent())
         assert(out == "1\n2\n3\n") { out }
     }
@@ -64,7 +64,7 @@ class TTask {
                 output std x
             }
             spawn f ()
-            awake f _0:_int
+            awake f _1:_int
         """.trimIndent())
         assert(out == "10\n") { out }
     }
@@ -87,8 +87,8 @@ class TTask {
                 }
             }
             spawn f ()
-            awake f _0:_int
-            awake f _0:_int
+            awake f _1:_int
+            awake f _1:_int
         """.trimIndent())
         assert(out == "10\n20\n") { out }
     }
@@ -142,8 +142,8 @@ class TTask {
             spawn f ()
             output std _11:_int
             spawn g ()
-            awake f _0:_int
-            awake g _0:_int
+            awake f _1:_int
+            awake g _1:_int
             output std _12:_int
         """.trimIndent())
         assert(out == "10\n1\n11\n1\n2\n2\n12\n") { out }
@@ -178,7 +178,7 @@ class TTask {
             var f: task @LOCAL->@[]->()->()
             set f = task @LOCAL->@[]->()->() {
                 await
-                output std _(evt+0):_int
+                output std _(evt+0):_int    -- only on kill
             }
             spawn f ()
             
@@ -195,7 +195,7 @@ class TTask {
                 bcast @LOCAL _2:_int
             }            
         """.trimIndent())
-        assert(out == "11\n12\n") { out }
+        assert(out == "11\n12\n0\n") { out }
     }
     @Test
     fun a09_nest () {
@@ -216,9 +216,9 @@ class TTask {
             }
             spawn f ()
             output std _10:_int
-            bcast @GLOBAL _0:_int
+            bcast @GLOBAL _1:_int
             output std _11:_int
-            bcast @GLOBAL _0:_int
+            bcast @GLOBAL _1:_int
             output std _12:_int
         """.trimIndent())
         assert(out == "1\n10\n2\n11\n3\n4\n12\n") { out }
@@ -236,7 +236,11 @@ class TTask {
                         await
                         output std _21:_int
                         await
-                        output std _22:_int     -- can't execute this one
+                        if _(evt == 0):_int {
+                            output std _0:_int      -- only on kill
+                        } else {
+                            output std _22:_int     -- can't execute this one
+                        }
                     }
                     spawn g ()
                     await
@@ -253,10 +257,10 @@ class TTask {
                 output std _12:_int
             }
             spawn f ()
-            bcast @GLOBAL _0:_int
-            bcast @GLOBAL _0:_int
+            bcast @GLOBAL _1:_int
+            bcast @GLOBAL _1:_int
         """.trimIndent())
-        assert(out == "10\n20\n21\n11\n30\n31\n12\n") { out }
+        assert(out == "10\n20\n21\n0\n11\n30\n31\n12\n") { out }
     }
     @Test
     fun a11_self_kill () {
@@ -268,7 +272,7 @@ class TTask {
                     output std _1:_int
                     await
                     output std _4:_int
-                    bcast @GLOBAL _0:_int
+                    bcast @GLOBAL _1:_int
                     output std _999:_int
                 }
                 spawn f ()
@@ -279,7 +283,7 @@ class TTask {
             output std _0:_int
             spawn g ()
             output std _3:_int
-            bcast @GLOBAL _0:_int
+            bcast @GLOBAL _1:_int
             output std _6:_int
        """.trimIndent())
         assert(out == "0\n1\n2\n3\n4\n5\n6\n") { out }
@@ -296,7 +300,7 @@ class TTask {
                     output std _4:_int
                     var kkk : func @[]->()->()
                     set kkk = func @[]->()->() {
-                        bcast @GLOBAL _0:_int
+                        bcast @GLOBAL _1:_int
                     }
                     call kkk ()
                     output std _999:_int
@@ -309,7 +313,7 @@ class TTask {
             output std _0:_int
             spawn g ()
             output std _3:_int
-            bcast @GLOBAL _0:_int
+            bcast @GLOBAL _1:_int
             output std _6:_int
        """.trimIndent())
         assert(out == "0\n1\n2\n3\n4\n5\n6\n") { out }
@@ -317,6 +321,7 @@ class TTask {
 
     // DEFER
 
+    @Disabled
     @Test
     fun b01_defer () {
         val out = all("""
@@ -333,7 +338,7 @@ class TTask {
                 output std _1:_int
             }
             spawn f ()
-            awake f _0:_int
+            awake f _1:_int
         """.trimIndent())
         assert(out == "0\n1\n2\n") { out }
     }
