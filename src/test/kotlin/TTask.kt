@@ -17,8 +17,8 @@ class TTask {
         if (!ok2) {
             return out2
         }
-        val (_,out3) = exec("./out.exe")
-        //val (_,out3) = exec("valgrind ./out.exe")
+        //val (_,out3) = exec("./out.exe")
+        val (_,out3) = exec("valgrind ./out.exe")
             // search in tests output for
             //  - "definitely lost"
             //  - "Invalid read of size"
@@ -52,6 +52,22 @@ class TTask {
             awake f _1:_int
         """.trimIndent())
         assert(out == "1\n2\n3\n") { out }
+    }
+    @Test
+    fun a02_await_err () {
+        val out = all("""
+            var f: task @LOCAL->@[]->()->()
+            set f = task @LOCAL->@[]->()->() {
+                output std _1:_int
+                await
+                output std _3:_int
+            }
+            spawn f ()
+            output std _2:_int
+            awake f _1:_int
+            awake f _1:_int
+        """.trimIndent())
+        assert(out.endsWith("f: Assertion `fdata->task.state==TASK_UNBORN || fdata->task.state==TASK_AWAITING' failed.\n")) { out }
     }
     @Test
     fun a03_var () {
@@ -151,14 +167,14 @@ class TTask {
     @Test
     fun a07_bcast () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()
+            var f : task @LOCAL->@[]->()->()
             set f = task @LOCAL->@[]->()->() {
                 await
                 output std _(evt+0):_int
             }
             spawn f ()
             
-            var g: task @LOCAL->@[]->()->()
+            var g : task @LOCAL->@[]->()->()
             set g = task @LOCAL->@[]->()->() {
                 await
                 output std _(evt+10):_int
@@ -319,9 +335,8 @@ class TTask {
         assert(out == "0\n1\n2\n3\n4\n5\n6\n") { out }
     }
 
-    // DEFER
+    // DEFER, CATCH
 
-    @Disabled
     @Test
     fun b01_defer () {
         val out = all("""
@@ -329,10 +344,15 @@ class TTask {
             set f = task @LOCAL->@[]->()->() {
                 var defer : task @LOCAL->@[]->()->()
                 set defer = task @LOCAL->@[]->()->() {
-                    await ()
+                    loop {
+                        await
+                        if _(evt == 0):_int {
+                            break
+                        } else {}
+                    }
                     output std _2:_int
                 }
-                spawn f ()
+                spawn defer ()
                 output std _0:_int
                 await
                 output std _1:_int
@@ -342,5 +362,81 @@ class TTask {
         """.trimIndent())
         assert(out == "0\n1\n2\n") { out }
     }
+    @Test
+    fun b02_defer_block () {
+        val out = all("""
+            var f: task @LOCAL->@[]->()->()
+            set f = task @LOCAL->@[]->()->() {
+                {
+                    var defer : task @LOCAL->@[]->()->()
+                    set defer = task @LOCAL->@[]->()->() {
+                        loop {
+                            await
+                            if _(evt == 0):_int {
+                                break
+                            } else {}
+                        }
+                        output std _2:_int
+                    }
+                    spawn defer ()
+                    output std _0:_int
+                    await
+                }
+                output std _1:_int
+            }
+            spawn f ()
+            awake f _1:_int
+        """.trimIndent())
+        assert(out == "0\n2\n1\n") { out }
+    }
+    @Test
+    fun b03_catch () {
+        val out = all("""
+            catch (file not found) {
+                var f = open ()
+                defer {
+                    call close f
+                }
+                loop {
+                    var c = read f
+                }
+            }
+            
+            {
+                var try : task @LOCAL->@[]->()->()
+                set try = task @LOCAL->@[]->()->() {
+                    var f = open ()
+                    defer {
+                        call close f
+                    }
+                    loop {
+                        var c = read f
+                        ... throw err ...    -- bcast up EX n
+                    }
+                }
+                var catch : task @LOCAL->@[]->()->()
+                set catch = task @LOCAL->@[]->()->() {
+                    await (file exception)
+                }
+                spawn catch () -- preciso estar esperando antes, senao o throw nao vai ser capturado
+                spawn try   ()
+                loop {
+                    await (any catch/try) break
+                }
+            }
+                -- acordar em ordem inversa evt=[1,n]
+                -- vai precisar bcast first
+                
+                -- nao precisa nada disso aqui embaixo
+                -- transformar kill em bcast reverso
+                    -- usar fc unica
+                    -- o q fazer com block_free?
+                -- kill try ainda nao existe
+                    -- block_kill -> task_kill é só extrair o código                
+                -- 1. kill t, gera evento
+            }
 
+        """.trimIndent())
+        assert(out == "0\n1\n2\n") { out }
+    }
 }

@@ -1,3 +1,4 @@
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
@@ -100,6 +101,7 @@ class TCode {
 
     // CODE
 
+    @Disabled
     @Test
     fun d01 () {
         val s = Stmt.Nop(Tk.Err(TK.ERR,1,1,""))
