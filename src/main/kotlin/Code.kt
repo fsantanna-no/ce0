@@ -592,7 +592,6 @@ fun code_fs (s: Stmt) {
                     return 0;
                 }
                 fdata->task.state = TASK_RUNNING;
-                evt = argevt.evt;
                 
             """.trimIndent()
             Code(it.type, it.stmt+src, "")
