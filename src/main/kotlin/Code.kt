@@ -532,7 +532,7 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
             else -> Pair("","")
         }
     }
-    return Triple(link, unlink, "block_bcast(stack, &$blk, 0, EVENT_KILL);\n")
+    return Triple(link, unlink, "block_bcast(stack, &$blk, 1, EVENT_KILL);\n")
 }
 
 fun code_fs (s: Stmt) {
@@ -595,7 +595,7 @@ fun code_fs (s: Stmt) {
                 evt = argevt.evt;
                 
             """.trimIndent()
-            Code("", src, "")
+            Code(it.type, it.stmt+src, "")
         }
         is Stmt.Awake -> CODE.removeFirst().let {
             val call = it.expr + ";\n"
@@ -605,7 +605,7 @@ fun code_fs (s: Stmt) {
             val bcast = """
                 {
                     Stack stk = { stack, ${s.local()} };
-                    block_bcast(&stk, ${s.scp1.toce(s)}, 1, ${it.expr});
+                    block_bcast(&stk, ${s.scp1.toce(s)}, 0, ${it.expr});
                     if (stk.block == NULL) {
                         return ret;
                     }
@@ -806,7 +806,7 @@ fun Stmt.code (): String {
         // 1.3. awake next task
         // 2. awake my nested block (it started after the inner tasks)            
 
-        void block_bcast (Stack* stack, Block* block, int down, EVENT evt) {
+        int block_bcast (Stack* stack, Block* block, int up, EVENT evt) {
             // X. clear stack from myself
             if (evt == EVENT_KILL) {
                 Stack* s = stack;
@@ -821,11 +821,23 @@ fun Stmt.code (): String {
             void aux (Task_F* taskf) {
                 if (taskf == NULL) return;
                 
-                if (down) {
+                if (up) {
+                    aux(taskf->task.links.next);                                // 1.3
+                    //assert(taskf->task.links.block != NULL);
+                    if (taskf->task.links.block != NULL) { // maybe unlinked by natural termination
+                        block_bcast(stack, taskf->task.links.block, up, evt); // 1.1
+                    }
+                    if (taskf->task.state == TASK_AWAITING) {
+                        taskf->f(stack, taskf, evt);                            // 1.2
+                        if (evt == EVENT_KILL) {
+                            taskf->task.state = TASK_DEAD;
+                        }
+                    }
+                } else {
                     //assert(taskf->task.links.block != NULL);
                     if (taskf->task.links.block != NULL) { // maybe unlinked by natural termination
                         Stack stk = { stack, taskf->task.links.block };
-                        block_bcast(&stk, taskf->task.links.block, down, evt);  // 1.1
+                        block_bcast(&stk, taskf->task.links.block, up, evt);  // 1.1
                         if (stk.block == NULL) return;
                         if (stack->block == NULL) return;
                     }
@@ -834,31 +846,19 @@ fun Stmt.code (): String {
                         if (stack->block == NULL) return;
                     }
                     aux(taskf->task.links.next);                                // 1.3
-                } else {
-                    aux(taskf->task.links.next);                                // 1.3
-                    //assert(taskf->task.links.block != NULL);
-                    if (taskf->task.links.block != NULL) { // maybe unlinked by natural termination
-                        block_bcast(stack, taskf->task.links.block, down, evt); // 1.1
-                    }
-                    if (taskf->task.state == TASK_AWAITING) {
-                        taskf->f(stack, taskf, evt);                            // 1.2
-                        if (evt == EVENT_KILL) {
-                            taskf->task.state = TASK_DEAD;
-                        }
-                    }
                 }
             }
             
-            if (down) {
-                aux(block->links.first);            // 1. awake my inner tasks
+            if (up) {
                 if (block->links.block != NULL) {   // 2. awake my nested block
-                    block_bcast(stack, block->links.block, down, evt);
-                }
-            } else {
-                if (block->links.block != NULL) {   // 2. awake my nested block
-                    block_bcast(stack, block->links.block, down, evt);
+                    block_bcast(stack, block->links.block, up, evt);
                 }                
                 aux(block->links.first);            // 1. awake my inner tasks
+            } else {
+                aux(block->links.first);            // 1. awake my inner tasks
+                if (block->links.block != NULL) {   // 2. awake my nested block
+                    block_bcast(stack, block->links.block, up, evt);
+                }
             }
             
             // X. free myself
@@ -883,7 +883,7 @@ fun Stmt.code (): String {
             Stack _stack_ = { NULL, &block_0 };
             Stack* stack = &_stack_;
             ${code.stmt}
-            block_bcast(stack, &block_0, 0, EVENT_KILL);
+            block_bcast(stack, &block_0, 1, EVENT_KILL);
         }
 
     """).trimIndent()
