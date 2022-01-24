@@ -342,7 +342,7 @@ class TTask {
         assert(out == "0\n1\n2\n3\n4\n5\n6\n") { out }
     }
 
-    // DEFER, CATCH
+    // DEFER
 
     @Test
     fun b01_defer () {
@@ -386,8 +386,11 @@ class TTask {
         """.trimIndent())
         assert(out == "0\n2\n1\n") { out }
     }
+
+    // DEFER
+
     @Test
-    fun b03_throw () {
+    fun c01_throw () {
         val out = all("""
             var f: task @LOCAL->@[]->()->()
             set f = task @LOCAL->@[]->()->() {
@@ -406,7 +409,69 @@ class TTask {
         assert(out == "1\n") { out }
     }
     @Test
-    fun b04_try_catch () {
+    fun c02_throw_par2 () {
+        val out = all("""
+            var fg: task @LOCAL->@[]->()->()
+            set fg = task @LOCAL->@[]->()->() {
+                var f: task @LOCAL->@[]->()->()
+                set f = task @LOCAL->@[]->()->() {
+                    await _(evt == 2):_int
+                    output std _999:_int
+                }
+                var g: task @LOCAL->@[]->()->()
+                set g = task @LOCAL->@[]->()->() {
+                    await _(evt == 2):_int
+                    output std _1:_int
+                }
+                await _(evt != 0):_int
+                spawn f ()
+                spawn g ()
+                throw
+            }
+            var h: task @LOCAL->@[]->()->()
+            set h = task @LOCAL->@[]->()->() {
+                await _(evt == 1):_int
+                output std _998:_int
+            }
+            spawn fg ()
+            spawn h ()
+            bcast @GLOBAL _5:_int
+            output std _1:_int
+        """.trimIndent())
+        assert(out == "1\n1\n") { out }
+    }
+    @Test
+    fun c02_throw_par1 () {
+        val out = all("""
+            var h: task @LOCAL->@[]->()->()
+            set h = task @LOCAL->@[]->()->() {
+                await _(evt == 1):_int
+                output std _998:_int
+            }
+            var fg: task @LOCAL->@[]->()->()
+            set fg = task @LOCAL->@[]->()->() {
+                var f: task @LOCAL->@[]->()->()
+                set f = task @LOCAL->@[]->()->() {
+                    await _(evt > 5):_int
+                    output std _999:_int
+                }
+                var g: task @LOCAL->@[]->()->()
+                set g = task @LOCAL->@[]->()->() {
+                    await _(evt > 5):_int
+                    output std _1:_int
+                }
+                spawn f ()
+                spawn g ()
+                throw
+            }
+            spawn h ()
+            spawn fg ()
+            output std _2:_int
+        """.trimIndent())
+        assert(out == "1\n") { out }
+    }
+    @Test
+    fun c03_try_catch () {
         val out = all("""
             catch (file not found) {
                 var f = open ()

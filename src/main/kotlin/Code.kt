@@ -591,8 +591,8 @@ fun code_fs (s: Stmt) {
                 case ${s.n}:                // awake here
                 assert(fdata->task.state == TASK_AWAITING);
                 evt = argevt.evt;
-                if (!${it.expr}) {
-                    return 0;
+                if (!(${it.expr})) {
+                    return 0;               // awake no
                 }
                 fdata->task.state = TASK_RUNNING;
                 
@@ -874,6 +874,7 @@ fun Stmt.code (): String {
                         return 1;
                     }
                 }
+                return 0;
             }
             
             if (up) {
