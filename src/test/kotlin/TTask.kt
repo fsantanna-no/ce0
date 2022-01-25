@@ -402,9 +402,11 @@ class TTask {
                 await _(evt != 0):_int
                 output std _1:_int
             }
-            spawn f ()
-            spawn g ()
-            throw
+           catch {
+                spawn f ()
+                spawn g ()
+                throw
+            }
         """.trimIndent())
         assert(out == "1\n") { out }
     }
@@ -480,8 +482,22 @@ class TTask {
                 }
                 loop {
                     var c = read f
+                    ... throw err ...
                 }
             }
+            
+            par/or do
+                await ERROR
+            with
+                var f = open ()
+                defer {
+                    close f
+                }
+                loop {
+                    var c = read f
+                    ... throw ...
+                }
+            end
             
             {
                 var try : task @LOCAL->@[]->()->()
@@ -501,9 +517,7 @@ class TTask {
                 }
                 spawn catch () -- preciso estar esperando antes, senao o throw nao vai ser capturado
                 spawn try   ()
-                loop {
-                    await (any catch/try) break
-                }
+                await (any catch/try)
             }
                 -- vai precisar bcast first
                 -- vai precisar bcast return int

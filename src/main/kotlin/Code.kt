@@ -514,8 +514,8 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
             // found block: link as nested block, unlink as nested block
             // link enclosing block to myself (I'm the only active block)
             (it is Stmt.Block) -> Pair (
-                "${this.local()}->links.block = &$blk;\n",
-                "${this.local()}->links.block = NULL;\n"
+                "${this.local()}->links.blk_down = &$blk;\n",
+                "${this.local()}->links.blk_down = NULL;\n"
             )
             // found task: link as first block, unlink as first block
             // link enclosing task  to myself (I'm the only active block)
@@ -526,8 +526,8 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
             // found func: link as first block, unlink as first block
             // link enclosing task  to myself (I'm the only active block)
             (it is Expr.Func && it.tk.enu==TK.FUNC) -> Pair (
-                "fblock->links.block = &$blk;\n",
-                "fblock->links.block = NULL;\n"
+                "fblock->links.blk_down = &$blk;\n",
+                "fblock->links.blk_down = NULL;\n"
             )
             // GLOBAL: nothing to link
             else -> Pair("","")
@@ -774,7 +774,7 @@ fun Stmt.code (): String {
             struct {
                 struct Task_F* tsk_first;   // first Task inside me
                 struct Task_F* tsk_last;    // current last Task inside me
-                struct Block*  block;   // current nested Block inside me 
+                struct Block*  blk_down;   // current nested Block inside me 
             } links;
         } Block;
         
@@ -878,8 +878,8 @@ fun Stmt.code (): String {
             }
             
             if (up) {
-                if (block->links.block != NULL) {   // 2. awake my nested block
-                    if (block_bcast(stack, block->links.block, up, first, evt) && first) {
+                if (block->links.blk_down != NULL) {   // 2. awake my nested block
+                    if (block_bcast(stack, block->links.blk_down, up, first, evt) && first) {
                         return 1;
                     }
                 }                
@@ -890,8 +890,8 @@ fun Stmt.code (): String {
                 if (aux(block->links.tsk_first) && first) {            // 1. awake my inner tasks
                     return 1;
                 }
-                if (block->links.block != NULL) {   // 2. awake my nested block
-                    if (block_bcast(stack, block->links.block, up, first, evt) && first) {
+                if (block->links.blk_down != NULL) {   // 2. awake my nested block
+                    if (block_bcast(stack, block->links.blk_down, up, first, evt) && first) {
                         return 1;
                     }
                 }
