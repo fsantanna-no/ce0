@@ -63,7 +63,6 @@ fun code_ft (tp: Type) {
                 //"${tp.out.pos()} ${tp.toce()} $fid ($pc $ups $pools ${e.type.inp.pos()})"
             } else {
                 val xfdata  = if (isnone) "" else "struct ${tp.toce()}* fdata,"
-                val xfblock = if (istk)   "" else "Block* fblock,"
                 """
                     ${if (!istk) "" else """
                         typedef union { ${tp.inp.pos()} arg; int evt; } ARGEVT_${tp.toce()};
@@ -73,7 +72,7 @@ fun code_ft (tp: Type) {
                     typedef struct ${tp.toce()} {
                         ${tp.out.pos()} (*f) (
                             Stack* stack,
-                            $xfblock
+                            Block* fblock,
                             $xfdata
                             $xblocks
                             ${if (!istk) "${tp.inp.pos()}" else "ARGEVT_${tp.toce()}"}
@@ -352,7 +351,7 @@ fun code_fe (e: Expr) {
                                 is Stmt.Awake -> "(ARGEVT_${tpf.toce()}) {.evt=${arg.expr}}"
                                 else -> error("bug found")
                             }
-                            f.expr + "->f(&stk_${e.n}, " + f.expr + ", " + blks + argret + ")"
+                            f.expr + "->f(&stk_${e.n}, " + blk + "," + f.expr + ", " + blks + argret + ")"
                         } else {
                             f.expr + "->f(&stk_${e.n}, " + blk + "," + f.expr + ", " + blks + arg.expr + ")"
                         }
@@ -404,7 +403,6 @@ fun code_fe (e: Expr) {
             """.trimIndent()
 
             val xfdata  = if (isnone) "" else "$fstruct* fdata,"
-            val xfblock = if (istk)   "" else "Block* fblock,"
             val blocks = e.type.xscp1s.second.let { if (it.size == 0) "" else
                 it.map { "Block* ${it.toce(e)}" }.joinToString(",") + ","
             }
@@ -458,7 +456,7 @@ fun code_fe (e: Expr) {
                     $fstruct {
                         $tpret (*f) (
                             Stack* stack,
-                            $xfblock
+                            Block* fblock,
                             $xfdata
                             $blocks
                             ${if (!istk) "${e.type.inp.pos()} arg" else "ARGEVT_${e.type.toce()} argevt"}
@@ -479,7 +477,7 @@ fun code_fe (e: Expr) {
                 // int f (XXX* fdata, Pools**, int arg);
                 $tpret ${if (isnone) fvar else fvar+"_f"} (
                     Stack* stack,
-                    $xfblock
+                    Block* fblock,
                     $xfdata
                     $blocks
                     ${if (!istk) "${e.type.inp.pos()} arg" else "ARGEVT_${e.type.toce()} argevt"}
@@ -514,20 +512,26 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
             // found block: link as nested block, unlink as nested block
             // link enclosing block to myself (I'm the only active block)
             (it is Stmt.Block) -> Pair (
-                "${this.local()}->links.blk_down = &$blk;\n",
-                "${this.local()}->links.blk_down = NULL;\n"
+                ("${this.local()}->links.blk_down = &$blk;\n" +
+                 "$blk.links.blk_up = ${this.local()};\n"),
+                ("${this.local()}->links.blk_down = NULL;\n" +
+                 "$blk.links.blk_up = NULL;\n")
             )
             // found task: link as first block, unlink as first block
             // link enclosing task  to myself (I'm the only active block)
             (it is Expr.Func && it.tk.enu==TK.TASK) -> Pair (
-                "fdata->task.links.blk_down = &$blk;\n",
-                "fdata->task.links.blk_down = NULL;\n"
+                ("fdata->task.links.blk_down = &$blk;\n" +
+                 "$blk.links.blk_up = fblock;\n"),
+                ("fdata->task.links.blk_down = NULL;\n" +
+                 "$blk.links.blk_up = NULL;\n")
             )
             // found func: link as first block, unlink as first block
             // link enclosing task  to myself (I'm the only active block)
             (it is Expr.Func && it.tk.enu==TK.FUNC) -> Pair (
-                "fblock->links.blk_down = &$blk;\n",
-                "fblock->links.blk_down = NULL;\n"
+                ("fblock->links.blk_down = &$blk;\n" +
+                 "$blk.links.blk_up = fblock;\n"),
+                ("fblock->links.blk_down = NULL;\n" +
+                 "$blk.links.blk_up = NULL;\n")
             )
             // GLOBAL: nothing to link
             else -> Pair("","")
@@ -760,12 +764,13 @@ fun Stmt.code (): String {
             int pc;
             struct {
                 struct Task_F* tsk_next;    // next Task in the same block
-                struct Block*  blk_down;   // first nested block inside me
+                struct Block*  blk_up;      // enclosing block outside me
+                struct Block*  blk_down;    // nested block inside me
             } links;
         } Task;
         
         typedef struct Task_F {
-            int (*f) (Stack* stack, void* x, int evt);
+            int (*f) (Stack* stack, struct Block* fblock, void* fdata, int evt);
             Task task;
         } Task_F;
         
@@ -774,7 +779,8 @@ fun Stmt.code (): String {
             struct {
                 struct Task_F* tsk_first;   // first Task inside me
                 struct Task_F* tsk_last;    // current last Task inside me
-                struct Block*  blk_down;   // current nested Block inside me 
+                struct Block*  blk_up;      // enclosing block outside me
+                struct Block*  blk_down;    // nested Block inside me 
             } links;
         } Block;
         
@@ -847,7 +853,7 @@ fun Stmt.code (): String {
                         }
                     }
                     if (taskf->task.state == TASK_AWAITING) {
-                        if (taskf->f(stack, taskf, evt) && first) {                       // 1.2
+                        if (taskf->f(stack, block, taskf, evt) && first) {                       // 1.2
                             return 1;
                         }
                         if (evt == EVENT_KILL) {
@@ -865,7 +871,7 @@ fun Stmt.code (): String {
                         if (stack->block == NULL) return 0;
                     }
                     if (taskf->task.state == TASK_AWAITING) {
-                        if (taskf->f(stack, taskf, evt) && first) {                           // 1.2
+                        if (taskf->f(stack,  block, taskf, evt) && first) {                           // 1.2
                             return 1;
                         }
                         if (stack->block == NULL) return 0;
