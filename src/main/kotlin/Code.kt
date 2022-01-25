@@ -759,7 +759,7 @@ fun Stmt.code (): String {
             TASK_STATE state;
             int pc;
             struct {
-                struct Task_F* next;    // next Task in the same block
+                struct Task_F* tsk_next;    // next Task in the same block
                 struct Block*  block;   // first nested block inside me
             } links;
         } Task;
@@ -772,8 +772,8 @@ fun Stmt.code (): String {
         typedef struct Block {
             Pool* pool;
             struct {
-                struct Task_F* first;   // first Task inside me
-                struct Task_F* last;    // current last Task inside me
+                struct Task_F* tsk_first;   // first Task inside me
+                struct Task_F* tsk_last;    // current last Task inside me
                 struct Block*  block;   // current nested Block inside me 
             } links;
         } Block;
@@ -801,15 +801,15 @@ fun Stmt.code (): String {
         ///
         
         void task_link (Block* block, Task_F* taskf) {
-            Task_F* last = block->links.last;
+            Task_F* last = block->links.tsk_last;
             if (last == NULL) {
-                assert(block->links.first == NULL);
-                block->links.first = taskf;
+                assert(block->links.tsk_first == NULL);
+                block->links.tsk_first = taskf;
             } else {
-                last->task.links.next = taskf;
+                last->task.links.tsk_next = taskf;
             }
-            block->links.last = taskf;
-            taskf->task.links.next  = NULL;
+            block->links.tsk_last = taskf;
+            taskf->task.links.tsk_next  = NULL;
             taskf->task.links.block = NULL;
         }
 
@@ -837,7 +837,7 @@ fun Stmt.code (): String {
                 if (taskf == NULL) return 0;
                 
                 if (up) {
-                    if (aux(taskf->task.links.next) && first) {                                // 1.3
+                    if (aux(taskf->task.links.tsk_next) && first) {                                // 1.3
                         return 1;
                     }
                     //assert(taskf->task.links.block != NULL);
@@ -870,7 +870,7 @@ fun Stmt.code (): String {
                         }
                         if (stack->block == NULL) return 0;
                     }
-                    if (aux(taskf->task.links.next) && first) {                                // 1.3
+                    if (aux(taskf->task.links.tsk_next) && first) {                                // 1.3
                         return 1;
                     }
                 }
@@ -883,11 +883,11 @@ fun Stmt.code (): String {
                         return 1;
                     }
                 }                
-                if (aux(block->links.first) && first) {            // 1. awake my inner tasks
+                if (aux(block->links.tsk_first) && first) {            // 1. awake my inner tasks
                     return 1;
                 }
             } else {
-                if (aux(block->links.first) && first) {            // 1. awake my inner tasks
+                if (aux(block->links.tsk_first) && first) {            // 1. awake my inner tasks
                     return 1;
                 }
                 if (block->links.block != NULL) {   // 2. awake my nested block
