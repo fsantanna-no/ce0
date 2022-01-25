@@ -520,8 +520,8 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
             // found task: link as first block, unlink as first block
             // link enclosing task  to myself (I'm the only active block)
             (it is Expr.Func && it.tk.enu==TK.TASK) -> Pair (
-                "fdata->task.links.block = &$blk;\n",
-                "fdata->task.links.block = NULL;\n"
+                "fdata->task.links.blk_down = &$blk;\n",
+                "fdata->task.links.blk_down = NULL;\n"
             )
             // found func: link as first block, unlink as first block
             // link enclosing task  to myself (I'm the only active block)
@@ -760,7 +760,7 @@ fun Stmt.code (): String {
             int pc;
             struct {
                 struct Task_F* tsk_next;    // next Task in the same block
-                struct Block*  block;   // first nested block inside me
+                struct Block*  blk_down;   // first nested block inside me
             } links;
         } Task;
         
@@ -810,7 +810,7 @@ fun Stmt.code (): String {
             }
             block->links.tsk_last = taskf;
             taskf->task.links.tsk_next  = NULL;
-            taskf->task.links.block = NULL;
+            taskf->task.links.blk_down = NULL;
         }
 
         ///
@@ -840,9 +840,9 @@ fun Stmt.code (): String {
                     if (aux(taskf->task.links.tsk_next) && first) {                                // 1.3
                         return 1;
                     }
-                    //assert(taskf->task.links.block != NULL);
-                    if (taskf->task.links.block != NULL) { // maybe unlinked by natural termination
-                        if (block_bcast(stack, taskf->task.links.block, up, first, evt) && first) { // 1.1
+                    //assert(taskf->task.links.blk_down != NULL);
+                    if (taskf->task.links.blk_down != NULL) { // maybe unlinked by natural termination
+                        if (block_bcast(stack, taskf->task.links.blk_down, up, first, evt) && first) { // 1.1
                             return 1;
                         }
                     }
@@ -855,10 +855,10 @@ fun Stmt.code (): String {
                         }
                     }
                 } else {
-                    //assert(taskf->task.links.block != NULL);
-                    if (taskf->task.links.block != NULL) { // maybe unlinked by natural termination
-                        Stack stk = { stack, taskf->task.links.block };
-                        if (block_bcast(&stk, taskf->task.links.block, up, first, evt) && first) {  // 1.1
+                    //assert(taskf->task.links.blk_down != NULL);
+                    if (taskf->task.links.blk_down != NULL) { // maybe unlinked by natural termination
+                        Stack stk = { stack, taskf->task.links.blk_down };
+                        if (block_bcast(&stk, taskf->task.links.blk_down, up, first, evt) && first) {  // 1.1
                             return 1;
                         }
                         if (stk.block == NULL) return 0;
