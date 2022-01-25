@@ -242,7 +242,7 @@ class TExec {
         val out = all("""
         var f : (func@[]-> _int -> _int)
         set f = func@[]-> _int->_int {
-           set arg = _(arg+1): _int
+           set arg = _(self->mem.arg+1): _int
            set ret = arg
            return
         }
