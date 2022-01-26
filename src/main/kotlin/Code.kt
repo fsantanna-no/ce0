@@ -51,14 +51,14 @@ fun code_ft (tp: Type) {
     when (tp) {
         is Type.Func -> {
             val xblocks = tp.xscp1s.second.let { if (it.size == 0) "" else
-                it.map { "Block* ${it.toce(tp)}" }.joinToString(";\n")
+                it.map { "Block* ${it.toce(tp)};\n" }.joinToString("")
             }
             val src = """
                 typedef union {
                     int evt;
                     struct {
-                        ${tp.inp.pos()} arg;
                         $xblocks
+                        ${tp.inp.pos()} arg;
                     } pars;
                 } X_${tp.toce()};
                 typedef void (*F_${tp.toce()}) (Stack*, struct Block*, struct Task*, X_${tp.toce()});
@@ -196,7 +196,7 @@ val CODE = ArrayDeque<Code>()
 fun String.mem (up: Any): String {
     val intask = (up.ups_first { it is Expr.Func }.let { it!=null && (it as Expr.Func).type.tk.enu==TK.TASK })
     return if (intask) {
-        "(fdata->mem.$this)"
+        "(self->mem.$this)"
     } else {
         this
     }
@@ -224,12 +224,54 @@ fun Any.local (): String {
     }
 }
 
+fun Stmt.mem_vars (): String {
+    return when (this) {
+        is Stmt.Nop, is Stmt.SSet, is Stmt.ESet, is Stmt.Nat,
+        is Stmt.SCall, is Stmt.Spawn, is Stmt.Await, is Stmt.Awake, is Stmt.Bcast, is Stmt.Throw,
+        is Stmt.Inp, is Stmt.Out, is Stmt.Ret, is Stmt.Break -> ""
+
+        is Stmt.Var -> "${this.xtype!!.pos()} ${this.tk_.str};\n"
+        is Stmt.Loop -> this.block.mem_vars()
+
+        is Stmt.Block -> """
+            struct {
+                Block block_${this.n};
+                ${this.body.mem_vars()}
+            };
+            
+        """.trimIndent()
+
+        is Stmt.If -> """
+            union {
+                ${this.true_.mem_vars()}
+                ${this.false_.mem_vars()}
+            };
+                
+        """.trimIndent()
+
+        is Stmt.Seq -> {
+            if (this.s1 !is Stmt.Block) {
+                this.s1.mem_vars() + this.s2.mem_vars()
+            } else {
+                """
+                    union {
+                        ${this.s1.mem_vars()}
+                        struct {
+                            ${this.s2.mem_vars()}
+                        };
+                    };
+                """.trimIndent()
+            }
+        }
+    }
+}
+
 fun code_fe (e: Expr) {
     val xp = e.wtype!!
     CODE.addFirst(when (e) {
         is Expr.Unit  -> Code("", "", "0")
         is Expr.Nat   -> Code("", "", e.tk_.src)
-        is Expr.Var   -> if (e.env()!!.ups_first { it is Stmt.Block || it is Expr.Func } == null) {
+        is Expr.Var   -> if (e.env()!!.ups_first { it is Expr.Func } == null) {
             Code("", "", e.tk_.str)
         } else {
             Code("", "", "(self->mem.${e.tk_.str})")
@@ -272,8 +314,12 @@ fun code_fe (e: Expr) {
             val ID  = "__tmp_" + e.n
             val ptr = e.wtype as Type.Ptr
 
-            val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==ptr.xscp1.lbl && it.num==ptr.xscp1.num } }
-            val blk = (if (up == null) ptr.xscp1.toce(ptr) else "fdata->block")
+            val up = e.ups_first {
+                it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let {
+                    it!=null && it.lbl==ptr.xscp1.lbl && it.num==ptr.xscp1.num
+                }
+            }
+            val blk = (if (up == null) ptr.xscp1.toce(ptr) else e.local())
 
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
@@ -320,11 +366,11 @@ fun code_fe (e: Expr) {
                         val xxx = if (e.getUp() is Stmt.Awake) {
                             "(X_${tpf.toce()}) {.evt=${arg.expr}}"
                         } else {
-                            "(X_${tpf.toce()}) {.pars={${arg.expr}}}"
+                            "(X_${tpf.toce()}) {.pars={$blks ${arg.expr}}}"
                         }
                         val pre = """
                             Stack stk_${e.n} = { stack, ${e.local()} };
-                            ((F_${tpf.toce()})(${f.expr}->f)) (&stk_${e.n}, $blk, ${f.expr}, $blks $xxx);
+                            ((F_${tpf.toce()})(${f.expr}->f)) (&stk_${e.n}, $blk, ${f.expr}, $xxx);
                             if (stk_${e.n}.block == NULL) {
                                 return;
                             }
@@ -346,63 +392,8 @@ fun code_fe (e: Expr) {
             val tsk_var    = "func_${e.n}"
             val clo_block  = if (isclo) e.type.xscp1s.first!!.toce(e) else e.local()
 
-            val src = """
-                ${if (isnone) "static" else ""}
-                Task pln_$tsk_var = { (Task_F)f_$tsk_var, NULL, TASK_UNBORN, 0, {}, {} };
-                pln_$tsk_var.clo_block = $clo_block; // TODO: clo_block only if it escapes?
-                ${e.ups.map { "pln_$tsk_var.mem.${it.str} = ${it.str};\n" }.joinToString("")}
-                Task* ptr_$tsk_var = 
-                    ${if (isnone) "&pln_$tsk_var" else "malloc(sizeof(Func_${e.n}))"}; // TODO: malloc only if escapes
-                assert(ptr_$tsk_var!=NULL && "not enough memory");                
-                ${if (isnone) "" else "block_push($clo_block, ptr_$tsk_var);"}                   
-                task_link($clo_block, ptr_$tsk_var);
-                                        
-            """.trimIndent()
-
-            fun Stmt.mem_vars (): String {
-                return when (this) {
-                    is Stmt.Nop, is Stmt.SSet, is Stmt.ESet, is Stmt.Nat,
-                    is Stmt.SCall, is Stmt.Spawn, is Stmt.Await, is Stmt.Awake, is Stmt.Bcast, is Stmt.Throw,
-                    is Stmt.Inp, is Stmt.Out, is Stmt.Ret, is Stmt.Break -> ""
-
-                    is Stmt.Var -> "${this.xtype!!.pos()} ${this.tk_.str};\n"
-                    is Stmt.Loop -> this.block.mem_vars()
-
-                    is Stmt.Block -> """
-                        struct {
-                            Block block_${this.n};
-                            ${this.body.mem_vars()}
-                        };
-                        
-                    """.trimIndent()
-
-                    is Stmt.If -> """
-                        union {
-                            ${this.true_.mem_vars()}
-                            ${this.false_.mem_vars()}
-                        };
-                            
-                    """.trimIndent()
-
-                    is Stmt.Seq -> {
-                        if (this.s1 !is Stmt.Block) {
-                            this.s1.mem_vars() + this.s2.mem_vars()
-                        } else {
-                            """
-                                union {
-                                    ${this.s1.mem_vars()}
-                                    struct {
-                                        ${this.s2.mem_vars()}
-                                    };
-                                };
-                            """.trimIndent()
-                        }
-                    }
-                }
-            }
-
             val xblocks = e.type.xscp1s.second.let { if (it.size == 0) "" else
-                it.map { "Block* ${it.toce(e)}" }.joinToString(";\n")
+                it.map { "Block* ${it.toce(e)};\n" }.joinToString("")
             }
 
             val pre = """
@@ -411,8 +402,8 @@ fun code_fe (e: Expr) {
                     struct {
                         ${e.type.out.pos()} ret;
                         ${e.ups.map { "${e.env(it.str)!!.toType().pos()} ${it.str};\n" }.joinToString("")}
-                        ${e.type.inp.pos()} arg;
                         $xblocks
+                        ${e.type.inp.pos()} arg;
                         ${e.block.mem_vars()}
                     } mem;
                 } Func_${e.n};
@@ -435,6 +426,20 @@ fun code_fe (e: Expr) {
                 }
 
             """.trimIndent()
+
+            val src = """
+                ${if (isnone) "static" else ""}
+                Func_${e.n} pln_$tsk_var = { (Task_F)f_$tsk_var, NULL, TASK_UNBORN, 0, {}, {} };
+                pln_$tsk_var.task.clo_block = $clo_block; // TODO: clo_block only if it escapes?
+                ${e.ups.map { "pln_$tsk_var.mem.${it.str} = ${it.str};\n" }.joinToString("")}
+                Task* ptr_$tsk_var = (Task*)
+                    ${if (isnone) "&pln_$tsk_var" else "malloc(sizeof(Func_${e.n}))"}; // TODO: malloc only if escapes
+                assert(ptr_$tsk_var!=NULL && "not enough memory");                
+                ${if (isnone) "" else "block_push($clo_block, ptr_$tsk_var);"}                   
+                task_link($clo_block, ptr_$tsk_var);
+                                        
+            """.trimIndent()
+
             Code(it.type+pre, src, "ptr_$tsk_var")
         }
     })
@@ -473,8 +478,19 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
 fun code_fs (s: Stmt) {
     CODE.addFirst(when (s) {
         is Stmt.Nop -> Code("","","")
-        is Stmt.Nat  -> Code("", s.tk_.src + "\n", "")
-        is Stmt.Seq  -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; Code(s1.type+s2.type, s1.stmt+s2.stmt, "") }
+        is Stmt.Nat -> Code("", s.tk_.src + "\n", "")
+        is Stmt.Seq -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; Code(s1.type+s2.type, s1.stmt+s2.stmt, "") }
+        is Stmt.Var -> {
+            val dcl = "${s.xtype!!.pos()} ${s.tk_.str};\n"
+            when {
+                // inside task
+                (s.ups_first { it is Expr.Func  } != null) -> Code("", "", "")
+                // global outermost scope
+                (s.ups_first { it is Stmt.Block } == null) -> Code(dcl, "", "")
+                // global nested scope
+                else -> Code("", dcl, "")
+            }
+        }
         is Stmt.SSet  -> {
             val src = CODE.removeFirst()
             val dst = CODE.removeFirst()
@@ -598,19 +614,6 @@ fun code_fs (s: Stmt) {
             """.trimIndent()
 
             Code(it.type, dcl+src, "")
-        }
-        is Stmt.Var -> {
-            val dcl = "${s.xtype!!.pos()} ${s.tk_.str};\n"
-            when {
-                // var is global? declare outside main
-                (s.ups_first { it is Stmt.Block } == null) -> Code(dcl, "", "")
-
-                // var is inside task? declare in task struct
-                ((s.ups_first { it is Expr.Func } as Expr.Func?).let { it!=null && it.type.tk.enu==TK.TASK }) -> Code("", "", "")
-
-                // var is normal? declare here
-                else -> Code("", dcl, "")
-            }
         }
     })
 }

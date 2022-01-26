@@ -529,7 +529,7 @@ class TExec {
         val out = all("""
         var f : func@[@i1]-> /_int@i1 -> ()
         set f = func@[@i1]-> /_int@i1 -> () {
-           set arg\ = _(*arg+1): _int
+           set arg\ = _(*self->mem.arg+1): _int
            return
         }
         var x: _int
@@ -784,11 +784,11 @@ class TExec {
                 set ret = /v
                 return
             }
-            {
+            --{
                 var p: /_int @LOCAL
                 set p = f @[@GLOBAL] /v: @GLOBAL
                 output std p\
-            }
+            --}
         """.trimIndent())
         assert(out == "10\n") { out }
     }
