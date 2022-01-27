@@ -50,14 +50,13 @@ fun code_ft (tp: Type) {
 
     when (tp) {
         is Type.Func -> {
-            val xblocks = tp.xscp1s.second.let { if (it.size == 0) "" else
-                it.map { "Block* ${it.toce(tp)};\n" }.joinToString("")
-            }
             val src = """
                 typedef union {
                     int evt;
                     struct {
-                        $xblocks
+                        ${tp.xscp1s.second.let { if (it.size == 0) "" else
+                            it.map { "Block* ${it.lbl_num()};\n" }.joinToString("") }
+                        }
                         ${tp.inp.pos()} arg;
                     } pars;
                 } X_${tp.toce()};
@@ -194,19 +193,34 @@ data class Code (val type: String, val stmt: String, val expr: String)
 val CODE = ArrayDeque<Code>()
 
 fun String.mem (up: Any): String {
-    val intask = (up.ups_first { it is Expr.Func }.let { it!=null && (it as Expr.Func).type.tk.enu==TK.TASK })
-    return if (intask) {
-        "(self->mem.$this)"
-    } else {
-        this
-    }
+    return when {
+        (up.env(this)?.ups_first { it is Expr.Func } != null) ->
+            "(self->mem.$this)"
+        (up.ups_first { it is Expr.Func && (/*it.type.xscp1s.first?.lbl==this ||*/ it.ups.any { it.str==this }) } != null) ->
+            "(self->mem.$this)"
+        else ->
+            this
+    }}
+
+fun Tk.Scp1.lbl_num (): String {
+    return this.lbl + this.num.let { if (it==null) "" else "_"+it }
 }
 
 fun Tk.Scp1.toce (up: Any): String {
     return when {
-        (this.enu == TK.XSCPVAR) -> this.lbl + "_" + this.num
+        // @GLOBAL is never an argument
         (this.lbl == "GLOBAL")   -> "GLOBAL"
+        // @LOCAL depends (calls mem inside local())
         (this.lbl == "LOCAL")    -> up.local()
+        // @i_1 is always an argument
+        (this.enu == TK.XSCPVAR) -> "(self->mem.${this.lbl_num()})"
+        // closure block is always an argument
+        (up.ups_first {
+            it is Expr.Func && it.type.xscp1s.first.let {
+                it?.enu==this.enu && it?.lbl==this.lbl && it?.num==this.num
+            }
+        } != null) -> "(self->mem.${this.lbl_num()})"
+        // otherwise depends (calls mem)
         else -> {
             val blk = up.env(this.lbl) as Stmt.Block
             val mem = ("block_" + blk.n).mem(up)
@@ -271,14 +285,7 @@ fun code_fe (e: Expr) {
     CODE.addFirst(when (e) {
         is Expr.Unit  -> Code("", "", "0")
         is Expr.Nat   -> Code("", "", e.tk_.src)
-        is Expr.Var   -> when {
-            (e.env()!!.ups_first { it is Expr.Func } != null) ->
-                Code("", "", "(self->mem.${e.tk_.str})")
-            (e.ups_first { it is Expr.Func  && it.ups.any { it.str==e.tk_.str } } != null) ->
-                Code("", "", "(self->mem.${e.tk_.str})")
-            else ->
-                Code("", "", e.tk_.str)
-        }
+        is Expr.Var   -> Code("", "", e.tk_.str.mem(e))
         is Expr.Upref -> CODE.removeFirst().let {
             Code(it.type, it.stmt, "(&" + it.expr + ")")
         }
@@ -317,18 +324,11 @@ fun code_fe (e: Expr) {
             val ID  = "__tmp_" + e.n
             val ptr = e.wtype as Type.Ptr
 
-            val up = e.ups_first {
-                it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let {
-                    it!=null && it.lbl==ptr.xscp1.lbl && it.num==ptr.xscp1.num
-                }
-            }
-            val blk = (if (up == null) ptr.xscp1.toce(ptr) else e.local())
-
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
                 *$ID = ${it.expr};
-                block_push($blk, $ID);
+                block_push(${ptr.xscp1.toce(ptr)}, $ID);
 
             """.trimIndent()
             Code(it.type, it.stmt+pre, ID)
@@ -395,17 +395,16 @@ fun code_fe (e: Expr) {
             val tsk_var    = "func_${e.n}"
             val clo_block  = if (isclo) e.type.xscp1s.first!!.toce(e) else e.local()
 
-            val xblocks = e.type.xscp1s.second.let { if (it.size == 0) "" else
-                it.map { "Block* ${it.toce(e)};\n" }.joinToString("")
-            }
-
             val pre = """
                 typedef struct Func_${e.n} {
                     Task task;
                     struct {
                         ${e.type.out.pos()} ret;
                         ${e.ups.map { "${e.env(it.str)!!.toType().pos()} ${it.str};\n" }.joinToString("")}
-                        $xblocks
+                        ${e.type.xscp1s.first.let { if (it == null) "" else "Block* ${it.lbl_num()};" }}
+                        ${e.type.xscp1s.second.let { if (it.size == 0) "" else
+                            it.map { "Block* ${it.lbl_num()};\n" }.joinToString("") }
+                        }
                         ${e.type.inp.pos()} arg;
                         ${e.block.mem_vars()}
                     } mem;
@@ -434,11 +433,16 @@ fun code_fe (e: Expr) {
                 ${if (isnone) "static" else ""}
                 Func_${e.n} pln_$tsk_var = { (Task_F)f_$tsk_var, NULL, TASK_UNBORN, 0, {}, {} };
                 pln_$tsk_var.task.clo_block = $clo_block; // TODO: clo_block only if it escapes?
-                ${e.ups.map { "pln_$tsk_var.mem.${it.str} = ${it.str};\n" }.joinToString("")}
+                ${e.type.xscp1s.first.let { if (it==null) "" else "pln_$tsk_var.mem.${it.lbl} = ${it.toce(e)};\n" }}
+                ${e.ups.map { "pln_$tsk_var.mem.${it.str} = ${it.str.mem(e)};\n" }.joinToString("")}
                 Task* ptr_$tsk_var = (Task*)
                     ${if (isnone) "&pln_$tsk_var" else "malloc(sizeof(Func_${e.n}))"}; // TODO: malloc only if escapes
                 assert(ptr_$tsk_var!=NULL && "not enough memory");                
-                ${if (isnone) "" else "block_push($clo_block, ptr_$tsk_var);"}                   
+                ${if (isnone) "" else """
+                    *((Func_${e.n}*)ptr_$tsk_var) = pln_$tsk_var;
+                    block_push($clo_block, ptr_$tsk_var);
+                    
+                """.trimIndent()}                   
                 task_link($clo_block, ptr_$tsk_var);
                                         
             """.trimIndent()

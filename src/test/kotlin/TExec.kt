@@ -1290,11 +1290,8 @@ class TExec {
                 set f = func@A-> @[]-> ()->()[pa]{
                     var pf: /</^ @A> @A
                     set pf = new <.1 <.0>: /</^ @A> @A>:</^ @A>: @A
-                    --var p2: /</^ @A> @A
-                    --set p2 = new <.1 <.0>: /</^ @A> @A>:</^ @A>: @A
-                    --set p2\!1 = pf
-                    --output std pa
                     set pa\!1 = pf
+                    --output std pa
                 }
                 call f ()
                 output std pa
