@@ -54,9 +54,7 @@ fun code_ft (tp: Type) {
                 typedef union {
                     int evt;
                     struct {
-                        ${tp.xscp1s.second.let { if (it.size == 0) "" else
-                            it.map { "Block* ${it.lbl_num()};\n" }.joinToString("") }
-                        }
+                        Block* blks[${tp.xscp1s.second.size}];
                         ${tp.inp.pos()} arg;
                     } pars;
                 } X_${tp.toce()};
@@ -356,7 +354,7 @@ fun code_fe (e: Expr) {
             val blks = e.xscp1s.first.let { if (it.size == 0) "" else (it.map { out ->
                 val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==out.lbl && it.num==out.num } }
                 if (up == null) out.toce(e) else "(fdata->block)"
-            }.joinToString(",") + ",") }
+            }.joinToString(",")) }
 
             val (pre,pos) =
                 if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
@@ -369,7 +367,7 @@ fun code_fe (e: Expr) {
                         val xxx = if (e.getUp() is Stmt.Awake) {
                             "(X_${tpf.toce()}) {.evt=${arg.expr}}"
                         } else {
-                            "(X_${tpf.toce()}) {.pars={$blks ${arg.expr}}}"
+                            "(X_${tpf.toce()}) {.pars={{$blks}, ${arg.expr}}}"
                         }
                         val pre = """
                             Stack stk_${e.n} = { stack, ${e.local()} };
@@ -402,9 +400,14 @@ fun code_fe (e: Expr) {
                         ${e.type.out.pos()} ret;
                         ${e.ups.map { "${e.env(it.str)!!.toType().pos()} ${it.str};\n" }.joinToString("")}
                         ${e.type.xscp1s.first.let { if (it == null) "" else "Block* ${it.lbl_num()};" }}
-                        ${e.type.xscp1s.second.let { if (it.size == 0) "" else
-                            it.map { "Block* ${it.lbl_num()};\n" }.joinToString("") }
-                        }
+                        union {
+                            Block* blks[${e.type.xscp1s.second.size}];
+                            struct {
+                                ${e.type.xscp1s.second.let { if (it.size == 0) "" else
+                                    it.map { "Block* ${it.lbl_num()};\n" }.joinToString("") }
+                                }
+                            };
+                        };
                         ${e.type.inp.pos()} arg;
                         ${e.block.mem_vars()}
                     } mem;
@@ -414,6 +417,7 @@ fun code_fe (e: Expr) {
                     assert(task->state==TASK_UNBORN || task->state==TASK_AWAITING);
                     Func_${e.n}* self = (Func_${e.n}*) task;
                     self->mem.arg = xxx.pars.arg;
+                    ${e.type.xscp1s.second.mapIndexed { i,_ -> "self->mem.blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
                     switch (task->pc) {
                         case 0:                    
                             assert(task->state == TASK_UNBORN);
