@@ -437,7 +437,7 @@ fun code_fe (e: Expr) {
                 ${if (isnone) "static" else ""}
                 Func_${e.n} pln_$tsk_var = { (Task_F)f_$tsk_var, NULL, TASK_UNBORN, 0, {}, {} };
                 pln_$tsk_var.task.clo_block = $clo_block; // TODO: clo_block only if it escapes?
-                ${e.type.xscp1s.first.let { if (it==null) "" else "pln_$tsk_var.mem.${it.lbl} = ${it.toce(e)};\n" }}
+                ${e.type.xscp1s.first.let { if (it==null) "" else "pln_$tsk_var.mem.${it.lbl_num()} = ${it.toce(e)};\n" }}
                 ${e.ups.map { "pln_$tsk_var.mem.${it.str} = ${it.str.mem(e)};\n" }.joinToString("")}
                 Task* ptr_$tsk_var = (Task*)
                     ${if (isnone) "&pln_$tsk_var" else "malloc(sizeof(Func_${e.n}))"}; // TODO: malloc only if escapes
