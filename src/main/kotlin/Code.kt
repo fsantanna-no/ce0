@@ -353,7 +353,7 @@ fun code_fe (e: Expr) {
 
             val blks = e.xscp1s.first.let { if (it.size == 0) "" else (it.map { out ->
                 val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==out.lbl && it.num==out.num } }
-                if (up == null) out.toce(e) else "(fdata->block)"
+                if (up == null) out.toce(e) else "(task->clo_block)"
             }.joinToString(",")) }
 
             val (pre,pos) =
@@ -377,7 +377,7 @@ fun code_fe (e: Expr) {
                             }
                             
                         """.trimIndent()
-                        Pair(pre, "*((${tpf.out.pos()}*)${f.expr}->mem)")
+                        Pair(pre, "(*((${tpf.out.pos()}*)${f.expr}->mem))")
                     } else {
                         val cll = f.expr + "(" + blks + (if (e.arg is Expr.Unit) "" else arg.expr) + ")"
                         Pair("", cll)
