@@ -351,14 +351,9 @@ fun code_fe (e: Expr) {
         }
         is Expr.UNull -> Code("","","NULL")
         is Expr.Call  -> {
-            val arg = CODE.removeFirst()
-            val f   = CODE.removeFirst()
-            //val ff  = e.f as? Expr.Dnref
-
-            val blks = e.xscp1s.first.let { if (it.size == 0) "" else (it.map { out ->
-                val up = e.ups_first { it is Expr.Func && (it.wtype as Type.Func).xscp1s.first.let { it!=null && it.lbl==out.lbl && it.num==out.num } }
-                if (up == null) out.toce(e) else "(task->clo_block)"
-            }.joinToString(",")) }
+            val arg  = CODE.removeFirst()
+            val f    = CODE.removeFirst()
+            val blks = e.xscp1s.first.map { it.toce(e) }.joinToString(",")
 
             val (pre,pos) =
                 if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
@@ -394,12 +389,10 @@ fun code_fe (e: Expr) {
             Code(f.type+arg.type, f.stmt+arg.stmt+pre, pos)
         }
         is Expr.Func  -> CODE.removeFirst().let {
-            val isclo  = (e.type.xscp1s.first != null)
-            val istk   = (e.type.tk.enu == TK.TASK)
-            val isnone = !isclo && !istk
-
-            val tsk_var    = "func_${e.n}"
-            val clo_block  = if (isclo) e.type.xscp1s.first!!.toce(e) else e.local()
+            val isclo   = (e.type.xscp1s.first != null)
+            val istk    = (e.type.tk.enu == TK.TASK)
+            val isnone  = !isclo && !istk
+            val tsk_var = "func_${e.n}"
 
             val pre = """
                 typedef struct Func_${e.n} {
@@ -448,10 +441,10 @@ fun code_fe (e: Expr) {
 
             """.trimIndent()
 
+            val clo_block = if (isclo) e.type.xscp1s.first!!.toce(e) else e.local()
             val src = """
                 ${if (isnone) "static" else ""}
-                Func_${e.n} pln_$tsk_var = { (Task_F)f_$tsk_var, NULL, TASK_UNBORN, 0, {}, {} };
-                pln_$tsk_var.task.clo_block = $clo_block; // TODO: clo_block only if it escapes?
+                Func_${e.n} pln_$tsk_var = { (Task_F)f_$tsk_var, TASK_UNBORN, 0, {}, {} };
                 ${e.type.xscp1s.first.let { if (it==null) "" else "pln_$tsk_var.mem.${it.lbl_num()} = ${it.toce(e)};\n" }}
                 ${e.ups.map { "pln_$tsk_var.mem.${it.str} = ${it.str.mem(e)};\n" }.joinToString("")}
                 Task* ptr_$tsk_var = (Task*)
@@ -718,15 +711,11 @@ fun Stmt.code (): String {
             EVENT_KILL=0, EVENT_THROW=1, EVENT_NORMAL=2 // (or more)
         } EVENT;
         
-       // Task.clo_block is needed at runtime b/c it is implicit after return
-       // and closure might want to `new` to it since it is its wider scope
-
         // stack, blk_up, task, evt
         typedef void (*Task_F) (Stack*, struct Block*, struct Task*, int);
         
         typedef struct Task {
             Task_F f; // (Stack* stack, Block* blk_up, Task* task, int evt);
-            struct Block* clo_block;
             TASK_STATE state;
             int pc;
             struct {
