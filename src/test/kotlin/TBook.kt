@@ -148,7 +148,7 @@ val lte = """
         set islt = lt @[@a1,@b1] [arg.1\!1,arg.2\!1]
         var iseq: _int
         set iseq = eq @[@a1,@b1] [arg.1\!1,arg.2\!1]
-        set ret = _(islt || iseq): _int
+        set ret = _(self->mem.islt || self->mem.iseq): _int
     }
 """.trimIndent()
 
@@ -777,11 +777,13 @@ class TBook {
             output std /xxx
             set xxx = neq [<.2()>:<(),()>,<.1()>:<(),()>]
             output std /xxx
+            set xxx = eq [<.2()>:<(),()>,<.1()>:<(),()>]
+            output std /xxx
             set xxx = eq [<.1()>:<(),()>,<.1()>:<(),()>]
             output std /xxx
         """.trimIndent()
         )
-        assert(out == "<.1>\n<.2>\n<.2>\n") { out }
+        assert(out == "<.1>\n<.2>\n<.1>\n<.2>\n") { out }
     }
 
     @Test

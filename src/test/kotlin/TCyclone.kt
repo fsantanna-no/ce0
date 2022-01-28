@@ -73,16 +73,16 @@ class TCyclone {
             var fact: (func @[@i1]->[/_int@i1,_int] -> ())
             set fact = func @[@i1] ->[/_int@i1,_int] -> () { @F
                 var x: _int
-                set x = _1: _int
                 var n: _int
                 set n = arg.2
-                if _(n > 1):_int {
-                    call fact @[@F] [/x,_(n-1):_int]
-                } else {}
-                set arg.1\ = _(x*n):_int
+                if _(self->mem.n > 1):_int {
+                    call fact @[@F] [/x,_(self->mem.n-1):_int]
+                } else {
+                    set x = _1: _int                
+                }
+                set arg.1\ = _(self->mem.x*self->mem.n):_int
             }
             var x: _int
-            set x = _0: _int
             call fact @[@LOCAL] [/x, _6:_int]
             output std x
         """.trimIndent()

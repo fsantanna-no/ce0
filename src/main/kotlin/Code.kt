@@ -192,6 +192,10 @@ val CODE = ArrayDeque<Code>()
 
 fun String.mem (up: Any): String {
     return when {
+        (this == "ret") -> {    // TODO: call stack
+            val out = (up.ups_first { it is Expr.Func } as Expr.Func).type.out
+            "(*((${out.pos()}*) &task->mem))"
+        }
         (up.env(this)?.ups_first { it is Expr.Func } != null) ->
             "(self->mem.$this)"
         (up.ups_first { it is Expr.Func && (/*it.type.xscp1s.first?.lbl==this ||*/ it.ups.any { it.str==this }) } != null) ->
@@ -370,14 +374,18 @@ fun code_fe (e: Expr) {
                             "(X_${tpf.toce()}) {.pars={{$blks}, ${arg.expr}}}"
                         }
                         val pre = """
-                            Stack stk_${e.n} = { stack, ${e.local()} };
-                            ((F_${tpf.toce()})(${f.expr}->f)) (&stk_${e.n}, $blk, ${f.expr}, $xxx);
-                            if (stk_${e.n}.block == NULL) {
-                                return;
+                            ${tpf.out.pos()} ret_${e.n};    // TODO: call stack
+                            {
+                                Stack stk_${e.n} = { stack, ${e.local()} };
+                                ((F_${tpf.toce()})(${f.expr}->f)) (&stk_${e.n}, $blk, ${f.expr}, $xxx);
+                                if (stk_${e.n}.block == NULL) {
+                                    return;
+                                }
+                                ret_${e.n} = (*((${tpf.out.pos()}*)${f.expr}->mem));
                             }
                             
                         """.trimIndent()
-                        Pair(pre, "(*((${tpf.out.pos()}*)${f.expr}->mem))")
+                        Pair(pre, "ret_${e.n}")
                     } else {
                         val cll = f.expr + "(" + blks + (if (e.arg is Expr.Unit) "" else arg.expr) + ")"
                         Pair("", cll)
@@ -416,14 +424,21 @@ fun code_fe (e: Expr) {
                 void f_$tsk_var (Stack* stack, struct Block* blk_up, struct Task* task, X_${e.type.toce()} xxx) {
                     assert(task->state==TASK_UNBORN || task->state==TASK_AWAITING);
                     Func_${e.n}* self = (Func_${e.n}*) task;
+                    ${if (istk) "" else """     // TODO: call stack
+                        Func_${e.n} _self_ = *self;
+                        self = &_self_;
+                        //task = (Task*) self;
+                        
+                    """.trimIndent()}
                     self->mem.arg = xxx.pars.arg;
                     ${e.type.xscp1s.second.mapIndexed { i,_ -> "self->mem.blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
                     switch (task->pc) {
-                        case 0:                    
+                        case 0: {                    
                             assert(task->state == TASK_UNBORN);
                             ${it.stmt}
                             task->state = TASK_DEAD;
                             break;
+                        }
                         default:
                             assert(0 && "invalid PC");
                             break;
