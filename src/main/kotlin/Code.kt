@@ -679,7 +679,7 @@ fun Stmt.code (): String {
         // All call/spawn/awake/bcast operations need to test if its enclosing
         // block is still alive before continuing.
         typedef struct Stack {
-            struct Stack* prv;
+            struct Stack* stk_up;
             struct Block* block;
         } Stack;
         
@@ -760,12 +760,12 @@ fun Stmt.code (): String {
         void block_bcast (Stack* stack, Block* block, int up, EVENT evt) {
             // X. clear stack from myself
             if (evt == EVENT_KILL) {
-                Stack* s = stack;
-                while (s != NULL) {
-                    if (s->block == block) {
-                        s->block = NULL;
+                Stack* stk = stack;
+                while (stk != NULL) {
+                    if (stk->block == block) {
+                        stk->block = NULL;
                     }
-                    s = s->prv;
+                    stk = stk->stk_up;
                 }
             }
             
