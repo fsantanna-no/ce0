@@ -401,7 +401,10 @@ fun code_fe (e: Expr) {
                                 }
                             };
                         };
-                        ${e.type.inp.pos()} arg;
+                        union {
+                            ${e.type.inp.pos()} arg;
+                            int evt;
+                        };
                         ${e.block.mem_vars()}
                     } mem;
                 } Func_${e.n};
@@ -415,11 +418,11 @@ fun code_fe (e: Expr) {
                         //task = (Task*) self;
                         
                     """.trimIndent()}
-                    self->mem.arg = xxx.pars.arg;
                     ${e.type.xscp1s.second.mapIndexed { i,_ -> "self->mem.blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
                     switch (task->pc) {
                         case 0: {                    
                             assert(task->state == TASK_UNBORN);
+                            self->mem.arg = xxx.pars.arg;
                             ${it.stmt}
                             task->state = TASK_DEAD;
                             break;
@@ -537,14 +540,14 @@ fun code_fs (s: Stmt) {
         is Stmt.Await -> CODE.removeFirst().let {
             val src = """
                 {
-                    task->pc = ${s.n};    // next awake
+                    task->pc = ${s.n};      // next awake
                     task->state = TASK_AWAITING;
-                    return 1;                   // await (1 = awake ok)
+                    return;                 // await (1 = awake ok)
                 case ${s.n}:                // awake here
                     assert(task->state == TASK_AWAITING);
-                    evt = argevt.evt;
+                    self->mem.evt = xxx.evt;
                     if (!(${it.expr})) {
-                        return 0;               // awake no
+                        return;             // (0 = awake no)
                     }
                     task->state = TASK_RUNNING;
                 }
@@ -819,7 +822,7 @@ fun Stmt.code (): String {
         ///
         
         Block* GLOBAL;
-        int evt;
+        //int evt;
 
         ${TPS.map { it.second }.joinToString("")}
         ${TPS.map { it.third  }.joinToString("")}
