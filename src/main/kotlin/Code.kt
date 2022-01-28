@@ -52,7 +52,7 @@ fun code_ft (tp: Type) {
                         ${tp.inp.pos()} arg;
                     } pars;
                 } X_${tp.toce()};
-                typedef void (*F_${tp.toce()}) (Stack*, struct Block*, struct Task*, X_${tp.toce()});
+                typedef void (*F_${tp.toce()}) (Stack*, struct Task*, X_${tp.toce()});
                 
             """.trimIndent()
 
@@ -354,7 +354,6 @@ fun code_fe (e: Expr) {
                 } else {
                     val tpf = e.f.wtype
                     if (tpf is Type.Func) {
-                        val blk = e.local()
                         val xxx = if (e.getUp() is Stmt.Awake) {
                             "(X_${tpf.toce()}) {.evt=${arg.expr}}"
                         } else {
@@ -364,7 +363,7 @@ fun code_fe (e: Expr) {
                             ${tpf.out.pos()} ret_${e.n};    // TODO: call stack
                             {
                                 Stack stk_${e.n} = { stack, ${e.local()} };
-                                ((F_${tpf.toce()})(${f.expr}->f)) (&stk_${e.n}, $blk, ${f.expr}, $xxx);
+                                ((F_${tpf.toce()})(${f.expr}->f)) (&stk_${e.n}, ${f.expr}, $xxx);
                                 if (stk_${e.n}.block == NULL) {
                                     return;
                                 }
@@ -409,7 +408,7 @@ fun code_fe (e: Expr) {
                     } mem;
                 } Func_${e.n};
                     
-                void f_$tsk_var (Stack* stack, struct Block* blk_up, struct Task* task, X_${e.type.toce()} xxx) {
+                void f_$tsk_var (Stack* stack, struct Task* task, X_${e.type.toce()} xxx) {
                     assert(task->state==TASK_UNBORN || task->state==TASK_AWAITING);
                     Func_${e.n}* self = (Func_${e.n}*) task;
                     ${if (istk) "" else """     // TODO: call stack
@@ -479,8 +478,8 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
             // found func: link as first block, unlink as first block
             // link enclosing task  to myself (I'm the only active block)
             (it is Expr.Func && it.tk.enu==TK.FUNC) -> Pair (
-                "blk_up->links.blk_down = &$blk;\n",
-                "blk_up->links.blk_down = NULL;\n"
+                "stack->block->links.blk_down = &$blk;\n",
+                "stack->block->links.blk_down = NULL;\n"
             )
             // GLOBAL: nothing to link
             else -> Pair("","")
@@ -692,11 +691,11 @@ fun Stmt.code (): String {
             EVENT_KILL=0, EVENT_THROW=1, EVENT_NORMAL=2 // (or more)
         } EVENT;
         
-        // stack, blk_up, task, evt
-        typedef void (*Task_F) (Stack*, struct Block*, struct Task*, int);
+        // stack, task, evt
+        typedef void (*Task_F) (Stack*, struct Task*, int);
         
         typedef struct Task {
-            Task_F f; // (Stack* stack, Block* blk_up, Task* task, int evt);
+            Task_F f; // (Stack* stack, Task* task, int evt);
             TASK_STATE state;
             int pc;
             struct {
@@ -780,7 +779,7 @@ fun Stmt.code (): String {
                         block_bcast(stack, task->links.blk_down, up, evt);  // 1.1
                     }
                     if (task->state == TASK_AWAITING) {
-                        task->f(stack, block, task, evt);                   // 1.2
+                        task->f(stack, task, evt);                          // 1.2
                         if (evt == EVENT_KILL) {
                             task->state = TASK_DEAD;
                         }
@@ -794,7 +793,7 @@ fun Stmt.code (): String {
                         if (stack->block == NULL) return;
                     }
                     if (task->state == TASK_AWAITING) {
-                        task->f(stack,  block, task, evt);                  // 1.2
+                        task->f(stack, task, evt);                          // 1.2
                         if (stack->block == NULL) return;
                     }
                     aux(task->links.tsk_next);                              // 1.3

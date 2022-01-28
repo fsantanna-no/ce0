@@ -387,7 +387,7 @@ class TTask {
         assert(out == "0\n2\n1\n") { out }
     }
 
-    // DEFER
+    // THROW / CATCH
 
     @Test
     fun c01_throw () {
