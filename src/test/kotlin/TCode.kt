@@ -39,7 +39,7 @@ class TCode {
             )
         e.wtype = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
         code_fe(e)
-        CODE.removeFirst().let { assert(it.expr == "xxx") { it.expr } }
+        CODE.removeFirst().let { assert(it.expr == "(global.xxx)") { it.expr } }
     }
     @Test
     fun b03_expr_nat () {
@@ -51,7 +51,7 @@ class TCode {
             )
         e.wtype = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
         code_fe(e)
-        assert(CODE.removeFirst().expr == "xxx")
+        assert(CODE.removeFirst().expr == "(global.xxx)")
     }
     @Test
     fun b04_expr_tuple () {
@@ -85,7 +85,7 @@ class TCode {
         e.tup.wtype = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))))
         e.visit(false, null, ::code_fe, null)
         CODE.removeFirst().expr.let {
-            assert(it == "x._1")
+            assert(it == "(global.x)._1")
         }
     }
 

@@ -24,12 +24,6 @@ fun Type.output_std (c: String, arg: String): String {
     }
 }
 
-fun Any.intk (): Boolean {
-    return (this.ups_first { it is Expr.Func } as Expr.Func?).let {
-        it!=null && it.type.tk.enu==TK.TASK
-    }
-}
-
 fun deps (tps: Set<Type>): Set<String> {
     return tps
         .filter { it !is Type.Rec }
@@ -191,18 +185,16 @@ data class Code (val type: String, val stmt: String, val expr: String)
 val CODE = ArrayDeque<Code>()
 
 fun String.mem (up: Any): String {
+    val func = if (up is Expr.Func) up else up.ups_first { it is Expr.Func }
     return when {
         (this == "ret") -> {    // TODO: call stack
-            val out = (up.ups_first { it is Expr.Func } as Expr.Func).type.out
+            val out = (func as Expr.Func).type.out
             "(*((${out.pos()}*) &task->mem))"
         }
-        (up.env(this)?.ups_first { it is Expr.Func } != null) ->
-            "(self->mem.$this)"
-        (up.ups_first { it is Expr.Func && (/*it.type.xscp1s.first?.lbl==this ||*/ it.ups.any { it.str==this }) } != null) ->
-            "(self->mem.$this)"
-        else ->
-            this
-    }}
+        (func == null) -> "(global.$this)"
+        else -> "(self->mem.$this)"
+    }
+}
 
 fun Tk.Scp1.lbl_num (): String {
     return this.lbl + this.num.let { if (it==null) "" else "_"+it }
@@ -287,7 +279,7 @@ fun code_fe (e: Expr) {
     CODE.addFirst(when (e) {
         is Expr.Unit  -> Code("", "", "0")
         is Expr.Nat   -> Code("", "", e.tk_.src)
-        is Expr.Var   -> Code("", "", e.tk_.str.mem(e))
+        is Expr.Var   -> Code("", "", e.tk_.str.mem(e.env()!!))
         is Expr.Upref -> CODE.removeFirst().let {
             Code(it.type, it.stmt, "(&" + it.expr + ")")
         }
@@ -441,12 +433,12 @@ fun code_fe (e: Expr) {
 
             """.trimIndent()
 
-            val clo_block = if (isclo) e.type.xscp1s.first!!.toce(e) else e.local()
+            val clo_block = if (isclo) e.type.xscp1s.first!!.toce(e.wup!!) else e.local()
             val src = """
                 ${if (isnone) "static" else ""}
                 Func_${e.n} pln_$tsk_var = { (Task_F)f_$tsk_var, TASK_UNBORN, 0, {}, {} };
-                ${e.type.xscp1s.first.let { if (it==null) "" else "pln_$tsk_var.mem.${it.lbl_num()} = ${it.toce(e)};\n" }}
-                ${e.ups.map { "pln_$tsk_var.mem.${it.str} = ${it.str.mem(e)};\n" }.joinToString("")}
+                ${e.type.xscp1s.first.let { if (it==null) "" else "pln_$tsk_var.mem.${it.lbl_num()} = ${it.toce(e.wup!!)};\n" }}
+                ${e.ups.map { "pln_$tsk_var.mem.${it.str} = ${it.str.mem(e.wup!!)};\n" }.joinToString("")}
                 Task* ptr_$tsk_var = (Task*)
                     ${if (isnone) "&pln_$tsk_var" else "malloc(sizeof(Func_${e.n}))"}; // TODO: malloc only if escapes
                 assert(ptr_$tsk_var!=NULL && "not enough memory");                
@@ -499,17 +491,7 @@ fun code_fs (s: Stmt) {
         is Stmt.Nop -> Code("","","")
         is Stmt.Nat -> Code("", s.tk_.src + "\n", "")
         is Stmt.Seq -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; Code(s1.type+s2.type, s1.stmt+s2.stmt, "") }
-        is Stmt.Var -> {
-            val dcl = "${s.xtype!!.pos()} ${s.tk_.str};\n"
-            when {
-                // inside task
-                (s.ups_first { it is Expr.Func  } != null) -> Code("", "", "")
-                // global outermost scope
-                (s.ups_first { it is Stmt.Block } == null) -> Code(dcl, "", "")
-                // global nested scope
-                else -> Code("", dcl, "")
-            }
-        }
+        is Stmt.Var -> Code("","","")
         is Stmt.SSet  -> {
             val src = CODE.removeFirst()
             val dst = CODE.removeFirst()
@@ -554,16 +536,18 @@ fun code_fs (s: Stmt) {
         is Stmt.Spawn -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
         is Stmt.Await -> CODE.removeFirst().let {
             val src = """
-                task->pc = ${s.n};    // next awake
-                task->state = TASK_AWAITING;
-                return 1;                   // await (1 = awake ok)
+                {
+                    task->pc = ${s.n};    // next awake
+                    task->state = TASK_AWAITING;
+                    return 1;                   // await (1 = awake ok)
                 case ${s.n}:                // awake here
-                assert(task->state == TASK_AWAITING);
-                evt = argevt.evt;
-                if (!(${it.expr})) {
-                    return 0;               // awake no
+                    assert(task->state == TASK_AWAITING);
+                    evt = argevt.evt;
+                    if (!(${it.expr})) {
+                        return 0;               // awake no
+                    }
+                    task->state = TASK_RUNNING;
                 }
-                task->state = TASK_RUNNING;
                 
             """.trimIndent()
             Code(it.type, it.stmt+src, "")
@@ -615,12 +599,6 @@ fun code_fs (s: Stmt) {
         }
         is Stmt.Block -> CODE.removeFirst().let {
             val (link,unlink,kill) = s.link_unlink_kill()
-            val intk = s.intk()
-            val dcl = if (intk) {
-                ""
-            } else {
-                "Block block_${s.n};\n"
-            }
             val src = """
             {
                 ${"block_${s.n}".mem(s)} = (Block) { NULL, {NULL,NULL,NULL} };
@@ -632,7 +610,7 @@ fun code_fs (s: Stmt) {
             
             """.trimIndent()
 
-            Code(it.type, dcl+src, "")
+            Code(it.type, src, "")
         }
     })
 }
@@ -845,6 +823,11 @@ fun Stmt.code (): String {
 
         ${TPS.map { it.second }.joinToString("")}
         ${TPS.map { it.third  }.joinToString("")}
+        
+        struct {
+            ${this.mem_vars()}
+        } global;
+
         ${code.type}
 
         void main (void) {

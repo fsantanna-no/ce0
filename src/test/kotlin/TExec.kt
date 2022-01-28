@@ -227,6 +227,17 @@ class TExec {
         assert(out == "()\n") { out }
     }
     @Test
+    fun d03_global () {
+        val out = all("""
+            var xxx: _int
+            set xxx = _10:_int
+            var g: (func@[]-> () -> ())
+            set g = func@[]-> ()->() { output std xxx }
+            call g ()
+        """.trimIndent())
+        assert(out == "10\n") { out }
+    }
+    @Test
     fun d03_fg () {
         val out = all("""
             var f: (func@[]-> () -> ())
@@ -441,7 +452,7 @@ class TExec {
             set z = <.2()>: <(),()>
             output std z!1
         """.trimIndent())
-        assert(out.endsWith("main: Assertion `z.tag == 1' failed.\n")) { out }
+        assert(out.endsWith("main: Assertion `(global.z).tag == 1' failed.\n")) { out }
     }
     @Test
     fun f12_user_disc_pred_idx () {
@@ -922,7 +933,7 @@ class TExec {
             set l = <.0>: /</^ @LOCAL> @LOCAL
             output std l\!1
         """.trimIndent())
-        assert(out.endsWith("main: Assertion `&(*l) != NULL' failed.\n")) { out }
+        assert(out.endsWith("main: Assertion `&(*(global.l)) != NULL' failed.\n")) { out }
     }
     @Test
     fun j06_list_1 () {
@@ -1209,7 +1220,7 @@ class TExec {
             set xy.1 = _20: _int
             var x: _int; set x = xy.1
             var y: _int; set y = xy.2
-            var v: _int; set v = _(x+y): _int
+            var v: _int; set v = _(global.x+global.y): _int
             output std v
         """.trimIndent())
         assert(out == "30\n") { out }
@@ -1417,7 +1428,7 @@ class TExec {
             var x: _int
             var px: /_int@LOCAL
             set px = f @[@LOCAL] /x: @LOCAL
-            output std _(px == &x):_int
+            output std _(global.px == &global.x):_int
         """.trimIndent()
         )
         assert(out == "1\n") { out }
@@ -1502,16 +1513,16 @@ class TExec {
     fun n08_clo_int () {
         val out = all("""
             { @A
-                var x: _int
-                set x = _10:_int
+                var xxx: _int
+                set xxx = _10:_int
                 var f: (func @A->@[]->()->_int)
-                set f = func @A->@[]->()->_int [x] {
-                    set ret = x
+                set f = func @A->@[]->()->_int [xxx] {
+                    set ret = xxx
                 }
-                set x = _20:_int
-                output std x
-                set x = f ()
-                output std x
+                set xxx = _20:_int
+                output std xxx
+                set xxx = f ()
+                output std xxx
             }
         """.trimIndent())
         assert(out == "20\n10\n") { out }
@@ -1636,9 +1647,9 @@ class TExec {
         var i: _int; set i = _1: _int
         var n: _int; set n = _0: _int
         loop {
-            set n = _(n + i): _int
-            set i = _(i + 1): _int
-            if _(i > 5): _int {
+            set n = _(global.n + global.i): _int
+            set i = _(global.i + 1): _int
+            if _(global.i > 5): _int {
                 break
             } else {}
         }
@@ -1674,10 +1685,10 @@ class TExec {
         var i: _int; set i = _0: _int
         var f: func@[]-> ()->()
         set f = func@[]-> ()->() {
-            if _(i == 10): _int {
+            if _(global.i == 10): _int {
                 
             } else {
-                set i = _(i + 1): _int
+                set i = _(global.i + 1): _int
                 set ret = f ()
             }
         }
@@ -1758,7 +1769,7 @@ class TExec {
             var z3: _int
             set z3 = f @[@LOCAL] x2
             var xxx: _int
-            set xxx = _(z1 + z2 + z3): _int
+            set xxx = _(global.z1 + global.z2 + global.z3): _int
             output std xxx
         """.trimIndent())
         assert(out == "2\n") { out }
