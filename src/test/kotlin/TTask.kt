@@ -74,7 +74,7 @@ class TTask {
             awake f _1:_int
             awake f _1:_int
         """.trimIndent())
-        assert(out.endsWith("f: Assertion `task->state==TASK_UNBORN || task->state==TASK_AWAITING' failed.\n")) { out }
+        assert(out.endsWith("Assertion `task->state==TASK_UNBORN || task->state==TASK_AWAITING' failed.\n")) { out }
     }
     @Test
     fun a03_var () {
@@ -390,28 +390,49 @@ class TTask {
     // THROW / CATCH
 
     @Test
-    fun c01_throw () {
+    fun c00_throw () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()
-            set f = task @LOCAL->@[]->()->() {
-                await _(self->mem.evt != 0):_int
-                output std _999:_int
-            }
-            var g: task @LOCAL->@[]->()->()
-            set g = task @LOCAL->@[]->()->() {
-                await _1:_int
-                output std _1:_int
-            }
             var h: task @LOCAL->@[]->()->()
             set h = task @LOCAL->@[]->()->() {
                catch {
-                   spawn f ()
-                   spawn g ()
-                   output std _0:_int
-                   throw
-                   output std _999:_int
+                    var f: task @LOCAL->@[]->()->()
+                    set f = task @LOCAL->@[]->()->() {
+                        await _1:_int
+                        output std _1:_int
+                    }
+                    spawn f ()
+                    throw
                }
                output std _2:_int
+           }
+           spawn h ()
+           output std _3:_int
+        """.trimIndent())
+        assert(out == "1\n2\n3\n") { out }
+    }
+    @Test
+    fun c01_throw () {
+        val out = all("""
+            var h: task @LOCAL->@[]->()->()
+            set h = task @LOCAL->@[]->()->() {
+                catch {
+                    var f: task @LOCAL->@[]->()->()
+                    set f = task @LOCAL->@[]->()->() {
+                        await _(self->mem.evt != 0):_int
+                        output std _999:_int
+                    }
+                    var g: task @LOCAL->@[]->()->()
+                    set g = task @LOCAL->@[]->()->() {
+                        await _1:_int
+                        output std _1:_int
+                    }
+                    spawn f ()
+                    spawn g ()
+                    output std _0:_int
+                    throw
+                    output std _999:_int
+                }
+                output std _2:_int
            }
            spawn h ()
            output std _3:_int
@@ -421,65 +442,69 @@ class TTask {
     @Test
     fun c02_throw_par2 () {
         val out = all("""
-            var fg: task @LOCAL->@[]->()->()
-            set fg = task @LOCAL->@[]->()->() {
-                var f: task @LOCAL->@[]->()->()
-                set f = task @LOCAL->@[]->()->() {
-                    await _(self->mem.evt == 2):_int
-                    output std _999:_int
+            var main : task @LOCAL->@[]->()->()
+            set main = task @LOCAL->@[]->()->() {
+                var fg: task @LOCAL->@[]->()->()
+                set fg = task @LOCAL->@[]->()->() {
+                    var f: task @LOCAL->@[]->()->()
+                    set f = task @LOCAL->@[]->()->() {
+                        await _(self->mem.evt == 2):_int
+                        output std _999:_int
+                    }
+                    var g: task @LOCAL->@[]->()->()
+                    set g = task @LOCAL->@[]->()->() {
+                        await _(self->mem.evt == 0):_int
+                        output std _2:_int
+                    }
+                    await _(self->mem.evt != 0):_int
+                    spawn f ()
+                    spawn g ()
+                    throw
                 }
-                var g: task @LOCAL->@[]->()->()
-                set g = task @LOCAL->@[]->()->() {
-                    await _(self->mem.evt == 2):_int
+                var h: task @LOCAL->@[]->()->()
+                set h = task @LOCAL->@[]->()->() {
+                    await _(self->mem.evt == 0):_int
                     output std _1:_int
                 }
-                await _(self->mem.evt != 0):_int
-                spawn f ()
-                spawn g ()
-                throw
+                catch {
+                    spawn fg ()
+                    spawn h ()
+                    bcast @GLOBAL _5:_int
+                    output std _999:_int
+                }
             }
-            var h: task @LOCAL->@[]->()->()
-            set h = task @LOCAL->@[]->()->() {
-                await _(self->mem.evt == 1):_int
-                output std _998:_int
-            }
-            spawn fg ()
-            spawn h ()
-            bcast @GLOBAL _5:_int
-            output std _1:_int
+            spawn main ()
+            output std _3:_int
         """.trimIndent())
-        assert(out == "1\n1\n") { out }
+        assert(out == "1\n2\n3\n") { out }
     }
     @Test
-    fun c02_throw_par1 () {
+    fun c03_throw_func () {
         val out = all("""
-            var h: task @LOCAL->@[]->()->()
-            set h = task @LOCAL->@[]->()->() {
-                await _(self->mem.evt == 1):_int
-                output std _998:_int
-            }
-            var fg: task @LOCAL->@[]->()->()
-            set fg = task @LOCAL->@[]->()->() {
-                var f: task @LOCAL->@[]->()->()
-                set f = task @LOCAL->@[]->()->() {
-                    await _(self->mem.evt > 5):_int
-                    output std _999:_int
-                }
-                var g: task @LOCAL->@[]->()->()
-                set g = task @LOCAL->@[]->()->() {
-                    await _(self->mem.evt > 5):_int
-                    output std _1:_int
-                }
-                spawn f ()
-                spawn g ()
+            var err : func @[]->()->()
+            set err = func @[]->()->() {
                 throw
             }
-            spawn h ()
-            spawn fg ()
-            output std _2:_int
+            var h: task @LOCAL->@[]->()->()
+            set h = task @LOCAL->@[]->()->() {
+               catch {
+                    var f: task @LOCAL->@[]->()->()
+                    set f = task @LOCAL->@[]->()->() {
+                        await _1:_int
+                        output std _1:_int
+                    }
+                    spawn f ()
+                    call err ()
+                    output std _999:_int
+               }
+               output std _2:_int
+           }
+           spawn h ()
+           output std _3:_int
         """.trimIndent())
-        assert(out == "1\n") { out }
+        assert(out == "1\n2\n3\n") { out }
     }
+    @Disabled
     @Test
     fun c03_try_catch () {
         val out = all("""
@@ -493,52 +518,6 @@ class TTask {
                     ... throw err ...
                 }
             }
-            
-            par/or do
-                await ERROR
-            with
-                var f = open ()
-                defer {
-                    close f
-                }
-                loop {
-                    var c = read f
-                    ... throw ...
-                }
-            end
-            
-            {
-                var try : task @LOCAL->@[]->()->()
-                set try = task @LOCAL->@[]->()->() {
-                    var f = open ()
-                    defer {
-                        call close f
-                    }
-                    loop {
-                        var c = read f
-                        ... throw err ...    -- bcast up EX n
-                    }
-                }
-                var catch : task @LOCAL->@[]->()->()
-                set catch = task @LOCAL->@[]->()->() {
-                    await (file exception)
-                }
-                spawn catch () -- preciso estar esperando antes, senao o throw nao vai ser capturado
-                spawn try   ()
-                await (any catch/try)
-            }
-                -- vai precisar bcast first
-                -- vai precisar bcast return int
-                
-                -- nao precisa nada disso aqui embaixo
-                -- transformar kill em bcast reverso
-                    -- usar fc unica
-                    -- o q fazer com block_free?
-                -- kill try ainda nao existe
-                    -- block_kill -> task_kill é só extrair o código                
-                -- 1. kill t, gera evento
-            }
-
         """.trimIndent())
         assert(out == "0\n1\n2\n") { out }
     }

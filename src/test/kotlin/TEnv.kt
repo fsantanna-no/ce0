@@ -1252,7 +1252,7 @@ class TEnv {
         """.trimIndent())
         assert(out == "(ln 6, col 17): invalid return : type mismatch") { out }
     }
-    @Test
+    @Test // passou a falhar qd mudei env p/ upvals
     fun g11_ptr_func_ok () {
         val out = inp2env("""
             { @A
@@ -2714,7 +2714,7 @@ class TEnv {
         )
         assert(out == "(ln 2, col 9): invalid function : unexpected closure declaration") { out }
     }
-    @Test
+    @Test // passou a falhar qd mudei env p/ upvals
     fun p22_pool_closure_err() {
         val out = inp2env(
             """

@@ -368,6 +368,7 @@ fun code_fe (e: Expr) {
                             {
                                 Stack stk_${e.n} = { stack, ${e.self_or_null()}, ${e.local()} };
                                 ((F_${tpf.toce()})(${f.expr}->f)) (&stk_${e.n}, ${f.expr}, $xxx);
+                                ${if (tpf.tk.enu != TK.FUNC) "" else "${f.expr}->state = TASK_UNBORN;"}
                                 if (stk_${e.n}.block == NULL) {
                                     return;
                                 }
@@ -467,23 +468,20 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
     val blk = "block_${this.n}".mem(this)
     val (link,unlink) = this.ups_first { it is Expr.Func || it is Stmt.Block }.let {
         when {
-            // found block: link as nested block, unlink as nested block
-            // link enclosing block to myself (I'm the only active block)
+            // found block above me: link/unlink me as nested block
             (it is Stmt.Block) -> Pair (
                 "${this.local()}->links.blk_down = &$blk;\n",
                 "${this.local()}->links.blk_down = NULL;\n"
             )
-            // found task: link as first block, unlink as first block
-            // link enclosing task  to myself (I'm the only active block)
+            // found task above myself: link/unlink me as first block
             (it is Expr.Func && it.tk.enu==TK.TASK) -> Pair (
                 "task->links.blk_down = &$blk;\n",
                 "task->links.blk_down = NULL;\n"
             )
-            // found func: link as first block, unlink as first block
-            // link enclosing task  to myself (I'm the only active block)
+            // found func above me: link/unlink me in the stack
             (it is Expr.Func && it.tk.enu==TK.FUNC) -> Pair (
                 "stack->block->links.blk_down = &$blk;\n",
-                "stack->block->links.blk_down = NULL;\n"
+                "if (stack->block != NULL) stack->block->links.blk_down = NULL;\n"
             )
             // GLOBAL: nothing to link
             else -> Pair("","")
@@ -610,9 +608,9 @@ fun code_fs (s: Stmt) {
                 ${"block_${s.n}".mem(s)} = (Block) { NULL, ${if (s.iscatch) s.n else 0}, {NULL,NULL,NULL} };
                 $link
                 ${it.stmt}
-                ${if (!s.iscatch) "" else "case ${s.n}:"}
-                $unlink
+                ${if (!s.iscatch) "" else "case ${s.n}: // catch"}
                 $kill
+                $unlink
             }
             
             """.trimIndent()
