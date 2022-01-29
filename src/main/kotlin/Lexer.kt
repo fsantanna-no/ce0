@@ -2,7 +2,7 @@ enum class TK {
     ERR, EOF, CHAR,
     XVAR, XNAT, XNUM, XUP, XSCPCST, XSCPVAR,
     UNIT, ARROW, ATBRACK,
-    AWAIT, AWAKE, BCAST, BREAK, CALL, ELSE, FUNC, IF, INPUT, LOOP,
+    AWAIT, AWAKE, BCAST, BREAK, CALL, CATCH, ELSE, FUNC, IF, INPUT, LOOP,
     NATIVE, NEW, OUTPUT, RETURN, SET, SPAWN, TASK, THROW, VAR,
 }
 
@@ -12,6 +12,7 @@ val key2tk: HashMap<String, TK> = hashMapOf (
     "bcast"  to TK.BCAST,
     "break"  to TK.BREAK,
     "call"   to TK.CALL,
+    "catch"  to TK.CATCH,
     "else"   to TK.ELSE,
     "func"   to TK.FUNC,
     "if"     to TK.IF,

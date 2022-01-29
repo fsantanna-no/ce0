@@ -59,5 +59,5 @@ sealed class Stmt (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Ret   (val tk_: Tk.Key) : Stmt(N++, tk_, null, null)
     data class Loop  (val tk_: Tk.Key, val block: Block) : Stmt(N++, tk_, null, null)
     data class Break (val tk_: Tk.Key) : Stmt(N++, tk_, null, null)
-    data class Block (val tk_: Tk.Chr, val xscp1: Tk.Scp1?, val body: Stmt) : Stmt(N++, tk_, null, null)
+    data class Block (val tk_: Tk.Chr, val iscatch: Boolean, val xscp1: Tk.Scp1?, val body: Stmt) : Stmt(N++, tk_, null, null)
 }

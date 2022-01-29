@@ -1,6 +1,10 @@
 val TYPEX = mutableSetOf<String>()
 val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 
+fun Any.self_or_null (): String {
+    return if (this.ups_first { it is Expr.Func } == null) "NULL" else "task"
+}
+
 fun Type.pos (): String {
     return when (this) {
         is Type.Rec -> TODO(this.toString())
@@ -362,7 +366,7 @@ fun code_fe (e: Expr) {
                         val pre = """
                             ${tpf.out.pos()} ret_${e.n};    // TODO: call stack
                             {
-                                Stack stk_${e.n} = { stack, ${e.local()} };
+                                Stack stk_${e.n} = { stack, ${e.self_or_null()}, ${e.local()} };
                                 ((F_${tpf.toce()})(${f.expr}->f)) (&stk_${e.n}, ${f.expr}, $xxx);
                                 if (stk_${e.n}.block == NULL) {
                                     return;
@@ -561,7 +565,7 @@ fun code_fs (s: Stmt) {
         is Stmt.Bcast -> CODE.removeFirst().let {
             val src = """
                 {
-                    Stack stk = { stack, ${s.local()} };
+                    Stack stk = { stack, ${s.self_or_null()}, ${s.local()} };
                     block_bcast(&stk, ${s.scp1.toce(s)}, 0, ${it.expr});
                     if (stk.block == NULL) {
                         return;
@@ -574,8 +578,8 @@ fun code_fs (s: Stmt) {
         is Stmt.Throw -> {
             val src = """
                 {
-                    Stack stk = { stack, ${s.local()} };
-                    block_throw(&stk, GLOBAL, 1, EVENT_THROW);
+                    Stack stk = { stack, ${s.self_or_null()}, ${s.local()} };
+                    block_throw(&stk);
                     if (stk.block == NULL) {
                         return;
                     }
@@ -603,9 +607,10 @@ fun code_fs (s: Stmt) {
             val (link,unlink,kill) = s.link_unlink_kill()
             val src = """
             {
-                ${"block_${s.n}".mem(s)} = (Block) { NULL, {NULL,NULL,NULL} };
+                ${"block_${s.n}".mem(s)} = (Block) { NULL, ${if (s.iscatch) s.n else 0}, {NULL,NULL,NULL} };
                 $link
                 ${it.stmt}
+                ${if (!s.iscatch) "" else "case ${s.n}:"}
                 $unlink
                 $kill
             }
@@ -680,6 +685,7 @@ fun Stmt.code (): String {
         // block is still alive before continuing.
         typedef struct Stack {
             struct Stack* stk_up;
+            struct Task*  task;
             struct Block* block;
         } Stack;
         
@@ -706,7 +712,8 @@ fun Stmt.code (): String {
         } Task;
         
         typedef struct Block {
-            Pool* pool;
+            Pool* pool;                     // allocations in this block
+            int catch;                      // label to jump on catch
             struct {
                 struct Task*  tsk_first;    // first Task inside me
                 struct Task*  tsk_last;     // current last Task inside me
@@ -750,6 +757,21 @@ fun Stmt.code (): String {
         }
 
         ///
+
+        void block_throw (Stack* stack) {
+            if (stack == NULL) {
+                assert(0 && "throw without catch");
+            } if (stack->block->catch == 0) {
+                block_throw(stack->stk_up);
+            } else {
+                assert(stack->task!=NULL && "catch outside task");
+                Stack stk = { stack, stack->task, stack->block };
+                stack->task->pc = stack->block->catch;
+                stack->task->f(&stk, stack->task, EVENT_THROW);
+            }            
+        }
+        
+        ///
         
         // 1. awake my inner tasks  (they started before the nested block)
         // 1.1. awake tasks in inner block in current task
@@ -787,7 +809,7 @@ fun Stmt.code (): String {
                 } else {
                     //assert(task->links.blk_down != NULL);
                     if (task->links.blk_down != NULL) { // maybe unlinked by natural termination
-                        Stack stk = { stack, task->links.blk_down };
+                        Stack stk = { stack, task, task->links.blk_down };
                         block_bcast(&stk, task->links.blk_down, up, evt);   // 1.1
                         if (stk.block == NULL) return;
                         if (stack->block == NULL) return;
@@ -821,7 +843,6 @@ fun Stmt.code (): String {
         ///
         
         Block* GLOBAL;
-        //int evt;
 
         ${TPS.map { it.second }.joinToString("")}
         ${TPS.map { it.third  }.joinToString("")}
@@ -833,10 +854,10 @@ fun Stmt.code (): String {
         ${code.type}
 
         void main (void) {
-            Block block_0 = { NULL, {NULL,NULL,NULL} };
+            Block block_0 = { NULL, 0, {NULL,NULL,NULL} };
             GLOBAL = &block_0;
             int ret;
-            Stack _stack_ = { NULL, &block_0 };
+            Stack _stack_ = { NULL, NULL, &block_0 };
             Stack* stack = &_stack_;
             ${code.stmt}
             block_bcast(stack, &block_0, 1, EVENT_KILL);

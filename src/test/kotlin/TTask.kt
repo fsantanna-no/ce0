@@ -74,7 +74,7 @@ class TTask {
             awake f _1:_int
             awake f _1:_int
         """.trimIndent())
-        assert(out.endsWith("f: Assertion `fdata->task.state==TASK_UNBORN || fdata->task.state==TASK_AWAITING' failed.\n")) { out }
+        assert(out.endsWith("f: Assertion `task->state==TASK_UNBORN || task->state==TASK_AWAITING' failed.\n")) { out }
     }
     @Test
     fun a03_var () {
@@ -399,16 +399,24 @@ class TTask {
             }
             var g: task @LOCAL->@[]->()->()
             set g = task @LOCAL->@[]->()->() {
-                await _(self->mem.evt != 0):_int
+                await _1:_int
                 output std _1:_int
             }
-           catch {
-                spawn f ()
-                spawn g ()
-                throw
-            }
+            var h: task @LOCAL->@[]->()->()
+            set h = task @LOCAL->@[]->()->() {
+               catch {
+                   spawn f ()
+                   spawn g ()
+                   output std _0:_int
+                   throw
+                   output std _999:_int
+               }
+               output std _2:_int
+           }
+           spawn h ()
+           output std _3:_int
         """.trimIndent())
-        assert(out == "1\n") { out }
+        assert(out == "0\n1\n2\n3\n") { out }
     }
     @Test
     fun c02_throw_par2 () {

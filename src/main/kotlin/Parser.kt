@@ -274,12 +274,13 @@ fun parser_attr (all: All): Attr {
 }
 
 fun parser_block (all: All): Stmt.Block {
+    val iscatch = (all.tk0.enu == TK.CATCH)
     all.accept_err(TK.CHAR,'{')
     val tk0 = all.tk0 as Tk.Chr
     val scp = all.accept(TK.XSCPCST).let { if (it) all.tk0 as Tk.Scp1 else null }
     val ret = parser_stmts(all, Pair(TK.CHAR,'}'))
     all.accept_err(TK.CHAR,'}')
-    return Stmt.Block(tk0, scp, ret)
+    return Stmt.Block(tk0, iscatch, scp, ret)
 }
 
 fun parser_stmt (all: All): Stmt {
@@ -372,7 +373,7 @@ fun parser_stmt (all: All): Stmt {
             Stmt.Loop(tk0, block)
         }
         all.accept(TK.BREAK) -> Stmt.Break(all.tk0 as Tk.Key)
-        all.check(TK.CHAR,'{') -> parser_block(all)
+        all.accept(TK.CATCH) || all.check(TK.CHAR,'{') -> parser_block(all)
         else -> {
             all.err_expected("statement")
             error("unreachable")
