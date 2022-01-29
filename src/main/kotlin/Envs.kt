@@ -32,14 +32,14 @@ fun Any.env_first (f: (Any)->Boolean): Any? {
     return aux (this.getEnv())
 }
 
-fun Any.env (id: String): Any? {
+fun Any.env (id: String, upval: Boolean=false): Any? {
     //print(">>> ") ; println(id)
     return this.env_first {
         //println(it)
         it is Stmt.Var   && it.tk_.str.toLowerCase()==id.toLowerCase() ||
         it is Stmt.Block && it.xscp1?.lbl?.toUpperCase()==id.toUpperCase() ||
         //it is Expr.Func  && (id=="arg" || id=="ret" || id=="evt")
-        it is Expr.Func  && (id=="arg" || id=="ret" || id=="evt" || it.ups.any { it.str==id })
+        it is Expr.Func  && (id=="arg" || id=="ret" || id=="evt" || (upval && it.ups.any { it.str==id }))
     }.let {
         if (it is Expr.Func) {
             when (id) {
@@ -55,8 +55,8 @@ fun Any.env (id: String): Any? {
     }
 }
 
-fun Expr.Var.env (): Any? {
-    return (this as Any).env(this.tk_.str)
+fun Expr.Var.env (upval: Boolean=false): Any? {
+    return (this as Any).env(this.tk_.str, upval)
 }
 
 //////////////////////////////////////////////////////////////////////////////

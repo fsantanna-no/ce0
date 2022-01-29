@@ -3,7 +3,18 @@ fun check_02_after_tps (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.Var -> {    // check closures
-                val (var_fdepth,var_bdepth) = e.env(e.tk_.str)!!.ups_tolist().let {
+                /*
+                // ignore upvals declarations, search above if found
+                val env = e.ups_first { it is Expr.Func }.let {
+                    if (it != null && (it as Expr.Func).ups.any { it.str == e.tk_.str }) {
+                        it.env(e.tk_.str)!!
+                    } else {
+                        e.env(e.tk_.str)!!
+                    }
+                }
+                 */
+                val env = e.env(e.tk_.str)!!
+                val (var_fdepth,var_bdepth) = env.ups_tolist().let {
                     Pair (
                         it.filter { it is Expr.Func }.count(),
                         it.filter { it is Stmt.Block }.count()
@@ -12,7 +23,7 @@ fun check_02_after_tps (s: Stmt) {
                 val exp_fdepth = e.ups_tolist().filter { it is Expr.Func }.count()
                 if (var_bdepth>0 && var_fdepth<exp_fdepth) {
                     // access is inside function, declaration is outside
-                    val var_scope = e.env(e.tk_.str)!!.toType().toScp2()
+                    val var_scope = env.toType().toScp2()
                     val func = e.ups_first { it is Expr.Func } as Expr.Func
                     val clo = func.type.xscp2s!!.first?.depth ?: 0
                     All_assert_tk(e.tk, clo>=var_scope.depth && func.ups.any { it.str==e.tk_.str }) {

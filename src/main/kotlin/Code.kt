@@ -283,7 +283,7 @@ fun code_fe (e: Expr) {
     CODE.addFirst(when (e) {
         is Expr.Unit  -> Code("", "", "0")
         is Expr.Nat   -> Code("", "", e.tk_.src)
-        is Expr.Var   -> Code("", "", e.tk_.str.mem(e.env()!!))
+        is Expr.Var   -> Code("", "", e.tk_.str.mem(e.env(true)!!))
         is Expr.Upref -> CODE.removeFirst().let {
             Code(it.type, it.stmt, "(&" + it.expr + ")")
         }
