@@ -521,4 +521,37 @@ class TTask {
         """.trimIndent())
         assert(out == "0\n1\n2\n") { out }
     }
+
+    // FIELDS
+
+    // SPAWN / DYNAMIC
+
+    @Test
+    fun e01_spawn () {
+        val out = all("""
+            spawn task @LOCAL->@[]->()->() {
+                output std _1:_int
+                await _(self->mem.evt != 0):_int
+                output std _3:_int
+            } ()
+            output std _2:_int
+            bcast @GLOBAL _1:_int
+            output std _4:_int
+        """.trimIndent())
+        assert(out == "1\n2\n3\n4\n") { out }
+    }
+    @Test
+    fun e02_spawn_free () {
+        val out = all("""
+            spawn task @LOCAL->@[]->()->() {
+                output std _1:_int
+                await _(self->mem.evt != 0):_int
+                output std _3:_int
+            } ()
+            output std _2:_int
+            bcast @GLOBAL _1:_int
+            output std _4:_int
+        """.trimIndent())
+        assert(out == "1\n2\n3\n4\n") { out }
+    }
 }
