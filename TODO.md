@@ -1,6 +1,6 @@
 - rever local/mem/scp1.toce
 - catch N, throw N
-- spawn dyn
+- spawn dyn @block
   - public fields
   - iterate over tasks
 - \#line, stack debug

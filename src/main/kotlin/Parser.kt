@@ -184,20 +184,39 @@ fun parser_expr (all: All): Expr {
             }
             Expr.Dnref(chr, e)
         } else {
-            all.accept_err(TK.XNUM)
-            val num = all.tk0 as Tk.Num
+            val ok = when {
+                (chr.chr != '.') -> false
+                all.accept(TK.XVAR) -> {
+                    val tk = all.tk0 as Tk.Str
+                    all.assert_tk(tk, tk.str=="pub") {
+                        "unexpected \"${tk.str}\""
+                    }
+                    true
+                }
+                else -> false
+            }
+            if (!ok) {
+                all.accept_err(TK.XNUM)
+            }
+            val num = if (ok) null else (all.tk0 as Tk.Num)
             all.assert_tk(all.tk0, e !is Expr.TCons && e !is Expr.UCons && e !is Expr.UNull) {
                 "invalid discriminator : unexpected constructor"
             }
             if (chr.chr=='?' || chr.chr=='!') {
-                All_assert_tk(all.tk0, num.num!=0 || e is Expr.Dnref) {
+                All_assert_tk(all.tk0, num!!.num!=0 || e is Expr.Dnref) {
                     "invalid discriminator : union cannot be <.0>"
                 }
             }
             when {
-                (chr.chr == '?') -> Expr.UPred(num, e)
-                (chr.chr == '!') -> Expr.UDisc(num, e)
-                (chr.chr == '.') -> Expr.TDisc(num, e)
+                (chr.chr == '?') -> Expr.UPred(num!!, e)
+                (chr.chr == '!') -> Expr.UDisc(num!!, e)
+                (chr.chr == '.') -> {
+                    if (all.tk0.enu == TK.XVAR) {
+                        Expr.Pub(all.tk0 as Tk.Str, e)
+                    } else {
+                        Expr.TDisc(num!!, e)
+                    }
+                }
                 else -> error("impossible case")
             }
         }
@@ -267,11 +286,30 @@ fun parser_attr (all: All): Attr {
             }
             e = Attr.Dnref(chr, e)
         } else {
-            all.accept_err(TK.XNUM)
-            val num = all.tk0 as Tk.Num
+            val ok = when {
+                (chr.chr != '.') -> false
+                all.accept(TK.XVAR) -> {
+                    val tk = all.tk0 as Tk.Str
+                    all.assert_tk(tk, tk.str=="pub") {
+                        "unexpected \"${tk.str}\""
+                    }
+                    true
+                }
+                else -> false
+            }
+            if (!ok) {
+                all.accept_err(TK.XNUM)
+            }
+            val num = if (ok) null else (all.tk0 as Tk.Num)
             e = when {
-                (chr.chr == '!') -> Attr.UDisc(num, e)
-                (chr.chr == '.') -> Attr.TDisc(num, e)
+                (chr.chr == '!') -> Attr.UDisc(num!!, e)
+                (chr.chr == '.') -> {
+                    if (all.tk0.enu == TK.XVAR) {
+                        Attr.Pub(all.tk0 as Tk.Str, e)
+                    } else {
+                        Attr.TDisc(num!!, e)
+                    }
+                }
                 else -> error("impossible case")
             }
         }

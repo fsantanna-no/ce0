@@ -77,7 +77,7 @@ class TEnv {
             var x: <(),()>
             output std(x.0)
         """.trimIndent())
-        assert(out == "(ln 2, col 14): invalid discriminator : type mismatch") { out }
+        assert(out == "(ln 2, col 14): invalid discriminator : type mismatch : expected tuple") { out }
     }
     @Test
     fun b04_user_disc_cons_err () {
@@ -380,7 +380,7 @@ class TEnv {
             call arg.2 ()
         }
         """.trimIndent())
-        assert(out == "(ln 2, col 14): invalid discriminator : type mismatch") { out }
+        assert(out == "(ln 2, col 14): invalid discriminator : type mismatch : expected tuple") { out }
     }
     @Test
     fun c18_type_func_err () {
@@ -430,7 +430,7 @@ class TEnv {
             var x: <()>
             output std x.2
         """.trimIndent())
-        assert(out == "(ln 2, col 14): invalid discriminator : type mismatch")
+        assert(out == "(ln 2, col 14): invalid discriminator : type mismatch : expected tuple")
     }
     @Test
     fun c18_uni_disc_err () {

@@ -291,6 +291,7 @@ fun code_fe (e: Expr) {
             Code(it.type, it.stmt, "(*" + it.expr + ")")
         }
         is Expr.TDisc -> CODE.removeFirst().let { Code(it.type, it.stmt, it.expr + "._" + e.tk_.num) }
+        is Expr.Pub   -> CODE.removeFirst().let { Code(it.type, it.stmt, it.expr + "->pub") }
         is Expr.UDisc -> CODE.removeFirst().let {
             val ee = it.expr
             val uni = e.uni.wtype!!
@@ -409,6 +410,7 @@ fun code_fe (e: Expr) {
                             ${e.type.inp.pos()} arg;
                             int evt;
                         };
+                        ${e.type.pub.let { if (it == null) "" else it.pos() + " pub;" }}
                         ${e.block.mem_vars()}
                     } mem;
                 } Func_${e.n};

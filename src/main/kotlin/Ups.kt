@@ -32,7 +32,7 @@ fun Type.setUps (up: Any) {
         is Type.Unit, is Type.Nat, is Type.Rec -> {}
         is Type.Tuple -> this.vec.forEach { it.setUps(this) }
         is Type.Union -> this.vec.forEach { it.setUps(this) }
-        is Type.Func  -> { this.inp.setUps(this) ; this.out.setUps(this) }
+        is Type.Func  -> { this.inp.setUps(this) ; this.pub?.setUps(this) ; this.out.setUps(this) }
         is Type.Ptr   -> this.pln.setUps(this)
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }
@@ -51,6 +51,7 @@ fun Expr.setUps (up: Any) {
         is Expr.Dnref -> this.ptr.setUps(this)
         is Expr.Upref -> this.pln.setUps(this)
         is Expr.TDisc -> this.tup.setUps(this)
+        is Expr.Pub   -> this.tsk.setUps(this)
         is Expr.UDisc -> this.uni.setUps(this)
         is Expr.UPred -> this.uni.setUps(this)
         is Expr.Call  -> {

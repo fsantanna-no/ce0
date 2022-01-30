@@ -4,6 +4,7 @@ fun Expr.flattenRight (): List<Expr> {
         is Expr.TCons -> this.arg.map { it.flattenRight() }.flatten() + this
         is Expr.Call  -> this.f.flattenRight() + this.arg.flattenRight() + this
         is Expr.TDisc -> this.tup.flattenRight() + this
+        is Expr.Pub   -> this.tsk.flattenRight() + this
         is Expr.UDisc -> this.uni.flattenRight() + this
         is Expr.UPred -> this.uni.flattenRight() + this
         is Expr.New   -> this.arg.flattenRight() + this
@@ -19,6 +20,7 @@ fun Attr.toExpr (): Expr {
         is Attr.Nat   -> Expr.Nat(this.tk_, this.type)
         is Attr.Dnref -> Expr.Dnref(this.tk_,this.ptr.toExpr())
         is Attr.TDisc -> Expr.TDisc(this.tk_,this.tup.toExpr())
+        is Attr.Pub   -> Expr.Pub(this.tk_,this.tsk.toExpr())
         is Attr.UDisc -> Expr.UDisc(this.tk_,this.uni.toExpr())
     }
 }

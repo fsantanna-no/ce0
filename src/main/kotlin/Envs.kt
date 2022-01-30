@@ -39,11 +39,12 @@ fun Any.env (id: String, upval: Boolean=false): Any? {
         it is Stmt.Var   && it.tk_.str.toLowerCase()==id.toLowerCase() ||
         it is Stmt.Block && it.xscp1?.lbl?.toUpperCase()==id.toUpperCase() ||
         //it is Expr.Func  && (id=="arg" || id=="ret" || id=="evt")
-        it is Expr.Func  && (id=="arg" || id=="ret" || id=="evt" || (upval && it.ups.any { it.str==id }))
+        it is Expr.Func  && (id=="arg" || id=="pub" || id=="ret" || id=="evt" || (upval && it.ups.any { it.str==id }))
     }.let {
         if (it is Expr.Func) {
             when (id) {
                 "arg" -> it.type.inp
+                "pub" -> it.type.pub!!
                 "ret" -> it.type.out
                 "evt" -> Type.Nat(Tk.Nat(TK.XNAT, it.tk.lin, it.tk.col, null, "int")).clone(it,it.tk.lin,it.tk.col)
                 //else  -> error("bug found")
@@ -81,6 +82,7 @@ fun Expr.setEnvs (env: Any?) {
         is Expr.Dnref -> this.ptr.setEnvs(env)
         is Expr.Upref -> this.pln.setEnvs(env)
         is Expr.TDisc -> this.tup.setEnvs(env)
+        is Expr.Pub   -> this.tsk.setEnvs(env)
         is Expr.UDisc -> this.uni.setEnvs(env)
         is Expr.UPred -> this.uni.setEnvs(env)
         is Expr.Call  -> {

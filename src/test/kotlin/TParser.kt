@@ -793,4 +793,26 @@ class TParser {
         val s = parser_stmt(all)
         assert(s is Stmt.Spawn && s.e is Expr.Call && s.e.f is Expr.Var)
     }
+
+    // PUB
+
+    @Test
+    fun e01_error () {
+        val all = All_new(PushbackReader(StringReader("x.y"), 2))
+        lexer(all)
+        try {
+            parser_expr(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 3): unexpected \"y\"") { e.message!! }
+        }
+    }
+
+    @Test
+    fun e02_ok () {
+        val all = All_new(PushbackReader(StringReader("set x.pub = ()"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.ESet && s.dst is Expr.Pub)
+    }
 }

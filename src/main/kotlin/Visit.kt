@@ -32,7 +32,7 @@ fun Type.visit_ (xpd: Boolean, ft: ((Type)->Unit)?) {
         is Type.Unit, is Type.Nat, is Type.Rec -> {}
         is Type.Tuple -> this.vec.forEach { it.visit_(xpd,ft) }
         is Type.Union -> (if (xpd) this.expand() else this.vec).forEach { it.visit_(xpd,ft) }
-        is Type.Func  -> { this.inp.visit_(xpd,ft) ; this.out.visit_(xpd,ft) }
+        is Type.Func  -> { this.inp.visit_(xpd,ft) ; this.pub?.visit_(xpd,ft) ; this.out.visit_(xpd,ft) }
         is Type.Ptr   -> this.pln.visit_(xpd,ft)
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }
@@ -53,6 +53,7 @@ fun Expr.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((T
         is Expr.Dnref -> this.ptr.visit_(xpd,fs,fe,ft)
         is Expr.Upref -> this.pln.visit_(xpd,fs,fe,ft)
         is Expr.TDisc -> this.tup.visit_(xpd,fs,fe,ft)
+        is Expr.Pub   -> this.tsk.visit_(xpd,fs,fe,ft)
         is Expr.UDisc -> this.uni.visit_(xpd,fs,fe,ft)
         is Expr.UPred -> this.uni.visit_(xpd,fs,fe,ft)
         is Expr.Call  -> { this.f.visit_(xpd,fs,fe,ft) ; this.arg.visit_(xpd,fs,fe,ft) }

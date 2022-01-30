@@ -87,13 +87,19 @@ fun Stmt.setTypes () {
             }
             is Expr.TDisc -> e.tup.wtype.let {
                 All_assert_tk(e.tk, it is Type.Tuple) {
-                    "invalid discriminator : type mismatch"
+                    "invalid discriminator : type mismatch : expected tuple"
                 }
                 val (MIN, MAX) = Pair(1, (it as Type.Tuple).vec.size)
                 All_assert_tk(e.tk, MIN <= e.tk_.num && e.tk_.num <= MAX) {
                     "invalid discriminator : out of bounds"
                 }
                 it.vec[e.tk_.num - 1]
+            }
+            is Expr.Pub -> e.tsk.wtype.let {
+                All_assert_tk(e.tk, it is Type.Func && it.tk.enu==TK.TASK) {
+                    "invalid \"pub\" : type mismatch : expected task"
+                }
+                (it as Type.Func).pub!!
             }
             is Expr.UDisc, is Expr.UPred -> {
                 val (tk_,uni) = when (e) {

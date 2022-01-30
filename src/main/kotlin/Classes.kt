@@ -21,6 +21,7 @@ sealed class Attr (val n: Int, val tk: Tk) {
     data class Dnref (val tk_: Tk, val ptr: Attr): Attr(N++, tk_)
     data class TDisc (val tk_: Tk.Num, val tup: Attr): Attr(N++, tk_)
     data class UDisc (val tk_: Tk.Num, val uni: Attr): Attr(N++, tk_)
+    data class Pub   (val tk_: Tk.Str, val tsk: Attr): Attr(N++, tk_)
 }
 
 sealed class Expr (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?, var wtype: Type?) {
@@ -38,6 +39,7 @@ sealed class Expr (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?, var wt
     data class Upref (val tk_: Tk.Chr, val pln: Expr): Expr(N++, tk_, null, null, null)
     data class Call  (val tk_: Tk, val f: Expr, val arg: Expr, val xscp1s: Pair<Array<Tk.Scp1>,Tk.Scp1?>, var xscp2s: Pair<Array<Scp2>,Scp2?>?): Expr(N++, tk_, null, null, null)
     data class Func  (val tk_: Tk.Key, val type: Type.Func, val ups: Array<Tk.Str>, val block: Stmt.Block) : Expr(N++, tk_, null, null, type)
+    data class Pub   (val tk_: Tk.Str, val tsk: Expr): Expr(N++, tk_, null, null, null)
 }
 
 sealed class Stmt (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
