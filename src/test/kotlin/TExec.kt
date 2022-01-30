@@ -253,7 +253,7 @@ class TExec {
         val out = all("""
         var f : (func@[]-> _int -> _int)
         set f = func@[]-> _int->_int {
-           set arg = _(self->mem.arg+1): _int
+           set arg = _(task1->arg+1): _int
            set ret = arg
            return
         }
@@ -270,7 +270,7 @@ class TExec {
         set p = f
         output std p _10: _int
         """.trimIndent())
-        assert(out == "10\n")
+        assert(out == "10\n") { out }
     }
     @Test
     fun d06_func_fg () {
@@ -540,7 +540,7 @@ class TExec {
         val out = all("""
         var f : func@[@i1]-> /_int@i1 -> ()
         set f = func@[@i1]-> /_int@i1 -> () {
-           set arg\ = _(*self->mem.arg+1): _int
+           set arg\ = _(*task1->arg+1): _int
            return
         }
         var x: _int

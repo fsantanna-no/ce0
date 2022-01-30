@@ -2,7 +2,7 @@ val TYPEX = mutableSetOf<String>()
 val TYPES = mutableListOf<Triple<Pair<String,Set<String>>,String,String>>()
 
 fun Any.self_or_null (): String {
-    return if (this.ups_first { it is Expr.Func } == null) "NULL" else "task"
+    return if (this.ups_first { it is Expr.Func } == null) "NULL" else "(&task1->task0)"
 }
 
 fun Type.pos (): String {
@@ -13,7 +13,7 @@ fun Type.pos (): String {
         is Type.Nat   -> this.tk_.src
         is Type.Tuple -> "struct " + this.toce()
         is Type.Union -> "struct " + this.toce()
-        is Type.Func  -> "Task*" //this.toce() + "*"
+        is Type.Func  -> this.toce() + "*"
     }
 }
 
@@ -56,7 +56,25 @@ fun code_ft (tp: Type) {
                         ${tp.inp.pos()} arg;
                     } pars;
                 } X_${tp.toce()};
-                typedef void (*F_${tp.toce()}) (Stack*, struct Task*, X_${tp.toce()});
+                typedef struct {
+                    Task task0;
+                    ${tp.xscp1s.first.let { if (it == null) "" else "Block* ${it.lbl_num()};" }}
+                    union {
+                        Block* blks[${tp.xscp1s.second.size}];
+                        struct {
+                            ${tp.xscp1s.second.let { if (it.size == 0) "" else
+                                it.map { "Block* ${it.lbl_num()};\n" }.joinToString("") }
+                            }
+                        };
+                    };
+                    union {
+                        ${tp.inp.pos()} arg;
+                        int evt;
+                    };
+                    ${tp.pub.let { if (it == null) "" else it.pos() + " pub;" }}
+                    ${tp.out.pos()} ret;
+                } ${tp.toce()};
+                typedef void (*F_${tp.toce()}) (Stack*, ${tp.toce()}*, X_${tp.toce()});
                 
             """.trimIndent()
 
@@ -191,12 +209,9 @@ val CODE = ArrayDeque<Code>()
 fun String.mem (up: Any): String {
     val func = if (up is Expr.Func) up else up.ups_first { it is Expr.Func }
     return when {
-        (this == "ret") -> {    // TODO: call stack
-            val out = (func as Expr.Func).type.out
-            "(*((${out.pos()}*) &task->mem))"
-        }
         (func == null) -> "(global.$this)"
-        else -> "(self->mem.$this)"
+        (this in arrayOf("arg","pub","ret")) -> "(task1->$this)"
+        else -> "(task2->$this)"
     }
 }
 
@@ -211,13 +226,13 @@ fun Tk.Scp1.toce (up: Any): String {
         // @LOCAL depends (calls mem inside local())
         (this.lbl == "LOCAL")    -> up.local()
         // @i_1 is always an argument
-        (this.enu == TK.XSCPVAR) -> "(self->mem.${this.lbl_num()})"
+        (this.enu == TK.XSCPVAR) -> "(task1->${this.lbl_num()})"
         // closure block is always an argument
         (up.ups_first {
             it is Expr.Func && it.type.xscp1s.first.let {
                 it?.enu==this.enu && it?.lbl==this.lbl && it?.num==this.num
             }
-        } != null) -> "(self->mem.${this.lbl_num()})"
+        } != null) -> "(task1->${this.lbl_num()})"
         // otherwise depends (calls mem)
         else -> {
             val blk = up.env(this.lbl) as Stmt.Block
@@ -368,12 +383,12 @@ fun code_fe (e: Expr) {
                             ${tpf.out.pos()} ret_${e.n};    // TODO: call stack
                             {
                                 Stack stk_${e.n} = { stack, ${e.self_or_null()}, ${e.local()} };
-                                ((F_${tpf.toce()})(${f.expr}->f)) (&stk_${e.n}, ${f.expr}, $xxx);
-                                ${if (tpf.tk.enu != TK.FUNC) "" else "${f.expr}->state = TASK_UNBORN;"}
+                                ((F_${tpf.toce()})(${f.expr}->task0.f)) (&stk_${e.n}, ${f.expr}, $xxx);
+                                ${if (tpf.tk.enu != TK.FUNC) "" else "${f.expr}->task0.state = TASK_UNBORN;"}
                                 if (stk_${e.n}.block == NULL) {
                                     return;
                                 }
-                                ret_${e.n} = (*((${tpf.out.pos()}*)${f.expr}->mem));
+                                ret_${e.n} = (${f.expr}->ret);
                             }
                             
                         """.trimIndent()
@@ -393,44 +408,27 @@ fun code_fe (e: Expr) {
 
             val pre = """
                 typedef struct Func_${e.n} {
-                    Task task;
-                    struct {
-                        ${e.type.out.pos()} ret;
-                        ${e.ups.map { "${e.env(it.str)!!.toType().pos()} ${it.str};\n" }.joinToString("")}
-                        ${e.type.xscp1s.first.let { if (it == null) "" else "Block* ${it.lbl_num()};" }}
-                        union {
-                            Block* blks[${e.type.xscp1s.second.size}];
-                            struct {
-                                ${e.type.xscp1s.second.let { if (it.size == 0) "" else
-                                    it.map { "Block* ${it.lbl_num()};\n" }.joinToString("") }
-                                }
-                            };
-                        };
-                        union {
-                            ${e.type.inp.pos()} arg;
-                            int evt;
-                        };
-                        ${e.type.pub.let { if (it == null) "" else it.pos() + " pub;" }}
-                        ${e.block.mem_vars()}
-                    } mem;
+                    ${e.type.toce()} task1;
+                    ${e.ups.map { "${e.env(it.str)!!.toType().pos()} ${it.str};\n" }.joinToString("")}
+                    ${e.block.mem_vars()}
                 } Func_${e.n};
                     
-                void f_$tsk_var (Stack* stack, struct Task* task, X_${e.type.toce()} xxx) {
-                    assert(task->state==TASK_UNBORN || task->state==TASK_AWAITING);
-                    Func_${e.n}* self = (Func_${e.n}*) task;
+                void f_$tsk_var (Stack* stack, ${e.type.toce()}* task1, X_${e.type.toce()} xxx) {
+                    Task*        task0 = (Task*)        task1;
+                    Func_${e.n}* task2 = (Func_${e.n}*) task1;
                     ${if (istk) "" else """     // TODO: call stack
-                        Func_${e.n} _self_ = *self;
-                        self = &_self_;
-                        //task = (Task*) self;
+                        Func_${e.n} _task2_ = *task2;
+                        task2 = &_task2_;
                         
                     """.trimIndent()}
-                    ${e.type.xscp1s.second.mapIndexed { i,_ -> "self->mem.blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
-                    switch (task->pc) {
+                    ${e.type.xscp1s.second.mapIndexed { i,_ -> "task1->blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
+                    assert(task0->state==TASK_UNBORN || task0->state==TASK_AWAITING);
+                    switch (task0->pc) {
                         case 0: {                    
-                            assert(task->state == TASK_UNBORN);
-                            self->mem.arg = xxx.pars.arg;
+                            assert(task0->state == TASK_UNBORN);
+                            task1->arg = xxx.pars.arg;
                             ${it.stmt}
-                            task->state = TASK_DEAD;
+                            task0->state = TASK_DEAD;
                             break;
                         }
                         default:
@@ -446,9 +444,9 @@ fun code_fe (e: Expr) {
             val src = """
                 ${if (isnone) "static" else ""}
                 Func_${e.n} pln_$tsk_var = { (Task_F)f_$tsk_var, TASK_UNBORN, 0, {}, {} };
-                ${e.type.xscp1s.first.let { if (it==null) "" else "pln_$tsk_var.mem.${it.lbl_num()} = ${it.toce(e.wup!!)};\n" }}
-                ${e.ups.map { "pln_$tsk_var.mem.${it.str} = ${it.str.mem(e.wup!!)};\n" }.joinToString("")}
-                Task* ptr_$tsk_var = (Task*)
+                ${e.type.xscp1s.first.let { if (it==null) "" else "pln_$tsk_var.${it.lbl_num()} = ${it.toce(e.wup!!)};\n" }}
+                ${e.ups.map { "pln_$tsk_var.${it.str} = ${it.str.mem(e.wup!!)};\n" }.joinToString("")}
+                ${e.type.toce()}* ptr_$tsk_var = (${e.type.toce()}*)
                     ${if (isnone) "&pln_$tsk_var" else "malloc(sizeof(Func_${e.n}))"}; // TODO: malloc only if escapes
                 assert(ptr_$tsk_var!=NULL && "not enough memory");                
                 ${if (isnone) "" else """
@@ -456,7 +454,7 @@ fun code_fe (e: Expr) {
                     block_push($clo_block, ptr_$tsk_var);
                     
                 """.trimIndent()}                   
-                task_link($clo_block, ptr_$tsk_var);
+                task_link($clo_block, (Task*) ptr_$tsk_var);
                                         
             """.trimIndent()
 
@@ -477,8 +475,8 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
             )
             // found task above myself: link/unlink me as first block
             (it is Expr.Func && it.tk.enu==TK.TASK) -> Pair (
-                "task->links.blk_down = &$blk;\n",
-                "task->links.blk_down = NULL;\n"
+                "task0->links.blk_down = &$blk;\n",
+                "task0->links.blk_down = NULL;\n"
             )
             // found func above me: link/unlink me in the stack
             (it is Expr.Func && it.tk.enu==TK.FUNC) -> Pair (
@@ -531,7 +529,7 @@ fun code_fs (s: Stmt) {
         }
         is Stmt.Ret   -> {
             val src = """
-                task->state = TASK_DEAD;
+                task0->state = TASK_DEAD;
                 return;
                 
             """.trimIndent()
@@ -543,16 +541,16 @@ fun code_fs (s: Stmt) {
         is Stmt.Await -> CODE.removeFirst().let {
             val src = """
                 {
-                    task->pc = ${s.n};      // next awake
-                    task->state = TASK_AWAITING;
+                    task0->pc = ${s.n};      // next awake
+                    task0->state = TASK_AWAITING;
                     return;                 // await (1 = awake ok)
                 case ${s.n}:                // awake here
-                    assert(task->state == TASK_AWAITING);
-                    self->mem.evt = xxx.evt;
+                    assert(task0->state == TASK_AWAITING);
+                    task1->evt = xxx.evt;
                     if (!(${it.expr})) {
                         return;             // (0 = awake no)
                     }
-                    task->state = TASK_RUNNING;
+                    task0->state = TASK_RUNNING;
                 }
                 
             """.trimIndent()
@@ -708,7 +706,6 @@ fun Stmt.code (): String {
                 struct Task*  tsk_next;     // next Task in the same block
                 struct Block* blk_down;     // nested block inside me
             } links;
-            char mem[0];
         } Task;
         
         typedef struct Block {
@@ -856,7 +853,6 @@ fun Stmt.code (): String {
         void main (void) {
             Block block_0 = { NULL, 0, {NULL,NULL,NULL} };
             GLOBAL = &block_0;
-            int ret;
             Stack _stack_ = { NULL, NULL, &block_0 };
             Stack* stack = &_stack_;
             ${code.stmt}
