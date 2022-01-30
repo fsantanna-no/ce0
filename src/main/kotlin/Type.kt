@@ -84,6 +84,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
                 ),
                 this.xscp2s,
                 this.inp.aux(lin, col),
+                this.pub?.aux(lin, col),
                 this.out.aux(lin, col)
             )
             is Type.Ptr -> Type.Ptr(
@@ -120,6 +121,7 @@ fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
                 ),
                 this.xscp2s,
                 this.inp.aux(lin, col),
+                this.pub?.aux(lin, col),
                 this.out.aux(lin, col)
             )
             is Type.Ptr -> Type.Ptr(this.tk_.copy(lin_ = lin, col_ = col), this.xscp1?.copy(lin_=lin,col_=col), this.xscp2, this.pln.aux(lin, col))
@@ -143,17 +145,18 @@ fun Type.containsRec (): Boolean {
 }
 
 fun Type.Union.expand (): Array<Type> {
-    fun aux (cur: Type, up: Int): Type {
-        return when (cur) {
-            is Type.Rec   -> if (up == cur.tk_.up) this else { assert(up>cur.tk_.up) ; cur }
-            is Type.Tuple -> Type.Tuple(cur.tk_, cur.vec.map { aux(it,up) }.toTypedArray())
-            is Type.Union -> Type.Union(cur.tk_, cur.isrec, cur.vec.map { aux(it,up+1) }.toTypedArray())
-            is Type.Ptr   -> Type.Ptr(cur.tk_, cur.xscp1, cur.xscp2, aux(cur.pln,up))
-            is Type.Func  -> Type.Func(cur.tk_, cur.xscp1s, cur.xscp2s, aux(cur.inp,up), aux(cur.out,up))
-            else -> cur
+    val outer = this
+    fun Type.aux (up: Int): Type {
+        return when (this) {
+            is Type.Rec   -> if (up == this.tk_.up) outer else { assert(up>this.tk_.up) ; this }
+            is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.aux(up) }.toTypedArray())
+            is Type.Union -> Type.Union(this.tk_, this.isrec, this.vec.map { it.aux(up+1) }.toTypedArray())
+            is Type.Ptr   -> Type.Ptr(this.tk_, this.xscp1, this.xscp2, this.pln.aux(up))
+            is Type.Func  -> Type.Func(this.tk_, this.xscp1s, this.xscp2s, this.inp.aux(up), this.pub?.aux(up), this.out.aux(up))
+            else -> this
         }
     }
-    return this.vec.map { aux(it, 1).cloneX(this,this.tk.lin,this.tk.col) }.toTypedArray()
+    return this.vec.map { it.aux(1).cloneX(this,this.tk.lin,this.tk.col) }.toTypedArray()
 }
 
 fun Type.toce (): String {

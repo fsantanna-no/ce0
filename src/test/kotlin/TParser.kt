@@ -538,7 +538,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("var x: () @a"), 2))
         lexer(all)
         try {
-            parser_stmts(all, Pair(TK.EOF,null))
+            parser_stmts(all)
             error("impossible case")
         } catch (e: Throwable) {
             assert(e.message == "(ln 1, col 11): expected statement : have `@a´") { e.message!! }
@@ -549,7 +549,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("var x: /()@1"), 2))
         lexer(all)
         try {
-            parser_stmts(all, Pair(TK.EOF,null))
+            parser_stmts(all)
             error("impossible case")
         } catch (e: Throwable) {
             assert(e.message == "(ln 1, col 11): expected `@´ : have \"@\"") { e.message!! }
@@ -623,7 +623,7 @@ class TParser {
     fun c08_parser_stmt_seq () {
         val all = All_new(PushbackReader(StringReader("call f() ; call _printf:func@[]->()->() () call g()"), 2))
         lexer(all)
-        val s = parser_stmts(all, Pair(TK.EOF,null))
+        val s = parser_stmts(all)
         assert (
             s is Stmt.Seq && s.s1 is Stmt.Seq && s.s2 is Stmt.SCall && (((s.s2 as Stmt.SCall).e as Expr.Call).f.tk as Tk.Str).str=="g" &&
             (s.s1 as Stmt.Seq).let {
@@ -661,7 +661,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("if <.2()>:<()> {}"), 2))
         lexer(all)
         try {
-            parser_stmts(all, Pair(TK.EOF,null))
+            parser_stmts(all)
             error("impossible case")
         } catch (e: Throwable) {
             assert(e.message == "(ln 1, col 18): expected `else` : have end of file") { e.message!! }
@@ -781,7 +781,7 @@ class TParser {
 
     @Test
     fun d01_type_task () {
-        val all = All_new(PushbackReader(StringReader("task @LOCAL->@[]->()->() {}"), 2))
+        val all = All_new(PushbackReader(StringReader("task @LOCAL->@[]->()->()->() {}"), 2))
         lexer(all)
         val tp = parser_type(all)
         assert(tp is Type.Func && tp.tk.enu==TK.TASK)

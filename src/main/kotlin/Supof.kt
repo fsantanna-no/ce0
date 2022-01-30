@@ -36,17 +36,18 @@ fun Type.isSupOf (sub: Type): Boolean {
 fun Type.Func.mapLabels (up: Any): Type.Func {
     val MAP = mutableMapOf<String,Char>()
     var c = ('a'-1)
-    fun aux (tp: Type): Type {
-        return when (tp) {
-            is Type.Unit, is Type.Nat, is Type.Rec -> tp
-            is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { aux(it) }.toTypedArray())
-            is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { aux(it) }.toTypedArray())
-            is Type.Func  -> tp
+    val outer = this
+    fun Type.aux (): Type {
+        return when (this) {
+            is Type.Unit, is Type.Nat, is Type.Rec -> this
+            is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.aux() }.toTypedArray())
+            is Type.Union -> Type.Union(this.tk_, this.isrec, this.vec.map { it.aux() }.toTypedArray())
+            is Type.Func  -> this
             is Type.Ptr   -> {
-                if (tp.xscp1.enu == TK.XSCPCST) {
-                    tp
+                if (this.xscp1.enu == TK.XSCPCST) {
+                    this
                 } else {
-                    val old = tp.xscp1
+                    val old = this.xscp1
                     //assert(old.num == 1)
                     val lbl = if (MAP[old.lbl] != null) MAP[old.lbl] else {
                         c += 1
@@ -54,13 +55,13 @@ fun Type.Func.mapLabels (up: Any): Type.Func {
                         c
                     }
                     val new = Tk.Scp1(TK.XSCPCST, old.lin, old.col, lbl.toString(), old.num)
-                    Type.Ptr(tp.tk_, new, new.toScp2(this), aux(tp.pln))
+                    Type.Ptr(this.tk_, new, new.toScp2(outer), this.pln.aux())
                 }
             }
         }
     }
     // TODO: xscp1s/xscp2s are not used in supOf, so we ignore them here
-    return Type.Func(this.tk_,this.xscp1s,this.xscp2s, aux(this.inp), aux(this.out)).clone(up,this.tk.lin,this.tk.col) as Type.Func
+    return Type.Func(this.tk_,this.xscp1s,this.xscp2s, this.inp.aux(), this.pub?.aux(), this.out.aux()).clone(up,this.tk.lin,this.tk.col) as Type.Func
 }
 fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: List<Type.Union>): Boolean {
     return when {

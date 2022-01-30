@@ -29,8 +29,8 @@ class TTask {
     @Test
     fun a01_output () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()
-            set f = task @LOCAL->@[]->()->() {
+            var f: task @LOCAL->@[]->()->()->()
+            set f = task @LOCAL->@[]->()->()->() {
                 output std _1:_int
             }
             spawn f ()
@@ -48,8 +48,8 @@ class TTask {
     @Test
     fun a02_await () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()
-            set f = task @LOCAL->@[]->()->() {
+            var f: task @LOCAL->@[]->()->()->()
+            set f = task @LOCAL->@[]->()->()->() {
                 output std _1:_int
                 await _(self->mem.evt != 0):_int
                 output std _3:_int
@@ -63,8 +63,8 @@ class TTask {
     @Test
     fun a02_await_err () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()
-            set f = task @LOCAL->@[]->()->() {
+            var f: task @LOCAL->@[]->()->()->()
+            set f = task @LOCAL->@[]->()->()->() {
                 output std _1:_int
                 await _(self->mem.evt != 0):_int
                 output std _3:_int
@@ -79,8 +79,8 @@ class TTask {
     @Test
     fun a03_var () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()
-            set f = task @LOCAL->@[]->()->() {
+            var f: task @LOCAL->@[]->()->()->()
+            set f = task @LOCAL->@[]->()->()->() {
                 var x: _int
                 set x = _10:_int
                 await _(self->mem.evt != 0):_int
@@ -94,8 +94,8 @@ class TTask {
     @Test
     fun a04_vars () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()
-            set f = task @LOCAL->@[]->()->() {
+            var f: task @LOCAL->@[]->()->()->()
+            set f = task @LOCAL->@[]->()->()->() {
                 {
                     var x: _int
                     set x = _10:_int
@@ -118,8 +118,8 @@ class TTask {
     @Test
     fun a05_args () {
         val out = all("""
-            var f: task @LOCAL->@[]->_(char*)->()
-            set f = task @LOCAL->@[]->_(char*)->() {
+            var f: task @LOCAL->@[]->_(char*)->()->()
+            set f = task @LOCAL->@[]->_(char*)->()->() {
                 output std arg
                 await _(self->mem.evt != 0):_int
                 output std evt
@@ -135,9 +135,9 @@ class TTask {
     @Test
     fun a06_par_err () {
         val out = all("""
-            var build : func @[] -> () -> task @LOCAL->@[]->()->()
-            set build = func @[] -> () -> task @LOCAL->@[]->()->() {
-                set ret = task @LOCAL->@[]->()->() {    -- ERR: not the same @LOCAL
+            var build : func @[] -> () -> task @LOCAL->@[]->()->()->()
+            set build = func @[] -> () -> task @LOCAL->@[]->()->()->() {
+                set ret = task @LOCAL->@[]->()->()->() {    -- ERR: not the same @LOCAL
                     output std _1:_int
                     await _(self->mem.evt != 0):_int
                     output std _2:_int
@@ -149,17 +149,17 @@ class TTask {
     @Test
     fun a06_par () {
         val out = all("""
-            var build : func @[@r1] -> () -> task @r1->@[]->()->()
-            set build = func @[@r1] -> () -> task @r1->@[]->()->() {
-                set ret = task @r1->@[]->()->() {
+            var build : func @[@r1] -> () -> task @r1->@[]->()->()->()
+            set build = func @[@r1] -> () -> task @r1->@[]->()->()->() {
+                set ret = task @r1->@[]->()->()->() {
                     output std _1:_int
                     await _(self->mem.evt != 0):_int
                     output std _2:_int
                 }
             }
-            var f: task @LOCAL->@[]->()->()
+            var f: task @LOCAL->@[]->()->()->()
             set f = build @[@LOCAL] ()
-            var g: task @LOCAL->@[]->()->()
+            var g: task @LOCAL->@[]->()->()->()
             set g = build @[@LOCAL] ()
             output std _10:_int
             spawn f ()
@@ -174,15 +174,15 @@ class TTask {
     @Test
     fun a07_bcast () {
         val out = all("""
-            var f : task @LOCAL->@[]->()->()
-            set f = task @LOCAL->@[]->()->() {
+            var f : task @LOCAL->@[]->()->()->()
+            set f = task @LOCAL->@[]->()->()->() {
                 await _(self->mem.evt != 0):_int
                 output std _(self->mem.evt+0):_int
             }
             spawn f ()
             
-            var g : task @LOCAL->@[]->()->()
-            set g = task @LOCAL->@[]->()->() {
+            var g : task @LOCAL->@[]->()->()->()
+            set g = task @LOCAL->@[]->()->()->() {
                 await _(self->mem.evt != 0):_int
                 output std _(self->mem.evt+10):_int
                 await _(self->mem.evt != 0):_int
@@ -198,16 +198,16 @@ class TTask {
     @Test
     fun a08_bcast_block () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()
-            set f = task @LOCAL->@[]->()->() {
+            var f: task @LOCAL->@[]->()->()->()
+            set f = task @LOCAL->@[]->()->()->() {
                 await _1:_int
                 output std _(self->mem.evt+0):_int    -- only on kill
             }
             spawn f ()
             
             {
-                var g: task @LOCAL->@[]->()->()
-                set g = task @LOCAL->@[]->()->() {
+                var g: task @LOCAL->@[]->()->()->()
+                set g = task @LOCAL->@[]->()->()->() {
                     await _(self->mem.evt != 0):_int
                     output std _(self->mem.evt+10):_int
                     await _(self->mem.evt != 0):_int
@@ -223,12 +223,12 @@ class TTask {
     @Test
     fun a09_nest () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()
-            set f = task @LOCAL->@[]->()->() {
+            var f: task @LOCAL->@[]->()->()->()
+            set f = task @LOCAL->@[]->()->()->() {
                 output std _1:_int
                 await _(self->mem.evt != 0):_int
-                var g: task @LOCAL->@[]->()->()
-                set g = task @LOCAL->@[]->()->() {
+                var g: task @LOCAL->@[]->()->()->()
+                set g = task @LOCAL->@[]->()->()->() {
                     output std _2:_int
                     await _(self->mem.evt != 0):_int
                     output std _3:_int
@@ -249,12 +249,12 @@ class TTask {
     @Test
     fun a10_block_out () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()
-            set f = task @LOCAL->@[]->()->() {
+            var f: task @LOCAL->@[]->()->()->()
+            set f = task @LOCAL->@[]->()->()->() {
                 output std _10:_int
                 {
-                    var g: task @LOCAL->@[]->()->()
-                    set g = task @LOCAL->@[]->()->() {
+                    var g: task @LOCAL->@[]->()->()->()
+                    set g = task @LOCAL->@[]->()->()->() {
                         output std _20:_int
                         await _1:_int
                         output std _21:_int
@@ -269,8 +269,8 @@ class TTask {
                     await _(self->mem.evt != 0):_int
                 }
                 output std _11:_int
-                var h: task @LOCAL->@[]->()->()
-                set h = task @LOCAL->@[]->()->() {
+                var h: task @LOCAL->@[]->()->()->()
+                set h = task @LOCAL->@[]->()->()->() {
                     output std _30:_int
                     await _(self->mem.evt != 0):_int
                     output std _31:_int
@@ -288,10 +288,10 @@ class TTask {
     @Test
     fun a11_self_kill () {
         val out = all("""
-            var g : task @LOCAL->@[]->()->()
-            set g = task @LOCAL->@[]->()->() {
-                var f : task @LOCAL->@[]->()->()
-                set f = task @LOCAL->@[]->()->() {
+            var g : task @LOCAL->@[]->()->()->()
+            set g = task @LOCAL->@[]->()->()->() {
+                var f : task @LOCAL->@[]->()->()->()
+                set f = task @LOCAL->@[]->()->()->() {
                     output std _1:_int
                     await _(self->mem.evt != 0):_int
                     output std _4:_int
@@ -314,10 +314,10 @@ class TTask {
     @Test
     fun a12_self_kill () {
         val out = all("""
-            var g : task @LOCAL->@[]->()->()
-            set g = task @LOCAL->@[]->()->() {
-                var f : task @LOCAL->@[]->()->()
-                set f = task @LOCAL->@[]->()->() {
+            var g : task @LOCAL->@[]->()->()->()
+            set g = task @LOCAL->@[]->()->()->() {
+                var f : task @LOCAL->@[]->()->()->()
+                set f = task @LOCAL->@[]->()->()->() {
                     output std _1:_int
                     await _(self->mem.evt != 0):_int
                     output std _4:_int
@@ -347,10 +347,10 @@ class TTask {
     @Test
     fun b01_defer () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()
-            set f = task @LOCAL->@[]->()->() {
-                var defer : task @LOCAL->@[]->()->()
-                set defer = task @LOCAL->@[]->()->() {
+            var f: task @LOCAL->@[]->()->()->()
+            set f = task @LOCAL->@[]->()->()->() {
+                var defer : task @LOCAL->@[]->()->()->()
+                set defer = task @LOCAL->@[]->()->()->() {
                     await _(self->mem.evt == 0):_int
                     output std _2:_int
                 }
@@ -367,11 +367,11 @@ class TTask {
     @Test
     fun b02_defer_block () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()
-            set f = task @LOCAL->@[]->()->() {
+            var f: task @LOCAL->@[]->()->()->()
+            set f = task @LOCAL->@[]->()->()->() {
                 {
-                    var defer : task @LOCAL->@[]->()->()
-                    set defer = task @LOCAL->@[]->()->() {
+                    var defer : task @LOCAL->@[]->()->()->()
+                    set defer = task @LOCAL->@[]->()->()->() {
                         await _(self->mem.evt == 0):_int
                         output std _2:_int
                     }
@@ -392,11 +392,11 @@ class TTask {
     @Test
     fun c00_throw () {
         val out = all("""
-            var h: task @LOCAL->@[]->()->()
-            set h = task @LOCAL->@[]->()->() {
+            var h: task @LOCAL->@[]->()->()->()
+            set h = task @LOCAL->@[]->()->()->() {
                catch {
-                    var f: task @LOCAL->@[]->()->()
-                    set f = task @LOCAL->@[]->()->() {
+                    var f: task @LOCAL->@[]->()->()->()
+                    set f = task @LOCAL->@[]->()->()->() {
                         await _1:_int
                         output std _1:_int
                     }
@@ -413,16 +413,16 @@ class TTask {
     @Test
     fun c01_throw () {
         val out = all("""
-            var h: task @LOCAL->@[]->()->()
-            set h = task @LOCAL->@[]->()->() {
+            var h: task @LOCAL->@[]->()->()->()
+            set h = task @LOCAL->@[]->()->()->() {
                 catch {
-                    var f: task @LOCAL->@[]->()->()
-                    set f = task @LOCAL->@[]->()->() {
+                    var f: task @LOCAL->@[]->()->()->()
+                    set f = task @LOCAL->@[]->()->()->() {
                         await _(self->mem.evt != 0):_int
                         output std _999:_int
                     }
-                    var g: task @LOCAL->@[]->()->()
-                    set g = task @LOCAL->@[]->()->() {
+                    var g: task @LOCAL->@[]->()->()->()
+                    set g = task @LOCAL->@[]->()->()->() {
                         await _1:_int
                         output std _1:_int
                     }
@@ -442,17 +442,17 @@ class TTask {
     @Test
     fun c02_throw_par2 () {
         val out = all("""
-            var main : task @LOCAL->@[]->()->()
-            set main = task @LOCAL->@[]->()->() {
-                var fg: task @LOCAL->@[]->()->()
-                set fg = task @LOCAL->@[]->()->() {
-                    var f: task @LOCAL->@[]->()->()
-                    set f = task @LOCAL->@[]->()->() {
+            var main : task @LOCAL->@[]->()->()->()
+            set main = task @LOCAL->@[]->()->()->() {
+                var fg: task @LOCAL->@[]->()->()->()
+                set fg = task @LOCAL->@[]->()->()->() {
+                    var f: task @LOCAL->@[]->()->()->()
+                    set f = task @LOCAL->@[]->()->()->() {
                         await _(self->mem.evt == 2):_int
                         output std _999:_int
                     }
-                    var g: task @LOCAL->@[]->()->()
-                    set g = task @LOCAL->@[]->()->() {
+                    var g: task @LOCAL->@[]->()->()->()
+                    set g = task @LOCAL->@[]->()->()->() {
                         await _(self->mem.evt == 0):_int
                         output std _2:_int
                     }
@@ -461,8 +461,8 @@ class TTask {
                     spawn g ()
                     throw
                 }
-                var h: task @LOCAL->@[]->()->()
-                set h = task @LOCAL->@[]->()->() {
+                var h: task @LOCAL->@[]->()->()->()
+                set h = task @LOCAL->@[]->()->()->() {
                     await _(self->mem.evt == 0):_int
                     output std _1:_int
                 }
@@ -485,11 +485,11 @@ class TTask {
             set err = func @[]->()->() {
                 throw
             }
-            var h: task @LOCAL->@[]->()->()
-            set h = task @LOCAL->@[]->()->() {
+            var h: task @LOCAL->@[]->()->()->()
+            set h = task @LOCAL->@[]->()->()->() {
                catch {
-                    var f: task @LOCAL->@[]->()->()
-                    set f = task @LOCAL->@[]->()->() {
+                    var f: task @LOCAL->@[]->()->()->()
+                    set f = task @LOCAL->@[]->()->()->() {
                         await _1:_int
                         output std _1:_int
                     }
@@ -524,12 +524,29 @@ class TTask {
 
     // FIELDS
 
+    @Test
+    fun d01_field () {
+        val out = all("""
+            var f: task @LOCAL->@[]->()->_int->()
+            set f = task @LOCAL->@[]->()->_int->() {
+                set pub = _3:_int
+                output std _1:_int
+            }
+            spawn f ()
+            output std _2:_int
+            output std f.pub
+            set f.pub = _4:_int
+            output std f.pub
+        """.trimIndent())
+        assert(out == "1\n2\n3\n4\n") { out }
+    }
+
     // SPAWN / DYNAMIC
 
     @Test
     fun e01_spawn () {
         val out = all("""
-            spawn task @LOCAL->@[]->()->() {
+            spawn task @LOCAL->@[]->()->()->() {
                 output std _1:_int
                 await _(self->mem.evt != 0):_int
                 output std _3:_int
@@ -543,7 +560,7 @@ class TTask {
     @Test
     fun e02_spawn_free () {
         val out = all("""
-            spawn task @LOCAL->@[]->()->() {
+            spawn task @LOCAL->@[]->()->()->() {
                 output std _1:_int
                 await _(self->mem.evt != 0):_int
                 output std _3:_int

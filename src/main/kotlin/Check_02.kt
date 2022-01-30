@@ -104,40 +104,41 @@ fun check_02_after_tps (s: Stmt) {
                 // transform inp2, out2 to use scopes from the call @LOCAL... (vs arg scopes @a1...)
                 val (inp2,out2) = if (func !is Type.Func) Pair(inp1,out1) else
                 {
-                    fun aux (tp: Type, dofunc: Boolean): Type {
-                        return when (tp) {
-                            is Type.Unit, is Type.Nat, is Type.Rec -> tp
-                            is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { aux(it,dofunc) }.toTypedArray())
-                            is Type.Union -> Type.Union(tp.tk_, tp.isrec, tp.vec.map { aux(it,dofunc) }.toTypedArray())
+                    fun Type.aux (dofunc: Boolean): Type {
+                        return when (this) {
+                            is Type.Unit, is Type.Nat, is Type.Rec -> this
+                            is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.aux(dofunc) }.toTypedArray())
+                            is Type.Union -> Type.Union(this.tk_, this.isrec, this.vec.map { it.aux(dofunc) }.toTypedArray())
                             is Type.Ptr -> {
-                                val ret = tp.xscp1.let { scp ->
+                                val ret = this.xscp1.let { scp ->
                                     acc[scp.lbl].let { if (it == null) null else it[scp.num]!! }
                                 }
-                                if (ret == null) tp else {
-                                    Type.Ptr(tp.tk_, ret.first, ret.second, aux(tp.pln,dofunc))
+                                if (ret == null) this else {
+                                    Type.Ptr(this.tk_, ret.first, ret.second, this.pln.aux(dofunc))
                                 }
                             }
-                            is Type.Func -> if (!dofunc) tp else {
-                                val ret = tp.xscp1s.first.let { scp ->
+                            is Type.Func -> if (!dofunc) this else {
+                                val ret = this.xscp1s.first.let { scp ->
                                     if (scp == null) {
                                         null
                                     } else {
-                                        acc[scp.lbl].let { if (it == null) Pair(tp.xscp1s.first,tp.xscp2s!!.first) else it[scp.num]!! }
+                                        acc[scp.lbl].let { if (it == null) Pair(this.xscp1s.first,this.xscp2s!!.first) else it[scp.num]!! }
                                     }
                                 }
                                 Type.Func (
-                                    tp.tk_,
-                                    Pair(ret?.first,  tp.xscp1s.second),
-                                    Pair(ret?.second, tp.xscp2s!!.second),
-                                    aux(tp.inp,dofunc),
-                                    aux(tp.out,dofunc)
+                                    this.tk_,
+                                    Pair(ret?.first,  this.xscp1s.second),
+                                    Pair(ret?.second, this.xscp2s!!.second),
+                                    this.inp.aux(dofunc),
+                                    this.pub?.aux(dofunc),
+                                    this.out.aux(dofunc)
                                 )
                             }
                         }
                     }
                     Pair (
-                        aux(inp1,false).clone(e,e.tk.lin,e.tk.col),
-                        aux(out1,true).clone(e,e.tk.lin,e.tk.col)
+                        inp1.aux(false).clone(e,e.tk.lin,e.tk.col),
+                        out1.aux(true).clone(e,e.tk.lin,e.tk.col)
                     )
                 }
 

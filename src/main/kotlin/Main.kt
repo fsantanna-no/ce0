@@ -6,7 +6,7 @@ fun ce2c (ce: String): Pair<Boolean,String> {
     val all = All_new(PushbackReader(StringReader(ce), 2))
     lexer(all)
     try {
-        val s = parser_stmts(all, Pair(TK.EOF,null))
+        val s = parser_stmts(all)
         s.setUps(null)
         s.setEnvs(null)
         check_01_before_tps(s)

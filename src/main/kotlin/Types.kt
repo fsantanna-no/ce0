@@ -43,36 +43,37 @@ fun Stmt.setTypes () {
                                         ?: Pair(this, scp2)
                                 }
 
-                                fun map(tp: Type): Type {
-                                    return when (tp) {
-                                        is Type.Ptr -> tp.xscp1.get(tp.xscp2!!).let {
-                                            Type.Ptr(tp.tk_, it.first, it.second, map(tp.pln))
+                                fun Type.map (): Type {
+                                    return when (this) {
+                                        is Type.Ptr -> this.xscp1.get(this.xscp2!!).let {
+                                            Type.Ptr(this.tk_, it.first, it.second, this.pln.map())
                                                 .clone(e, e.tk.lin, e.tk.col)
                                         }
-                                        is Type.Tuple -> Type.Tuple(tp.tk_, tp.vec.map { map(it) }.toTypedArray())
+                                        is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.map() }.toTypedArray())
                                             .clone(e, e.tk.lin, e.tk.col)
                                         is Type.Union -> Type.Union(
-                                            tp.tk_,
-                                            tp.isrec,
-                                            tp.vec.map { map(it) }.toTypedArray()
+                                            this.tk_,
+                                            this.isrec,
+                                            this.vec.map { it.map() }.toTypedArray()
                                         ).clone(e, e.tk.lin, e.tk.col)
                                         is Type.Func -> {
-                                            val clo = tp.xscp1s.first?.get(tp.xscp2s!!.first!!)
-                                            val (x1, x2) = tp.xscp1s.second.zip(tp.xscp2s!!.second)
+                                            val clo = this.xscp1s.first?.get(this.xscp2s!!.first!!)
+                                            val (x1, x2) = this.xscp1s.second.zip(this.xscp2s!!.second)
                                                 .map { it.first.get(it.second) }
                                                 .unzip()
                                             Type.Func(
-                                                tp.tk_,
+                                                this.tk_,
                                                 Pair(clo?.first, x1.toTypedArray()),
                                                 Pair(clo?.second, x2.toTypedArray()),
-                                                map(tp.inp),
-                                                map(tp.out)
+                                                this.inp.map(),
+                                                this.pub?.map(),
+                                                this.out.map()
                                             ).clone(e, e.tk.lin, e.tk.col)
                                         }
-                                        else -> tp
+                                        else -> this
                                     }
                                 }
-                                map(it.out)
+                                it.out.map()
                             }
                         }
                         else -> {

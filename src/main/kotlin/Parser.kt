@@ -67,9 +67,15 @@ fun parser_type (all: All): Type {
             all.accept_err(TK.CHAR, ']')
             all.accept_err(TK.ARROW)
             val inp = parser_type(all)
+
+            val pub = if (tk0.enu == TK.TASK) {
+                all.accept_err(TK.ARROW)
+                parser_type(all)
+            } else null
+
             all.accept_err(TK.ARROW)
             val out = parser_type(all) // right associative
-            Type.Func(tk0, Pair(clo,scps.toTypedArray()), null, inp, out)
+            Type.Func(tk0, Pair(clo,scps.toTypedArray()), null, inp, pub, out)
         }
         else -> {
             all.err_expected("type")
@@ -278,7 +284,7 @@ fun parser_block (all: All): Stmt.Block {
     all.accept_err(TK.CHAR,'{')
     val tk0 = all.tk0 as Tk.Chr
     val scp = all.accept(TK.XSCPCST).let { if (it) all.tk0 as Tk.Scp1 else null }
-    val ret = parser_stmts(all, Pair(TK.CHAR,'}'))
+    val ret = parser_stmts(all)
     all.accept_err(TK.CHAR,'}')
     return Stmt.Block(tk0, iscatch, scp, ret)
 }
@@ -381,7 +387,7 @@ fun parser_stmt (all: All): Stmt {
     }
 }
 
-fun parser_stmts (all: All, opt: Pair<TK,Char?>): Stmt {
+fun parser_stmts (all: All): Stmt {
     fun enseq (s1: Stmt, s2: Stmt): Stmt {
         return when {
             (s1 is Stmt.Nop) -> s2

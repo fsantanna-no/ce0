@@ -11,7 +11,7 @@ sealed class Type (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
         val tk_: Tk.Key,
         val xscp1s: Pair<Tk.Scp1?,Array<Tk.Scp1>>,   // first=closure scope, second=input scopes
         var xscp2s: Pair<Scp2?,Array<Scp2>>?,
-        val inp: Type, val out: Type
+        val inp: Type, val pub: Type?, val out: Type
     ): Type(N++, tk_, null, null)
 }
 

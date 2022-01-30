@@ -11,7 +11,7 @@ class TEnv {
         val all = All_new(PushbackReader(StringReader(inp), 2))
         lexer(all)
         try {
-            val s = parser_stmts(all, Pair(TK.EOF,null))
+            val s = parser_stmts(all)
             s.setUps(null)
             s.setEnvs(null)
             check_01_before_tps(s)
