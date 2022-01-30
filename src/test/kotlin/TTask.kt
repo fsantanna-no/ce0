@@ -74,7 +74,7 @@ class TTask {
             awake f _1:_int
             awake f _1:_int
         """.trimIndent())
-        assert(out.endsWith("Assertion `task->state==TASK_UNBORN || task->state==TASK_AWAITING' failed.\n")) { out }
+        assert(out.endsWith("Assertion `task0->state==TASK_UNBORN || task0->state==TASK_AWAITING' failed.\n")) { out }
     }
     @Test
     fun a03_var () {

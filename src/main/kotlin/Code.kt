@@ -210,7 +210,7 @@ fun String.mem (up: Any): String {
     val func = if (up is Expr.Func) up else up.ups_first { it is Expr.Func }
     return when {
         (func == null) -> "(global.$this)"
-        (this in arrayOf("arg","pub","ret")) -> "(task1->$this)"
+        (this in arrayOf("arg","pub","evt","ret")) -> "(task1->$this)"
         else -> "(task2->$this)"
     }
 }
@@ -443,8 +443,11 @@ fun code_fe (e: Expr) {
             val clo_block = if (isclo) e.type.xscp1s.first!!.toce(e.wup!!) else e.local()
             val src = """
                 ${if (isnone) "static" else ""}
-                Func_${e.n} pln_$tsk_var = { (Task_F)f_$tsk_var, TASK_UNBORN, 0, {}, {} };
-                ${e.type.xscp1s.first.let { if (it==null) "" else "pln_$tsk_var.${it.lbl_num()} = ${it.toce(e.wup!!)};\n" }}
+                Func_${e.n} pln_$tsk_var;
+                pln_$tsk_var.task1.task0.f     = (Task_F) f_$tsk_var;
+                pln_$tsk_var.task1.task0.state = TASK_UNBORN;
+                pln_$tsk_var.task1.task0.pc    = 0;
+                ${e.type.xscp1s.first.let { if (it==null) "" else "pln_$tsk_var.task1.${it.lbl_num()} = ${it.toce(e.wup!!)};\n" }}
                 ${e.ups.map { "pln_$tsk_var.${it.str} = ${it.str.mem(e.wup!!)};\n" }.joinToString("")}
                 ${e.type.toce()}* ptr_$tsk_var = (${e.type.toce()}*)
                     ${if (isnone) "&pln_$tsk_var" else "malloc(sizeof(Func_${e.n}))"}; // TODO: malloc only if escapes
