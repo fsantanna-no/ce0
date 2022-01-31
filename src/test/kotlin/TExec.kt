@@ -1860,4 +1860,23 @@ class TExec {
         """.trimIndent())
         assert(out == "<.2 <.1>>\n<.1>\n") { out }
     }
+    @Test
+    fun z16_rec () {
+        val out = all(
+            """
+            var frec : func @[]->_int->_int
+            set frec = func @[]->_int->_int {
+                if _(task1->arg == 1):_int {
+                    set ret = _1:_int
+                } else {
+                    var tmp: _int
+                    set tmp = frec _(task1->arg-1):_int
+                    set ret = _(task1->arg + task2->tmp):_int
+                }
+            }
+            output std (frec _5:_int)
+        """.trimIndent()
+        )
+        assert(out == "720\n") { out }
+    }
 }
