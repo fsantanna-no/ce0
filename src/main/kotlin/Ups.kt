@@ -33,6 +33,7 @@ fun Type.setUps (up: Any) {
         is Type.Tuple -> this.vec.forEach { it.setUps(this) }
         is Type.Union -> this.vec.forEach { it.setUps(this) }
         is Type.Func  -> { this.inp.setUps(this) ; this.pub?.setUps(this) ; this.out.setUps(this) }
+        is Type.Tasks -> this.tsk.setUps(this)
         is Type.Ptr   -> this.pln.setUps(this)
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }
@@ -96,7 +97,7 @@ fun Stmt.setUps (up: Any?) {
             this.false_.setUps(this)
         }
         is Stmt.Loop  -> this.block.setUps(this)
-        is Stmt.LoopT -> { this.i.setUps(this) ; this.block.setUps(this) }
+        is Stmt.LoopT -> { this.i.setUps(this) ; this.tsks.setUps(this) ; this.block.setUps(this) }
         is Stmt.Block -> this.body.setUps(this)
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }

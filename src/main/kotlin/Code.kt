@@ -14,7 +14,7 @@ fun Type.pos (): String {
         is Type.Tuple -> "struct " + this.toce()
         is Type.Union -> "struct " + this.toce()
         is Type.Func  -> this.toce() + "*"
-        is Type.Tasks -> TODO()
+        is Type.Tasks -> "TODO"
     }
 }
 
@@ -526,12 +526,14 @@ fun code_fs (s: Stmt) {
             """.trimIndent()
             Code(tst.type+true_.type+false_.type, src, "")
         }
-        is Stmt.Loop  -> CODE.removeFirst().let {
+        is Stmt.Loop -> CODE.removeFirst().let {
             Code(it.type, "while (1) { ${it.stmt} }", "")
         }
-        is Stmt.LoopT  -> CODE.removeFirst().let {
-            Code(it.type, "while (1) { ${it.stmt} }", "")
-            TODO()
+        is Stmt.LoopT -> {
+            val block = CODE.removeFirst()
+            val tsks  = CODE.removeFirst()
+            val i     = CODE.removeFirst()
+            Code(i.type+tsks.type+block.type, i.stmt+tsks.stmt + "while (1) { TODO; ${block.stmt} }", "")
         }
         is Stmt.Break -> {
             val (_,unlink,kill) = (s.ups_first { it is Stmt.Loop } as Stmt.Loop).block.link_unlink_kill()

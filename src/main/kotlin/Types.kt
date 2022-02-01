@@ -130,6 +130,7 @@ fun Stmt.setTypes () {
                 }
             }
             is Expr.Var -> e.env()!!.toType()
+            else -> TODO()
         }
     }
     this.visit(false, null, ::fe, null)
