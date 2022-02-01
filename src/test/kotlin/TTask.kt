@@ -390,6 +390,15 @@ class TTask {
     // THROW / CATCH
 
     @Test
+    fun c00_catch () {
+        val out = all("""
+           catch {
+           }
+        """.trimIndent())
+        assert(out == "(ln 1, col 7): invalid `catch` : requires enclosing task") { out }
+    }
+
+    @Test
     fun c00_throw () {
         val out = all("""
             var h: task @LOCAL->@[]->()->()->()

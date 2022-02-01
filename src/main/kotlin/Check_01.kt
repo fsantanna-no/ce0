@@ -152,13 +152,20 @@ fun check_01_before_tps (s: Stmt) {
                     "invalid return : no enclosing function"
                 }
             }
-            is Stmt.Block -> s.xscp1?.let {
-                All_assert_tk(it, it.num == null) {
-                    "invalid pool : unexpected `_${it.num}´ depth"
+            is Stmt.Block -> {
+                s.xscp1?.let {
+                    All_assert_tk(it, it.num == null) {
+                        "invalid pool : unexpected `_${it.num}´ depth"
+                    }
+                    val dcl = s.env(it.lbl)
+                    All_assert_tk(it, dcl == null) {
+                        "invalid pool : \"@${it.lbl}\" is already declared (ln ${dcl!!.toTk().lin})"
+                    }
                 }
-                val dcl = s.env(it.lbl)
-                All_assert_tk(it, dcl == null) {
-                    "invalid pool : \"@${it.lbl}\" is already declared (ln ${dcl!!.toTk().lin})"
+                if (s.iscatch) {
+                    All_assert_tk(s.tk, s.ups_first { it is Expr.Func } != null) {
+                        "invalid `catch` : requires enclosing task"
+                    }
                 }
             }
         }
