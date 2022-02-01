@@ -210,7 +210,8 @@ fun String.mem (up: Any): String {
     val func = if (up is Expr.Func) up else up.ups_first { it is Expr.Func }
     return when {
         (func == null) -> "(global.$this)"
-        (this in arrayOf("arg","pub","evt","ret")) -> "(task1->$this)"
+        (this == "ret") -> "(task1->$this)"    // TODO: call stack
+        (this in arrayOf("arg","pub","evt")) -> "(task2->task1.$this)"
         else -> "(task2->$this)"
     }
 }
@@ -416,9 +417,9 @@ fun code_fe (e: Expr) {
                 void f_$tsk_var (Stack* stack, ${e.type.toce()}* task1, X_${e.type.toce()} xxx) {
                     Task*        task0 = (Task*)        task1;
                     Func_${e.n}* task2 = (Func_${e.n}*) task1;
-                    ${if (istk) "" else """     // TODO: call stack
-                        Func_${e.n} _task2_ = *task2;
-                        task2 = &_task2_;
+                    ${if (istk) "" else """             // TODO: call stack
+                        Func_${e.n} _task2_ = *task2;   // task2 is copied (use for arg and everything else)
+                        task2 = &_task2_;               // task0, task1 are unchanged (use for task fields and ret)
                         
                     """.trimIndent()}
                     ${e.type.xscp1s.second.mapIndexed { i,_ -> "task1->blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
@@ -426,7 +427,7 @@ fun code_fe (e: Expr) {
                     switch (task0->pc) {
                         case 0: {                    
                             assert(task0->state == TASK_UNBORN);
-                            task1->arg = xxx.pars.arg;
+                            task2->task1.arg = xxx.pars.arg;
                             ${it.stmt}
                             task0->state = TASK_DEAD;
                             break;

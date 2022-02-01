@@ -1,3 +1,8 @@
+- loop tk in @block { stack tk }
+- natural termination, free
+
+- remover // TODO: call stack
+  - usar stack de C para fcs normais
 - rever local/mem/scp1.toce
 - catch N, throw N
 - spawn dyn @block

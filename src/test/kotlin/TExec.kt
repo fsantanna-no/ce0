@@ -253,7 +253,7 @@ class TExec {
         val out = all("""
         var f : (func@[]-> _int -> _int)
         set f = func@[]-> _int->_int {
-           set arg = _(task1->arg+1): _int
+           set arg = _(task2->task1.arg+1): _int
            set ret = arg
            return
         }
@@ -540,7 +540,7 @@ class TExec {
         val out = all("""
         var f : func@[@i1]-> /_int@i1 -> ()
         set f = func@[@i1]-> /_int@i1 -> () {
-           set arg\ = _(*task1->arg+1): _int
+           set arg\ = _(*task2->task1.arg+1): _int
            return
         }
         var x: _int
@@ -1866,17 +1866,20 @@ class TExec {
             """
             var frec : func @[]->_int->_int
             set frec = func @[]->_int->_int {
-                if _(task1->arg == 1):_int {
+                --output std arg
+                if _(task2->task1.arg == 1):_int {
                     set ret = _1:_int
                 } else {
                     var tmp: _int
-                    set tmp = frec _(task1->arg-1):_int
-                    set ret = _(task1->arg + task2->tmp):_int
+                    set tmp = frec _(task2->task1.arg-1):_int
+                    --output std arg
+                    --output std tmp
+                    set ret = _(task2->task1.arg + task2->tmp):_int
                 }
             }
             output std (frec _5:_int)
         """.trimIndent()
         )
-        assert(out == "720\n") { out }
+        assert(out == "15\n") { out }
     }
 }
