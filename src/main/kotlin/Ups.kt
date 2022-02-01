@@ -96,6 +96,7 @@ fun Stmt.setUps (up: Any?) {
             this.false_.setUps(this)
         }
         is Stmt.Loop  -> this.block.setUps(this)
+        is Stmt.LoopT -> { this.i.setUps(this) ; this.block.setUps(this) }
         is Stmt.Block -> this.body.setUps(this)
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }

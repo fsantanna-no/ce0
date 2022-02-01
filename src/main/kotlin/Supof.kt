@@ -43,6 +43,7 @@ fun Type.Func.mapLabels (up: Any): Type.Func {
             is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.aux() }.toTypedArray())
             is Type.Union -> Type.Union(this.tk_, this.isrec, this.vec.map { it.aux() }.toTypedArray())
             is Type.Func  -> this
+            is Type.Tasks -> TODO()
             is Type.Ptr   -> {
                 if (this.xscp1.enu == TK.XSCPCST) {
                     this

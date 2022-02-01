@@ -777,7 +777,7 @@ class TParser {
         //assert(s is Stmt.Var && s.src.e is Expr.TDisc)
     }
 
-    // TASKS
+    // TASKS / PUB / POOL
 
     @Test
     fun d01_type_task () {
@@ -794,10 +794,53 @@ class TParser {
         assert(s is Stmt.Spawn && s.e is Expr.Call && s.e.f is Expr.Var)
     }
 
+    // LOOP
+
+    @Test
+    fun d03_stmt_loop () {
+        val all = All_new(PushbackReader(StringReader("loop tk in () {}"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.LoopT && s.i is Expr.Var && s.tsks is Expr.Unit)
+    }
+    @Test
+    fun d04_loop () {
+        val all = All_new(PushbackReader(StringReader("loop () in @LOCAL {}"), 2))
+        lexer(all)
+        try {
+            parser_stmt(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 6): expected variable expression") { e.message!! }
+        }
+    }
+    @Test
+    fun d05_loop () {
+        val all = All_new(PushbackReader(StringReader("loop e {}"), 2))
+        lexer(all)
+        try {
+            parser_stmt(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 8): expected `in` : have `{´") { e.message!! }
+        }
+    }
+    @Test
+    fun d06_loop () {
+        val all = All_new(PushbackReader(StringReader("loop e in {}"), 2))
+        lexer(all)
+        try {
+            parser_stmt(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 11): expected `@´ : have `{´") { e.message!! }
+        }
+    }
+
     // PUB
 
     @Test
-    fun e01_error () {
+    fun d07_error () {
         val all = All_new(PushbackReader(StringReader("x.y"), 2))
         lexer(all)
         try {
@@ -807,12 +850,32 @@ class TParser {
             assert(e.message == "(ln 1, col 3): unexpected \"y\"") { e.message!! }
         }
     }
-
     @Test
-    fun e02_ok () {
+    fun d08_ok () {
         val all = All_new(PushbackReader(StringReader("set x.pub = ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
         assert(s is Stmt.ESet && s.dst is Expr.Pub)
+    }
+
+    // TASKS TYPE
+
+    @Test
+    fun d09_tasks () { // task @LOCAL->@[]->()->()->() {}
+        val all = All_new(PushbackReader(StringReader("tasks @[]->()->()->()"), 2))
+        lexer(all)
+        try {
+            parser_type(all)
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 7): expected `@´ : have `@[´") { e.message!! }
+        }
+    }
+    @Test
+    fun d10_tassk () {
+        val all = All_new(PushbackReader(StringReader("tasks @LOCAL->@[]->()->()->()"), 2))
+        lexer(all)
+        val tp = parser_type(all)
+        assert(tp is Type.Tasks && tp.tsk is Type.Func && tp.tsk.tk.enu==TK.TASK && tp.tsk.xscp1s.first!!.lbl=="LOCAL")
     }
 }

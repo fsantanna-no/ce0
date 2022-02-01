@@ -82,6 +82,7 @@ fun Stmt.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((T
         is Stmt.Seq   -> { this.s1.visit(xpd,fs,fe,ft) ; this.s2.visit(xpd,fs,fe,ft) }
         is Stmt.If    -> { this.tst.visit_(xpd,fs,fe,ft) ; this.true_.visit(xpd,fs,fe,ft) ; this.false_.visit(xpd,fs,fe,ft) }
         is Stmt.Loop  -> { this.block.visit(xpd,fs,fe,ft) }
+        is Stmt.LoopT -> { this.i.visit_(xpd,fs,fe,ft) ; this.block.visit(xpd,fs,fe,ft) }
         is Stmt.Block -> { this.body.visit(xpd,fs,fe,ft) }
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }

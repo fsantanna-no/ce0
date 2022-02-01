@@ -13,6 +13,7 @@ sealed class Type (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
         var xscp2s: Pair<Scp2?,Array<Scp2>>?,
         val inp: Type, val pub: Type?, val out: Type
     ): Type(N++, tk_, null, null)
+    data class Tasks (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
 }
 
 sealed class Attr (val n: Int, val tk: Tk) {
@@ -60,6 +61,7 @@ sealed class Stmt (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class If    (val tk_: Tk.Key, val tst: Expr, val true_: Block, val false_: Block) : Stmt(N++, tk_, null, null)
     data class Ret   (val tk_: Tk.Key) : Stmt(N++, tk_, null, null)
     data class Loop  (val tk_: Tk.Key, val block: Block) : Stmt(N++, tk_, null, null)
+    data class LoopT (val tk_: Tk.Key, val i: Expr.Var, val tsks: Expr, val block: Block) : Stmt(N++, tk_, null, null)
     data class Break (val tk_: Tk.Key) : Stmt(N++, tk_, null, null)
     data class Block (val tk_: Tk.Chr, val iscatch: Boolean, val xscp1: Tk.Scp1?, val body: Stmt) : Stmt(N++, tk_, null, null)
 }

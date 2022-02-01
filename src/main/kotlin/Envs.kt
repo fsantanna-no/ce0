@@ -137,6 +137,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
             env
         }
         is Stmt.Loop  -> { this.block.setEnvs(env) ; env }
+        is Stmt.LoopT -> { this.i.setEnvs(env) ; this.block.setEnvs(env) ; env }
         is Stmt.Block -> {
             this.body.setEnvs(this) // also include blocks w/o labels b/c of inference
             env

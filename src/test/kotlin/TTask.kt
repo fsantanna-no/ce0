@@ -580,4 +580,55 @@ class TTask {
         """.trimIndent())
         assert(out == "1\n2\n3\n4\n") { out }
     }
+
+    // POOL / TASKS
+
+    @Test
+    fun f01_pool () {
+        val out = all("""
+            var f: task @LOCAL->@[]->()->_int->()
+            set f = task @LOCAL->@[]->()->_int->() {
+                set pub = _3:_int
+                output std _1:_int
+            }
+            var fs: tasks @LOCAL->@[]->()->_int->()
+            var x: task @LOCAL->@[]->()->_int->()
+            loop x in @LOCAL {
+            }
+        """.trimIndent())
+        assert(out == "(ln 2, col 6): invalid loop : type mismatch : expected task type") { out }
+    }
+
+    // LOOPT
+
+    @Test
+    fun g01_loopt () {
+        val out = all("""
+            var x: ()
+            loop x in () {
+            }
+        """.trimIndent())
+        assert(out == "(ln 2, col 6): invalid loop : type mismatch : expected task type") { out }
+    }
+
+    @Test
+    fun g02_loopt () {
+        val out = all("""
+            var x: task @LOCAL->@[]->()->_int->()
+            loop x in () {
+            }
+        """.trimIndent())
+        assert(out == "(ln 2, col 11): invalid loop : type mismatch : expected tasks type") { out }
+    }
+
+    @Test
+    fun g03_loopt () {
+        val out = all("""
+            var fs: tasks @LOCAL->@[]->()->_int->()
+            var f: task @LOCAL->@[]->()->_int->()
+            loop f in fs {
+            }
+        """.trimIndent())
+        assert(out == "(ln 2, col 6): invalid loop : type mismatch : expected task type") { out }
+    }
 }

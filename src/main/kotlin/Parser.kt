@@ -47,9 +47,9 @@ fun parser_type (all: All): Type {
                 Type.Union(tk0, isrec, vec)
             }
         }
-        all.accept(TK.FUNC) || all.accept(TK.TASK) -> {
+        all.accept(TK.FUNC) || all.accept(TK.TASK) || all.accept(TK.TASKS) -> {
             val tk0 = all.tk0 as Tk.Key
-            val clo = if (all.accept(TK.XSCPCST) || (tk0.enu==TK.TASK && all.accept_err(TK.XSCPVAR)) || all.accept(TK.XSCPVAR)) {
+            val clo = if (all.accept(TK.XSCPCST) || (tk0.enu!=TK.FUNC && all.accept_err(TK.XSCPVAR)) || all.accept(TK.XSCPVAR)) {
                 val tk = all.tk0 as Tk.Scp1
                 all.accept_err(TK.ARROW)
                 tk
@@ -68,14 +68,24 @@ fun parser_type (all: All): Type {
             all.accept_err(TK.ARROW)
             val inp = parser_type(all)
 
-            val pub = if (tk0.enu == TK.TASK) {
+            val pub = if (tk0.enu != TK.FUNC) {
                 all.accept_err(TK.ARROW)
                 parser_type(all)
             } else null
 
             all.accept_err(TK.ARROW)
             val out = parser_type(all) // right associative
-            Type.Func(tk0, Pair(clo,scps.toTypedArray()), null, inp, pub, out)
+
+            if (tk0.enu == TK.TASKS) {
+                val task = Type.Func (
+                    Tk.Key(TK.TASK, tk0.lin, tk0.col,"task"),
+                    Pair(clo, scps.toTypedArray()),
+                    null, inp, pub, out
+                )
+                Type.Tasks(tk0, task)
+            } else {
+                Type.Func(tk0, Pair(clo,scps.toTypedArray()), null, inp, pub, out)
+            }
         }
         else -> {
             all.err_expected("type")
@@ -413,8 +423,17 @@ fun parser_stmt (all: All): Stmt {
         all.accept(TK.RETURN) -> Stmt.Ret(all.tk0 as Tk.Key)
         all.accept(TK.LOOP) -> {
             val tk0 = all.tk0 as Tk.Key
-            val block = parser_block(all)
-            Stmt.Loop(tk0, block)
+            if (all.check(TK.CHAR, '{')) {
+                val block = parser_block(all)
+                Stmt.Loop(tk0, block)
+            } else {
+                val i = parser_expr(all)
+                All_assert_tk(all.tk0, i is Expr.Var) { "expected variable expression" }
+                all.accept_err(TK.IN)
+                val tsks = parser_expr(all)
+                val block = parser_block(all)
+                Stmt.LoopT(tk0, i as Expr.Var, tsks, block)
+            }
         }
         all.accept(TK.BREAK) -> Stmt.Break(all.tk0 as Tk.Key)
         all.accept(TK.CATCH) || all.check(TK.CHAR,'{') -> parser_block(all)

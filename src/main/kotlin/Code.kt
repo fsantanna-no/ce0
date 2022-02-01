@@ -14,6 +14,7 @@ fun Type.pos (): String {
         is Type.Tuple -> "struct " + this.toce()
         is Type.Union -> "struct " + this.toce()
         is Type.Func  -> this.toce() + "*"
+        is Type.Tasks -> TODO()
     }
 }
 
@@ -260,6 +261,7 @@ fun Stmt.mem_vars (): String {
 
         is Stmt.Var -> "${this.xtype!!.pos()} ${this.tk_.str};\n"
         is Stmt.Loop -> this.block.mem_vars()
+        is Stmt.LoopT -> this.block.mem_vars()
 
         is Stmt.Block -> """
             struct {
@@ -526,6 +528,10 @@ fun code_fs (s: Stmt) {
         }
         is Stmt.Loop  -> CODE.removeFirst().let {
             Code(it.type, "while (1) { ${it.stmt} }", "")
+        }
+        is Stmt.LoopT  -> CODE.removeFirst().let {
+            Code(it.type, "while (1) { ${it.stmt} }", "")
+            TODO()
         }
         is Stmt.Break -> {
             val (_,unlink,kill) = (s.ups_first { it is Stmt.Loop } as Stmt.Loop).block.link_unlink_kill()
