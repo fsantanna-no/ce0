@@ -368,46 +368,52 @@ fun code_fe (e: Expr) {
             val arg  = CODE.removeFirst()
             val f    = CODE.removeFirst()
             val blks = e.xscp1s.first.map { it.toce(e) }.joinToString(",")
-
-            val (pre,pos) =
-                if (e.f is Expr.Var && e.f.tk_.str=="output_std") {
-                //if (ff!=null && ff.ptr is Expr.Var && ff.ptr.tk_.str=="output_std") {
-                    Pair(e.arg.wtype!!.output_std("", arg.expr), "")
-                } else {
-                    val tpf = e.f.wtype
-                    if (tpf is Type.Func) {
-                        val xxx = if (e.getUp() is Stmt.Awake) {
-                            "(X_${tpf.toce()}) {.evt=${arg.expr}}"
-                        } else {
-                            "(X_${tpf.toce()}) {.pars={{$blks}, ${arg.expr}}}"
-                        }
-                        val pre = """
-                            ${tpf.out.pos()} ret_${e.n};    // TODO: call stack
-                            {
-                                Stack stk_${e.n} = { stack, ${e.self_or_null()}, ${e.local()} };
-                                ((F_${tpf.toce()})(${f.expr}->task0.f)) (&stk_${e.n}, ${f.expr}, $xxx);
-                                ${if (tpf.tk.enu != TK.FUNC) "" else "${f.expr}->task0.state = TASK_UNBORN;"}
-                                if (stk_${e.n}.block == NULL) {
-                                    return;
-                                }
-                                ret_${e.n} = (${f.expr}->ret);
-                            }
-                            
-                        """.trimIndent()
-                        Pair(pre, "ret_${e.n}")
-                    } else {
-                        val cll = f.expr + "(" + blks + (if (e.arg is Expr.Unit) "" else arg.expr) + ")"
-                        Pair("", cll)
-                    }
+            val tpf  = e.f.wtype
+            when {
+                (e.f is Expr.Var && e.f.tk_.str=="output_std") -> {
+                    Code (
+                        f.type + arg.type,
+                        f.stmt + arg.stmt + e.arg.wtype!!.output_std("", arg.expr),
+                        ""
+                    )
                 }
-            Code(f.type+arg.type, f.stmt+arg.stmt+pre, pos)
+                (tpf is Type.Func) -> {
+                    val xxx = if (e.getUp() is Stmt.Awake) {
+                        "(X_${tpf.toce()}) {.evt=${arg.expr}}"
+                    } else {
+                        "(X_${tpf.toce()}) {.pars={{$blks}, ${arg.expr}}}"
+                    }
+                    val pre = """
+                        ${tpf.out.pos()} ret_${e.n};    // TODO: call stack
+                        {
+                            Stack stk_${e.n} = { stack, ${e.self_or_null()}, ${e.local()} };
+                            char frame[${f.expr}->task0.size];
+                            memcpy(frame, ${f.expr}, ${f.expr}->task0.size);
+                            ((F_${tpf.toce()})(${f.expr}->task0.f)) (&stk_${e.n}, (${tpf.toce()}*)frame, $xxx);
+                            ${if (tpf.tk.enu != TK.FUNC) "" else "${f.expr}->task0.state = TASK_UNBORN;"}
+                            if (stk_${e.n}.block == NULL) {
+                                return;
+                            }
+                            ret_${e.n} = (((${tpf.toce()}*)frame)->ret);
+                        }
+                        
+                        """.trimIndent()
+                    Code (
+                        f.type + arg.type,
+                        f.stmt + arg.stmt + pre,
+                        "ret_${e.n}"
+                    )
+                }
+                else -> {
+                    Code (
+                        f.type + arg.type,
+                        f.stmt + arg.stmt,
+                        f.expr + "(" + blks + (if (e.arg is Expr.Unit) "" else arg.expr) + ")"
+                    )
+                }
+            }
         }
         is Expr.Func  -> CODE.removeFirst().let {
-            val isclo   = (e.type.xscp1s.first != null)
-            val istk    = (e.type.tk.enu == TK.TASK)
-            val isnone  = !isclo && !istk
-            val tsk_var = "func_${e.n}"
-
             val pre = """
                 typedef struct Func_${e.n} {
                     ${e.type.toce()} task1;
@@ -415,14 +421,9 @@ fun code_fe (e: Expr) {
                     ${e.block.mem_vars()}
                 } Func_${e.n};
                     
-                void f_$tsk_var (Stack* stack, ${e.type.toce()}* task1, X_${e.type.toce()} xxx) {
+                void func_${e.n} (Stack* stack, ${e.type.toce()}* task1, X_${e.type.toce()} xxx) {
                     Task*        task0 = (Task*)        task1;
                     Func_${e.n}* task2 = (Func_${e.n}*) task1;
-                    ${if (istk) "" else """             // TODO: call stack
-                        Func_${e.n} _task2_ = *task2;   // task2 is copied (use for arg and everything else)
-                        task2 = &_task2_;               // task0, task1 are unchanged (use for task fields and ret)
-                        
-                    """.trimIndent()}
                     ${e.type.xscp1s.second.mapIndexed { i,_ -> "task1->blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
                     assert(task0->state==TASK_UNBORN || task0->state==TASK_AWAITING);
                     switch (task0->pc) {
@@ -439,31 +440,44 @@ fun code_fe (e: Expr) {
                     }
                     return;
                 }
-
+                
             """.trimIndent()
 
-            val clo_block = if (isclo) e.type.xscp1s.first!!.toce(e.wup!!) else e.local()
-            val src = """
-                ${if (isnone) "static" else ""}
-                Func_${e.n} pln_$tsk_var;
-                pln_$tsk_var.task1.task0.f     = (Task_F) f_$tsk_var;
-                pln_$tsk_var.task1.task0.state = TASK_UNBORN;
-                pln_$tsk_var.task1.task0.pc    = 0;
-                ${e.type.xscp1s.first.let { if (it==null) "" else "pln_$tsk_var.task1.${it.lbl_num()} = ${it.toce(e.wup!!)};\n" }}
-                ${e.ups.map { "pln_$tsk_var.${it.str} = ${it.str.mem(e.wup!!)};\n" }.joinToString("")}
-                ${e.type.toce()}* ptr_$tsk_var = (${e.type.toce()}*)
-                    ${if (isnone) "&pln_$tsk_var" else "malloc(sizeof(Func_${e.n}))"}; // TODO: malloc only if escapes
-                assert(ptr_$tsk_var!=NULL && "not enough memory");                
-                ${if (isnone) "" else """
-                    *((Func_${e.n}*)ptr_$tsk_var) = pln_$tsk_var;
-                    block_push($clo_block, ptr_$tsk_var);
-                    
-                """.trimIndent()}                   
-                task_link($clo_block, (Task*) ptr_$tsk_var);
-                                        
-            """.trimIndent()
+            val isclo  = (e.type.xscp1s.first != null)
+            val istk   = (e.type.tk.enu == TK.TASK)
+            val isnone = !isclo && !istk
+            val cloblk = if (isclo) e.type.xscp1s.first!!.toce(e.wup!!) else e.local()
 
-            Code(it.type+pre, src, "ptr_$tsk_var")
+            val src = if (isnone) {
+                """
+                    static Func_${e.n} _frame_${e.n};
+                    _frame_${e.n}.task1.task0.size  = sizeof(Func_${e.n});
+                    _frame_${e.n}.task1.task0.state = TASK_UNBORN;
+                    _frame_${e.n}.task1.task0.f     = (Task_F) func_${e.n};
+                    _frame_${e.n}.task1.task0.pc    = 0;
+                    static Func_${e.n}* frame_${e.n} = &_frame_${e.n};
+    
+                """.trimIndent()
+            } else {
+                """
+                    Func_${e.n}* frame_${e.n} = (Func_${e.n}*) malloc(sizeof(Func_${e.n}));
+                    assert(frame_${e.n}!=NULL && "not enough memory");
+                    frame_${e.n}->task1.task0.size  = sizeof(Func_${e.n});
+                    frame_${e.n}->task1.task0.state = TASK_UNBORN;
+                    frame_${e.n}->task1.task0.f     = (Task_F) func_${e.n};
+                    frame_${e.n}->task1.task0.pc    = 0;
+                    ${e.type.xscp1s.first.let {
+                        if (it==null) "" else
+                            "frame_${e.n}->task1.${it.lbl_num()} = ${it.toce(e.wup!!)};\n"
+                    }}
+                    ${e.ups.map {
+                        "frame_${e.n}->${it.str} = ${it.str.mem(e.wup!!)};\n"
+                    }.joinToString("")}
+                    block_push($cloblk, frame_${e.n});
+
+            """.trimIndent()
+            }
+            Code(it.type+pre, src, "((${e.type.pos()}) frame_${e.n})")
         }
     })
 }
@@ -692,6 +706,7 @@ fun Stmt.code (): String {
         #include <assert.h>
         #include <stdio.h>
         #include <stdlib.h>
+        #include <string.h>
         
         #define input_std_int(x)     ({ int _x ; scanf("%d",&_x) ; _x ; })
         #define output_std_Unit_(x)  printf("()")
@@ -735,8 +750,9 @@ fun Stmt.code (): String {
         typedef void (*Task_F) (Stack*, struct Task*, int);
         
         typedef struct Task {
-            Task_F f; // (Stack* stack, Task* task, int evt);
+            int size;
             TASK_STATE state;
+            Task_F f; // (Stack* stack, Task* task, int evt);
             int pc;
             struct {
                 struct Task*  tsk_next;     // next Task in the same block
