@@ -385,8 +385,9 @@ fun code_fe (e: Expr) {
                     )
                 }
                 (tpf is Type.Func) -> {
+                    val istk   = (tpf.tk.enu == TK.TASK)
                     val cloblk = tpf.xscp1s.first.let { if (it == null) e.local() else tpf.xscp1s.first!!.toce(e.wup!!) }
-                    val frame = if (e.wup is Stmt.Awake) f.expr else "frame"
+                    val frame  = if (e.wup is Stmt.Awake) f.expr else "frame"
 
                     val xxx = if (e.getUp() is Stmt.Awake) {
                         "(X_${tpf.toce()}) {.evt=${arg.expr}}"
@@ -409,6 +410,7 @@ fun code_fe (e: Expr) {
                                 assert(frame!=NULL && "not enough memory");
                                 memcpy(frame, ${f.expr}, ${f.expr}->task0.size);
                                 block_push($cloblk, frame);
+                                ${if (istk) "task_link($cloblk, &frame->task0);" else ""}
                                 ((F_${tpf.toce()})(frame->task0.f)) (&stk_${e.n}, frame, $xxx);
                                 ${if (tpf.tk.enu != TK.FUNC) "" else "frame->task0.state = TASK_UNBORN;"}
                                     

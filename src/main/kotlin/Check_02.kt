@@ -176,6 +176,14 @@ fun check_02_after_tps (s: Stmt) {
                     "invalid `awake` : type mismatch : expected running task"
                 }
             }
+            is Stmt.SSpawn -> {
+                val dst  = (s.dst.wtype!! as Type.Run).tsk
+                val call = s.call.f.wtype!!
+                //println("invalid `spawn` : type mismatch : ${dst.tostr()} = ${call.tostr()}")
+                All_assert_tk(s.tk, dst.isSupOf(call)) {
+                    "invalid `spawn` : type mismatch\n    ${dst.tostr()}\n    ${call.tostr()}"
+                }
+            }
             is Stmt.If -> {
                 All_assert_tk(s.tk, s.tst.wtype is Type.Nat) {
                     "invalid condition : type mismatch"
