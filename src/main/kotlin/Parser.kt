@@ -353,7 +353,7 @@ fun parser_stmt (all: All): Stmt {
             //val dst = parser_expr(all)
             all.accept_err(TK.CHAR,'=')
             val tk0 = all.tk0 as Tk.Chr
-            if (all.check(TK.SPAWN) || all.check_err(TK.INPUT)) {
+            if (all.check(TK.INPUT) || all.check(TK.SPAWN)) {
                 val src = parser_stmt(all)
                 Stmt.SSet(tk0, dst.toExpr(), src)
             } else {
