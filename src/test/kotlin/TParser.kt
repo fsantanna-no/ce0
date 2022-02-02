@@ -833,7 +833,7 @@ class TParser {
             parser_stmt(all)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 11): expected `@´ : have `{´") { e.message!! }
+            assert(e.message == "(ln 1, col 11): expected expression : have `{´") { e.message!! }
         }
     }
 
