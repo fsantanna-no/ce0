@@ -14,7 +14,7 @@ fun Type.pos (): String {
         is Type.Tuple -> "struct " + this.toce()
         is Type.Union -> "struct " + this.toce()
         is Type.Func  -> this.toce() + "*"
-        is Type.Tasks -> "TODO"
+        is Type.Tasks -> this.tsk.pos()
     }
 }
 
@@ -78,7 +78,6 @@ fun code_ft (tp: Type) {
                 typedef void (*F_${tp.toce()}) (Stack*, ${tp.toce()}*, X_${tp.toce()});
                 
             """.trimIndent()
-
             TYPES.add(Triple(
                 Pair(tp.toce(), deps(setOf(tp.inp,tp.out))),
                 src,
@@ -256,12 +255,12 @@ fun Any.local (): String {
 fun Stmt.mem_vars (): String {
     return when (this) {
         is Stmt.Nop, is Stmt.SSet, is Stmt.ESet, is Stmt.Nat,
-        is Stmt.SCall, is Stmt.Spawn, is Stmt.Await, is Stmt.Awake, is Stmt.Bcast, is Stmt.Throw,
+        is Stmt.SCall, is Stmt.Spawn, is Stmt.DSpawn, is Stmt.Await, is Stmt.Awake, is Stmt.Bcast, is Stmt.Throw,
         is Stmt.Inp, is Stmt.Out, is Stmt.Ret, is Stmt.Break -> ""
 
         is Stmt.Var -> "${this.xtype!!.pos()} ${this.tk_.str};\n"
         is Stmt.Loop -> this.block.mem_vars()
-        is Stmt.LoopT -> this.block.mem_vars()
+        is Stmt.DLoop -> this.block.mem_vars()
 
         is Stmt.Block -> """
             struct {
@@ -501,7 +500,12 @@ fun code_fs (s: Stmt) {
         is Stmt.Nop -> Code("","","")
         is Stmt.Nat -> Code("", s.tk_.src + "\n", "")
         is Stmt.Seq -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; Code(s1.type+s2.type, s1.stmt+s2.stmt, "") }
-        is Stmt.Var -> Code("","","")
+        is Stmt.Var -> {
+            val src = if (s.xtype is Type.Tasks) {
+                s.tk_.str.mem(s) + " = NULL;\n"
+            } else ""
+            Code("",src,"")
+        }
         is Stmt.SSet  -> {
             val src = CODE.removeFirst()
             val dst = CODE.removeFirst()
@@ -529,11 +533,20 @@ fun code_fs (s: Stmt) {
         is Stmt.Loop -> CODE.removeFirst().let {
             Code(it.type, "while (1) { ${it.stmt} }", "")
         }
-        is Stmt.LoopT -> {
+        is Stmt.DLoop -> {
             val block = CODE.removeFirst()
             val tsks  = CODE.removeFirst()
             val i     = CODE.removeFirst()
-            Code(i.type+tsks.type+block.type, i.stmt+tsks.stmt + "while (1) { TODO; ${block.stmt} }", "")
+            val src   = """
+                {
+                    ${i.expr} = ${tsks.expr};
+                    while (${i.expr} != NULL) {
+                        ${block.stmt}
+                        ${i.expr} = (${s.i.wtype!!.pos()}) ${i.expr}->task0.links.tsk_next;
+                    }
+                }
+            """.trimIndent()
+            Code(tsks.type+i.type+block.type, tsks.stmt+i.stmt+src, "")
         }
         is Stmt.Break -> {
             val (_,unlink,kill) = (s.ups_first { it is Stmt.Loop } as Stmt.Loop).block.link_unlink_kill()
@@ -550,6 +563,17 @@ fun code_fs (s: Stmt) {
         }
         is Stmt.SCall -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
         is Stmt.Spawn -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
+        is Stmt.DSpawn -> {
+            val tsks = CODE.removeFirst()
+            val call = CODE.removeFirst()
+            val task = s.call.f as Expr.Func
+            val src = """
+                if (${tsks.expr} == NULL) {
+                    ${tsks.expr} = ptr_func_${task.n};
+                }
+            """.trimIndent()
+            Code(tsks.type+call.type, tsks.stmt+call.stmt+src+call.expr+";\n", "")
+        }
         is Stmt.Await -> CODE.removeFirst().let {
             val src = """
                 {

@@ -17,8 +17,8 @@ class TTask {
         if (!ok2) {
             return out2
         }
-        val (_,out3) = exec("./out.exe")
-        //val (_,out3) = exec("valgrind ./out.exe")
+        //val (_,out3) = exec("./out.exe")
+        val (_,out3) = exec("valgrind ./out.exe")
             // search in tests output for
             //  - "definitely lost"
             //  - "Invalid read of size"
@@ -610,7 +610,6 @@ class TTask {
         """.trimIndent())
         assert(out == "(ln 2, col 6): invalid loop : type mismatch : expected task type") { out }
     }
-
     @Test
     fun g02_loopt () {
         val out = all("""
@@ -620,7 +619,6 @@ class TTask {
         """.trimIndent())
         assert(out == "(ln 2, col 11): invalid loop : type mismatch : expected tasks type") { out }
     }
-
     @Test
     fun g03_loopt () {
         val out = all("""
@@ -628,7 +626,41 @@ class TTask {
             var f: task @LOCAL->@[]->()->_int->()
             loop f in fs {
             }
+            output std ()
         """.trimIndent())
-        assert(out == "(ln 2, col 6): invalid loop : type mismatch : expected task type") { out }
+        assert(out == "()\n") { out }
+    }
+    @Test
+    fun g04_loopt () {
+        val out = all("""
+            var fs: tasks @LOCAL->@[]->_int->_int->()
+            var f: task @LOCAL->@[]->_int->_int->()
+
+            spawn task @LOCAL->@[]->_int->_int->() {
+                set pub = arg
+                output std pub
+                await _1:_int
+                await _1:_int
+            } _1:_int in fs
+
+            spawn task @LOCAL->@[]->_int->_int->() {
+                set pub = arg
+                output std pub
+                await _1:_int
+            } _2:_int in fs
+
+            loop f in fs {
+                output std f.pub
+            }
+            
+            bcast @GLOBAL _10:_int
+            
+            loop f in fs {
+                output std f.pub
+            }
+            
+            output std ()
+        """.trimIndent())
+        assert(out == "1\n2\n1\n2\n2\n()\n") { out }
     }
 }

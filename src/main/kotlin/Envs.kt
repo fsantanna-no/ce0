@@ -120,6 +120,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
         }
         is Stmt.SCall -> { this.e.setEnvs(env) ; env }
         is Stmt.Spawn -> { this.e.setEnvs(env) ; env }
+        is Stmt.DSpawn -> { this.call.setEnvs(this) ; this.tsks.setEnvs(this) ; env }
         is Stmt.Await -> { this.e.setEnvs(env) ; env }
         is Stmt.Awake -> { this.e.setEnvs(env) ; env }
         is Stmt.Bcast -> { this.e.setEnvs(env) ; env }
@@ -137,7 +138,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
             env
         }
         is Stmt.Loop  -> { this.block.setEnvs(env) ; env }
-        is Stmt.LoopT -> { this.i.setEnvs(env) ; this.tsks.setEnvs(env) ; this.block.setEnvs(env) ; env }
+        is Stmt.DLoop -> { this.i.setEnvs(env) ; this.tsks.setEnvs(env) ; this.block.setEnvs(env) ; env }
         is Stmt.Block -> {
             this.body.setEnvs(this) // also include blocks w/o labels b/c of inference
             env

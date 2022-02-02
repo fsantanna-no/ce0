@@ -82,6 +82,7 @@ fun Stmt.setUps (up: Any?) {
         }
         is Stmt.SCall -> this.e.setUps(this)
         is Stmt.Spawn -> this.e.setUps(this)
+        is Stmt.DSpawn -> { this.call.setUps(this) ; this.tsks.setUps(this) }
         is Stmt.Await -> this.e.setUps(this)
         is Stmt.Awake -> this.e.setUps(this)
         is Stmt.Bcast -> this.e.setUps(this)
@@ -97,7 +98,7 @@ fun Stmt.setUps (up: Any?) {
             this.false_.setUps(this)
         }
         is Stmt.Loop  -> this.block.setUps(this)
-        is Stmt.LoopT -> { this.i.setUps(this) ; this.tsks.setUps(this) ; this.block.setUps(this) }
+        is Stmt.DLoop -> { this.i.setUps(this) ; this.tsks.setUps(this) ; this.block.setUps(this) }
         is Stmt.Block -> this.body.setUps(this)
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }

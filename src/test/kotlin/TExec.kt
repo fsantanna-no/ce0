@@ -238,6 +238,15 @@ class TExec {
         assert(out == "10\n") { out }
     }
     @Test
+    fun d03_global2 () {
+        val out = all("""
+            var xxx: _int
+            set xxx = _10:_int
+            call (func @[]->()->() { output std xxx }) ()
+        """.trimIndent())
+        assert(out == "10\n") { out }
+    }
+    @Test
     fun d03_fg () {
         val out = all("""
             var f: (func@[]-> () -> ())

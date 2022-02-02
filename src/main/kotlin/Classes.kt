@@ -51,6 +51,7 @@ sealed class Stmt (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Nat   (val tk_: Tk.Nat) : Stmt(N++, tk_, null, null)
     data class SCall (val tk_: Tk.Key, val e: Expr.Call): Stmt(N++, tk_, null, null)
     data class Spawn (val tk_: Tk.Key, val e: Expr.Call): Stmt(N++, tk_, null, null)
+    data class DSpawn (val tk_: Tk.Key, val call: Expr.Call, val tsks: Expr): Stmt(N++, tk_, null, null)
     data class Await (val tk_: Tk.Key, val e: Expr): Stmt(N++, tk_, null, null)
     data class Awake (val tk_: Tk.Key, val e: Expr.Call): Stmt(N++, tk_, null, null)
     data class Bcast (val tk_: Tk.Key, val scp1: Tk.Scp1, val e: Expr): Stmt(N++, tk_, null, null)
@@ -61,7 +62,7 @@ sealed class Stmt (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class If    (val tk_: Tk.Key, val tst: Expr, val true_: Block, val false_: Block) : Stmt(N++, tk_, null, null)
     data class Ret   (val tk_: Tk.Key) : Stmt(N++, tk_, null, null)
     data class Loop  (val tk_: Tk.Key, val block: Block) : Stmt(N++, tk_, null, null)
-    data class LoopT (val tk_: Tk.Key, val i: Expr.Var, val tsks: Expr, val block: Block) : Stmt(N++, tk_, null, null)
+    data class DLoop (val tk_: Tk.Key, val i: Expr.Var, val tsks: Expr, val block: Block) : Stmt(N++, tk_, null, null)
     data class Break (val tk_: Tk.Key) : Stmt(N++, tk_, null, null)
     data class Block (val tk_: Tk.Chr, val iscatch: Boolean, val xscp1: Tk.Scp1?, val body: Stmt) : Stmt(N++, tk_, null, null)
 }

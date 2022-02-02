@@ -175,7 +175,7 @@ fun check_02_after_tps (s: Stmt) {
                     "invalid condition : type mismatch"
                 }
             }
-            is Stmt.LoopT -> {
+            is Stmt.DLoop -> {
                 All_assert_tk(s.i.tk, s.i.wtype.let { it is Type.Func && it.tk.enu==TK.TASK }) {
                     "invalid loop : type mismatch : expected task type"
                 }

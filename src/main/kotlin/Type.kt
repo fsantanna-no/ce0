@@ -35,7 +35,7 @@ fun Type.tostr (): String {
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
         is Type.Func  -> (if (this.tk.enu == TK.FUNC) "func " else "task ") + this.xscp1s.first.clo() + "@[" + this.xscp1s.second!!.map { it.tostr() }.joinToString(",") + "] -> " + this.inp.tostr() + " -> " + this.out.tostr()
-        is Type.Tasks -> TODO()
+        is Type.Tasks -> "tasks" + this.tsk.tostr().drop(5)
     }
 }
 
@@ -172,6 +172,6 @@ fun Type.toce (): String {
         is Type.Tuple -> "T_" + this.vec.map { it.toce() }.joinToString("_") + "_T"
         is Type.Union -> "U_" + this.vec.map { it.toce() }.joinToString("_") + "_U"
         is Type.Func  -> "F_" + (if (this.tk.enu==TK.TASK) "TK_" else "") + (if (this.xscp1s.first!=null) "CLO_" else "") + this.inp.toce() + "_" + this.out.toce() + "_F"
-        is Type.Tasks -> "TODO"
+        is Type.Tasks -> "S_" + this.tsk.toce() + "_S"
     }
 }
