@@ -369,7 +369,13 @@ fun code_fe (e: Expr) {
             val arg  = CODE.removeFirst()
             val f    = CODE.removeFirst()
             val blks = e.xscp1s.first.map { it.toce(e) }.joinToString(",")
-            val tpf  = e.f.wtype
+            val tpf  = e.f.wtype.let {
+                when (it) {
+                    is Type.Run  -> it.tsk
+                    is Type.Runs -> it.tsk
+                    else         -> it
+                }
+            }
             when {
                 (e.f is Expr.Var && e.f.tk_.str=="output_std") -> {
                     Code (
@@ -380,6 +386,7 @@ fun code_fe (e: Expr) {
                 }
                 (tpf is Type.Func) -> {
                     val cloblk = tpf.xscp1s.first.let { if (it == null) e.local() else tpf.xscp1s.first!!.toce(e.wup!!) }
+                    val frame = if (e.wup is Stmt.Awake) f.expr else "frame"
 
                     val xxx = if (e.getUp() is Stmt.Awake) {
                         "(X_${tpf.toce()}) {.evt=${arg.expr}}"
@@ -390,16 +397,27 @@ fun code_fe (e: Expr) {
                         ${if (e.wup is Stmt.SSpawn) tpf.toce()+"*" else tpf.out.pos()} ret_${e.n};    // TODO: call stack
                         {
                             Stack stk_${e.n} = { stack, ${e.self_or_null()}, ${e.local()} };
-                            ${tpf.toce()}* frame = (${tpf.toce()}*) malloc(${f.expr}->task0.size);
-                            assert(frame!=NULL && "not enough memory");
-                            memcpy(frame, ${f.expr}, ${f.expr}->task0.size);
-                            block_push($cloblk, frame);
-                            ((F_${tpf.toce()})(frame->task0.f)) (&stk_${e.n}, frame, $xxx);
-                            ${if (tpf.tk.enu != TK.FUNC) "" else "frame->task0.state = TASK_UNBORN;"}
+                            ${if (e.getUp() is Stmt.Awake) {
+                                """
+                                assert($frame->task0.state == TASK_AWAITING);
+                                ((F_${tpf.toce()})$frame->task0.f) (&stk_${e.n}, $frame, $xxx);
+                                    
+                                """.trimIndent()
+                            } else {
+                                """
+                                ${tpf.toce()}* frame = (${tpf.toce()}*) malloc(${f.expr}->task0.size);
+                                assert(frame!=NULL && "not enough memory");
+                                memcpy(frame, ${f.expr}, ${f.expr}->task0.size);
+                                block_push($cloblk, frame);
+                                ((F_${tpf.toce()})(frame->task0.f)) (&stk_${e.n}, frame, $xxx);
+                                ${if (tpf.tk.enu != TK.FUNC) "" else "frame->task0.state = TASK_UNBORN;"}
+                                    
+                                """.trimIndent()
+                            }}
                             if (stk_${e.n}.block == NULL) {
                                 return;
                             }
-                            ret_${e.n} = ${if (e.wup is Stmt.SSpawn) "frame" else "(((${tpf.toce()}*)frame)->ret)"};
+                            ret_${e.n} = ${if (e.wup is Stmt.SSpawn) frame else "(((${tpf.toce()}*)$frame)->ret)"};
                         }
                         
                         """.trimIndent()
@@ -426,9 +444,9 @@ fun code_fe (e: Expr) {
                     ${e.block.mem_vars()}
                 } Func_${e.n};
                     
-                void func_${e.n} (Stack* stack, ${e.type.toce()}* task1, X_${e.type.toce()} xxx) {
-                    Task*        task0 = (Task*)        task1;
-                    Func_${e.n}* task2 = (Func_${e.n}*) task1;
+                void func_${e.n} (Stack* stack, Func_${e.n}* task2, X_${e.type.toce()} xxx) {
+                    Task*             task0 = &task2->task1.task0;
+                    ${e.type.toce()}* task1 = &task2->task1;
                     ${e.type.xscp1s.second.mapIndexed { i,_ -> "task1->blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
                     assert(task0->state==TASK_UNBORN || task0->state==TASK_AWAITING);
                     switch (task0->pc) {

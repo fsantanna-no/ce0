@@ -17,16 +17,9 @@ fun Stmt.setTypes () {
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.wtype!! }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
             is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.xscp1!!, e.xscp2!!, e.arg.wtype!!).clone(e,e.tk.lin,e.tk.col)
-            is Expr.Call -> {
-                val tpd = e.f.wtype.let {
-                    when (it) {
-                        is Type.Run  -> it.tsk
-                        is Type.Runs -> it.tsk
-                        else         -> it
-                    }
-                }
+            is Expr.Call -> e.f.wtype.let { tpd ->
                 when (tpd) {
-                    is Type.Nat -> tpd
+                    is Type.Nat, is Type.Run, is Type.Runs -> tpd
                     is Type.Func -> {
                         // calculates return of "e" call based on "e.f" function type
                         // "e" passes "e.arg" with "e.scp1s.first" scopes which may affect "e.f" return scopes

@@ -147,17 +147,16 @@ fun check_02_after_tps (s: Stmt) {
 
                 /*
                 //print("INP1: ") ; println(inp1.tostr())
-                print("INP2: ") ; println(inp2.tostr())
-                print("ARG1: ") ; println(arg1.tostr())
-                //print("ARG2: ") ; println(arg2.tostr())
+                //print("INP2: ") ; println(inp2.tostr())
+                //print("ARG1: ") ; println(arg1.tostr())
                 //println("OUT, RET1, RET2")
                 //print("OUT1: ") ; println(out1.tostr())
                 //print("OUT2: ") ; println(out2.tostr())
                 //print("RET1: ") ; println(ret1.tostr())
-                //print("RET2: ") ; println(ret2.tostr())
                 */
 
-                All_assert_tk(e.f.tk, inp2.isSupOf(arg1) && ret1.isSupOf(out2)) {
+                val run = (ret1 is Type.Run || ret1 is Type.Runs)
+                All_assert_tk(e.f.tk, inp2.isSupOf(arg1) && (run || ret1.isSupOf(out2))) {
                     //println(inp2.isSupOf(arg1))
                     //println(ret1.isSupOf(out2))
                     "invalid call : type mismatch"
