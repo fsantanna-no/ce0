@@ -47,6 +47,14 @@ class TTask {
         assert(out == "(ln 1, col 1): invalid condition : type mismatch") { out }
     }
     @Test
+    fun a02_await_err3 () {
+        val out = all("""
+            var f : task @LOCAL->@[]->()->()->()
+            awake f _1:_int
+        """.trimIndent())
+        assert(out == "(ln 2, col 1): invalid `awake` : type mismatch : expected running task") { out }
+    }
+    @Test
     fun a02_await () {
         val out = all("""
             var f : task @LOCAL->@[]->()->()->()
@@ -58,7 +66,7 @@ class TTask {
             var x : running task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             output std _2:_int
-            awake f _1:_int
+            awake x _1:_int
         """.trimIndent())
         assert(out == "1\n2\n3\n") { out }
     }

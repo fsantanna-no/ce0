@@ -18,70 +18,75 @@ fun Stmt.setTypes () {
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.wtype!! }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
             is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.xscp1!!, e.xscp2!!, e.arg.wtype!!).clone(e,e.tk.lin,e.tk.col)
             is Expr.Call -> {
-                e.f.wtype.let {
+                val tpd = e.f.wtype.let {
                     when (it) {
-                        is Type.Nat -> it
-                        is Type.Func -> {
-                            // calculates return of "e" call based on "e.f" function type
-                            // "e" passes "e.arg" with "e.scp1s.first" scopes which may affect "e.f" return scopes
-                            // we want to map these input scopes into "e.f" return scopes
-                            //  var f: func /@a1 -> /@b1
-                            //              /     /---/
-                            //  call f {@scp1,@scp2}  -->  /@scp2
-                            //  f passes two scopes, first goes to @a1, second goes to @b1 which is the return
-                            //  so @scp2 maps to @b1
-                            // zip [[{@scp1a,@scp1b},{@scp2a,@scp2b}],{@a1,@b1}]
-                            if (it.xscp1s.second.size != e.xscp1s.first.size) {
-                                // TODO: may fail before check2, return anything
-                                Type.Nat(Tk.Nat(TK.NATIVE, e.tk.lin, e.tk.col, null,"ERR")).clone(e,e.tk.lin,e.tk.col)
-                            } else {
-                                val MAP: List<Pair<Tk.Scp1, Pair<Tk.Scp1, Scp2>>> =
-                                    it.xscp1s.second.zip(e.xscp1s.first.zip(e.xscp2s!!.first))
+                        is Type.Run  -> it.tsk
+                        is Type.Runs -> it.tsk
+                        else         -> it
+                    }
+                }
+                when (tpd) {
+                    is Type.Nat -> tpd
+                    is Type.Func -> {
+                        // calculates return of "e" call based on "e.f" function type
+                        // "e" passes "e.arg" with "e.scp1s.first" scopes which may affect "e.f" return scopes
+                        // we want to map these input scopes into "e.f" return scopes
+                        //  var f: func /@a1 -> /@b1
+                        //              /     /---/
+                        //  call f {@scp1,@scp2}  -->  /@scp2
+                        //  f passes two scopes, first goes to @a1, second goes to @b1 which is the return
+                        //  so @scp2 maps to @b1
+                        // zip [[{@scp1a,@scp1b},{@scp2a,@scp2b}],{@a1,@b1}]
+                        if (tpd.xscp1s.second.size != e.xscp1s.first.size) {
+                            // TODO: may fail before check2, return anything
+                            Type.Nat(Tk.Nat(TK.NATIVE, e.tk.lin, e.tk.col, null, "ERR")).clone(e, e.tk.lin, e.tk.col)
+                        } else {
+                            val MAP: List<Pair<Tk.Scp1, Pair<Tk.Scp1, Scp2>>> =
+                                tpd.xscp1s.second.zip(e.xscp1s.first.zip(e.xscp2s!!.first))
 
-                                fun Tk.Scp1.get(scp2: Scp2): Pair<Tk.Scp1, Scp2> {
-                                    return MAP.find { it.first.let { it.lbl == this.lbl && it.num == this.num } }?.second
-                                        ?: Pair(this, scp2)
-                                }
+                            fun Tk.Scp1.get(scp2: Scp2): Pair<Tk.Scp1, Scp2> {
+                                return MAP.find { it.first.let { it.lbl == this.lbl && it.num == this.num } }?.second
+                                    ?: Pair(this, scp2)
+                            }
 
-                                fun Type.map (): Type {
-                                    return when (this) {
-                                        is Type.Ptr -> this.xscp1.get(this.xscp2!!).let {
-                                            Type.Ptr(this.tk_, it.first, it.second, this.pln.map())
-                                                .clone(e, e.tk.lin, e.tk.col)
-                                        }
-                                        is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.map() }.toTypedArray())
+                            fun Type.map(): Type {
+                                return when (this) {
+                                    is Type.Ptr -> this.xscp1.get(this.xscp2!!).let {
+                                        Type.Ptr(this.tk_, it.first, it.second, this.pln.map())
                                             .clone(e, e.tk.lin, e.tk.col)
-                                        is Type.Union -> Type.Union(
-                                            this.tk_,
-                                            this.isrec,
-                                            this.vec.map { it.map() }.toTypedArray()
-                                        ).clone(e, e.tk.lin, e.tk.col)
-                                        is Type.Func -> {
-                                            val clo = this.xscp1s.first?.get(this.xscp2s!!.first!!)
-                                            val (x1, x2) = this.xscp1s.second.zip(this.xscp2s!!.second)
-                                                .map { it.first.get(it.second) }
-                                                .unzip()
-                                            Type.Func(
-                                                this.tk_,
-                                                Pair(clo?.first, x1.toTypedArray()),
-                                                Pair(clo?.second, x2.toTypedArray()),
-                                                this.inp.map(),
-                                                this.pub?.map(),
-                                                this.out.map()
-                                            ).clone(e, e.tk.lin, e.tk.col)
-                                        }
-                                        else -> this
                                     }
+                                    is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.map() }.toTypedArray())
+                                        .clone(e, e.tk.lin, e.tk.col)
+                                    is Type.Union -> Type.Union(
+                                        this.tk_,
+                                        this.isrec,
+                                        this.vec.map { it.map() }.toTypedArray()
+                                    ).clone(e, e.tk.lin, e.tk.col)
+                                    is Type.Func -> {
+                                        val clo = this.xscp1s.first?.get(this.xscp2s!!.first!!)
+                                        val (x1, x2) = this.xscp1s.second.zip(this.xscp2s!!.second)
+                                            .map { it.first.get(it.second) }
+                                            .unzip()
+                                        Type.Func(
+                                            this.tk_,
+                                            Pair(clo?.first, x1.toTypedArray()),
+                                            Pair(clo?.second, x2.toTypedArray()),
+                                            this.inp.map(),
+                                            this.pub?.map(),
+                                            this.out.map()
+                                        ).clone(e, e.tk.lin, e.tk.col)
+                                    }
+                                    else -> this
                                 }
-                                it.out.map()
                             }
+                            tpd.out.map()
                         }
-                        else -> {
-                            All_assert_tk(e.f.tk, false) {
-                                "invalid call : not a function"
-                            }
-                            error("impossible case")
+                    }
+                    else -> {
+                        All_assert_tk(e.f.tk, false) {
+                            "invalid call : not a function"
                         }
+                        error("impossible case")
                     }
                 }
             }

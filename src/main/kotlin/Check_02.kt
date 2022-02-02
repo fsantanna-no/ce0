@@ -60,6 +60,8 @@ fun check_02_after_tps (s: Stmt) {
                 val arg1 = e.arg.wtype!!
 
                 val (scps1,inp1,out1) = when (func) {
+                    is Type.Run  -> Triple(func.tsk.xscp1s.second,func.tsk.inp,func.tsk.out)
+                    is Type.Runs -> Triple(func.tsk.xscp1s.second,func.tsk.inp,func.tsk.out)
                     is Type.Func -> Triple(func.xscp1s.second,func.inp,func.out)
                     is Type.Nat  -> Triple(null,func,func)
                     else -> error("impossible case")
@@ -168,6 +170,11 @@ fun check_02_after_tps (s: Stmt) {
             is Stmt.Await -> {
                 All_assert_tk(s.tk, s.e.wtype is Type.Nat) {
                     "invalid condition : type mismatch"
+                }
+            }
+            is Stmt.Awake -> {
+                All_assert_tk(s.tk, s.e.wtype is Type.Run) {
+                    "invalid `awake` : type mismatch : expected running task"
                 }
             }
             is Stmt.If -> {

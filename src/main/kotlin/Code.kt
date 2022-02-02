@@ -387,7 +387,7 @@ fun code_fe (e: Expr) {
                         "(X_${tpf.toce()}) {.pars={{$blks}, ${arg.expr}}}"
                     }
                     val pre = """
-                        ${if (e.wup is Stmt.SSpawn) tpf.toce() else tpf.out.pos()} ret_${e.n};    // TODO: call stack
+                        ${if (e.wup is Stmt.SSpawn) tpf.toce()+"*" else tpf.out.pos()} ret_${e.n};    // TODO: call stack
                         {
                             Stack stk_${e.n} = { stack, ${e.self_or_null()}, ${e.local()} };
                             ${tpf.toce()}* frame = (${tpf.toce()}*) malloc(${f.expr}->task0.size);
@@ -580,7 +580,7 @@ fun code_fs (s: Stmt) {
             val call = CODE.removeFirst()
             val dst  = CODE.removeFirst()
             val src = """
-                ${dst.expr} = frame_${s.call.n};
+                ${dst.expr} = ${call.expr};
                 
             """.trimIndent()
             Code(call.type+dst.type, call.stmt+dst.stmt+src, "")
