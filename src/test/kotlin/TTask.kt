@@ -33,7 +33,8 @@ class TTask {
             set f = task @LOCAL->@[]->()->()->() {
                 output std _1:_int
             }
-            spawn f ()
+            var x : running task @LOCAL->@[]->()->()->()
+            set x = spawn f ()
             output std _2:_int
         """.trimIndent())
         assert(out == "1\n2\n") { out }

@@ -379,23 +379,27 @@ fun code_fe (e: Expr) {
                     )
                 }
                 (tpf is Type.Func) -> {
+                    val cloblk = tpf.xscp1s.first.let { if (it == null) e.local() else tpf.xscp1s.first!!.toce(e.wup!!) }
+
                     val xxx = if (e.getUp() is Stmt.Awake) {
                         "(X_${tpf.toce()}) {.evt=${arg.expr}}"
                     } else {
                         "(X_${tpf.toce()}) {.pars={{$blks}, ${arg.expr}}}"
                     }
                     val pre = """
-                        ${tpf.out.pos()} ret_${e.n};    // TODO: call stack
+                        ${if (e.wup is Stmt.SSpawn) tpf.toce() else tpf.out.pos()} ret_${e.n};    // TODO: call stack
                         {
                             Stack stk_${e.n} = { stack, ${e.self_or_null()}, ${e.local()} };
-                            char frame[${f.expr}->task0.size];
+                            ${tpf.toce()}* frame = (${tpf.toce()}*) malloc(${f.expr}->task0.size);
+                            assert(frame!=NULL && "not enough memory");
                             memcpy(frame, ${f.expr}, ${f.expr}->task0.size);
-                            ((F_${tpf.toce()})(${f.expr}->task0.f)) (&stk_${e.n}, (${tpf.toce()}*)frame, $xxx);
-                            ${if (tpf.tk.enu != TK.FUNC) "" else "${f.expr}->task0.state = TASK_UNBORN;"}
+                            block_push($cloblk, frame);
+                            ((F_${tpf.toce()})(frame->task0.f)) (&stk_${e.n}, frame, $xxx);
+                            ${if (tpf.tk.enu != TK.FUNC) "" else "frame->task0.state = TASK_UNBORN;"}
                             if (stk_${e.n}.block == NULL) {
                                 return;
                             }
-                            ret_${e.n} = (((${tpf.toce()}*)frame)->ret);
+                            ret_${e.n} = ${if (e.wup is Stmt.SSpawn) "frame" else "(((${tpf.toce()}*)frame)->ret)"};
                         }
                         
                         """.trimIndent()
@@ -447,7 +451,7 @@ fun code_fe (e: Expr) {
             val isclo  = (e.type.xscp1s.first != null)
             val istk   = (e.type.tk.enu == TK.TASK)
             val isnone = !isclo && !istk
-            val cloblk = if (isclo) e.type.xscp1s.first!!.toce(e.wup!!) else e.local()
+            val cloblk = e.type.xscp1s.first.let { if (it == null) e.local() else e.type.xscp1s.first!!.toce(e.wup!!) }
 
             val src = if (isnone) {
                 """
@@ -476,7 +480,7 @@ fun code_fe (e: Expr) {
                     }.joinToString("")}
                     block_push($cloblk, frame_${e.n});
 
-            """.trimIndent()
+                """.trimIndent()
             }
             Code(it.type+pre, src, "((${e.type.pos()}) frame_${e.n})")
         }
@@ -576,9 +580,10 @@ fun code_fs (s: Stmt) {
             val call = CODE.removeFirst()
             val dst  = CODE.removeFirst()
             val src = """
-                ${dst.expr} = TODO;
+                ${dst.expr} = frame_${s.call.n};
+                
             """.trimIndent()
-            Code(call.type+dst.type, call.stmt+dst.stmt+src+";\n", "")
+            Code(call.type+dst.type, call.stmt+dst.stmt+src, "")
         }
         is Stmt.DSpawn -> {
             val tsks = CODE.removeFirst()
