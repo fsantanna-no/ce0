@@ -70,7 +70,7 @@ fun Expr.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((T
 private
 fun Stmt.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
     when (this) {
-        is Stmt.Nop, is Stmt.Nat, is Stmt.Break, is Stmt.Ret, is Stmt.Throw -> {}
+        is Stmt.Nop, is Stmt.Native, is Stmt.Break, is Stmt.Return, is Stmt.Throw -> {}
         is Stmt.Var   -> this.xtype?.visit_(xpd,ft)
         is Stmt.Set -> { this.dst.visit_(xpd,fs,fe,ft) ; this.src.visit_(xpd,fs,fe,ft) }
         is Stmt.SCall -> this.e.visit_(xpd,fs,fe,ft)
@@ -79,8 +79,8 @@ fun Stmt.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((T
         is Stmt.Await -> this.e.visit_(xpd,fs,fe,ft)
         is Stmt.Awake -> this.e.visit_(xpd,fs,fe,ft)
         is Stmt.Bcast -> this.e.visit_(xpd,fs,fe,ft)
-        is Stmt.Inp   -> { this.dst.visit_(xpd,fs,fe,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
-        is Stmt.Out   -> this.arg.visit_(xpd,fs,fe,ft)
+        is Stmt.Input   -> { this.dst.visit_(xpd,fs,fe,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
+        is Stmt.Output   -> this.arg.visit_(xpd,fs,fe,ft)
         is Stmt.Seq   -> { this.s1.visit(xpd,fs,fe,ft) ; this.s2.visit(xpd,fs,fe,ft) }
         is Stmt.If    -> { this.tst.visit_(xpd,fs,fe,ft) ; this.true_.visit(xpd,fs,fe,ft) ; this.false_.visit(xpd,fs,fe,ft) }
         is Stmt.Loop  -> { this.block.visit(xpd,fs,fe,ft) }

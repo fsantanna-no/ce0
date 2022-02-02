@@ -146,7 +146,7 @@ fun check_01_before_tps (s: Stmt) {
                     "invalid declaration : \"${s.tk_.str}\" is already declared (ln ${dcl!!.toTk().lin})"
                 }
             }
-            is Stmt.Ret -> {
+            is Stmt.Return -> {
                 val ok = s.ups_first { it is Expr.Func } != null
                 All_assert_tk(s.tk, ok) {
                     "invalid return : no enclosing function"

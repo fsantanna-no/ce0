@@ -255,9 +255,9 @@ fun Any.local (): String {
 
 fun Stmt.mem_vars (): String {
     return when (this) {
-        is Stmt.Nop, is Stmt.Set, is Stmt.Nat, is Stmt.SCall, is Stmt.SSpawn,
+        is Stmt.Nop, is Stmt.Set, is Stmt.Native, is Stmt.SCall, is Stmt.SSpawn,
         is Stmt.DSpawn, is Stmt.Await, is Stmt.Awake, is Stmt.Bcast, is Stmt.Throw,
-        is Stmt.Inp, is Stmt.Out, is Stmt.Ret, is Stmt.Break -> ""
+        is Stmt.Input, is Stmt.Output, is Stmt.Return, is Stmt.Break -> ""
 
         is Stmt.Var -> "${this.xtype!!.pos()} ${this.tk_.str};\n"
         is Stmt.Loop -> this.block.mem_vars()
@@ -513,7 +513,7 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
 fun code_fs (s: Stmt) {
     CODE.addFirst(when (s) {
         is Stmt.Nop -> Code("","","")
-        is Stmt.Nat -> Code("", s.tk_.src + "\n", "")
+        is Stmt.Native -> Code("", s.tk_.src + "\n", "")
         is Stmt.Seq -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; Code(s1.type+s2.type, s1.stmt+s2.stmt, "") }
         is Stmt.Var -> {
             val src = if (s.xtype is Type.Runs) {
@@ -562,7 +562,7 @@ fun code_fs (s: Stmt) {
             val (_,unlink,kill) = (s.ups_first { it is Stmt.Loop } as Stmt.Loop).block.link_unlink_kill()
             Code("", unlink+kill+"break;\n", "")
         }
-        is Stmt.Ret   -> {
+        is Stmt.Return   -> {
             val src = """
                 task0->state = TASK_DEAD;
                 return;
@@ -639,7 +639,7 @@ fun code_fs (s: Stmt) {
             """.trimIndent()
             Code("", src, "")
         }
-        is Stmt.Inp -> {
+        is Stmt.Input -> {
             val arg = CODE.removeFirst()
             val dst = CODE.removeFirst()
             val src = """
@@ -647,7 +647,7 @@ fun code_fs (s: Stmt) {
             """.trimIndent()
             Code(arg.type+dst.type, arg.stmt+dst.stmt+src+";\n", "")
         }
-        is Stmt.Out -> CODE.removeFirst().let {
+        is Stmt.Output -> CODE.removeFirst().let {
             val call = if (s.lib.str == "std") {
                 s.arg.wtype!!.output_std("", it.expr)
             } else {

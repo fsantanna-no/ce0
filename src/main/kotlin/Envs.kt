@@ -103,7 +103,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
         tp.wenv = env
     }
     return when (this) {
-        is Stmt.Nop, is Stmt.Nat, is Stmt.Ret, is Stmt.Break, is Stmt.Throw -> env
+        is Stmt.Nop, is Stmt.Native, is Stmt.Return, is Stmt.Break, is Stmt.Throw -> env
         is Stmt.Var    -> { this.xtype?.visit(false, ::ft) ; this }
         is Stmt.Set    -> { this.dst.setEnvs(env) ; this.src.setEnvs(env) ; env }
         is Stmt.SCall  -> { this.e.setEnvs(env) ; env }
@@ -112,8 +112,8 @@ fun Stmt.setEnvs (env: Any?): Any? {
         is Stmt.Await  -> { this.e.setEnvs(env) ; env }
         is Stmt.Awake  -> { this.e.setEnvs(env) ; env }
         is Stmt.Bcast  -> { this.e.setEnvs(env) ; env }
-        is Stmt.Inp    -> { this.dst.setEnvs(env) ; this.arg.setEnvs(env) ; this.xtype?.visit(false, ::ft) ; env }
-        is Stmt.Out    -> { this.arg.setEnvs(env) ; env }
+        is Stmt.Input    -> { this.dst.setEnvs(env) ; this.arg.setEnvs(env) ; this.xtype?.visit(false, ::ft) ; env }
+        is Stmt.Output    -> { this.arg.setEnvs(env) ; env }
         is Stmt.Seq -> {
             val e1 = this.s1.setEnvs(env)
             val e2 = this.s2.setEnvs(e1)

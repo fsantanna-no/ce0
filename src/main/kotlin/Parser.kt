@@ -361,7 +361,7 @@ fun parser_stmt (all: All): Stmt {
                     val arg = parser_expr(all)
                     all.accept_err(TK.CHAR, ':')
                     val tp = parser_type(all)
-                    Stmt.Inp(tk, tp, dst, lib, arg)
+                    Stmt.Input(tk, tp, dst, lib, arg)
                 }
                 all.check(TK.SPAWN) -> {
                     all.accept(TK.SPAWN)
@@ -378,7 +378,7 @@ fun parser_stmt (all: All): Stmt {
         }
         all.accept(TK.NATIVE) -> {
             all.accept_err(TK.XNAT)
-            Stmt.Nat(all.tk0 as Tk.Nat)
+            Stmt.Native(all.tk0 as Tk.Nat)
         }
         all.accept(TK.CALL) -> {
             val tk0 = all.tk0 as Tk.Key
@@ -420,7 +420,7 @@ fun parser_stmt (all: All): Stmt {
             all.accept_err(TK.XVAR)
             val lib = (all.tk0 as Tk.Str)
             val arg = parser_expr(all)
-            Stmt.Out(tk, lib, arg)
+            Stmt.Output(tk, lib, arg)
         }
         all.accept(TK.IF) -> {
             val tk0    = all.tk0 as Tk.Key
@@ -430,7 +430,7 @@ fun parser_stmt (all: All): Stmt {
             val false_ = parser_block(all)
             Stmt.If(tk0, tst, true_, false_)
         }
-        all.accept(TK.RETURN) -> Stmt.Ret(all.tk0 as Tk.Key)
+        all.accept(TK.RETURN) -> Stmt.Return(all.tk0 as Tk.Key)
         all.accept(TK.LOOP) -> {
             val tk0 = all.tk0 as Tk.Key
             if (all.check(TK.CHAR, '{')) {
