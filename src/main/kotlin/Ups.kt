@@ -73,17 +73,13 @@ fun Stmt.setUps (up: Any?) {
     when (this) {
         is Stmt.Nop, is Stmt.Nat, is Stmt.Break, is Stmt.Ret, is Stmt.Throw -> {}
         is Stmt.Var -> this.xtype?.setUps(this)
-        is Stmt.SSet -> {
-            this.dst.setUps(this)
-            this.src.setUps(this)
-        }
-        is Stmt.ESet -> {
+        is Stmt.Set -> {
             this.dst.setUps(this)
             this.src.setUps(this)
         }
         is Stmt.SCall -> this.e.setUps(this)
-        is Stmt.Spawn -> this.e.setUps(this)
-        is Stmt.DSpawn -> { this.call.setUps(this) ; this.tsks.setUps(this) }
+        is Stmt.SSpawn -> { this.dst.setUps(this) ; this.call.setUps(this) }
+        is Stmt.DSpawn -> { this.call.setUps(this) ; this.dst.setUps(this) }
         is Stmt.Await -> this.e.setUps(this)
         is Stmt.Awake -> this.e.setUps(this)
         is Stmt.Bcast -> this.e.setUps(this)

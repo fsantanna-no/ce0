@@ -104,28 +104,16 @@ fun Stmt.setEnvs (env: Any?): Any? {
     }
     return when (this) {
         is Stmt.Nop, is Stmt.Nat, is Stmt.Ret, is Stmt.Break, is Stmt.Throw -> env
-        is Stmt.Var -> {
-            this.xtype?.visit(false, ::ft)
-            this
-        }
-        is Stmt.SSet -> {
-            this.dst.setEnvs(env)
-            this.src.setEnvs(env)
-            env
-        }
-        is Stmt.ESet -> {
-            this.dst.setEnvs(env)
-            this.src.setEnvs(env)
-            env
-        }
-        is Stmt.SCall -> { this.e.setEnvs(env) ; env }
-        is Stmt.Spawn -> { this.e.setEnvs(env) ; env }
-        is Stmt.DSpawn -> { this.call.setEnvs(this) ; this.tsks.setEnvs(this) ; env }
-        is Stmt.Await -> { this.e.setEnvs(env) ; env }
-        is Stmt.Awake -> { this.e.setEnvs(env) ; env }
-        is Stmt.Bcast -> { this.e.setEnvs(env) ; env }
-        is Stmt.Inp   -> { this.arg.setEnvs(env) ; this.xtype?.visit(false, ::ft) ; env }
-        is Stmt.Out   -> { this.arg.setEnvs(env) ; env }
+        is Stmt.Var    -> { this.xtype?.visit(false, ::ft) ; this }
+        is Stmt.Set    -> { this.dst.setEnvs(env) ; this.src.setEnvs(env) ; env }
+        is Stmt.SCall  -> { this.e.setEnvs(env) ; env }
+        is Stmt.SSpawn -> { this.dst.setEnvs(env) ; this.call.setEnvs(env) ; env }
+        is Stmt.DSpawn -> { this.call.setEnvs(this) ; this.dst.setEnvs(this) ; env }
+        is Stmt.Await  -> { this.e.setEnvs(env) ; env }
+        is Stmt.Awake  -> { this.e.setEnvs(env) ; env }
+        is Stmt.Bcast  -> { this.e.setEnvs(env) ; env }
+        is Stmt.Inp    -> { this.dst.setEnvs(env) ; this.arg.setEnvs(env) ; this.xtype?.visit(false, ::ft) ; env }
+        is Stmt.Out    -> { this.arg.setEnvs(env) ; env }
         is Stmt.Seq -> {
             val e1 = this.s1.setEnvs(env)
             val e2 = this.s2.setEnvs(e1)

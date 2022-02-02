@@ -255,8 +255,8 @@ fun Any.local (): String {
 
 fun Stmt.mem_vars (): String {
     return when (this) {
-        is Stmt.Nop, is Stmt.SSet, is Stmt.ESet, is Stmt.Nat,
-        is Stmt.SCall, is Stmt.Spawn, is Stmt.DSpawn, is Stmt.Await, is Stmt.Awake, is Stmt.Bcast, is Stmt.Throw,
+        is Stmt.Nop, is Stmt.Set, is Stmt.Nat, is Stmt.SCall, is Stmt.SSpawn,
+        is Stmt.DSpawn, is Stmt.Await, is Stmt.Awake, is Stmt.Bcast, is Stmt.Throw,
         is Stmt.Inp, is Stmt.Out, is Stmt.Ret, is Stmt.Break -> ""
 
         is Stmt.Var -> "${this.xtype!!.pos()} ${this.tk_.str};\n"
@@ -521,12 +521,7 @@ fun code_fs (s: Stmt) {
             } else ""
             Code("",src,"")
         }
-        is Stmt.SSet  -> {
-            val src = CODE.removeFirst()
-            val dst = CODE.removeFirst()
-            Code(dst.type+src.type, dst.stmt+src.stmt + dst.expr+" = "+src.expr + ";\n", "")
-        }
-        is Stmt.ESet  -> {
+        is Stmt.Set -> {
             val src = CODE.removeFirst()
             val dst = CODE.removeFirst()
             Code(dst.type+src.type, dst.stmt+src.stmt + dst.expr+" = "+src.expr + ";\n", "")
@@ -577,7 +572,14 @@ fun code_fs (s: Stmt) {
             Code("", unlink+kill+src, "")
         }
         is Stmt.SCall -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
-        is Stmt.Spawn -> CODE.removeFirst().let { Code(it.type, it.stmt+it.expr+";\n", "") }
+        is Stmt.SSpawn -> {
+            val call = CODE.removeFirst()
+            val dst  = CODE.removeFirst()
+            val src = """
+                ${dst.expr} = TODO;
+            """.trimIndent()
+            Code(call.type+dst.type, call.stmt+dst.stmt+src+";\n", "")
+        }
         is Stmt.DSpawn -> {
             val tsks = CODE.removeFirst()
             val call = CODE.removeFirst()
@@ -637,12 +639,13 @@ fun code_fs (s: Stmt) {
             """.trimIndent()
             Code("", src, "")
         }
-        is Stmt.Inp   -> CODE.removeFirst().let {
-            if (s.wup is Stmt.SSet) {
-                Code(it.type, it.stmt, "input_${s.lib.str}_${s.xtype!!.toce()}(${it.expr})")
-            } else {
-                Code(it.type, it.stmt + "input_${s.lib.str}_${s.xtype!!.toce()}(${it.expr});\n", "")
-            }
+        is Stmt.Inp -> {
+            val arg = CODE.removeFirst()
+            val dst = CODE.removeFirst()
+            val src = """
+                ${dst.expr} = input_${s.lib.str}_${s.xtype!!.toce()}(${arg.expr});
+            """.trimIndent()
+            Code(arg.type+dst.type, arg.stmt+dst.stmt+src+";\n", "")
         }
         is Stmt.Out -> CODE.removeFirst().let {
             val call = if (s.lib.str == "std") {

@@ -173,7 +173,7 @@ fun Type.toce (): String {
         is Type.Tuple -> "T_" + this.vec.map { it.toce() }.joinToString("_") + "_T"
         is Type.Union -> "U_" + this.vec.map { it.toce() }.joinToString("_") + "_U"
         is Type.Func  -> "F_" + (if (this.tk.enu==TK.TASK) "TK_" else "") + (if (this.xscp1s.first!=null) "CLO_" else "") + this.inp.toce() + "_" + this.out.toce() + "_F"
-        is Type.Run   -> TODO()
-        is Type.Runs  -> "S_" + this.tsk.toce() + "_S"
+        is Type.Run   -> this.tsk.toce()
+        is Type.Runs  -> "R_" + this.tsk.toce() + "_R"
     }
 }

@@ -610,11 +610,11 @@ class TParser {
     }
     @Test
     fun c08_parser_stmt_input () {
-        val all = All_new(PushbackReader(StringReader("input std (): _int"), 2))
+        val all = All_new(PushbackReader(StringReader("set x = input std (): _int"), 2))
         lexer(all)
         val s = parser_stmt(all)
         //assert(s is Stmt.Call && s.call.f is Expr.Dnref && ((s.call.f as Expr.Dnref).ptr is Expr.Var) && ((s.call.f as Expr.Dnref).ptr as Expr.Var).tk_.str=="output_std")
-        assert(s is Stmt.Inp && s.lib.str=="std" && s.xtype is Type.Nat)
+        assert(s is Stmt.Inp && s.lib.str=="std" && s.xtype is Type.Nat && s.dst is Expr.Var && s.arg is Expr.Unit)
     }
 
     // STMT_SEQ
@@ -698,7 +698,7 @@ class TParser {
         lexer(all)
         val s = parser_stmt(all)
         assert (
-            (s is Stmt.ESet) && ((s.dst as Expr.Var).tk_.str=="f") &&
+            (s is Stmt.Set) && ((s.dst as Expr.Var).tk_.str=="f") &&
             s.src.let {
                 (it is Expr.Func) && (it.type.inp is Type.Unit) && it.block.body is Stmt.Ret
             }
@@ -717,7 +717,7 @@ class TParser {
         lexer(all)
         val s = parser_stmt(all)
         assert (
-            (s is Stmt.ESet) && ((s.dst as Expr.Var).tk_.str=="f") &&
+            (s is Stmt.Set) && ((s.dst as Expr.Var).tk_.str=="f") &&
                     s.src.let { (it is Expr.Func) && (it.ups.size==2) }
         )
     }
@@ -760,14 +760,14 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("set s = ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.ESet && s.dst is Expr.Var && s.src is Expr.Unit)
+        assert(s is Stmt.Set && s.dst is Expr.Var && s.src is Expr.Unit)
     }
     @Test
     fun c17_parser_var () {
         val all = All_new(PushbackReader(StringReader("set c = arg.1\\!1.1"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.ESet && s.src is Expr.TDisc)
+        assert(s is Stmt.Set && s.src is Expr.TDisc)
     }
     @Test
     fun c18_parser_var () {
@@ -788,10 +788,10 @@ class TParser {
     }
     @Test
     fun d02_stmt_spawn () {
-        val all = All_new(PushbackReader(StringReader("spawn f ()"), 2))
+        val all = All_new(PushbackReader(StringReader("set x = spawn f ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Spawn && s.e is Expr.Call && s.e.f is Expr.Var)
+        assert(s is Stmt.SSpawn && s.call.f is Expr.Var && s.dst is Expr.Var)
     }
 
     // LOOP
@@ -801,7 +801,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("loop tk in () {}"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.DLoop && s.i is Expr.Var && s.tsks is Expr.Unit)
+        assert(s is Stmt.DLoop && s.i.tk_.str=="tk" && s.tsks is Expr.Unit)
     }
     @Test
     fun d04_loop () {
@@ -855,7 +855,7 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("set x.pub = ()"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.ESet && s.dst is Expr.Pub)
+        assert(s is Stmt.Set && s.dst is Expr.Pub)
     }
 
     // TASKS TYPE

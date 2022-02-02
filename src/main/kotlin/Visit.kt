@@ -72,15 +72,14 @@ fun Stmt.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((T
     when (this) {
         is Stmt.Nop, is Stmt.Nat, is Stmt.Break, is Stmt.Ret, is Stmt.Throw -> {}
         is Stmt.Var   -> this.xtype?.visit_(xpd,ft)
-        is Stmt.SSet  -> { this.dst.visit_(xpd,fs,fe,ft) ; this.src.visit_(xpd,fs,fe,ft) }
-        is Stmt.ESet  -> { this.dst.visit_(xpd,fs,fe,ft) ; this.src.visit_(xpd,fs,fe,ft) }
+        is Stmt.Set -> { this.dst.visit_(xpd,fs,fe,ft) ; this.src.visit_(xpd,fs,fe,ft) }
         is Stmt.SCall -> this.e.visit_(xpd,fs,fe,ft)
-        is Stmt.Spawn -> this.e.visit_(xpd,fs,fe,ft)
-        is Stmt.DSpawn -> { this.call.visit_(xpd,fs,fe,ft) ; this.tsks.visit_(xpd,fs,fe,ft) }
+        is Stmt.SSpawn -> { this.dst.visit_(xpd,fs,fe,ft) ; this.call.visit_(xpd,fs,fe,ft) }
+        is Stmt.DSpawn -> { this.call.visit_(xpd,fs,fe,ft) ; this.dst.visit_(xpd,fs,fe,ft) }
         is Stmt.Await -> this.e.visit_(xpd,fs,fe,ft)
         is Stmt.Awake -> this.e.visit_(xpd,fs,fe,ft)
         is Stmt.Bcast -> this.e.visit_(xpd,fs,fe,ft)
-        is Stmt.Inp   -> this.arg.visit_(xpd,fs,fe,ft)
+        is Stmt.Inp   -> { this.dst.visit_(xpd,fs,fe,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
         is Stmt.Out   -> this.arg.visit_(xpd,fs,fe,ft)
         is Stmt.Seq   -> { this.s1.visit(xpd,fs,fe,ft) ; this.s2.visit(xpd,fs,fe,ft) }
         is Stmt.If    -> { this.tst.visit_(xpd,fs,fe,ft) ; this.true_.visit(xpd,fs,fe,ft) ; this.false_.visit(xpd,fs,fe,ft) }

@@ -349,16 +349,31 @@ fun parser_stmt (all: All): Stmt {
             Stmt.Var(tk_id, tp)
         }
         all.accept(TK.SET) -> {
-            val dst = parser_attr(all)
-            //val dst = parser_expr(all)
+            val dst = parser_attr(all).toExpr()
             all.accept_err(TK.CHAR,'=')
             val tk0 = all.tk0 as Tk.Chr
-            if (all.check(TK.INPUT) || all.check(TK.SPAWN)) {
-                val src = parser_stmt(all)
-                Stmt.SSet(tk0, dst.toExpr(), src)
-            } else {
-                val src = parser_expr(all)
-                Stmt.ESet(tk0, dst.toExpr(), src)
+            when {
+                all.check(TK.INPUT) -> {
+                    all.accept(TK.INPUT)
+                    val tk = all.tk0 as Tk.Key
+                    all.accept_err(TK.XVAR)
+                    val lib = (all.tk0 as Tk.Str)
+                    val arg = parser_expr(all)
+                    all.accept_err(TK.CHAR, ':')
+                    val tp = parser_type(all)
+                    Stmt.Inp(tk, tp, dst, lib, arg)
+                }
+                all.check(TK.SPAWN) -> {
+                    all.accept(TK.SPAWN)
+                    val tk = all.tk0 as Tk.Key
+                    val e = parser_expr(all)
+                    All_assert_tk(tk, e is Expr.Call) { "expected call expression" }
+                    Stmt.SSpawn(tk, dst, e as Expr.Call)
+                }
+                else -> {
+                    val src = parser_expr(all)
+                    Stmt.Set(tk0, dst, src)
+                }
             }
         }
         all.accept(TK.NATIVE) -> {
@@ -375,12 +390,9 @@ fun parser_stmt (all: All): Stmt {
             val tk0 = all.tk0 as Tk.Key
             val e = parser_expr(all)
             All_assert_tk(tk0, e is Expr.Call) { "expected call expression" }
-            if (all.accept(TK.IN)) {
-                val tsks = parser_expr(all)
-                Stmt.DSpawn(tk0, e as Expr.Call, tsks)
-            } else {
-                Stmt.Spawn(tk0, e as Expr.Call)
-            }
+            all.accept_err(TK.IN)
+            val tsks = parser_expr(all)
+            Stmt.DSpawn(tk0, tsks, e as Expr.Call)
         }
         all.accept(TK.AWAIT) -> {
             val tk0 = all.tk0 as Tk.Key
@@ -402,15 +414,6 @@ fun parser_stmt (all: All): Stmt {
         }
         all.accept(TK.THROW) -> {
             Stmt.Throw(all.tk0 as Tk.Key)
-        }
-        all.accept(TK.INPUT) -> {
-            val tk = all.tk0 as Tk.Key
-            all.accept_err(TK.XVAR)
-            val lib = (all.tk0 as Tk.Str)
-            val arg = parser_expr(all)
-            all.accept_err(TK.CHAR, ':')
-            val tp = parser_type(all)
-            Stmt.Inp(tk, tp, lib, arg)
         }
         all.accept(TK.OUTPUT) -> {
             val tk = all.tk0 as Tk.Key
