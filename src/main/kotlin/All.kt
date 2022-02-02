@@ -63,6 +63,14 @@ fun All.check (enu: TK, chr: Char? = null): Boolean {
     }
 }
 
+fun All.check_err (enu: TK, chr: Char? = null): Boolean {
+    val ret = this.check(enu,chr)
+    if (!ret) {
+        this.err_expected(enu.toErr(chr))
+    }
+    return ret
+}
+
 fun All.err_expected (str: String) {
     fun Tk.toPay (): String {
         return when {

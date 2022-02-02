@@ -13,7 +13,8 @@ sealed class Type (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
         var xscp2s: Pair<Scp2?,Array<Scp2>>?,
         val inp: Type, val pub: Type?, val out: Type
     ): Type(N++, tk_, null, null)
-    data class Tasks (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
+    data class Run  (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
+    data class Runs (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
 }
 
 sealed class Attr (val n: Int, val tk: Tk) {
@@ -46,7 +47,7 @@ sealed class Expr (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?, var wt
 sealed class Stmt (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Nop   (val tk_: Tk) : Stmt(N++, tk_, null, null)
     data class Var   (val tk_: Tk.Str, val xtype: Type) : Stmt(N++, tk_, null, null)
-    data class SSet  (val tk_: Tk.Chr, val dst: Expr, val src: Stmt.Inp) : Stmt(N++, tk_, null, null)
+    data class SSet  (val tk_: Tk.Chr, val dst: Expr, val src: Stmt) : Stmt(N++, tk_, null, null)
     data class ESet  (val tk_: Tk.Chr, val dst: Expr, val src: Expr) : Stmt(N++, tk_, null, null)
     data class Nat   (val tk_: Tk.Nat) : Stmt(N++, tk_, null, null)
     data class SCall (val tk_: Tk.Key, val e: Expr.Call): Stmt(N++, tk_, null, null)

@@ -14,7 +14,8 @@ fun Type.pos (): String {
         is Type.Tuple -> "struct " + this.toce()
         is Type.Union -> "struct " + this.toce()
         is Type.Func  -> this.toce() + "*"
-        is Type.Tasks -> this.tsk.pos()
+        is Type.Run   -> this.tsk.pos()
+        is Type.Runs  -> this.tsk.pos()
     }
 }
 
@@ -515,7 +516,7 @@ fun code_fs (s: Stmt) {
         is Stmt.Nat -> Code("", s.tk_.src + "\n", "")
         is Stmt.Seq -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; Code(s1.type+s2.type, s1.stmt+s2.stmt, "") }
         is Stmt.Var -> {
-            val src = if (s.xtype is Type.Tasks) {
+            val src = if (s.xtype is Type.Runs) {
                 s.tk_.str.mem(s) + " = NULL;\n"
             } else ""
             Code("",src,"")

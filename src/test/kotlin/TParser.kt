@@ -876,6 +876,6 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("tasks @LOCAL->@[]->()->()->()"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Tasks && tp.tsk is Type.Func && tp.tsk.tk.enu==TK.TASK && tp.tsk.xscp1s.first!!.lbl=="LOCAL")
+        assert(tp is Type.Runs && tp.tsk is Type.Func && tp.tsk.tk.enu==TK.TASK && tp.tsk.xscp1s.first!!.lbl=="LOCAL")
     }
 }

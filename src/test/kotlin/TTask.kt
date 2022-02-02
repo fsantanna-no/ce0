@@ -48,13 +48,14 @@ class TTask {
     @Test
     fun a02_await () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()->()
+            var f : task @LOCAL->@[]->()->()->()
             set f = task @LOCAL->@[]->()->()->() {
                 output std _1:_int
                 await _(task1->evt != 0):_int
                 output std _3:_int
             }
-            spawn f ()
+            var x : running task @LOCAL->@[]->()->()->()
+            set x = spawn f ()
             output std _2:_int
             awake f _1:_int
         """.trimIndent())

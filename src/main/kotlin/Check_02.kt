@@ -134,7 +134,7 @@ fun check_02_after_tps (s: Stmt) {
                                     this.out.aux(dofunc)
                                 )
                             }
-                            is Type.Tasks -> TODO()
+                            is Type.Run, is Type.Runs -> TODO()
                         }
                     }
                     Pair (
@@ -179,7 +179,7 @@ fun check_02_after_tps (s: Stmt) {
                 All_assert_tk(s.i.tk, s.i.wtype.let { it is Type.Func && it.tk.enu==TK.TASK }) {
                     "invalid loop : type mismatch : expected task type"
                 }
-                All_assert_tk(s.tsks.tk, s.tsks.wtype is Type.Tasks) {
+                All_assert_tk(s.tsks.tk, s.tsks.wtype is Type.Runs) {
                     "invalid loop : type mismatch : expected tasks type"
                 }
             }

@@ -1,4 +1,4 @@
-fun parser_type (all: All): Type {
+fun parser_type (all: All, tasks: Boolean=false): Type {
     return when {
         all.accept(TK.UNIT) -> Type.Unit(all.tk0 as Tk.Sym)
         all.accept(TK.XNAT) -> Type.Nat(all.tk0 as Tk.Nat)
@@ -47,7 +47,7 @@ fun parser_type (all: All): Type {
                 Type.Union(tk0, isrec, vec)
             }
         }
-        all.accept(TK.FUNC) || all.accept(TK.TASK) || all.accept(TK.TASKS) -> {
+        all.accept(TK.FUNC) || all.accept(TK.TASK) || (tasks && all.accept(TK.TASKS)) -> {
             val tk0 = all.tk0 as Tk.Key
             val clo = if (all.accept(TK.XSCPCST) || (tk0.enu!=TK.FUNC && all.accept_err(TK.XSCPVAR)) || all.accept(TK.XSCPVAR)) {
                 val tk = all.tk0 as Tk.Scp1
@@ -76,15 +76,17 @@ fun parser_type (all: All): Type {
             all.accept_err(TK.ARROW)
             val out = parser_type(all) // right associative
 
-            if (tk0.enu == TK.TASKS) {
-                val task = Type.Func (
-                    Tk.Key(TK.TASK, tk0.lin, tk0.col,"task"),
-                    Pair(clo, scps.toTypedArray()),
-                    null, inp, pub, out
-                )
-                Type.Tasks(tk0, task)
+            Type.Func(tk0, Pair(clo,scps.toTypedArray()), null, inp, pub, out)
+        }
+        all.accept(TK.RUNNING) -> {
+            val tk0 = all.tk0 as Tk.Key
+            all.check(TK.TASKS) || all.check_err(TK.TASK)
+            val task = parser_type(all, true)
+            assert(task is Type.Func && task.tk.enu!=TK.FUNC)
+            if (task.tk.enu == TK.TASKS) {
+                Type.Runs(tk0, task as Type.Func)
             } else {
-                Type.Func(tk0, Pair(clo,scps.toTypedArray()), null, inp, pub, out)
+                Type.Run(tk0, task as Type.Func)
             }
         }
         else -> {
@@ -160,7 +162,7 @@ fun parser_expr (all: All): Expr {
             all.accept(TK.XSCPCST) || all.accept_err(TK.XSCPVAR)
             Expr.New(tk0 as Tk.Key, all.tk0 as Tk.Scp1, null, e as Expr.UCons)
         }
-        all.check(TK.FUNC) || all.check(TK.TASK) -> {
+        all.check(TK.TASK) || all.check(TK.FUNC) -> {
             val tk = all.tk1 as Tk.Key
             val tp = parser_type(all) as Type.Func
 
@@ -351,9 +353,9 @@ fun parser_stmt (all: All): Stmt {
             //val dst = parser_expr(all)
             all.accept_err(TK.CHAR,'=')
             val tk0 = all.tk0 as Tk.Chr
-            if (all.check(TK.INPUT)) {
+            if (all.check(TK.SPAWN) || all.check_err(TK.INPUT)) {
                 val src = parser_stmt(all)
-                Stmt.SSet(tk0, dst.toExpr(), src as Stmt.Inp)
+                Stmt.SSet(tk0, dst.toExpr(), src)
             } else {
                 val src = parser_expr(all)
                 Stmt.ESet(tk0, dst.toExpr(), src)
