@@ -71,21 +71,21 @@ private
 fun Stmt.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
     when (this) {
         is Stmt.Nop, is Stmt.Native, is Stmt.Break, is Stmt.Return, is Stmt.Throw -> {}
-        is Stmt.Var   -> this.xtype?.visit_(xpd,ft)
-        is Stmt.Set -> { this.dst.visit_(xpd,fs,fe,ft) ; this.src.visit_(xpd,fs,fe,ft) }
-        is Stmt.SCall -> this.e.visit_(xpd,fs,fe,ft)
+        is Stmt.Var    -> this.xtype?.visit_(xpd,ft)
+        is Stmt.Set    -> { this.dst.visit_(xpd,fs,fe,ft) ; this.src.visit_(xpd,fs,fe,ft) }
+        is Stmt.SCall  -> this.e.visit_(xpd,fs,fe,ft)
         is Stmt.SSpawn -> { this.dst.visit_(xpd,fs,fe,ft) ; this.call.visit_(xpd,fs,fe,ft) }
-        is Stmt.DSpawn -> { this.call.visit_(xpd,fs,fe,ft) ; this.dst.visit_(xpd,fs,fe,ft) }
-        is Stmt.Await -> this.e.visit_(xpd,fs,fe,ft)
-        is Stmt.Awake -> this.e.visit_(xpd,fs,fe,ft)
-        is Stmt.Bcast -> this.e.visit_(xpd,fs,fe,ft)
-        is Stmt.Input   -> { this.dst.visit_(xpd,fs,fe,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
-        is Stmt.Output   -> this.arg.visit_(xpd,fs,fe,ft)
-        is Stmt.Seq   -> { this.s1.visit(xpd,fs,fe,ft) ; this.s2.visit(xpd,fs,fe,ft) }
-        is Stmt.If    -> { this.tst.visit_(xpd,fs,fe,ft) ; this.true_.visit(xpd,fs,fe,ft) ; this.false_.visit(xpd,fs,fe,ft) }
-        is Stmt.Loop  -> { this.block.visit(xpd,fs,fe,ft) }
-        is Stmt.DLoop -> { this.i.visit_(xpd,fs,fe,ft) ; this.tsks.visit_(xpd,fs,fe,ft) ; this.block.visit(xpd,fs,fe,ft) }
-        is Stmt.Block -> { this.body.visit(xpd,fs,fe,ft) }
+        is Stmt.DSpawn -> { this.dst.visit_(xpd,fs,fe,ft) ; this.call.visit_(xpd,fs,fe,ft) }
+        is Stmt.Await  -> this.e.visit_(xpd,fs,fe,ft)
+        is Stmt.Awake  -> this.e.visit_(xpd,fs,fe,ft)
+        is Stmt.Bcast  -> this.e.visit_(xpd,fs,fe,ft)
+        is Stmt.Input  -> { this.dst.visit_(xpd,fs,fe,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
+        is Stmt.Output -> this.arg.visit_(xpd,fs,fe,ft)
+        is Stmt.Seq    -> { this.s1.visit(xpd,fs,fe,ft) ; this.s2.visit(xpd,fs,fe,ft) }
+        is Stmt.If     -> { this.tst.visit_(xpd,fs,fe,ft) ; this.true_.visit(xpd,fs,fe,ft) ; this.false_.visit(xpd,fs,fe,ft) }
+        is Stmt.Loop   -> { this.block.visit(xpd,fs,fe,ft) }
+        is Stmt.DLoop  -> { this.i.visit_(xpd,fs,fe,ft) ; this.tsks.visit_(xpd,fs,fe,ft) ; this.block.visit(xpd,fs,fe,ft) }
+        is Stmt.Block  -> { this.body.visit(xpd,fs,fe,ft) }
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }
     if (fs != null) {

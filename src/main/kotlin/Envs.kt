@@ -108,7 +108,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
         is Stmt.Set    -> { this.dst.setEnvs(env) ; this.src.setEnvs(env) ; env }
         is Stmt.SCall  -> { this.e.setEnvs(env) ; env }
         is Stmt.SSpawn -> { this.dst.setEnvs(env) ; this.call.setEnvs(env) ; env }
-        is Stmt.DSpawn -> { this.call.setEnvs(this) ; this.dst.setEnvs(this) ; env }
+        is Stmt.DSpawn -> { this.dst.setEnvs(this) ; this.call.setEnvs(this) ; env }
         is Stmt.Await  -> { this.e.setEnvs(env) ; env }
         is Stmt.Awake  -> { this.e.setEnvs(env) ; env }
         is Stmt.Bcast  -> { this.e.setEnvs(env) ; env }

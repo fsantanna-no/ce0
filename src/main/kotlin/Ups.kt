@@ -79,7 +79,7 @@ fun Stmt.setUps (up: Any?) {
         }
         is Stmt.SCall -> this.e.setUps(this)
         is Stmt.SSpawn -> { this.dst.setUps(this) ; this.call.setUps(this) }
-        is Stmt.DSpawn -> { this.call.setUps(this) ; this.dst.setUps(this) }
+        is Stmt.DSpawn -> { this.dst.setUps(this) ; this.call.setUps(this) }
         is Stmt.Await -> this.e.setUps(this)
         is Stmt.Awake -> this.e.setUps(this)
         is Stmt.Bcast -> this.e.setUps(this)

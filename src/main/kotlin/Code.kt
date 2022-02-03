@@ -15,7 +15,7 @@ fun Type.pos (): String {
         is Type.Union -> "struct " + this.toce()
         is Type.Func  -> this.toce() + "*"
         is Type.Run   -> this.tsk.pos()
-        is Type.Runs  -> this.tsk.pos()
+        is Type.Runs  -> "Tasks"
     }
 }
 
@@ -388,6 +388,7 @@ fun code_fe (e: Expr) {
                     val istk   = (tpf.tk.enu == TK.TASK)
                     val cloblk = tpf.xscp1s.first.let { if (it == null) e.local() else tpf.xscp1s.first!!.toce(e.wup!!) }
                     val frame  = if (e.wup is Stmt.Awake) f.expr else "frame"
+                    val block  = e.wup.let { if (it is Stmt.DSpawn) "&"+(it.dst as Expr.Var).tk_.str.mem(e)+".block" else e.local() }
 
                     val xxx = if (e.getUp() is Stmt.Awake) {
                         "(X_${tpf.toce()}) {.evt=${arg.expr}}"
@@ -410,7 +411,7 @@ fun code_fe (e: Expr) {
                                 assert(frame!=NULL && "not enough memory");
                                 memcpy(frame, ${f.expr}, ${f.expr}->task0.size);
                                 block_push($cloblk, frame);
-                                ${if (istk) "task_link($cloblk, &frame->task0);" else ""}
+                                ${if (istk) "task_link($block, &frame->task0);" else ""}
                                 ((F_${tpf.toce()})(frame->task0.f)) (&stk_${e.n}, frame, $xxx);
                                 ${if (tpf.tk.enu != TK.FUNC) "" else "frame->task0.state = TASK_UNBORN;"}
                                     
@@ -541,7 +542,14 @@ fun code_fs (s: Stmt) {
         is Stmt.Seq -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; Code(s1.type+s2.type, s1.stmt+s2.stmt, "") }
         is Stmt.Var -> {
             val src = if (s.xtype is Type.Runs) {
-                s.tk_.str.mem(s) + " = NULL;\n"
+                s.tk_.str.mem(s).let {
+                    """
+                        $it = (Tasks) { TASK_DEAD, { NULL, NULL }, { NULL, 0, { NULL, NULL, NULL } } };
+                        task_link(${s.local()}, (Task*) &$it);
+                        $it.links.blk_down = &$it.block;
+                        
+                    """.trimIndent()
+                }
             } else ""
             Code("",src,"")
         }
@@ -605,16 +613,10 @@ fun code_fs (s: Stmt) {
             """.trimIndent()
             Code(call.type+dst.type, call.stmt+dst.stmt+src, "")
         }
-        is Stmt.DSpawn -> {
-            val tsks = CODE.removeFirst()
+        is Stmt.DSpawn -> { // Expr.Call links call/tsks
             val call = CODE.removeFirst()
-            val task = s.call.f as Expr.Func
-            val src = """
-                if (${tsks.expr} == NULL) {
-                    ${tsks.expr} = ptr_func_${task.n};
-                }
-            """.trimIndent()
-            Code(tsks.type+call.type, tsks.stmt+call.stmt+src+call.expr+";\n", "")
+            val tsks = CODE.removeFirst()
+            Code(tsks.type+call.type, tsks.stmt+call.stmt+call.expr+";\n", "")
         }
         is Stmt.Await -> CODE.removeFirst().let {
             val src = """
@@ -779,14 +781,14 @@ fun Stmt.code (): String {
         typedef void (*Task_F) (Stack*, struct Task*, int);
         
         typedef struct Task {
-            int size;
             TASK_STATE state;
-            Task_F f; // (Stack* stack, Task* task, int evt);
-            int pc;
             struct {
                 struct Task*  tsk_next;     // next Task in the same block
                 struct Block* blk_down;     // nested block inside me
             } links;
+            int size;
+            Task_F f; // (Stack* stack, Task* task, int evt);
+            int pc;
         } Task;
         
         typedef struct Block {
@@ -799,6 +801,15 @@ fun Stmt.code (): String {
             } links;
         } Block;
         
+        typedef struct Tasks {              // task + block
+            TASK_STATE state;
+            struct {
+                Task*  tsk_next;
+                Block* blk_down;
+            } links;
+            Block block;
+        } Tasks;
+
         ///
         
         void block_free (Block* block) {

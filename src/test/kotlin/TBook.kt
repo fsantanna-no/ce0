@@ -182,8 +182,9 @@ class TBook {
         val (_, out3) = exec("./out.exe")
         //val (_,out3) = exec("valgrind ./out.exe")
         // search in tests output for
-        //  - "definitely lost"
-        //  - "Invalid read of size"
+        //  - definitely lost
+        //  - Invalid read of size
+        //  - uninitialised value
         //println(out3)
         return out3
     }

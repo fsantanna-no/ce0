@@ -21,6 +21,7 @@ class TCyclone {
         // search in tests output for
         //  - "definitely lost"
         //  - "Invalid read of size"
+        //  - "uninitialised value"
         //println(out3)
         return out3
     }
