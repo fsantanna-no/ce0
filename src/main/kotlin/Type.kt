@@ -166,14 +166,14 @@ fun Type.Union.expand (): Array<Type> {
 
 fun Type.toce (): String {
     return when (this) {
-        is Type.Rec   -> "Rec"
-        is Type.Unit  -> "Unit"
-        is Type.Ptr   -> "P_" + this.pln.toce() + "_P"
-        is Type.Nat   -> this.tk_.src.replace('*','_')
-        is Type.Tuple -> "T_" + this.vec.map { it.toce() }.joinToString("_") + "_T"
-        is Type.Union -> "U_" + this.vec.map { it.toce() }.joinToString("_") + "_U"
-        is Type.Func  -> "F_" + (if (this.tk.enu==TK.TASK) "TK_" else "") + (if (this.xscp1s.first!=null) "CLO_" else "") + this.inp.toce() + "_" + this.out.toce() + "_F"
-        is Type.Spawn   -> this.tsk.toce()
-        is Type.Spawns  -> "R_" + this.tsk.toce() + "_R"
+        is Type.Rec    -> "Rec"
+        is Type.Unit   -> "Unit"
+        is Type.Ptr    -> "P_" + this.pln.toce() + "_P"
+        is Type.Nat    -> this.tk_.src.replace('*','_')
+        is Type.Tuple  -> "T_" + this.vec.map { it.toce() }.joinToString("_") + "_T"
+        is Type.Union  -> "U_" + this.vec.map { it.toce() }.joinToString("_") + "_U"
+        is Type.Func   -> "F_" + (if (this.tk.enu==TK.TASK) "TK_" else "") + (if (this.xscp1s.first!=null) "CLO_" else "") + this.inp.toce() + "_" + this.out.toce() + "_F"
+        is Type.Spawn  -> "S_" + this.tsk.toce() + "_S"
+        is Type.Spawns -> "SS_" + this.tsk.toce() + "_SS"
     }
 }

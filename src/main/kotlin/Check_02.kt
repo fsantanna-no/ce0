@@ -210,11 +210,16 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
             is Stmt.DLoop -> {
-                All_assert_tk(s.i.tk, s.i.wtype.let { it is Type.Func && it.tk.enu==TK.TASK }) {
-                    "invalid loop : type mismatch : expected task type"
+                val i    = s.i.wtype!!
+                val tsks = s.tsks.wtype!!
+                All_assert_tk(s.i.tk, i is Type.Spawn) {
+                    "invalid `loop` : type mismatch : expected task type"
                 }
-                All_assert_tk(s.tsks.tk, s.tsks.wtype is Type.Spawns) {
-                    "invalid loop : type mismatch : expected tasks type"
+                All_assert_tk(s.tsks.tk, tsks is Type.Spawns) {
+                    "invalid `loop` : type mismatch : expected tasks type"
+                }
+                All_assert_tk(s.tk, i.isSupOf(tsks)) {
+                    "invalid `loop` : type mismatch\n    ${i.tostr()}\n    ${tsks.tostr()}"
                 }
             }
             is Stmt.Set -> {

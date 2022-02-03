@@ -698,82 +698,104 @@ class TTask {
         assert(out == "1\n2\n3\n4\n") { out }
     }
 
-    // POOL / TASKS
+    // POOL / TASKS / LOOPT
 
     @Test
-    fun f01_pool () {
+    fun f01_err () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->_int->()
-            set f = task @LOCAL->@[]->()->_int->() {
-                set pub = _3:_int
-                output std _1:_int
-            }
-            var fs: tasks @LOCAL->@[]->()->_int->()
-            var x: task @LOCAL->@[]->()->_int->()
-            loop x in @LOCAL {
+            var xs: active tasks @LOCAL->@[]->()->_int->()
+            var x:  task @LOCAL->@[]->()->_int->()
+            loop x in xs {
             }
         """.trimIndent())
-        assert(out == "(ln 2, col 6): invalid loop : type mismatch : expected task type") { out }
+        assert(out == "(ln 3, col 6): invalid `loop` : type mismatch : expected task type") { out }
+
     }
-
-    // LOOPT
-
     @Test
-    fun g01_loopt () {
+    fun f02_err () {
+        val out = all("""
+            var xs: active tasks @LOCAL->@[]->[()]->_int->()
+            var x:  active task  @LOCAL->@[]->()->_int->()
+            loop x in xs {
+            }
+        """.trimIndent())
+        assert(out == "(ln 3, col 1): invalid `loop` : type mismatch\n    active task @LOCAL -> @[] -> () -> ()\n    active tasks @LOCAL -> @[] -> [()] -> ()") { out }
+
+    }
+    @Test
+    fun f03_err () {
         val out = all("""
             var x: ()
             loop x in () {
             }
         """.trimIndent())
-        assert(out == "(ln 2, col 6): invalid loop : type mismatch : expected task type") { out }
+        assert(out == "(ln 2, col 6): invalid `loop` : type mismatch : expected task type") { out }
     }
     @Test
-    fun g02_loopt () {
+    fun f04_err () {
         val out = all("""
-            var x: task @LOCAL->@[]->()->_int->()
+            var x: active task @LOCAL->@[]->()->_int->()
             loop x in () {
             }
         """.trimIndent())
-        assert(out == "(ln 2, col 11): invalid loop : type mismatch : expected tasks type") { out }
+        assert(out == "(ln 2, col 11): invalid `loop` : type mismatch : expected tasks type") { out }
     }
+
     @Test
-    fun g03_loopt () {
+    fun f05_loop () {
         val out = all("""
-            var fs: tasks @LOCAL->@[]->()->_int->()
-            var f: task @LOCAL->@[]->()->_int->()
+            var fs: active tasks @LOCAL->@[]->()->_int->()
+            var f: active task @LOCAL->@[]->()->_int->()
             loop f in fs {
             }
             output std ()
         """.trimIndent())
         assert(out == "()\n") { out }
     }
+
     @Test
-    fun g04_loopt () {
+    fun f06_pub () {
         val out = all("""
-            var fs: tasks @LOCAL->@[]->_int->_int->()
-            var f: task @LOCAL->@[]->_int->_int->()
+            var f : task @LOCAL->@[]->()->_int->()
+            set f = task @LOCAL->@[]->()->_int->() {
+                set pub = _3:_int
+                output std _1:_int
+                await _1:_int
+            }
+            var fs: active tasks @LOCAL->@[]->()->_int->()
+            spawn f () in fs
+            var x: active task @LOCAL->@[]->()->_int->()
+            loop x in fs {
+                output std x.pub
+            }
+        """.trimIndent())
+        assert(out == "1\n3\n") { out }
+    }
 
-            spawn task @LOCAL->@[]->_int->_int->() {
+    @Test
+    fun f07_natural () {
+        val out = all("""
+            var f : task @LOCAL->@[]->_int->_int->()
+            set f = task @LOCAL->@[]->_int->_int->() {
                 set pub = arg
                 output std pub
                 await _1:_int
                 await _1:_int
-            } _1:_int in fs
+            }
 
-            spawn task @LOCAL->@[]->_int->_int->() {
-                set pub = arg
-                output std pub
-                await _1:_int
-            } _2:_int in fs
+            var xs: active tasks @LOCAL->@[]->_int->_int->()
+            spawn f _1:_int in xs
+            spawn f _2:_int in xs
 
-            loop f in fs {
-                output std f.pub
+            var x: active task @LOCAL->@[]->_int->_int->()
+            loop x in xs {
+                output std x.pub
             }
             
             bcast @GLOBAL _10:_int
             
-            loop f in fs {
-                output std f.pub
+            loop x in xs {
+                output std x.pub
             }
             
             output std ()

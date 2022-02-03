@@ -581,7 +581,7 @@ fun code_fs (s: Stmt) {
             val i     = CODE.removeFirst()
             val src   = """
                 {
-                    ${i.expr} = ${tsks.expr};
+                    ${i.expr} = (${s.i.wtype!!.pos()}) ${tsks.expr}.block.links.tsk_first;
                     while (${i.expr} != NULL) {
                         ${block.stmt}
                         ${i.expr} = (${s.i.wtype!!.pos()}) ${i.expr}->task0.links.tsk_next;
