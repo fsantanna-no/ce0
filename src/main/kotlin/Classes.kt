@@ -13,8 +13,8 @@ sealed class Type (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
         var xscp2s: Pair<Scp2?,Array<Scp2>>?,
         val inp: Type, val pub: Type?, val out: Type
     ): Type(N++, tk_, null, null)
-    data class Run  (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
-    data class Runs (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
+    data class Spawn  (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
+    data class Spawns (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
 }
 
 sealed class Attr (val n: Int, val tk: Tk) {

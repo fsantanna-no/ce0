@@ -14,8 +14,8 @@ fun Type.pos (): String {
         is Type.Tuple -> "struct " + this.toce()
         is Type.Union -> "struct " + this.toce()
         is Type.Func  -> this.toce() + "*"
-        is Type.Run   -> this.tsk.pos()
-        is Type.Runs  -> "Tasks"
+        is Type.Spawn   -> this.tsk.pos()
+        is Type.Spawns  -> "Tasks"
     }
 }
 
@@ -371,8 +371,8 @@ fun code_fe (e: Expr) {
             val blks = e.xscp1s.first.map { it.toce(e) }.joinToString(",")
             val tpf  = e.f.wtype.let {
                 when (it) {
-                    is Type.Run  -> it.tsk
-                    is Type.Runs -> it.tsk
+                    is Type.Spawn  -> it.tsk
+                    is Type.Spawns -> it.tsk
                     else         -> it
                 }
             }
@@ -541,7 +541,7 @@ fun code_fs (s: Stmt) {
         is Stmt.Native -> Code("", s.tk_.src + "\n", "")
         is Stmt.Seq -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; Code(s1.type+s2.type, s1.stmt+s2.stmt, "") }
         is Stmt.Var -> {
-            val src = if (s.xtype is Type.Runs) {
+            val src = if (s.xtype is Type.Spawns) {
                 s.tk_.str.mem(s).let {
                     """
                         $it = (Tasks) { TASK_DEAD, { NULL, NULL }, { NULL, 0, { NULL, NULL, NULL } } };

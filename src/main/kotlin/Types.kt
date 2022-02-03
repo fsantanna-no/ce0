@@ -19,7 +19,7 @@ fun Stmt.setTypes () {
             is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.xscp1!!, e.xscp2!!, e.arg.wtype!!).clone(e,e.tk.lin,e.tk.col)
             is Expr.Call -> e.f.wtype.let { tpd ->
                 when (tpd) {
-                    is Type.Nat, is Type.Run, is Type.Runs -> tpd
+                    is Type.Nat, is Type.Spawn, is Type.Spawns -> tpd
                     is Type.Func -> {
                         // calculates return of "e" call based on "e.f" function type
                         // "e" passes "e.arg" with "e.scp1s.first" scopes which may affect "e.f" return scopes
@@ -94,10 +94,10 @@ fun Stmt.setTypes () {
                 it.vec[e.tk_.num - 1]
             }
             is Expr.Pub -> e.tsk.wtype.let {
-                All_assert_tk(e.tk, it is Type.Run) {
-                    "invalid \"pub\" : type mismatch : expected running task"
+                All_assert_tk(e.tk, it is Type.Spawn) {
+                    "invalid \"pub\" : type mismatch : expected active task"
                 }
-                (it as Type.Run).tsk.pub!!
+                (it as Type.Spawn).tsk.pub!!
             }
             is Expr.UDisc, is Expr.UPred -> {
                 val (tk_,uni) = when (e) {

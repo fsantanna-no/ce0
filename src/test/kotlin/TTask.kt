@@ -34,7 +34,7 @@ class TTask {
             set f = task @LOCAL->@[]->()->()->() {
                 output std _1:_int
             }
-            var x : running task @LOCAL->@[]->()->()->()
+            var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             output std _2:_int
         """.trimIndent())
@@ -53,7 +53,7 @@ class TTask {
             var f : task @LOCAL->@[]->()->()->()
             awake f _1:_int
         """.trimIndent())
-        assert(out == "(ln 2, col 1): invalid `awake` : type mismatch : expected running task") { out }
+        assert(out == "(ln 2, col 1): invalid `awake` : type mismatch : expected active task") { out }
     }
     @Test
     fun a02_await () {
@@ -64,7 +64,7 @@ class TTask {
                 await _(task1->evt != 0):_int
                 output std _3:_int
             }
-            var x : running task @LOCAL->@[]->()->()->()
+            var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             output std _2:_int
             awake x _1:_int
@@ -80,7 +80,7 @@ class TTask {
                 await _(task1->evt != 0):_int
                 output std _3:_int
             }
-            var x : running task @LOCAL->@[]->()->()->()
+            var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             output std _2:_int
             awake x _1:_int
@@ -98,7 +98,7 @@ class TTask {
                 await _(task1->evt != 0):_int
                 output std x
             }
-            var x : running task @LOCAL->@[]->()->()->()
+            var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             awake x _1:_int
         """.trimIndent())
@@ -122,7 +122,7 @@ class TTask {
                     output std y
                 }
             }
-            var x : running task @LOCAL->@[]->()->()->()
+            var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             awake x _1:_int
             awake x _1:_int
@@ -133,7 +133,7 @@ class TTask {
     fun a05_args_err () {
         val out = all("""
             var f : task @LOCAL->@[]->()->()->()
-            var x : running task @LOCAL->@[]->[()]->()->()
+            var x : active task @LOCAL->@[]->[()]->()->()
             set x = spawn f ()
         """.trimIndent())
         assert(out == "(ln 3, col 9): invalid `spawn` : type mismatch\n    task @LOCAL -> @[] -> [()] -> ()\n    task @LOCAL -> @[] -> () -> ()") { out }
@@ -149,7 +149,7 @@ class TTask {
                 await _(task1->evt != 0):_int
                 output std evt
             }
-            var x : running task @LOCAL->@[]->_(char*)->()->()
+            var x : active task @LOCAL->@[]->_(char*)->()->()
             set x = spawn f _("hello"):_(char*)
             awake x _10:_int
             awake x _20:_int
@@ -180,10 +180,10 @@ class TTask {
                 output std _2:_int
             }
             output std _10:_int
-            var f : running task @LOCAL->@[]->()->()->()
+            var f : active task @LOCAL->@[]->()->()->()
             set f = spawn build ()
             output std _11:_int
-            var g : running task @LOCAL->@[]->()->()->()
+            var g : active task @LOCAL->@[]->()->()->()
             set g = spawn build ()
             awake f _1:_int
             awake g _1:_int
@@ -207,10 +207,10 @@ class TTask {
             var g: task @LOCAL->@[]->()->()->()
             set g = build @[@LOCAL] ()
             output std _10:_int
-            var x : running task @LOCAL->@[]->()->()->()
+            var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             output std _11:_int
-            var y : running task @LOCAL->@[]->()->()->()
+            var y : active task @LOCAL->@[]->()->()->()
             set y = spawn g ()
             awake x _1:_int
             awake y _1:_int
@@ -226,7 +226,7 @@ class TTask {
                 await _(task1->evt != 0):_int
                 output std _(task1->evt+0):_int
             }
-            var x : running task @LOCAL->@[]->()->()->()
+            var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             
             var g : task @LOCAL->@[]->()->()->()
@@ -236,7 +236,7 @@ class TTask {
                 await _(task1->evt != 0):_int
                 output std _(task1->evt+10):_int
             }
-            var y : running task @LOCAL->@[]->()->()->()
+            var y : active task @LOCAL->@[]->()->()->()
             set y = spawn g ()
             
             bcast @GLOBAL _1:_int
@@ -252,7 +252,7 @@ class TTask {
                 await _1:_int
                 output std _(task1->evt+0):_int    -- only on kill
             }
-            var x : running task @LOCAL->@[]->()->()->()
+            var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             
             {
@@ -263,7 +263,7 @@ class TTask {
                     await _(task1->evt != 0):_int
                     output std _(task1->evt+10):_int
                 }
-                var y : running task @LOCAL->@[]->()->()->()
+                var y : active task @LOCAL->@[]->()->()->()
                 set y = spawn g ()
                 bcast @LOCAL _1:_int
                 bcast @LOCAL _2:_int
@@ -284,12 +284,12 @@ class TTask {
                     await _(task1->evt != 0):_int
                     output std _3:_int
                 }
-                var xg : running task @LOCAL->@[]->()->()->()
+                var xg : active task @LOCAL->@[]->()->()->()
                 set xg = spawn g ()
                 await _(task1->evt != 0):_int
                 output std _4:_int
             }
-            var x : running task @LOCAL->@[]->()->()->()
+            var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             output std _10:_int
             bcast @GLOBAL _1:_int
@@ -318,7 +318,7 @@ class TTask {
                             output std _22:_int     -- can't execute this one
                         }
                     }
-                    var y : running task @LOCAL->@[]->()->()->()
+                    var y : active task @LOCAL->@[]->()->()->()
                     set y = spawn g ()
                     await _(task1->evt != 0):_int
                 }
@@ -329,12 +329,12 @@ class TTask {
                     await _(task1->evt != 0):_int
                     output std _31:_int
                 }
-                var z : running task @LOCAL->@[]->()->()->()
+                var z : active task @LOCAL->@[]->()->()->()
                 set z = spawn h ()
                 await _(task1->evt != 0):_int
                 output std _12:_int
             }
-            var x : running task @LOCAL->@[]->()->()->()
+            var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             bcast @GLOBAL _1:_int
             bcast @GLOBAL _1:_int
@@ -354,14 +354,14 @@ class TTask {
                     bcast @GLOBAL _1:_int
                     output std _999:_int
                 }
-                var x : running task @LOCAL->@[]->()->()->()
+                var x : active task @LOCAL->@[]->()->()->()
                 set x = spawn f ()
                 output std _2:_int
                 await _(task1->evt != 0):_int
                 output std _5:_int
             }
             output std _0:_int
-            var y : running task @LOCAL->@[]->()->()->()
+            var y : active task @LOCAL->@[]->()->()->()
             set y = spawn g ()
             output std _3:_int
             bcast @GLOBAL _1:_int
@@ -386,14 +386,14 @@ class TTask {
                     call kkk ()
                     output std _999:_int
                 }
-                var x : running task @LOCAL->@[]->()->()->()
+                var x : active task @LOCAL->@[]->()->()->()
                 set x = spawn f ()
                 output std _2:_int
                 await _(task1->evt != 0):_int
                 output std _5:_int
             }
             output std _0:_int
-            var y : running task @LOCAL->@[]->()->()->()
+            var y : active task @LOCAL->@[]->()->()->()
             set y = spawn g ()
             output std _3:_int
             bcast @GLOBAL _1:_int
@@ -414,13 +414,13 @@ class TTask {
                     await _(task1->evt == 0):_int
                     output std _2:_int
                 }
-                var xdefer : running task @LOCAL->@[]->()->()->()
+                var xdefer : active task @LOCAL->@[]->()->()->()
                 set xdefer = spawn defer ()
                 output std _0:_int
                 await _(task1->evt != 0):_int
                 output std _1:_int
             }
-            var x : running task @LOCAL->@[]->()->()->()
+            var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             awake x _1:_int
         """.trimIndent())
@@ -437,14 +437,14 @@ class TTask {
                         await _(task1->evt == 0):_int
                         output std _2:_int
                     }
-                    var xdefer : running task @LOCAL->@[]->()->()->()
+                    var xdefer : active task @LOCAL->@[]->()->()->()
                     set xdefer = spawn defer ()
                     output std _0:_int
                     await _(task1->evt != 0):_int
                 }
                 output std _1:_int
             }
-            var x : running task @LOCAL->@[]->()->()->()
+            var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             awake x _1:_int
         """.trimIndent())
@@ -469,7 +469,7 @@ class TTask {
             var x : task @LOCAL->@[]->()->()->()
             set x = spawn f ()
         """.trimIndent())
-        assert(out == "(ln 3, col 5): invalid `spawn` : type mismatch : expected running task") { out }
+        assert(out == "(ln 3, col 5): invalid `spawn` : type mismatch : expected active task") { out }
     }
     @Test
     fun c00_throw () {
@@ -482,13 +482,13 @@ class TTask {
                         await _1:_int
                         output std _1:_int
                     }
-                    var x : running task @LOCAL->@[]->()->()->()
+                    var x : active task @LOCAL->@[]->()->()->()
                     set x = spawn f ()
                     throw
                }
                output std _2:_int
            }
-           var z : running task @LOCAL->@[]->()->()->()
+           var z : active task @LOCAL->@[]->()->()->()
            set z = spawn h ()
            output std _3:_int
         """.trimIndent())
@@ -510,9 +510,9 @@ class TTask {
                         await _1:_int
                         output std _1:_int
                     }
-                    var x : running task @LOCAL->@[]->()->()->()
+                    var x : active task @LOCAL->@[]->()->()->()
                     set x = spawn f ()
-                    var y : running task @LOCAL->@[]->()->()->()
+                    var y : active task @LOCAL->@[]->()->()->()
                     set y = spawn g ()
                     output std _0:_int
                     throw
@@ -520,7 +520,7 @@ class TTask {
                 }
                 output std _2:_int
            }
-           var z : running task @LOCAL->@[]->()->()->()
+           var z : active task @LOCAL->@[]->()->()->()
            set z = spawn h ()
            output std _3:_int
         """.trimIndent())
@@ -544,9 +544,9 @@ class TTask {
                         output std _2:_int
                     }
                     await _(task1->evt != 0):_int
-                    var xf : running task @LOCAL->@[]->()->()->()
+                    var xf : active task @LOCAL->@[]->()->()->()
                     set xf = spawn f ()
-                    var xg : running task @LOCAL->@[]->()->()->()
+                    var xg : active task @LOCAL->@[]->()->()->()
                     set xg = spawn g ()
                     throw
                 }
@@ -555,8 +555,8 @@ class TTask {
                     await _(task1->evt == 0):_int
                     output std _1:_int
                 }
-                var xfg : running task @LOCAL->@[]->()->()->()
-                var xh : running task @LOCAL->@[]->()->()->()
+                var xfg : active task @LOCAL->@[]->()->()->()
+                var xh : active task @LOCAL->@[]->()->()->()
                 catch {
                     set xfg = spawn fg ()
                     set xh = spawn h ()
@@ -564,7 +564,7 @@ class TTask {
                     output std _999:_int
                 }
             }
-            var xmain : running task @LOCAL->@[]->()->()->()
+            var xmain : active task @LOCAL->@[]->()->()->()
             set xmain = spawn main ()
             output std _3:_int
         """.trimIndent())
@@ -585,14 +585,14 @@ class TTask {
                         await _1:_int
                         output std _1:_int
                     }
-                    var xf: running task @LOCAL->@[]->()->()->()
+                    var xf: active task @LOCAL->@[]->()->()->()
                     set xf = spawn f ()
                     call err ()
                     output std _999:_int
                }
                output std _2:_int
            }
-           var xh : running task @LOCAL->@[]->()->()->()
+           var xh : active task @LOCAL->@[]->()->()->()
            set xh = spawn h ()
            output std _3:_int
         """.trimIndent())
@@ -624,7 +624,7 @@ class TTask {
             var f : task @LOCAL->@[]->()->_int->()
             set f.pub = _4:_int
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid \"pub\" : type mismatch : expected running task") { out }
+        assert(out == "(ln 2, col 7): invalid \"pub\" : type mismatch : expected active task") { out }
     }
     @Test
     fun d01_field () {
@@ -634,7 +634,7 @@ class TTask {
                 set pub = _3:_int
                 output std _1:_int
             }
-            var xf: running task @LOCAL->@[]->()->_int->()
+            var xf: active task @LOCAL->@[]->()->_int->()
             set xf = spawn f ()
             output std _2:_int
             output std xf.pub
@@ -658,7 +658,7 @@ class TTask {
     fun e01_spawn_err2 () {
         val out = all("""
             var f : func @LOCAL->@[]->()->()
-            var fs : running tasks @LOCAL->@[]->()->()->()
+            var fs : active tasks @LOCAL->@[]->()->()->()
             spawn f () in fs
         """.trimIndent())
         assert(out == "(ln 3, col 7): invalid `spawn` : type mismatch : expected task") { out }
@@ -669,13 +669,13 @@ class TTask {
             var f : task @LOCAL->@[]->()->()->()
             spawn f () in ()
         """.trimIndent())
-        assert(out == "(ln 2, col 15): invalid `spawn` : type mismatch : expected running tasks") { out }
+        assert(out == "(ln 2, col 15): invalid `spawn` : type mismatch : expected active tasks") { out }
     }
     @Test
     fun e01_spawn_err4 () {
         val out = all("""
             var f : task @LOCAL->@[]->()->()->()
-            var fs : running tasks @LOCAL->@[]->[()]->()->()
+            var fs : active tasks @LOCAL->@[]->[()]->()->()
             spawn f () in fs
         """.trimIndent())
         assert(out == "(ln 3, col 1): invalid `spawn` : type mismatch\n    tasks @LOCAL -> @[] -> [()] -> ()\n    task @LOCAL -> @[] -> () -> ()") { out }
@@ -689,7 +689,7 @@ class TTask {
                 await _(task1->evt != 0):_int
                 output std _3:_int
             }
-            var fs : running tasks @LOCAL->@[]->()->()->()
+            var fs : active tasks @LOCAL->@[]->()->()->()
             spawn f () in fs
             output std _2:_int
             bcast @GLOBAL _1:_int

@@ -60,8 +60,8 @@ fun check_02_after_tps (s: Stmt) {
                 val arg1 = e.arg.wtype!!
 
                 val (scps1,inp1,out1) = when (func) {
-                    is Type.Run  -> Triple(func.tsk.xscp1s.second,func.tsk.inp,func.tsk.out)
-                    is Type.Runs -> Triple(func.tsk.xscp1s.second,func.tsk.inp,func.tsk.out)
+                    is Type.Spawn  -> Triple(func.tsk.xscp1s.second,func.tsk.inp,func.tsk.out)
+                    is Type.Spawns -> Triple(func.tsk.xscp1s.second,func.tsk.inp,func.tsk.out)
                     is Type.Func -> Triple(func.xscp1s.second,func.inp,func.out)
                     is Type.Nat  -> Triple(null,func,func)
                     else -> error("impossible case")
@@ -136,7 +136,7 @@ fun check_02_after_tps (s: Stmt) {
                                     this.out.aux(dofunc)
                                 )
                             }
-                            is Type.Run, is Type.Runs -> TODO()
+                            is Type.Spawn, is Type.Spawns -> TODO()
                         }
                     }
                     Pair (
@@ -155,7 +155,7 @@ fun check_02_after_tps (s: Stmt) {
                 //print("RET1: ") ; println(ret1.tostr())
                 */
 
-                val run = (ret1 is Type.Run || ret1 is Type.Runs)
+                val run = (ret1 is Type.Spawn || ret1 is Type.Spawns)
                 All_assert_tk(e.f.tk, inp2.isSupOf(arg1) && (run || ret1.isSupOf(out2))) {
                     //println(inp2.isSupOf(arg1))
                     //println(ret1.isSupOf(out2))
@@ -172,15 +172,15 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
             is Stmt.Awake -> {
-                All_assert_tk(s.tk, s.e.wtype is Type.Run) {
-                    "invalid `awake` : type mismatch : expected running task"
+                All_assert_tk(s.tk, s.e.wtype is Type.Spawn) {
+                    "invalid `awake` : type mismatch : expected active task"
                 }
             }
             is Stmt.SSpawn -> {
-                All_assert_tk(s.dst.tk, s.dst.wtype is Type.Run) {
-                    "invalid `spawn` : type mismatch : expected running task"
+                All_assert_tk(s.dst.tk, s.dst.wtype is Type.Spawn) {
+                    "invalid `spawn` : type mismatch : expected active task"
                 }
-                val dst  = (s.dst.wtype!! as Type.Run).tsk
+                val dst  = (s.dst.wtype!! as Type.Spawn).tsk
                 val call = s.call.f.wtype!!
                 All_assert_tk(s.call.tk, call is Type.Func && call.tk.enu==TK.TASK) {
                     "invalid `spawn` : type mismatch : expected task"
@@ -191,14 +191,14 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
             is Stmt.DSpawn -> {
-                All_assert_tk(s.dst.tk, s.dst.wtype is Type.Runs) {
-                    "invalid `spawn` : type mismatch : expected running tasks"
+                All_assert_tk(s.dst.tk, s.dst.wtype is Type.Spawns) {
+                    "invalid `spawn` : type mismatch : expected active tasks"
                 }
                 val call = s.call.f.wtype!!
                 All_assert_tk(s.call.tk, call is Type.Func && call.tk.enu==TK.TASK) {
                     "invalid `spawn` : type mismatch : expected task"
                 }
-                val dst = (s.dst.wtype!! as Type.Runs).tsk
+                val dst = (s.dst.wtype!! as Type.Spawns).tsk
                 //println("invalid `spawn` : type mismatch : ${dst.tostr()} = ${call.tostr()}")
                 All_assert_tk(s.tk, dst.isSupOf(call)) {
                     "invalid `spawn` : type mismatch\n    ${dst.tostr()}\n    ${call.tostr()}"
@@ -213,7 +213,7 @@ fun check_02_after_tps (s: Stmt) {
                 All_assert_tk(s.i.tk, s.i.wtype.let { it is Type.Func && it.tk.enu==TK.TASK }) {
                     "invalid loop : type mismatch : expected task type"
                 }
-                All_assert_tk(s.tsks.tk, s.tsks.wtype is Type.Runs) {
+                All_assert_tk(s.tsks.tk, s.tsks.wtype is Type.Spawns) {
                     "invalid loop : type mismatch : expected tasks type"
                 }
             }

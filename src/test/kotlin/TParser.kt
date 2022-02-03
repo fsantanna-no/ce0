@@ -862,20 +862,20 @@ class TParser {
 
     @Test
     fun d09_tasks () { // task @LOCAL->@[]->()->()->() {}
-        val all = All_new(PushbackReader(StringReader("running tasks @[]->()->()->()"), 2))
+        val all = All_new(PushbackReader(StringReader("active tasks @[]->()->()->()"), 2))
         lexer(all)
         try {
             parser_type(all)
             error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 15): expected `@´ : have `@[´") { e.message!! }
+            assert(e.message == "(ln 1, col 14): expected `@´ : have `@[´") { e.message!! }
         }
     }
     @Test
     fun d10_tassk () {
-        val all = All_new(PushbackReader(StringReader("running tasks @LOCAL->@[]->()->()->()"), 2))
+        val all = All_new(PushbackReader(StringReader("active tasks @LOCAL->@[]->()->()->()"), 2))
         lexer(all)
         val tp = parser_type(all)
-        assert(tp is Type.Runs && tp.tsk is Type.Func && tp.tsk.tk.enu==TK.TASKS && tp.tsk.xscp1s.first!!.lbl=="LOCAL")
+        assert(tp is Type.Spawns && tp.tsk is Type.Func && tp.tsk.tk.enu==TK.TASKS && tp.tsk.xscp1s.first!!.lbl=="LOCAL")
     }
 }

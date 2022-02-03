@@ -33,8 +33,8 @@ fun Type.visit_ (xpd: Boolean, ft: ((Type)->Unit)?) {
         is Type.Tuple -> this.vec.forEach { it.visit_(xpd,ft) }
         is Type.Union -> (if (xpd) this.expand() else this.vec).forEach { it.visit_(xpd,ft) }
         is Type.Func  -> { this.inp.visit_(xpd,ft) ; this.pub?.visit_(xpd,ft) ; this.out.visit_(xpd,ft) }
-        is Type.Run   -> this.tsk.visit_(xpd,ft)
-        is Type.Runs  -> this.tsk.visit_(xpd,ft)
+        is Type.Spawn   -> this.tsk.visit_(xpd,ft)
+        is Type.Spawns  -> this.tsk.visit_(xpd,ft)
         is Type.Ptr   -> this.pln.visit_(xpd,ft)
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }

@@ -35,8 +35,8 @@ fun Type.tostr (): String {
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
         is Type.Func  -> this.tk_.key + " " + this.xscp1s.first.clo() + "@[" + this.xscp1s.second!!.map { it.tostr() }.joinToString(",") + "] -> " + this.inp.tostr() + " -> " + this.out.tostr()
-        is Type.Run   -> "running " + this.tsk.tostr()
-        is Type.Runs  -> "running " + this.tsk.tostr()
+        is Type.Spawn   -> "active " + this.tsk.tostr()
+        is Type.Spawns  -> "active " + this.tsk.tostr()
     }
 }
 
@@ -60,7 +60,7 @@ fun Type.flattenLeft (): List<Type> {
         is Type.Tuple -> listOf(this) + this.vec.map { it.flattenLeft() }.flatten()
         is Type.Union -> listOf(this) + this.vec.map { it.flattenLeft() }.flatten()
         is Type.Func  -> listOf(this) //this.inp.flatten() + this.out.flatten()
-        is Type.Run, is Type.Runs -> TODO()
+        is Type.Spawn, is Type.Spawns -> TODO()
         is Type.Ptr   -> listOf(this) + this.pln.flattenLeft()
     }
 }
@@ -90,7 +90,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
                 this.pub?.aux(lin, col),
                 this.out.aux(lin, col)
             )
-            is Type.Run, is Type.Runs -> TODO()
+            is Type.Spawn, is Type.Spawns -> TODO()
             is Type.Ptr -> Type.Ptr(
                 this.tk_.copy(lin_ = lin, col_ = col),
                 this.xscp1?.copy(lin_=lin,col_=col),
@@ -128,7 +128,7 @@ fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
                 this.pub?.aux(lin, col),
                 this.out.aux(lin, col)
             )
-            is Type.Run, is Type.Runs -> TODO()
+            is Type.Spawn, is Type.Spawns -> TODO()
             is Type.Ptr -> Type.Ptr(this.tk_.copy(lin_ = lin, col_ = col), this.xscp1?.copy(lin_=lin,col_=col), this.xscp2, this.pln.aux(lin, col))
             is Type.Rec -> Type.Rec(this.tk_.copy(lin_ = lin, col_ = col))
         }
@@ -142,7 +142,7 @@ fun Type.isrec (): Boolean {
 
 fun Type.containsRec (): Boolean {
     return when (this) {
-        is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func, is Type.Run, is Type.Runs -> false
+        is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func, is Type.Spawn, is Type.Spawns -> false
         is Type.Rec   -> true
         is Type.Tuple -> this.vec.any { it.containsRec() }
         is Type.Union -> this.vec.any { it.containsRec() }
@@ -173,7 +173,7 @@ fun Type.toce (): String {
         is Type.Tuple -> "T_" + this.vec.map { it.toce() }.joinToString("_") + "_T"
         is Type.Union -> "U_" + this.vec.map { it.toce() }.joinToString("_") + "_U"
         is Type.Func  -> "F_" + (if (this.tk.enu==TK.TASK) "TK_" else "") + (if (this.xscp1s.first!=null) "CLO_" else "") + this.inp.toce() + "_" + this.out.toce() + "_F"
-        is Type.Run   -> this.tsk.toce()
-        is Type.Runs  -> "R_" + this.tsk.toce() + "_R"
+        is Type.Spawn   -> this.tsk.toce()
+        is Type.Spawns  -> "R_" + this.tsk.toce() + "_R"
     }
 }

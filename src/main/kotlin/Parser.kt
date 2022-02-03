@@ -78,15 +78,15 @@ fun parser_type (all: All, tasks: Boolean=false): Type {
 
             Type.Func(tk0, Pair(clo,scps.toTypedArray()), null, inp, pub, out)
         }
-        all.accept(TK.RUNNING) -> {
+        all.accept(TK.ACTIVE) -> {
             val tk0 = all.tk0 as Tk.Key
             all.check(TK.TASKS) || all.check_err(TK.TASK)
             val task = parser_type(all, true)
             assert(task is Type.Func && task.tk.enu!=TK.FUNC)
             if (task.tk.enu == TK.TASKS) {
-                Type.Runs(tk0, task as Type.Func)
+                Type.Spawns(tk0, task as Type.Func)
             } else {
-                Type.Run(tk0, task as Type.Func)
+                Type.Spawn(tk0, task as Type.Func)
             }
         }
         else -> {
