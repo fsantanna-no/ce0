@@ -1,14 +1,20 @@
-- loop tk in @block { stack tk }
-- natural termination, free
-
-- remover // TODO: call stack
-  - usar stack de C para fcs normais
-- rever local/mem/scp1.toce
-- catch N, throw N
-- spawn dyn @block
-  - public fields
-  - iterate over tasks
+- throw inside DLoop
+  - loop tk in @block { stack tk }
+  - break if NULL?
+- use C stack for normal func
+- static alloc for clo/task that do not escape
+  - should them even have a @clo annotation?
+- catch N, throw N (N = argument)
 - \#line, stack debug
+- remove `awake`?
+- bug expand: /</^@x>@y (x/y do not alternate as expected)
+- bug expand: cloneX
+- ce1: type, generics, typeclass, subtyping, option
+- explicit `free`
+- test block pass w/o data (e.g., internal `new` call)
+- reserve `arg`,`pub`,`evt`,`ret`
+- evt type should be <.fin=(), .throw=_int, ...>
+
 
 
 - Parser in parts to simplify ce1:

@@ -211,7 +211,7 @@ fun String.mem (up: Any): String {
     val func = if (up is Expr.Func) up else up.ups_first { it is Expr.Func }
     return when {
         (func == null) -> "(global.$this)"
-        (this == "ret") -> "(task1->$this)"    // TODO: call stack
+        (this == "ret") -> "(task1->$this)"
         (this in arrayOf("arg","pub","evt")) -> "(task2->task1.$this)"
         else -> "(task2->$this)"
     }
@@ -408,7 +408,7 @@ fun code_fe (e: Expr) {
                         "(X_${tpf.toce()}) {.pars={{$blks}, ${arg.expr}}}"
                     }
                     val pre = """
-                        ${if (e.wup is Stmt.SSpawn) tpf.toce()+"*" else tpf.out.pos()} ret_${e.n};    // TODO: call stack
+                        ${if (e.wup is Stmt.SSpawn) tpf.toce()+"*" else tpf.out.pos()} ret_${e.n};
                         {
                             Stack stk_${e.n} = { stack, ${e.self_or_null()}, ${e.local()} };
                             ${if (e.getUp() is Stmt.Awake) {
