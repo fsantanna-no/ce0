@@ -17,7 +17,7 @@ class TTask {
         if (!ok2) {
             return out2
         }
-        val (_,out3) = exec("$VALGRIND ./out.exe")
+        val (_,out3) = exec("$VALGRIND./out.exe")
         //println(out3)
         return out3
     }
@@ -787,7 +787,7 @@ class TTask {
     }
 
     @Test
-    fun f07_natural () {
+    fun f08_natural () {
         val out = all("""
             var f : task @LOCAL->@[]->_int->_int->()
             set f = task @LOCAL->@[]->_int->_int->() {
@@ -815,5 +815,26 @@ class TTask {
             output std ()
         """.trimIndent())
         assert(out == "1\n2\n1\n2\n2\n()\n") { out }
+    }
+
+    @Disabled   // TODO: can't kill itself b/c i becomes dangling
+    @Test
+    fun f09_dloop_kill () {
+        val out = all("""
+            var f : task @LOCAL->@[]->()->_int->()
+            set f = task @LOCAL->@[]->()->_int->() {
+                set pub = _3:_int
+                output std _1:_int
+                await _1:_int
+            }
+            var fs: active tasks @LOCAL->@[]->()->_int->()
+            spawn f () in fs
+            var x: active task @LOCAL->@[]->()->_int->()
+            loop x in fs {
+                bcast @GLOBAL _5:_int
+                output std x.pub
+            }
+        """.trimIndent())
+        assert(out == "1\n") { out }
     }
 }

@@ -1,6 +1,7 @@
 - throw inside DLoop
   - loop tk in @block { stack tk }
   - break if NULL?
+- _(1 + $v): $ interpolates Ce into C
 - use C stack for normal func
 - static alloc for clo/task that do not escape
   - should them even have a @clo annotation?
@@ -14,8 +15,7 @@
 - test block pass w/o data (e.g., internal `new` call)
 - reserve `arg`,`pub`,`evt`,`ret`
 - evt type should be <.fin=(), .throw=_int, ...>
-
-
+- if DLoop has await, it needs to recreate the i stack
 
 - Parser in parts to simplify ce1:
 

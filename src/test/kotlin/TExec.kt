@@ -17,7 +17,7 @@ class TExec {
         if (!ok2) {
             return out2
         }
-        val (_,out3) = exec("$VALGRIND ./out.exe")
+        val (_,out3) = exec("$VALGRIND./out.exe")
         //println(out3)
         return out3
     }
