@@ -399,12 +399,6 @@ fun parser_stmt (all: All): Stmt {
             val e = parser_expr(all)
             Stmt.Await(tk0, e)
         }
-        all.accept(TK.AWAKE) -> {
-            val tk0 = all.tk0 as Tk.Key
-            val e = parser_expr(all)
-            All_assert_tk(tk0, e is Expr.Call) { "expected call expression" }
-            Stmt.Awake(tk0, e as Expr.Call)
-        }
         all.accept(TK.BCAST) -> {
             val tk0 = all.tk0 as Tk.Key
             all.accept(TK.XSCPCST) || all.accept_err(TK.XSCPVAR)

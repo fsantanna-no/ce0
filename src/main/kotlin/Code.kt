@@ -256,7 +256,7 @@ fun Any.local (): String {
 fun Stmt.mem_vars (): String {
     return when (this) {
         is Stmt.Nop, is Stmt.Set, is Stmt.Native, is Stmt.SCall, is Stmt.SSpawn,
-        is Stmt.DSpawn, is Stmt.Await, is Stmt.Awake, is Stmt.Bcast, is Stmt.Throw,
+        is Stmt.DSpawn, is Stmt.Await, is Stmt.Bcast, is Stmt.Throw,
         is Stmt.Input, is Stmt.Output, is Stmt.Return, is Stmt.Break -> ""
 
         is Stmt.Var -> "${this.xtype!!.pos()} ${this.tk_.str};\n"
@@ -387,7 +387,6 @@ fun code_fe (e: Expr) {
                 }
                 (tpf is Type.Func) -> {
                     val istk   = (tpf.tk.enu == TK.TASK)
-                    val frame  = if (e.wup is Stmt.Awake) f.expr else "frame"
                     val block  = e.wup.let {
                         if (it is Stmt.DSpawn) {
                             "&" + (it.dst as Expr.Var).tk_.str.mem(e) + ".block"
@@ -403,41 +402,35 @@ fun code_fe (e: Expr) {
                         }
                     }
 
-                    val xxx = if (e.getUp() is Stmt.Awake) {
-                        "(X_${tpf.toce()}) {.evt=${arg.expr}}"
-                    } else {
-                        "(X_${tpf.toce()}) {.pars={{$blks}, ${arg.expr}}}"
+                    val (ret1,ret2) = when (e.wup) {
+                        is Stmt.SSpawn -> Pair("${tpf.toce()}* ret_${e.n};", "ret_${e.n} = frame;")
+                        is Stmt.DSpawn -> Pair("", "")
+                        else           -> Pair("${tpf.out.pos()} ret_${e.n};", "ret_${e.n} = (((${tpf.toce()}*)frame)->ret);")
                     }
+
                     val pre = """
-                        ${if (e.wup is Stmt.SSpawn) tpf.toce()+"*" else tpf.out.pos()} ret_${e.n};
+                        $ret1
                         {
                             Stack stk_${e.n} = { stack, ${e.self_or_null()}, ${e.local()} };
-                            ${if (e.getUp() is Stmt.Awake) {
-                                """
-                                assert($frame->task0.state == TASK_AWAITING);
-                                ((F_${tpf.toce()})$frame->task0.f) (&stk_${e.n}, $frame, $xxx);
-                                    
-                                """.trimIndent()
-                            } else {
-                                """
-                                ${tpf.toce()}* frame = (${tpf.toce()}*) malloc(${f.expr}->task0.size);
-                                assert(frame!=NULL && "not enough memory");
-                                memcpy(frame, ${f.expr}, ${f.expr}->task0.size);
-                                ${if (e.wup is Stmt.DSpawn) "frame->task0.isauto = 1;" else ""}
-                                block_push($block, frame);
-                                ${if (istk) "task_link($block, &frame->task0);" else ""}
-                                ${if (tpf.tk.enu != TK.FUNC) "" else "frame->task0.state = TASK_UNBORN;"}
-                                ((F_${tpf.toce()})(frame->task0.f)) (&stk_${e.n}, frame, $xxx);
-                                if (frame->task0.isauto && frame->task0.state==TASK_DEAD) {
-                                    task_unlink_free($block, &frame->task0);
-                                }
-                                                    
-                                """.trimIndent()
-                            }}
+                            ${tpf.toce()}* frame = (${tpf.toce()}*) malloc(${f.expr}->task0.size);
+                            assert(frame!=NULL && "not enough memory");
+                            memcpy(frame, ${f.expr}, ${f.expr}->task0.size);
+                            ${if (e.wup is Stmt.DSpawn) "frame->task0.isauto = 1;" else ""}
+                            block_push($block, frame);
+                            ${if (istk) "task_link($block, &frame->task0);" else ""}
+                            ${if (tpf.tk.enu != TK.FUNC) "" else "frame->task0.state = TASK_UNBORN;"}
+                            ((F_${tpf.toce()})(frame->task0.f)) (
+                                &stk_${e.n},
+                                frame,
+                                (X_${tpf.toce()}) {.pars={{$blks}, ${arg.expr}}}
+                            );
                             if (stk_${e.n}.block == NULL) {
                                 return;
                             }
-                            ret_${e.n} = ${if (e.wup is Stmt.SSpawn) frame else "(((${tpf.toce()}*)$frame)->ret)"};
+                            if (frame->task0.isauto && frame->task0.state==TASK_DEAD) {
+                                task_unlink_free($block, &frame->task0);
+                            }
+                            $ret2
                         }
                         
                         """.trimIndent()
@@ -651,10 +644,6 @@ fun code_fs (s: Stmt) {
                 
             """.trimIndent()
             Code(it.type, it.stmt+src, "")
-        }
-        is Stmt.Awake -> CODE.removeFirst().let {
-            val call = it.expr + ";\n"
-            Code(it.type, it.stmt+call, "")
         }
         is Stmt.Bcast -> CODE.removeFirst().let {
             val src = """

@@ -43,14 +43,6 @@ class TTask {
         assert(out == "(ln 1, col 1): invalid condition : type mismatch") { out }
     }
     @Test
-    fun a02_await_err3 () {
-        val out = all("""
-            var f : task @LOCAL->@[]->()->()->()
-            awake f _1:_int
-        """.trimIndent())
-        assert(out == "(ln 2, col 1): invalid `awake` : type mismatch : expected active task") { out }
-    }
-    @Test
     fun a02_await () {
         val out = all("""
             var f : task @LOCAL->@[]->()->()->()
@@ -62,7 +54,8 @@ class TTask {
             var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             output std _2:_int
-            awake x _1:_int
+            --awake x _1:_int
+            bcast @GLOBAL _1:_int
         """.trimIndent())
         assert(out == "1\n2\n3\n") { out }
     }
@@ -78,10 +71,13 @@ class TTask {
             var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             output std _2:_int
-            awake x _1:_int
-            awake x _1:_int
+            --awake x _1:_int
+            --awake x _1:_int
+            bcast @GLOBAL _1:_int
+            bcast @GLOBAL _1:_int
         """.trimIndent())
-        assert(out.endsWith("Assertion `(global.x)->task0.state == TASK_AWAITING' failed.\n")) { out }
+        //assert(out.endsWith("Assertion `(global.x)->task0.state == TASK_AWAITING' failed.\n")) { out }
+        assert(out.endsWith("1\n2\n3\n")) { out }
     }
     @Test
     fun a03_var () {
@@ -95,7 +91,8 @@ class TTask {
             }
             var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
-            awake x _1:_int
+            --awake x _1:_int
+            bcast @GLOBAL _1:_int
         """.trimIndent())
         assert(out == "10\n") { out }
     }
@@ -119,8 +116,10 @@ class TTask {
             }
             var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
-            awake x _1:_int
-            awake x _1:_int
+            --awake x _1:_int
+            --awake x _1:_int
+            bcast @GLOBAL _1:_int
+            bcast @GLOBAL _1:_int
         """.trimIndent())
         assert(out == "10\n20\n") { out }
     }
@@ -146,8 +145,10 @@ class TTask {
             }
             var x : active task @LOCAL->@[]->_(char*)->()->()
             set x = spawn f _("hello"):_(char*)
-            awake x _10:_int
-            awake x _20:_int
+            --awake x _10:_int
+            --awake x _20:_int
+            bcast @GLOBAL _10:_int
+            bcast @GLOBAL _20:_int
         """.trimIndent())
         assert(out == "\"hello\"\n10\n20\n") { out }
     }
@@ -180,8 +181,9 @@ class TTask {
             output std _11:_int
             var g : active task @LOCAL->@[]->()->()->()
             set g = spawn build ()
-            awake f _1:_int
-            awake g _1:_int
+            --awake f _1:_int
+            --awake g _1:_int
+            bcast @GLOBAL _1:_int
             output std _12:_int
         """.trimIndent())
         assert(out == "10\n1\n11\n1\n2\n2\n12\n") { out }
@@ -207,8 +209,9 @@ class TTask {
             output std _11:_int
             var y : active task @LOCAL->@[]->()->()->()
             set y = spawn g ()
-            awake x _1:_int
-            awake y _1:_int
+            --awake x _1:_int
+            --awake y _1:_int
+            bcast @GLOBAL _1:_int
             output std _12:_int
         """.trimIndent())
         assert(out == "10\n1\n11\n1\n2\n2\n12\n") { out }
@@ -417,7 +420,8 @@ class TTask {
             }
             var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
-            awake x _1:_int
+            --awake x _1:_int
+            bcast @GLOBAL _1:_int
         """.trimIndent())
         assert(out == "0\n1\n2\n") { out }
     }
@@ -441,7 +445,8 @@ class TTask {
             }
             var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
-            awake x _1:_int
+            --awake x _1:_int
+            bcast @GLOBAL _1:_int
         """.trimIndent())
         assert(out == "0\n2\n1\n") { out }
     }

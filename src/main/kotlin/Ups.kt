@@ -81,7 +81,6 @@ fun Stmt.setUps (up: Any?) {
         is Stmt.SSpawn -> { this.dst.setUps(this) ; this.call.setUps(this) }
         is Stmt.DSpawn -> { this.dst.setUps(this) ; this.call.setUps(this) }
         is Stmt.Await -> this.e.setUps(this)
-        is Stmt.Awake -> this.e.setUps(this)
         is Stmt.Bcast -> this.e.setUps(this)
         is Stmt.Input   -> { this.arg.setUps(this) ; this.xtype?.setUps(this) }
         is Stmt.Output   -> this.arg.setUps(this)

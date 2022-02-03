@@ -77,7 +77,6 @@ fun Stmt.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((T
         is Stmt.SSpawn -> { this.dst.visit_(xpd,fs,fe,ft) ; this.call.visit_(xpd,fs,fe,ft) }
         is Stmt.DSpawn -> { this.dst.visit_(xpd,fs,fe,ft) ; this.call.visit_(xpd,fs,fe,ft) }
         is Stmt.Await  -> this.e.visit_(xpd,fs,fe,ft)
-        is Stmt.Awake  -> this.e.visit_(xpd,fs,fe,ft)
         is Stmt.Bcast  -> this.e.visit_(xpd,fs,fe,ft)
         is Stmt.Input  -> { this.dst.visit_(xpd,fs,fe,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
         is Stmt.Output -> this.arg.visit_(xpd,fs,fe,ft)

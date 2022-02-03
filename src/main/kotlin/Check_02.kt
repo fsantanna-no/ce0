@@ -171,11 +171,6 @@ fun check_02_after_tps (s: Stmt) {
                     "invalid condition : type mismatch"
                 }
             }
-            is Stmt.Awake -> {
-                All_assert_tk(s.tk, s.e.wtype is Type.Spawn) {
-                    "invalid `awake` : type mismatch : expected active task"
-                }
-            }
             is Stmt.SSpawn -> {
                 All_assert_tk(s.dst.tk, s.dst.wtype is Type.Spawn) {
                     "invalid `spawn` : type mismatch : expected active task"

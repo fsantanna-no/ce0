@@ -110,7 +110,6 @@ fun Stmt.setEnvs (env: Any?): Any? {
         is Stmt.SSpawn -> { this.dst.setEnvs(env) ; this.call.setEnvs(env) ; env }
         is Stmt.DSpawn -> { this.dst.setEnvs(this) ; this.call.setEnvs(this) ; env }
         is Stmt.Await  -> { this.e.setEnvs(env) ; env }
-        is Stmt.Awake  -> { this.e.setEnvs(env) ; env }
         is Stmt.Bcast  -> { this.e.setEnvs(env) ; env }
         is Stmt.Input    -> { this.dst.setEnvs(env) ; this.arg.setEnvs(env) ; this.xtype?.visit(false, ::ft) ; env }
         is Stmt.Output    -> { this.arg.setEnvs(env) ; env }
