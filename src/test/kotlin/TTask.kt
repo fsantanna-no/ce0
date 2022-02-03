@@ -469,7 +469,7 @@ class TTask {
             var x : task @LOCAL->@[]->()->()->()
             set x = spawn f ()
         """.trimIndent())
-        assert(out == "(ln 3, col 9): invalid `spawn` : type mismatch : expected running task") { out }
+        assert(out == "(ln 3, col 5): invalid `spawn` : type mismatch : expected running task") { out }
     }
     @Test
     fun c00_throw () {
@@ -647,27 +647,50 @@ class TTask {
     // SPAWN / DYNAMIC
 
     @Test
-    fun e01_spawn () {
+    fun e01_spawn_err1 () {
         val out = all("""
             spawn task @LOCAL->@[]->()->()->() {
-                output std _1:_int
-                await _(task1->evt != 0):_int
-                output std _3:_int
             } ()
-            output std _2:_int
-            bcast @GLOBAL _1:_int
-            output std _4:_int
         """.trimIndent())
-        assert(out == "1\n2\n3\n4\n") { out }
+        assert(out == "(ln 2, col 5): expected `in` : have end of file") { out }
+    }
+    @Test
+    fun e01_spawn_err2 () {
+        val out = all("""
+            var f : func @LOCAL->@[]->()->()
+            var fs : running tasks @LOCAL->@[]->()->()->()
+            spawn f () in fs
+        """.trimIndent())
+        assert(out == "(ln 3, col 7): invalid `spawn` : type mismatch : expected task") { out }
+    }
+    @Test
+    fun e01_spawn_err3 () {
+        val out = all("""
+            var f : task @LOCAL->@[]->()->()->()
+            spawn f () in ()
+        """.trimIndent())
+        assert(out == "(ln 2, col 15): invalid `spawn` : type mismatch : expected running tasks") { out }
+    }
+    @Test
+    fun e01_spawn_err4 () {
+        val out = all("""
+            var f : task @LOCAL->@[]->()->()->()
+            var fs : running tasks @LOCAL->@[]->[()]->()->()
+            spawn f () in fs
+        """.trimIndent())
+        assert(out == "(ln 3, col 1): invalid `spawn` : type mismatch\n    tasks @LOCAL -> @[] -> [()] -> ()\n    task @LOCAL -> @[] -> () -> ()") { out }
     }
     @Test
     fun e02_spawn_free () {
         val out = all("""
-            spawn task @LOCAL->@[]->()->()->() {
+            var f : task @LOCAL->@[]->()->()->()
+            set f = task @LOCAL->@[]->()->()->() {
                 output std _1:_int
                 await _(task1->evt != 0):_int
                 output std _3:_int
-            } ()
+            }
+            var fs : running tasks @LOCAL->@[]->()->()->()
+            spawn f () in fs
             output std _2:_int
             bcast @GLOBAL _1:_int
             output std _4:_int
