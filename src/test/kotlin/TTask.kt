@@ -794,12 +794,18 @@ class TTask {
                 set pub = arg
                 output std pub
                 await _1:_int
+            }
+            var g : task @LOCAL->@[]->_int->_int->()
+            set g = task @LOCAL->@[]->_int->_int->() {
+                set pub = arg
+                output std pub
+                await _1:_int
                 await _1:_int
             }
 
             var xs: active tasks @LOCAL->@[]->_int->_int->()
             spawn f _1:_int in xs
-            spawn f _2:_int in xs
+            spawn g _2:_int in xs
 
             var x: active task @LOCAL->@[]->_int->_int->()
             loop x in xs {
