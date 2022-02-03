@@ -386,9 +386,21 @@ fun code_fe (e: Expr) {
                 }
                 (tpf is Type.Func) -> {
                     val istk   = (tpf.tk.enu == TK.TASK)
-                    val cloblk = tpf.xscp1s.first.let { if (it == null) e.local() else tpf.xscp1s.first!!.toce(e.wup!!) }
                     val frame  = if (e.wup is Stmt.Awake) f.expr else "frame"
-                    val block  = e.wup.let { if (it is Stmt.DSpawn) "&"+(it.dst as Expr.Var).tk_.str.mem(e)+".block" else e.local() }
+                    val block  = e.wup.let {
+                        if (it is Stmt.DSpawn) {
+                            "&" + (it.dst as Expr.Var).tk_.str.mem(e) + ".block"
+                        } else {
+                            // closure block: allows the func to escape up to it
+                            tpf.xscp1s.first.let {
+                                if (it == null) {
+                                    e.local()
+                                } else {
+                                    tpf.xscp1s.first!!.toce(e.wup!!)
+                                }
+                            }
+                        }
+                    }
 
                     val xxx = if (e.getUp() is Stmt.Awake) {
                         "(X_${tpf.toce()}) {.evt=${arg.expr}}"
@@ -410,10 +422,11 @@ fun code_fe (e: Expr) {
                                 ${tpf.toce()}* frame = (${tpf.toce()}*) malloc(${f.expr}->task0.size);
                                 assert(frame!=NULL && "not enough memory");
                                 memcpy(frame, ${f.expr}, ${f.expr}->task0.size);
-                                block_push($cloblk, frame);
+                                ${if (e.wup is Stmt.DSpawn) "frame->task0.isauto = 1;" else ""}
+                                block_push($block, frame);
                                 ${if (istk) "task_link($block, &frame->task0);" else ""}
-                                ((F_${tpf.toce()})(frame->task0.f)) (&stk_${e.n}, frame, $xxx);
                                 ${if (tpf.tk.enu != TK.FUNC) "" else "frame->task0.state = TASK_UNBORN;"}
+                                ((F_${tpf.toce()})(frame->task0.f)) (&stk_${e.n}, frame, $xxx);
                                     
                                 """.trimIndent()
                             }}
@@ -458,6 +471,9 @@ fun code_fe (e: Expr) {
                             task2->task1.arg = xxx.pars.arg;
                             ${it.stmt}
                             task0->state = TASK_DEAD;
+                            if (task0->isauto) {
+                                task_unlink_free(stack->block, task0);
+                            }
                             break;
                         }
                         default:
@@ -477,10 +493,9 @@ fun code_fe (e: Expr) {
             val src = if (isnone) {
                 """
                     static Func_${e.n} _frame_${e.n};
-                    _frame_${e.n}.task1.task0.size  = sizeof(Func_${e.n});
-                    _frame_${e.n}.task1.task0.state = TASK_UNBORN;
-                    _frame_${e.n}.task1.task0.f     = (Task_F) func_${e.n};
-                    _frame_${e.n}.task1.task0.pc    = 0;
+                    _frame_${e.n}.task1.task0 = (Task) {
+                        TASK_UNBORN, {}, sizeof(Func_${e.n}), (Task_F)func_${e.n}, 0, 0
+                    };
                     static Func_${e.n}* frame_${e.n} = &_frame_${e.n};
     
                 """.trimIndent()
@@ -488,10 +503,9 @@ fun code_fe (e: Expr) {
                 """
                     Func_${e.n}* frame_${e.n} = (Func_${e.n}*) malloc(sizeof(Func_${e.n}));
                     assert(frame_${e.n}!=NULL && "not enough memory");
-                    frame_${e.n}->task1.task0.size  = sizeof(Func_${e.n});
-                    frame_${e.n}->task1.task0.state = TASK_UNBORN;
-                    frame_${e.n}->task1.task0.f     = (Task_F) func_${e.n};
-                    frame_${e.n}->task1.task0.pc    = 0;
+                    frame_${e.n}->task1.task0 = (Task) {
+                        TASK_UNBORN, {}, sizeof(Func_${e.n}), (Task_F)func_${e.n}, 0, 0
+                    };
                     ${e.type.xscp1s.first.let {
                         if (it==null) "" else
                             "frame_${e.n}->task1.${it.lbl_num()} = ${it.toce(e.wup!!)};\n"
@@ -789,6 +803,7 @@ fun Stmt.code (): String {
             int size;
             Task_F f; // (Stack* stack, Task* task, int evt);
             int pc;
+            int isauto;
         } Task;
         
         typedef struct Block {
@@ -844,7 +859,46 @@ fun Stmt.code (): String {
             task->links.tsk_next  = NULL;
             task->links.blk_down = NULL;
         }
+        
+        void __task_unlink (Block* block, Task* task) {
+            Task* prev = NULL;
+            Task* cur = block->links.tsk_first;
+            while (cur != task) {
+                prev = cur;
+                cur = cur->links.tsk_next;
+            }
+            if (block->links.tsk_first == task) {
+                block->links.tsk_first = task->links.tsk_next;
+            }
+            if (block->links.tsk_last == task) {
+                block->links.tsk_last = prev;
+            }
+            if (task->links.tsk_next != NULL) {
+                task->links.tsk_next = task->links.tsk_next->links.tsk_next;
+            }
+        }
 
+        void __task_free (Block* block, Task* task) {
+            Pool*  tofree = NULL;
+            Pool** cur    = &block->pool;
+            assert(*cur != NULL);
+            while (*cur != NULL) {
+                if ((*cur)->val == task) {
+                    tofree = *cur;
+                    break;
+                }
+                *cur = (*cur)->nxt;
+            }
+            assert(tofree != NULL);
+            free(tofree->val);
+            free(tofree);
+        }
+        
+        void task_unlink_free (Block* block, Task* task) {
+            __task_unlink(block, task);
+            __task_free(block, task);
+        }
+        
         ///
 
         void block_throw (Stack* top, Stack* cur) {
@@ -904,6 +958,7 @@ fun Stmt.code (): String {
                         if (stack->block == NULL) return;
                     }
                     if (task->state == TASK_AWAITING) {
+                        Task* next = task->links.tsk_next;
                         task->f(stack, task, evt);                          // 1.2
                         if (stack->block == NULL) return;
                     }

@@ -17,9 +17,10 @@ class TTask {
         if (!ok2) {
             return out2
         }
-        val (_,out3) = exec("./out.exe")
-        //val (_,out3) = exec("valgrind ./out.exe")
+        //val (_,out3) = exec("./out.exe")
+        val (_,out3) = exec("valgrind ./out.exe")
             // search in tests output for
+            //  definitely|Invalid|uninitialized
             //  - definitely lost
             //  - Invalid read of size
             //  - uninitialised value
@@ -770,6 +771,25 @@ class TTask {
             }
         """.trimIndent())
         assert(out == "1\n3\n") { out }
+    }
+
+    @Test
+    fun f07_kill () {
+        val out = all("""
+            var f : task @LOCAL->@[]->()->_int->()
+            set f = task @LOCAL->@[]->()->_int->() {
+                set pub = _3:_int
+                output std _1:_int
+                --await _1:_int
+            }
+            var fs: active tasks @LOCAL->@[]->()->_int->()
+            spawn f () in fs
+            var x: active task @LOCAL->@[]->()->_int->()
+            loop x in fs {
+                output std x.pub
+            }
+        """.trimIndent())
+        assert(out == "1\n") { out }
     }
 
     @Test
