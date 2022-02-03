@@ -94,10 +94,10 @@ fun Stmt.setTypes () {
                 it.vec[e.tk_.num - 1]
             }
             is Expr.Pub -> e.tsk.wtype.let {
-                All_assert_tk(e.tk, it is Type.Func && it.tk.enu==TK.TASK) {
-                    "invalid \"pub\" : type mismatch : expected task"
+                All_assert_tk(e.tk, it is Type.Run) {
+                    "invalid \"pub\" : type mismatch : expected running task"
                 }
-                (it as Type.Func).pub!!
+                (it as Type.Run).tsk.pub!!
             }
             is Expr.UDisc, is Expr.UPred -> {
                 val (tk_,uni) = when (e) {

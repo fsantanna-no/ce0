@@ -655,7 +655,7 @@ fun code_fs (s: Stmt) {
             val src = """
                 {
                     Stack stk = { stack, ${s.self_or_null()}, ${s.local()} };
-                    block_throw(&stk);
+                    block_throw(&stk, &stk);
                     if (stk.block == NULL) {
                         return;
                     }
@@ -836,16 +836,16 @@ fun Stmt.code (): String {
 
         ///
 
-        void block_throw (Stack* stack) {
-            if (stack == NULL) {
+        void block_throw (Stack* top, Stack* cur) {
+            if (cur == NULL) {
                 assert(0 && "throw without catch");
-            } if (stack->block->catch == 0) {
-                block_throw(stack->stk_up);
+            } if (cur->block->catch == 0) {
+                block_throw(top, cur->stk_up);
             } else {
-                assert(stack->task!=NULL && "catch outside task");
-                Stack stk = { stack, stack->task, stack->block };
-                stack->task->pc = stack->block->catch;
-                stack->task->f(&stk, stack->task, EVENT_THROW);
+                assert(cur->task!=NULL && "catch outside task");
+                Stack stk = { top, cur->task, cur->block };
+                cur->task->pc = cur->block->catch;
+                cur->task->f(&stk, cur->task, EVENT_THROW);
             }            
         }
         

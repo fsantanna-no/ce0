@@ -22,6 +22,7 @@ class TTask {
             // search in tests output for
             //  - "definitely lost"
             //  - "Invalid read of size"
+            //  - "uninitialised value"
         //println(out3)
         return out3
     }
@@ -618,6 +619,14 @@ class TTask {
     // FIELDS
 
     @Test
+    fun d00_err () {
+        val out = all("""
+            var f : task @LOCAL->@[]->()->_int->()
+            set f.pub = _4:_int
+        """.trimIndent())
+        assert(out == "(ln 2, col 7): invalid \"pub\" : type mismatch : expected running task") { out }
+    }
+    @Test
     fun d01_field () {
         val out = all("""
             var f : task @LOCAL->@[]->()->_int->()
@@ -628,9 +637,9 @@ class TTask {
             var xf: running task @LOCAL->@[]->()->_int->()
             set xf = spawn f ()
             output std _2:_int
-            output std f.pub
-            set f.pub = _4:_int
-            output std f.pub
+            output std xf.pub
+            set xf.pub = _4:_int
+            output std xf.pub
         """.trimIndent())
         assert(out == "1\n2\n3\n4\n") { out }
     }
