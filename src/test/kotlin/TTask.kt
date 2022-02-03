@@ -246,22 +246,24 @@ class TTask {
     @Test
     fun a08_bcast_block () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()->()
+            var f : task @LOCAL->@[]->()->()->()
             set f = task @LOCAL->@[]->()->()->() {
                 await _1:_int
                 output std _(task1->evt+0):_int    -- only on kill
             }
-            spawn f ()
+            var x : running task @LOCAL->@[]->()->()->()
+            set x = spawn f ()
             
             {
-                var g: task @LOCAL->@[]->()->()->()
+                var g : task @LOCAL->@[]->()->()->()
                 set g = task @LOCAL->@[]->()->()->() {
                     await _(task1->evt != 0):_int
                     output std _(task1->evt+10):_int
                     await _(task1->evt != 0):_int
                     output std _(task1->evt+10):_int
                 }
-                spawn g ()
+                var y : running task @LOCAL->@[]->()->()->()
+                set y = spawn g ()
                 bcast @LOCAL _1:_int
                 bcast @LOCAL _2:_int
             }            
@@ -271,21 +273,23 @@ class TTask {
     @Test
     fun a09_nest () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()->()
+            var f : task @LOCAL->@[]->()->()->()
             set f = task @LOCAL->@[]->()->()->() {
                 output std _1:_int
                 await _(task1->evt != 0):_int
-                var g: task @LOCAL->@[]->()->()->()
+                var g : task @LOCAL->@[]->()->()->()
                 set g = task @LOCAL->@[]->()->()->() {
                     output std _2:_int
                     await _(task1->evt != 0):_int
                     output std _3:_int
                 }
-                spawn g ()
+                var xg : running task @LOCAL->@[]->()->()->()
+                set xg = spawn g ()
                 await _(task1->evt != 0):_int
                 output std _4:_int
             }
-            spawn f ()
+            var x : running task @LOCAL->@[]->()->()->()
+            set x = spawn f ()
             output std _10:_int
             bcast @GLOBAL _1:_int
             output std _11:_int
@@ -297,11 +301,11 @@ class TTask {
     @Test
     fun a10_block_out () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()->()
+            var f : task @LOCAL->@[]->()->()->()
             set f = task @LOCAL->@[]->()->()->() {
                 output std _10:_int
                 {
-                    var g: task @LOCAL->@[]->()->()->()
+                    var g : task @LOCAL->@[]->()->()->()
                     set g = task @LOCAL->@[]->()->()->() {
                         output std _20:_int
                         await _1:_int
@@ -313,21 +317,24 @@ class TTask {
                             output std _22:_int     -- can't execute this one
                         }
                     }
-                    spawn g ()
+                    var y : running task @LOCAL->@[]->()->()->()
+                    set y = spawn g ()
                     await _(task1->evt != 0):_int
                 }
                 output std _11:_int
-                var h: task @LOCAL->@[]->()->()->()
+                var h : task @LOCAL->@[]->()->()->()
                 set h = task @LOCAL->@[]->()->()->() {
                     output std _30:_int
                     await _(task1->evt != 0):_int
                     output std _31:_int
                 }
-                spawn h ()
+                var z : running task @LOCAL->@[]->()->()->()
+                set z = spawn h ()
                 await _(task1->evt != 0):_int
                 output std _12:_int
             }
-            spawn f ()
+            var x : running task @LOCAL->@[]->()->()->()
+            set x = spawn f ()
             bcast @GLOBAL _1:_int
             bcast @GLOBAL _1:_int
         """.trimIndent())
@@ -346,13 +353,15 @@ class TTask {
                     bcast @GLOBAL _1:_int
                     output std _999:_int
                 }
-                spawn f ()
+                var x : running task @LOCAL->@[]->()->()->()
+                set x = spawn f ()
                 output std _2:_int
                 await _(task1->evt != 0):_int
                 output std _5:_int
             }
             output std _0:_int
-            spawn g ()
+            var y : running task @LOCAL->@[]->()->()->()
+            set y = spawn g ()
             output std _3:_int
             bcast @GLOBAL _1:_int
             output std _6:_int
@@ -376,13 +385,15 @@ class TTask {
                     call kkk ()
                     output std _999:_int
                 }
-                spawn f ()
+                var x : running task @LOCAL->@[]->()->()->()
+                set x = spawn f ()
                 output std _2:_int
                 await _(task1->evt != 0):_int
                 output std _5:_int
             }
             output std _0:_int
-            spawn g ()
+            var y : running task @LOCAL->@[]->()->()->()
+            set y = spawn g ()
             output std _3:_int
             bcast @GLOBAL _1:_int
             output std _6:_int
@@ -395,27 +406,29 @@ class TTask {
     @Test
     fun b01_defer () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()->()
+            var f : task @LOCAL->@[]->()->()->()
             set f = task @LOCAL->@[]->()->()->() {
                 var defer : task @LOCAL->@[]->()->()->()
                 set defer = task @LOCAL->@[]->()->()->() {
                     await _(task1->evt == 0):_int
                     output std _2:_int
                 }
-                spawn defer ()
+                var xdefer : running task @LOCAL->@[]->()->()->()
+                set xdefer = spawn defer ()
                 output std _0:_int
                 await _(task1->evt != 0):_int
                 output std _1:_int
             }
-            spawn f ()
-            awake f _1:_int
+            var x : running task @LOCAL->@[]->()->()->()
+            set x = spawn f ()
+            awake x _1:_int
         """.trimIndent())
         assert(out == "0\n1\n2\n") { out }
     }
     @Test
     fun b02_defer_block () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->()->()
+            var f : task @LOCAL->@[]->()->()->()
             set f = task @LOCAL->@[]->()->()->() {
                 {
                     var defer : task @LOCAL->@[]->()->()->()
@@ -423,14 +436,16 @@ class TTask {
                         await _(task1->evt == 0):_int
                         output std _2:_int
                     }
-                    spawn defer ()
+                    var xdefer : running task @LOCAL->@[]->()->()->()
+                    set xdefer = spawn defer ()
                     output std _0:_int
                     await _(task1->evt != 0):_int
                 }
                 output std _1:_int
             }
-            spawn f ()
-            awake f _1:_int
+            var x : running task @LOCAL->@[]->()->()->()
+            set x = spawn f ()
+            awake x _1:_int
         """.trimIndent())
         assert(out == "0\n2\n1\n") { out }
     }
@@ -447,22 +462,33 @@ class TTask {
     }
 
     @Test
+    fun c00_err () {
+        val out = all("""
+            var f : task @LOCAL->@[]->()->()->()
+            var x : task @LOCAL->@[]->()->()->()
+            set x = spawn f ()
+        """.trimIndent())
+        assert(out == "(ln 3, col 9): invalid `spawn` : type mismatch : expected running task") { out }
+    }
+    @Test
     fun c00_throw () {
         val out = all("""
-            var h: task @LOCAL->@[]->()->()->()
+            var h : task @LOCAL->@[]->()->()->()
             set h = task @LOCAL->@[]->()->()->() {
                catch {
-                    var f: task @LOCAL->@[]->()->()->()
+                    var f : task @LOCAL->@[]->()->()->()
                     set f = task @LOCAL->@[]->()->()->() {
                         await _1:_int
                         output std _1:_int
                     }
-                    spawn f ()
+                    var x : running task @LOCAL->@[]->()->()->()
+                    set x = spawn f ()
                     throw
                }
                output std _2:_int
            }
-           spawn h ()
+           var z : running task @LOCAL->@[]->()->()->()
+           set z = spawn h ()
            output std _3:_int
         """.trimIndent())
         assert(out == "1\n2\n3\n") { out }
@@ -470,28 +496,31 @@ class TTask {
     @Test
     fun c01_throw () {
         val out = all("""
-            var h: task @LOCAL->@[]->()->()->()
+            var h : task @LOCAL->@[]->()->()->()
             set h = task @LOCAL->@[]->()->()->() {
                 catch {
-                    var f: task @LOCAL->@[]->()->()->()
+                    var f : task @LOCAL->@[]->()->()->()
                     set f = task @LOCAL->@[]->()->()->() {
                         await _(task1->evt != 0):_int
                         output std _999:_int
                     }
-                    var g: task @LOCAL->@[]->()->()->()
+                    var g : task @LOCAL->@[]->()->()->()
                     set g = task @LOCAL->@[]->()->()->() {
                         await _1:_int
                         output std _1:_int
                     }
-                    spawn f ()
-                    spawn g ()
+                    var x : running task @LOCAL->@[]->()->()->()
+                    set x = spawn f ()
+                    var y : running task @LOCAL->@[]->()->()->()
+                    set y = spawn g ()
                     output std _0:_int
                     throw
                     output std _999:_int
                 }
                 output std _2:_int
            }
-           spawn h ()
+           var z : running task @LOCAL->@[]->()->()->()
+           set z = spawn h ()
            output std _3:_int
         """.trimIndent())
         assert(out == "0\n1\n2\n3\n") { out }
@@ -501,9 +530,9 @@ class TTask {
         val out = all("""
             var main : task @LOCAL->@[]->()->()->()
             set main = task @LOCAL->@[]->()->()->() {
-                var fg: task @LOCAL->@[]->()->()->()
+                var fg : task @LOCAL->@[]->()->()->()
                 set fg = task @LOCAL->@[]->()->()->() {
-                    var f: task @LOCAL->@[]->()->()->()
+                    var f : task @LOCAL->@[]->()->()->()
                     set f = task @LOCAL->@[]->()->()->() {
                         await _(task1->evt == 2):_int
                         output std _999:_int
@@ -514,23 +543,28 @@ class TTask {
                         output std _2:_int
                     }
                     await _(task1->evt != 0):_int
-                    spawn f ()
-                    spawn g ()
+                    var xf : running task @LOCAL->@[]->()->()->()
+                    set xf = spawn f ()
+                    var xg : running task @LOCAL->@[]->()->()->()
+                    set xg = spawn g ()
                     throw
                 }
-                var h: task @LOCAL->@[]->()->()->()
+                var h : task @LOCAL->@[]->()->()->()
                 set h = task @LOCAL->@[]->()->()->() {
                     await _(task1->evt == 0):_int
                     output std _1:_int
                 }
+                var xfg : running task @LOCAL->@[]->()->()->()
+                var xh : running task @LOCAL->@[]->()->()->()
                 catch {
-                    spawn fg ()
-                    spawn h ()
+                    set xfg = spawn fg ()
+                    set xh = spawn h ()
                     bcast @GLOBAL _5:_int
                     output std _999:_int
                 }
             }
-            spawn main ()
+            var xmain : running task @LOCAL->@[]->()->()->()
+            set xmain = spawn main ()
             output std _3:_int
         """.trimIndent())
         assert(out == "1\n2\n3\n") { out }
@@ -542,7 +576,7 @@ class TTask {
             set err = func @[]->()->() {
                 throw
             }
-            var h: task @LOCAL->@[]->()->()->()
+            var h : task @LOCAL->@[]->()->()->()
             set h = task @LOCAL->@[]->()->()->() {
                catch {
                     var f: task @LOCAL->@[]->()->()->()
@@ -550,13 +584,15 @@ class TTask {
                         await _1:_int
                         output std _1:_int
                     }
-                    spawn f ()
+                    var xf: running task @LOCAL->@[]->()->()->()
+                    set xf = spawn f ()
                     call err ()
                     output std _999:_int
                }
                output std _2:_int
            }
-           spawn h ()
+           var xh : running task @LOCAL->@[]->()->()->()
+           set xh = spawn h ()
            output std _3:_int
         """.trimIndent())
         assert(out == "1\n2\n3\n") { out }
@@ -584,12 +620,13 @@ class TTask {
     @Test
     fun d01_field () {
         val out = all("""
-            var f: task @LOCAL->@[]->()->_int->()
+            var f : task @LOCAL->@[]->()->_int->()
             set f = task @LOCAL->@[]->()->_int->() {
                 set pub = _3:_int
                 output std _1:_int
             }
-            spawn f ()
+            var xf: running task @LOCAL->@[]->()->_int->()
+            set xf = spawn f ()
             output std _2:_int
             output std f.pub
             set f.pub = _4:_int

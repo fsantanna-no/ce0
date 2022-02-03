@@ -177,6 +177,9 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
             is Stmt.SSpawn -> {
+                All_assert_tk(s.tk, s.dst.wtype is Type.Run) {
+                    "invalid `spawn` : type mismatch : expected running task"
+                }
                 val dst  = (s.dst.wtype!! as Type.Run).tsk
                 val call = s.call.f.wtype!!
                 //println("invalid `spawn` : type mismatch : ${dst.tostr()} = ${call.tostr()}")
