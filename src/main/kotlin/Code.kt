@@ -471,9 +471,6 @@ fun code_fe (e: Expr) {
                             task2->task1.arg = xxx.pars.arg;
                             ${it.stmt}
                             task0->state = TASK_DEAD;
-                            if (task0->isauto) {
-                                task_unlink_free(stack->block, task0);
-                            }
                             break;
                         }
                         default:
@@ -861,33 +858,42 @@ fun Stmt.code (): String {
         }
         
         void __task_unlink (Block* block, Task* task) {
-            Task* prev = NULL;
-            Task* cur = block->links.tsk_first;
-            while (cur != task) {
-                prev = cur;
-                cur = cur->links.tsk_next;
+            Task* prv = NULL; {
+                Task* cur = block->links.tsk_first;
+                while (cur != task) {
+                    prv = cur;
+                    cur = cur->links.tsk_next;
+                }
+            }
+            Task* nxt = task->links.tsk_next; {
+                while (nxt!=NULL && nxt->state==TASK_DEAD) {
+                    nxt = nxt->links.tsk_next;
+                }
             }
             if (block->links.tsk_first == task) {
-                block->links.tsk_first = task->links.tsk_next;
+                block->links.tsk_first = nxt;
             }
             if (block->links.tsk_last == task) {
-                block->links.tsk_last = prev;
+                block->links.tsk_last = prv;
             }
-            if (task->links.tsk_next != NULL) {
-                task->links.tsk_next = task->links.tsk_next->links.tsk_next;
+            if (prv != NULL) {
+                prv->links.tsk_next = nxt;
             }
         }
 
         void __task_free (Block* block, Task* task) {
             Pool*  tofree = NULL;
-            Pool** cur    = &block->pool;
-            assert(*cur != NULL);
-            while (*cur != NULL) {
-                if ((*cur)->val == task) {
-                    tofree = *cur;
+            Pool** tonxt  = &block->pool;
+            Pool*  cur    = block->pool;
+            assert(cur != NULL);
+            while (cur != NULL) {
+                if (cur->val == task) {
+                    tofree = cur;
+                    *tonxt = cur->nxt; 
                     break;
                 }
-                *cur = (*cur)->nxt;
+                tonxt = &cur->nxt;
+                cur   = cur->nxt;
             }
             assert(tofree != NULL);
             free(tofree->val);
@@ -963,6 +969,10 @@ fun Stmt.code (): String {
                         if (stack->block == NULL) return;
                     }
                     aux(task->links.tsk_next);                              // 1.3
+                }
+                
+                if (task->isauto && task->state==TASK_DEAD) {
+                    task_unlink_free(block, task);
                 }
             }
             

@@ -2,6 +2,13 @@ import java.io.File
 import java.io.PushbackReader
 import java.io.StringReader
 
+// search in tests output for
+//  definitely|Invalid|uninitialized
+//  - definitely lost
+//  - Invalid read of size
+//  - uninitialised value
+val VALGRIND = "valgrind"
+
 fun ce2c (ce: String): Pair<Boolean,String> {
     val all = All_new(PushbackReader(StringReader(ce), 2))
     lexer(all)

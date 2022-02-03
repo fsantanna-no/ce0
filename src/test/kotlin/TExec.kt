@@ -17,12 +17,7 @@ class TExec {
         if (!ok2) {
             return out2
         }
-        val (_,out3) = exec("./out.exe")
-        //val (_,out3) = exec("valgrind ./out.exe")
-            // search in tests output for
-            //  - definitely lost
-            //  - Invalid read of size
-            //  - uninitialised value
+        val (_,out3) = exec("$VALGRIND ./out.exe")
         //println(out3)
         return out3
     }
