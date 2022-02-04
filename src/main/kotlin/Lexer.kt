@@ -1,3 +1,5 @@
+val D = "\$"
+
 enum class TK {
     ERR, EOF, CHAR,
     XVAR, XNAT, XNUM, XUP, XSCPCST, XSCPVAR,

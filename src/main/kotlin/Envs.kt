@@ -111,7 +111,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
         is Stmt.DSpawn -> { this.dst.setEnvs(this) ; this.call.setEnvs(this) ; env }
         is Stmt.Await  -> { this.e.setEnvs(env) ; env }
         is Stmt.Bcast  -> { this.e.setEnvs(env) ; env }
-        is Stmt.Input    -> { this.dst.setEnvs(env) ; this.arg.setEnvs(env) ; this.xtype?.visit(false, ::ft) ; env }
+        is Stmt.Input    -> { this.dst?.setEnvs(env) ; this.arg.setEnvs(env) ; this.xtype?.visit(false, ::ft) ; env }
         is Stmt.Output    -> { this.arg.setEnvs(env) ; env }
         is Stmt.Seq -> {
             val e1 = this.s1.setEnvs(env)

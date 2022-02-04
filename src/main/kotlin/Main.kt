@@ -9,7 +9,6 @@ import java.io.StringReader
 //  - uninitialised value
 val VALGRIND = ""
 //val VALGRIND = "valgrind "
-val D = "\$"
 
 fun ce2c (ce: String): Pair<Boolean,String> {
     val all = All_new(PushbackReader(StringReader(ce), 2))

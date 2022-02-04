@@ -1,3 +1,4 @@
+- parser in evidence (input, attr), than types, etc
 - use C stack for normal func
 - static alloc for clo/task that do not escape
   - should them even have a @clo annotation?
