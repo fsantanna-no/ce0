@@ -1,8 +1,8 @@
 # Ce0 - Core
 
-*Ce* is a simple language with algebraic data types, pointers, first-class
+`Ce` is a simple language with algebraic data types, pointers, first-class
 functions, and region-based memory management.
-The main goal of *Ce* is to support safe memory management for dynamically
+The main goal of `Ce` is to support safe memory management for dynamically
 allocated data structures.
 
 An allocated data is always attached to a specific block and cannot move.
@@ -14,10 +14,10 @@ This prevents dangling pointer dereferencing.
 These ideas have been successfully adopted in Cyclone:
 https://cyclone.thelanguage.org/
 
-*Ce0* is the most basic core version of *Ce* with no extensions (syntax sugar,
+`Ce0` is the most basic core version of `Ce` with no extensions (syntax sugar,
 type inference, etc).
 
-See also *Ce1*: https://github.com/fsantanna/ce1
+See also `Ce1`: https://github.com/fsantanna/ce1
 
 # INSTALL & RUN
 
@@ -194,7 +194,7 @@ unit value `()`.
 
 ## Native
 
-A native type holds external values from *C*, i.e., values which *Ce* does
+A native type holds external values from *C*, i.e., values which `Ce` does
 not create or manipulate directly.
 A native type identifier always starts with an underscore `_`:
 
@@ -300,7 +300,7 @@ _(2+2): _int            -- _(2+2) has type _int
 _{f(x,y)}: _(char*)     -- f returns a C string
 ```
 
-Symbols defined in *Ce* can also be accessed inside native expressions:
+Symbols defined in `Ce` can also be accessed inside native expressions:
 
 ```
 var x: _int
@@ -587,8 +587,8 @@ Blocks ::= `@[´ [BLOCK {`,´ BLOCK}] `]´             -- list of scopes        
 
 # A. Memory Management
 
-*Ce* relies on the concept of hierarchical blocks to manage memory.
-*Ce* guarantees that the scope and lifetime of a given piece of data
+`Ce` relies on the concept of hierarchical blocks to manage memory.
+`Ce` guarantees that the scope and lifetime of a given piece of data
 coincide and are always attached to a single fixed block.
 The scope refers to the visibility of the data, i.e., the ability to
 refer to it directly or indirectly through identifiers or pointers.
@@ -607,11 +607,11 @@ to an explicit block:
 -- `x` is no longer in memory (lifetime), but neither can be referred (scope)
 ```
 
-A pointer in *Ce* must statically specify a block, which restricts the data
+A pointer in `Ce` must statically specify a block, which restricts the data
 it can point to.
 A pointer can only point to data that is attached to a block that lives at
 least the same as the block specified in the pointer.
-*Ce* verifies that the pointer assignments respect this rule at compile time:
+`Ce` verifies that the pointer assignments respect this rule at compile time:
 
 ```
 { @A
@@ -635,7 +635,7 @@ least the same as the block specified in the pointer.
 Just like with pointers, a dynamic allocation operation with `new` must also
 statically specify a block to which the data becomes attached.
 The operation returns a pointer with the same block of the allocation.
-*Ce* verifies if the same rules for pointer assignments apply to dynamic data:
+`Ce` verifies if the same rules for pointer assignments apply to dynamic data:
 
 ```
 { @A
