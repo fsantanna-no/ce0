@@ -572,7 +572,11 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
 fun code_fs (s: Stmt) {
     CODE.addFirst(when (s) {
         is Stmt.Nop -> Code("","","")
-        is Stmt.Native -> Code("", s.tk_.src.native(s, s.tk) + "\n", "")
+        is Stmt.Native -> if (s.istype) {
+            Code(s.tk_.src.native(s, s.tk) + "\n", "", "")
+        } else {
+            Code("", s.tk_.src.native(s, s.tk) + "\n", "")
+        }
         is Stmt.Seq -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; Code(s1.type+s2.type, s1.stmt+s2.stmt, "") }
         is Stmt.Var -> {
             val src = if (s.xtype is Type.Spawns) {
@@ -699,12 +703,14 @@ fun code_fs (s: Stmt) {
         }
         is Stmt.Input -> {
             val arg = CODE.removeFirst()
-            val dst = CODE.removeFirst()
-            val src = """
-                ${dst.expr} = input_${s.lib.str}_${s.xtype!!.toce()}(${arg.expr});
-                
-            """.trimIndent()
-            Code(arg.type+dst.type, arg.stmt+dst.stmt+src, "")
+            if (s.dst == null) {
+                val src = "input_${s.lib.str}_${s.xtype!!.toce()}(${arg.expr});\n"
+                Code(arg.type, arg.stmt + src, "")
+            } else {
+                val dst = CODE.removeFirst()
+                val src = "${dst.expr} = input_${s.lib.str}_${s.xtype!!.toce()}(${arg.expr});\n"
+                Code(arg.type + dst.type, arg.stmt + dst.stmt + src, "")
+            }
         }
         is Stmt.Output -> CODE.removeFirst().let {
             val call = if (s.lib.str == "std") {

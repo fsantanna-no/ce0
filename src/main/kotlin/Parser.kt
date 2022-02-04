@@ -377,8 +377,9 @@ fun parser_stmt (all: All): Stmt {
             }
         }
         all.accept(TK.NATIVE) -> {
+            val istype = all.accept(TK.TYPE)
             all.accept_err(TK.XNAT)
-            Stmt.Native(all.tk0 as Tk.Nat)
+            Stmt.Native(all.tk0 as Tk.Nat, istype)
         }
         all.accept(TK.CALL) -> {
             val tk0 = all.tk0 as Tk.Key

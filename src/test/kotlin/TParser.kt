@@ -737,7 +737,14 @@ class TParser {
         val all = All_new(PushbackReader(StringReader("native _{xxx}"), 2))
         lexer(all)
         val s = parser_stmt(all)
-        assert(s is Stmt.Native && s.tk_.src=="xxx")
+        assert(s is Stmt.Native && s.tk_.src=="xxx" && !s.istype)
+    }
+    @Test
+    fun c14_parser_nat_type () {
+        val all = All_new(PushbackReader(StringReader("native type _{xxx}"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.Native && s.tk_.src=="xxx" && s.istype)
     }
     @Test
     fun c15_parser_nat () {

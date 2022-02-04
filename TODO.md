@@ -1,3 +1,5 @@
+- pico-ce
+- native pre _{}
 - var z = spawn h ()
   - optional in ce0?
   - optional in ce1?

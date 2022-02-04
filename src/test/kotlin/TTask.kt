@@ -719,7 +719,7 @@ class TTask {
             loop x in xs {
             }
         """.trimIndent())
-        assert(out == "(ln 3, col 1): invalid `loop` : type mismatch\n    active task @LOCAL -> @[] -> () -> () -> ()\n    active tasks @LOCAL -> @[] -> [()] -> () -> ()") { out }
+        assert(out == "(ln 3, col 1): invalid `loop` : type mismatch\n    active task @LOCAL -> @[] -> () -> _int -> ()\n    active tasks @LOCAL -> @[] -> [()] -> _int -> ()") { out }
 
     }
     @Test

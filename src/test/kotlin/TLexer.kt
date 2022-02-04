@@ -82,7 +82,7 @@ class TLexer {
         lexer(all) ; assert(all.tk1.enu==TK.VAR)
         lexer(all) ; assert(all.tk1.enu==TK.ELSE)
         lexer(all) ; assert(all.tk1.enu==TK.XVAR && (all.tk1 as Tk.Str).str=="varx")
-        lexer(all) ; assert(all.tk1.enu==TK.XVAR)
+        lexer(all) ; assert(all.tk1.enu==TK.TYPE)
         lexer(all) ; assert(all.tk1.enu==TK.OUTPUT)
         //lexer(all) ; assert(all.tk1.enu==TK.AREC && (all.tk1 as Tk.Key).key=="@rec")
     }

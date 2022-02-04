@@ -115,6 +115,7 @@ fun All.checkExpr (): Boolean {
 }
 
 fun exec (cmds: List<String>): Pair<Boolean,String> {
+    //System.err.println(cmds.joinToString(" "))
     val p = ProcessBuilder(cmds)
         //.redirectOutput(ProcessBuilder.Redirect.PIPE)
         .redirectErrorStream(true)
