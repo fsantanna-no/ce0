@@ -1,3 +1,6 @@
+- var z = spawn h ()
+  - optional in ce0?
+  - optional in ce1?
 - parser in evidence (input, attr), than types, etc
 - use C stack for normal func
 - static alloc for clo/task that do not escape

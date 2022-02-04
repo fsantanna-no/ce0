@@ -34,7 +34,7 @@ fun Type.tostr (): String {
         is Type.Ptr   -> this.xscp1.let { "/" + this.pln.tostr() + (it?.tostr() ?: "")}
         is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
-        is Type.Func  -> this.tk_.key + " " + this.xscp1s.first.clo() + "@[" + this.xscp1s.second!!.map { it.tostr() }.joinToString(",") + "] -> " + this.inp.tostr() + " -> " + this.out.tostr()
+        is Type.Func  -> this.tk_.key + " " + this.xscp1s.first.clo() + "@[" + this.xscp1s.second!!.map { it.tostr() }.joinToString(",") + "] -> " + this.inp.tostr() + " -> " + this.pub.let { if (it == null) "" else it.tostr() + " -> " } + this.out.tostr()
         is Type.Spawn   -> "active " + this.tsk.tostr()
         is Type.Spawns  -> "active " + this.tsk.tostr()
     }
@@ -90,7 +90,11 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
                 this.pub?.aux(lin, col),
                 this.out.aux(lin, col)
             )
-            is Type.Spawn, is Type.Spawns -> TODO()
+            is Type.Spawn -> Type.Spawn (
+                this.tk_.copy(lin_ = lin, col_ = col),
+                this.tsk.aux(lin, col) as Type.Func
+            )
+            is Type.Spawns -> TODO()
             is Type.Ptr -> Type.Ptr(
                 this.tk_.copy(lin_ = lin, col_ = col),
                 this.xscp1?.copy(lin_=lin,col_=col),

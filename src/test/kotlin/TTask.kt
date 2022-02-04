@@ -130,7 +130,7 @@ class TTask {
             var x : active task @LOCAL->@[]->[()]->()->()
             set x = spawn f ()
         """.trimIndent())
-        assert(out == "(ln 3, col 9): invalid `spawn` : type mismatch\n    task @LOCAL -> @[] -> [()] -> ()\n    task @LOCAL -> @[] -> () -> ()") { out }
+        assert(out == "(ln 3, col 9): invalid `spawn` : type mismatch\n    task @LOCAL -> @[] -> [()] -> () -> ()\n    task @LOCAL -> @[] -> () -> () -> ()") { out }
     }
     @Test
     fun a05_args () {
@@ -678,7 +678,7 @@ class TTask {
             var fs : active tasks @LOCAL->@[]->[()]->()->()
             spawn f () in fs
         """.trimIndent())
-        assert(out == "(ln 3, col 1): invalid `spawn` : type mismatch\n    tasks @LOCAL -> @[] -> [()] -> ()\n    task @LOCAL -> @[] -> () -> ()") { out }
+        assert(out == "(ln 3, col 1): invalid `spawn` : type mismatch\n    tasks @LOCAL -> @[] -> [()] -> () -> ()\n    task @LOCAL -> @[] -> () -> () -> ()") { out }
     }
     @Test
     fun e02_spawn_free () {
@@ -719,7 +719,7 @@ class TTask {
             loop x in xs {
             }
         """.trimIndent())
-        assert(out == "(ln 3, col 1): invalid `loop` : type mismatch\n    active task @LOCAL -> @[] -> () -> ()\n    active tasks @LOCAL -> @[] -> [()] -> ()") { out }
+        assert(out == "(ln 3, col 1): invalid `loop` : type mismatch\n    active task @LOCAL -> @[] -> () -> () -> ()\n    active tasks @LOCAL -> @[] -> [()] -> () -> ()") { out }
 
     }
     @Test
