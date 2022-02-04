@@ -148,7 +148,7 @@ val lte = """
         set islt = lt @[@a1,@b1] [arg.1\!1,arg.2\!1]
         var iseq: _int
         set iseq = eq @[@a1,@b1] [arg.1\!1,arg.2\!1]
-        set ret = _(task2->islt || task2->iseq): _int
+        set ret = _(${D}islt || ${D}iseq): _int
     }
 """.trimIndent()
 

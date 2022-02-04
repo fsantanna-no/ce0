@@ -71,12 +71,12 @@ class TCyclone {
                 var x: _int
                 var n: _int
                 set n = arg.2
-                if _(task2->n > 1):_int {
-                    call fact @[@F] [/x,_(task2->n-1):_int]
+                if _(${D}n > 1):_int {
+                    call fact @[@F] [/x,_(${D}n-1):_int]
                 } else {
                     set x = _1: _int                
                 }
-                set arg.1\ = _(task2->x*task2->n):_int
+                set arg.1\ = _(${D}x*${D}n):_int
             }
             var x: _int
             call fact @[@LOCAL] [/x, _6:_int]

@@ -258,13 +258,27 @@ class TExec {
         val out = all("""
         var f : (func@[]-> _int -> _int)
         set f = func@[]-> _int->_int {
-           set arg = _(task2->task1.arg+1): _int
+           set arg = _(${D}arg+1): _int
            set ret = arg
            return
         }
         output std f _1: _int
         """.trimIndent())
         assert(out == "2\n") { out }
+    }
+    @Test
+    fun d04_arg_err1 () {
+        val out = all("""
+            output std _(${D}{arg): _int
+        """.trimIndent())
+        assert(out == "(ln 1, col 12): invalid `\$´") { out }
+    }
+    @Test
+    fun d04_arg_err2 () {
+        val out = all("""
+            output std _(${D}): _int
+        """.trimIndent())
+        assert(out == "(ln 1, col 12): invalid `\$´") { out }
     }
     @Test
     fun d05_func_var () {
@@ -545,7 +559,7 @@ class TExec {
         val out = all("""
         var f : func@[@i1]-> /_int@i1 -> ()
         set f = func@[@i1]-> /_int@i1 -> () {
-           set arg\ = _(*task2->task1.arg+1): _int
+           set arg\ = _(*${D}arg+1): _int
            return
         }
         var x: _int
@@ -1872,14 +1886,14 @@ class TExec {
             var frec : func @[]->_int->_int
             set frec = func @[]->_int->_int {
                 --output std arg
-                if _(task2->task1.arg == 1):_int {
+                if _(${D}arg == 1):_int {
                     set ret = _1:_int
                 } else {
                     var tmp: _int
-                    set tmp = frec _(task2->task1.arg-1):_int
+                    set tmp = frec _(${D}arg-1):_int
                     --output std arg
                     --output std tmp
-                    set ret = _(task2->task1.arg + task2->tmp):_int
+                    set ret = _(${D}arg + ${D}tmp):_int
                 }
             }
             output std (frec _5:_int)

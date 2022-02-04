@@ -253,6 +253,32 @@ fun Any.local (): String {
     }
 }
 
+fun String.native (up: Any, tk: Tk): String {
+    var ret = ""
+    var i = 0
+    while (i < this.length) {
+        ret += if (this[i] == '$') {
+            i++
+            All_assert_tk(tk, i < this.length) { "invalid `\$´" }
+            val open = if (this[i] != '{') false else { i++; true }
+            var ce = ""
+            while (i<this.length && (this[i].isLetterOrDigit() || this[i] == '_' || (open && this[i]!='}'))) {
+                ce += this[i]
+                i++
+            }
+            if (open) {
+                All_assert_tk(tk, i < this.length) { "invalid `\$´" }
+                assert(this[i]=='}') { "bug found" }
+                i++
+            }
+            ce.mem(up)
+        } else {
+            this[i++]
+        }
+    }
+    return ret
+}
+
 fun Stmt.mem_vars (): String {
     return when (this) {
         is Stmt.Nop, is Stmt.Set, is Stmt.Native, is Stmt.SCall, is Stmt.SSpawn,
@@ -301,7 +327,7 @@ fun code_fe (e: Expr) {
     val xp = e.wtype!!
     CODE.addFirst(when (e) {
         is Expr.Unit  -> Code("", "", "0")
-        is Expr.Nat   -> Code("", "", e.tk_.src)
+        is Expr.Nat   -> Code("", "", e.tk_.src.native(e, e.tk))
         is Expr.Var   -> Code("", "", e.tk_.str.mem(e.env(true)!!))
         is Expr.Upref -> CODE.removeFirst().let {
             Code(it.type, it.stmt, "(&" + it.expr + ")")
@@ -546,7 +572,7 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
 fun code_fs (s: Stmt) {
     CODE.addFirst(when (s) {
         is Stmt.Nop -> Code("","","")
-        is Stmt.Native -> Code("", s.tk_.src + "\n", "")
+        is Stmt.Native -> Code("", s.tk_.src.native(s, s.tk) + "\n", "")
         is Stmt.Seq -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; Code(s1.type+s2.type, s1.stmt+s2.stmt, "") }
         is Stmt.Var -> {
             val src = if (s.xtype is Type.Spawns) {

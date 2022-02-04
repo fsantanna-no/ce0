@@ -1,6 +1,3 @@
-- throw inside DLoop
-  - loop tk in @block { stack tk }
-  - break if NULL?
 - _(1 + $v): $ interpolates Ce into C
 - use C stack for normal func
 - static alloc for clo/task that do not escape
@@ -15,7 +12,14 @@
 - test block pass w/o data (e.g., internal `new` call)
 - reserve `arg`,`pub`,`evt`,`ret`
 - evt type should be <.fin=(), .throw=_int, ...>
-- if DLoop has await, it needs to recreate the i stack
+- DLoop:
+  1. reject await/bcast/etc inside DLoop
+  2. runtime error when self kill
+  3. escape loop on error (but, multi-level escape)
+  - if DLoop has await, it needs to recreate the i stack
+  - throw inside DLoop
+    - loop tk in @block { stack tk }
+    - break if NULL?
 
 - Parser in parts to simplify ce1:
 
