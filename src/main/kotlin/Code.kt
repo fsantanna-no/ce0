@@ -1,8 +1,6 @@
 data class Code (val type: String, val pre: String, val stmt: String, val expr: String)
 val CODE = ArrayDeque<Code>()
 
-val TYPEX = mutableSetOf<String>()
-
 fun Any.self_or_null (): String {
     return if (this.ups_first { it is Expr.Func } == null) "NULL" else "(&task1->task0)"
 }
@@ -31,6 +29,8 @@ fun Type.output_std (c: String, arg: String): String {
         else -> "output_std_${this.toce()}$c($arg);\n"
     }
 }
+
+val TYPEX = mutableSetOf<String>()
 
 fun code_ft (tp: Type) {
     CODE.addFirst(when (tp) {

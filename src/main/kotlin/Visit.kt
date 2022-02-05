@@ -81,7 +81,7 @@ fun Stmt.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((T
         is Stmt.DSpawn -> { this.dst.visit_(xpd,fs,fe,ft) ; this.call.visit_(xpd,fs,fe,ft) }
         is Stmt.Await  -> this.e.visit_(xpd,fs,fe,ft)
         is Stmt.Bcast  -> this.e.visit_(xpd,fs,fe,ft)
-        is Stmt.Input  -> { this.dst?.visit_(xpd,fs,fe,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
+        is Stmt.Input  -> { this.xtype?.visit_(xpd,ft) ; this.dst?.visit_(xpd,fs,fe,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
         is Stmt.Output -> this.arg.visit_(xpd,fs,fe,ft)
         is Stmt.Seq    -> { this.s1.visit(xpd,fs,fe,ft) ; this.s2.visit(xpd,fs,fe,ft) }
         is Stmt.If     -> { this.tst.visit_(xpd,fs,fe,ft) ; this.true_.visit(xpd,fs,fe,ft) ; this.false_.visit(xpd,fs,fe,ft) }
