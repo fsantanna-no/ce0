@@ -1669,7 +1669,7 @@ class TExec {
         set x = [_1:_int,_2:_int]
         output std /x
         """.trimIndent())
-        assert(out == "()\n") { out }
+        assert(out == "[1,2]\n") { out }
     }
 
     // ALL

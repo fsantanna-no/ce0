@@ -1,25 +1,3 @@
-/*
-fun Type.link1 (up: Any): Type {
-    this.up  = up
-    this.env = up.getEnv()
-    return this
-}
-*/
-
-fun Type.link (up: Any): Type {
-    this.setUps(up)
-    this.setEnvs(up.getEnv())
-    this.visit(false, { this.wenv = up.getEnv() })
-    return this
-}
-
-fun Type.linkX (up: Any): Type {
-    this.setUps(up)
-    this.setEnvs(up.getEnv())
-    //this.visit(false, { this.env = up.getEnv() })
-    return this
-}
-
 fun Tk.Scp1.tostr (): String {
     return "@" + this.lbl + (this.num?:"")
 }
@@ -106,9 +84,13 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
                 this.pln.aux(lin, col)
             )
             is Type.Rec -> Type.Rec(this.tk_.copy(lin_ = lin, col_ = col))
+        }.let {
+            it.wup  = up
+            it.wenv = up.getEnv()
+            it
         }
     }
-    return this.aux(lin,col).link(up)
+    return this.aux(lin,col)
 }
 
 fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
@@ -140,9 +122,13 @@ fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
             is Type.Spawn, is Type.Spawns -> TODO()
             is Type.Ptr -> Type.Ptr(this.tk_.copy(lin_ = lin, col_ = col), this.xscp1?.copy(lin_=lin,col_=col), this.xscp2, this.pln.aux(lin, col))
             is Type.Rec -> Type.Rec(this.tk_.copy(lin_ = lin, col_ = col))
+        }.let {
+            it.wup  = up
+            it.wenv = up.getEnv()
+            it
         }
     }
-    return this.aux(lin,col).linkX(up)
+    return this.aux(lin,col)
 }
 
 fun Type.isrec (): Boolean {
