@@ -146,10 +146,8 @@ fun parser_expr (all: All): Expr {
             all.accept_err(TK.CHAR, ':')
             val tp = parser_type(all)
             if (tk0.num == 0) {
-                All_assert_tk(tp.tk, (tp is Type.Ptr && tp.pln is Type.Union)) { "invalid type : expected pointer to union"}
                 Expr.UNull(tk0, tp)
             } else {
-                All_assert_tk(tp.tk, tp is Type.Union) { "invalid type : expected union"}
                 Expr.UCons(tk0, tp, cons!!)
             }
         }

@@ -1,4 +1,6 @@
 - pico-ce
+- parametric type @a
+  - type List @a = </List @a>
 - remove Type.expand
   - fix cloneX, etc
   - all double rec will fail

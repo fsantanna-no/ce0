@@ -111,8 +111,8 @@ fun Expr.setEnvs (env: Any?) {
 
 fun Stmt.setEnvs (env: Any?): Any? {
     this.wenv = env
-    fun ft (tp: Type) {
-        tp.wenv = env
+    fun ft (tp: Type) { // recursive typedef
+        tp.wenv = if (this is Stmt.Typedef) this else env
     }
     return when (this) {
         is Stmt.Nop, is Stmt.Native, is Stmt.Return, is Stmt.Break, is Stmt.Throw -> env

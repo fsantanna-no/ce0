@@ -41,6 +41,7 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
 
+            is Expr.UNull -> e.check()
             is Expr.UCons -> {
                 e.check()
                 val uni = e.xtype as Type.Union
