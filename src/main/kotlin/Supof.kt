@@ -64,6 +64,7 @@ fun Type.Func.mapLabels (up: Any): Type.Func {
     // TODO: xscp1s/xscp2s are not used in supOf, so we ignore them here
     return Type.Func(this.tk_,this.xscp1s,this.xscp2s, this.inp.aux(), this.pub?.aux(), this.out.aux()).clone(up,this.tk.lin,this.tk.col) as Type.Func
 }
+
 fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: List<Type.Union>): Boolean {
     return when {
         (this is Type.Nat  || sub is Type.Nat) -> true

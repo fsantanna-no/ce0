@@ -1393,7 +1393,7 @@ class TExec {
     @Test
     fun m03_scope_f () {
         val out = all("""
-            var f: func@[@a1,@a2]-> [/</^@a1>@a1,/</^@a2>@a2]->()
+            var f: func @[@a1,@a2] -> [/</^@a1>@a1,/</^@a2>@a2]->()
             set f = func @[@a1,@a2]->[/</^@a1>@a1,/</^@a2>@a2]->() {
                 set arg.1\!1 = new <.1 <.0>:/</^@a1>@a1>:</^@a1>: @a1
                 set arg.2\!1 = new <.1 <.0>:/</^@a2>@a2>:</^@a2>: @a2

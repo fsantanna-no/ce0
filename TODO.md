@@ -1,3 +1,4 @@
+- change @[@a1,@a2] -> @[a,b: a>b]
 - simplify scp1s check, move to separate funcion, reuse bt/w Type/Call/isSupOf
 - verify List ... args to @[] pars
 - remove ^, substitute all examples with type List

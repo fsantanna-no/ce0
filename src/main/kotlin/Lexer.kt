@@ -116,12 +116,12 @@ fun token (all: All) {
 
     var (c1,x1) = all.read()
 
-    fun letters (): String {
+    fun letters (f: (c:Char)->Boolean): String {
         var pay = ""
         do {
             pay += x1
             all.read().let { c1=it.first ; x1=it.second }
-        } while (x1.isLetterOrDigit() || x1=='_')
+        } while (f(x1))
         all.unread(c1)
         return pay
     }
@@ -246,13 +246,13 @@ fun token (all: All) {
             all.tk1 = Tk.Num(TK.XNUM, LIN, COL, pay.toInt())
         }
         x1.isLowerCase() -> {
-            var pay = letters()
+            val pay = letters { it.isLetterOrDigit() || it=='_' }
             all.tk1 = key2tk[pay].let {
                 if (it != null) Tk.Key(it, LIN, COL, pay) else Tk.Str(TK.XVAR, LIN, COL, pay)
             }
         }
         x1.isUpperCase() -> {
-            var pay = letters()
+            val pay = letters { it.isLetterOrDigit() || it=='_' }
             all.tk1 = key2tk[pay].let {
                 if (it != null) Tk.Key(it, LIN, COL, pay) else Tk.Str(TK.XTYPE, LIN, COL, pay)
             }
