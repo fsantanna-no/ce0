@@ -1,5 +1,8 @@
 - pico-ce
-- native pre _{}
+- remove Type.expand
+  - fix cloneX, etc
+  - all double rec will fail
+  - need `type`
 - var z = spawn h ()
   - optional in ce0?
   - optional in ce1?

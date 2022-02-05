@@ -21,6 +21,7 @@ fun Stmt.visit (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Ty
 
 private
 fun Type.visit_ (xpd: Boolean, ft: ((Type)->Unit)?) {
+    /*
     if (xpd) {
         val ce = this.toce()
         if (XPDS.contains(ce)) {
@@ -28,10 +29,11 @@ fun Type.visit_ (xpd: Boolean, ft: ((Type)->Unit)?) {
         }
         XPDS.add(ce)
     }
+     */
     when (this) {
         is Type.Unit, is Type.Nat, is Type.Rec -> {}
         is Type.Tuple -> this.vec.forEach { it.visit_(xpd,ft) }
-        is Type.Union -> (if (xpd) this.expand() else this.vec).forEach { it.visit_(xpd,ft) }
+        is Type.Union -> this.vec.forEach { it.visit_(xpd,ft) } //(if (xpd) this.expand() else this.vec).forEach { it.visit_(xpd,ft) }
         is Type.Func  -> { this.inp.visit_(xpd,ft) ; this.pub?.visit_(xpd,ft) ; this.out.visit_(xpd,ft) }
         is Type.Spawn   -> this.tsk.visit_(xpd,ft)
         is Type.Spawns  -> this.tsk.visit_(xpd,ft)
@@ -45,9 +47,10 @@ fun Type.visit_ (xpd: Boolean, ft: ((Type)->Unit)?) {
 
 private
 fun Expr.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((Type)->Unit)?) {
-    this.wtype?.visit_(xpd,ft)
+    //this.wtype?.visit_(xpd,ft)
     when (this) {
-        is Expr.Unit, is Expr.Nat, is Expr.Var -> {}
+        is Expr.Unit, is Expr.Var -> {}
+        is Expr.Nat   -> this.xtype?.visit_(xpd,ft)
         is Expr.TCons -> this.arg.forEach { it.visit_(xpd,fs,fe,ft) }
         is Expr.UCons -> { this.xtype?.visit_(xpd,ft) ; this.arg.visit_(xpd,fs,fe,ft) }
         is Expr.UNull -> this.xtype?.visit_(xpd,ft)

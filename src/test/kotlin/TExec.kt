@@ -28,6 +28,11 @@ class TExec {
         assert(out == "()\n") { out }
     }
     @Test
+    fun a01_output2 () {
+        val out = all("output std _10:_int")
+        assert(out == "10\n") { out }
+    }
+    @Test
     fun a02_var () {
         val out = all("""
             var x: ()
@@ -48,7 +53,7 @@ class TExec {
             set x = _10: _int
             output std x
         """.trimIndent())
-        assert(out == "10\n")
+        assert(out == "10\n") { out }
     }
     @Test
     fun a06_int () {
@@ -79,7 +84,7 @@ class TExec {
                 putchar('A');
             }
         """.trimIndent())
-        assert(out == "A")
+        assert(out == "A") { out }
     }
     @Test
     fun a09_int_abs () {
@@ -125,9 +130,10 @@ class TExec {
     @Test
     fun b01_tuple_units () {
         val out = all("""
-            var x: [(),()]
+            var x : [(),()]
             set x = [(),()]
-            var y: (); set y = x.1
+            var y: ()
+            set y = x.1
             native _{ output_std_Unit(y); }
         """.trimIndent())
         assert(out == "()\n") { out }
@@ -142,13 +148,17 @@ class TExec {
     @Test
     fun b03_tuple_tuples () {
         val out = all("""
-            var v: [(),()] ; set v = [(),()]
-            var x: [(),[(),()]] ; set x = [(),v]
-            var y: [(),()] ; set y = x.2
-            var z: () ; set z = y.2
+            var v: [(),()]
+            set v = [(),()]
+            var x: [(),[(),()]]
+            set x = [(),v]
+            var y: [(),()]
+            set y = x.2
+            var z: ()
+            set z = y.2
             output std z
         """.trimIndent())
-        assert(out == "()\n")
+        assert(out == "()\n") { out }
     }
     @Test
     fun b04_tuple_pp () {
@@ -1763,7 +1773,7 @@ class TExec {
     @Test
     fun z08_type_complex () {
         val out = all("""
-            var y: [(),/<[(),/^ @LOCAL]> @LOCAL]
+            var y : [(),/<[(),/^ @LOCAL]> @LOCAL]
             set y = [(), new <.1 [(),<.0>:/<[(),/^ @LOCAL]> @LOCAL]>:<[(),/^ @LOCAL]>: @LOCAL]
             output std /y
         """.trimIndent())
