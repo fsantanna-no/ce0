@@ -147,14 +147,10 @@ fun code_ft (tp: Type) {
 
                 ${if (tp.containsRec()) struct.second else "" }
                 void output_std_${ce}_ (${tp.pos()}* v) {
-                    ${
-                        if (!tp.isrec) "" else """
-                            if (v == NULL) {
-                                printf("<.0>");
-                                return;
-                            }
-
-                        """.trimIndent()
+                    // TODO: only if tp.isrec
+                    if (v == NULL) {
+                        printf("<.0>");
+                        return;
                     }
                     printf("<.%d", v->tag);
                     switch (v->tag) {
@@ -324,7 +320,6 @@ fun code_fe (e: Expr) {
         is Expr.Pub   -> CODE.removeFirst().let { Code(it.type, it.pre, it.stmt, it.expr + "->pub") }
         is Expr.UDisc -> CODE.removeFirst().let {
             val ee = it.expr
-            val uni = e.uni.wtype!!
             val pre = if (e.tk_.num == 0) {
                 """
                 assert(&${it.expr} == NULL);
@@ -332,7 +327,7 @@ fun code_fe (e: Expr) {
                 """.trimIndent()
             } else {
                 """
-                ${ if (uni.let { it is Type.Union && it.isrec }) "assert(&${it.expr} != NULL);\n" else "" }
+                assert(&${it.expr} != NULL);    // TODO: only if e.uni.wtype!!.isrec()
                 assert($ee.tag == ${e.tk_.num});
 
                 """.trimIndent()
@@ -343,9 +338,8 @@ fun code_fe (e: Expr) {
             val ee = it.expr
             val pos = if (e.tk_.num == 0) {
                 "(&${it.expr} == NULL)"
-            } else {
-                (if (e.uni.wtype.let { it is Type.Union && it.isrec }) "(&${it.expr} != NULL) && " else "") +
-                "($ee.tag == ${e.tk_.num})"
+            } else { // TODO: only if e.uni.wtype!!.isrec()
+                "(&${it.expr} != NULL) && ($ee.tag == ${e.tk_.num})"
             }
             Code(it.type, it.pre, it.stmt, pos)
         }
@@ -375,8 +369,8 @@ fun code_fe (e: Expr) {
             val arg  = CODE.removeFirst()
             val type = CODE.removeFirst().type
             val ID  = "_tmp_" + e.n
-            val sup = "struct " + xp.toce()
-            val pre = "$sup $ID = (($sup) { ${e.tk_.num} , ._${e.tk_.num} = ${arg.expr} });\n"
+            val pos = xp.pos()
+            val pre = "$pos $ID = (($pos) { ${e.tk_.num} , ._${e.tk_.num} = ${arg.expr} });\n"
             Code(type+arg.type, arg.pre, arg.stmt + pre, ID)
         }
         is Expr.UNull -> Code(CODE.removeFirst().type, "","","NULL")
@@ -572,7 +566,7 @@ fun code_fs (s: Stmt) {
                 typedef ${s.type.pos()} ${s.tk_.str};
                 
             """.trimIndent()
-            Code(it+src, "", "", "")
+            Code(src+it, "", "", "")
         }
         is Stmt.Native -> if (s.istype) {
             Code(s.tk_.src.native(s, s.tk) + "\n", "", "", "")

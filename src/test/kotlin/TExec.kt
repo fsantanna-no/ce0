@@ -1674,16 +1674,12 @@ class TExec {
     @Test
     fun o03_alias () {
         val out = all("""
-        --var l: /</^ @LOCAL> @LOCAL
-        --set l = new <.1 <.0>: /</^@LOCAL>@LOCAL>:</^@LOCAL>: @LOCAL
-        --output std l
-        
         type List = </List @LOCAL>
         var l: /List @LOCAL
         set l = new <.1 <.0>:/List@LOCAL>:List: @LOCAL
         output std l
         """.trimIndent())
-        assert(out == "[1,2]\n") { out }
+        assert(out == "<.1 <.0>>\n") { out }
     }
 
     // ALL

@@ -28,11 +28,11 @@ fun Tk.Scp1.check (up: Any) {
 // need to check UNull/UCons on check_01 (Ce0) and check_02 (Ce1, b/c no type at check_01)
 
 fun Expr.UNull.check () {
-    All_assert_tk(this.xtype!!.tk, this.xtype.let { it.noalias() is Type.Union }) { "invalid type : expected union"}
+    All_assert_tk(this.xtype!!.tk, this.xtype.let { it is Type.Ptr && it.pln.noalias() is Type.Union }) { "invalid type : expected pointer to union"}
 }
 
 fun Expr.UCons.check () {
-    All_assert_tk(this.xtype!!.tk, this.xtype.let { it is Type.Ptr && it.pln.noalias() is Type.Union }) { "invalid type : expected pointer to union"}
+    All_assert_tk(this.xtype!!.tk, this.xtype.let { it.noalias() is Type.Union }) { "invalid type : expected union"}
     val uni = this.xtype.noalias() as Type.Union
     val ok = (uni.vec.size >= this.tk_.num)
     All_assert_tk(this.tk, ok) {

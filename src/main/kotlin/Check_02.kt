@@ -44,14 +44,14 @@ fun check_02_after_tps (s: Stmt) {
             is Expr.UNull -> e.check()
             is Expr.UCons -> {
                 e.check()
-                val uni = e.xtype as Type.Union
+                val uni = e.xtype.noalias() as Type.Union
                 All_assert_tk(e.tk, uni.expand()[e.tk_.num - 1].isSupOf(e.arg.wtype!!)) {
                     "invalid constructor : type mismatch"
                 }
             }
 
             is Expr.New -> {
-                All_assert_tk(e.tk, e.arg.wtype is Type.Union && e.arg.tk_.num>0) {
+                All_assert_tk(e.tk, e.arg.wtype!!.noalias() is Type.Union && e.arg.tk_.num>0) {
                     "invalid `new` : expected constructor" // TODO: remove?
                 }
             }
