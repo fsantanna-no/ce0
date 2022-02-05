@@ -1341,7 +1341,7 @@ class TExec {
     fun m01_scope_a () {
         val out = all("""
             { @A
-                var pa: /List @LOCAL
+                var pa: /</^ @LOCAL> @LOCAL
                 set pa = new <.1 <.0>: /</^ @A> @A>:</^ @A>: @A
                 var f: func @A->@[]-> ()->()
                 set f = func@A-> @[]-> ()->()[pa]{
@@ -1833,15 +1833,15 @@ class TExec {
     @Test
     fun z08_func_arg () {
         val out = all("""
-            var x1: /List @LOCAL
-            set x1 = <.0>: /List @LOCAL
+            var x1: /</^ @LOCAL> @LOCAL
+            set x1 = <.0>: /</^ @LOCAL> @LOCAL
             var z1: _int
             set z1 = x1\?0
-            var x2: //List @LOCAL @LOCAL
+            var x2: //</^ @LOCAL> @LOCAL @LOCAL
             set x2 = /x1
             var z2: _int
             set z2 = x2\\?1
-            set x2\ = new <.1 <.0>: /List @LOCAL>:List: @LOCAL
+            set x2\ = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>: @LOCAL
             var f: func@[@i1]-> //</^@i1>@i1@i1->_int
             set f = func@[@i1]-> //</^@i1>@i1@i1->_int {
                 set ret = arg\\?1
