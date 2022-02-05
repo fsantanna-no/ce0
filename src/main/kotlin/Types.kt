@@ -127,7 +127,7 @@ fun Stmt.setTypes () {
                     else -> error("bug found")
                 }
             }
-            is Expr.Var -> e.env()!!.toType()
+            is Expr.Var -> e.env(e.tk_.str)!!.toType()
             else -> TODO()
         }
     }

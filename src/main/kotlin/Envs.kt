@@ -72,10 +72,6 @@ fun Any.env (id: String, upval: Boolean=false): Any? {
     }
 }
 
-fun Expr.Var.env (upval: Boolean=false): Any? {
-    return (this as Any).env(this.tk_.str, upval)
-}
-
 //////////////////////////////////////////////////////////////////////////////
 
 private

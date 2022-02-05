@@ -317,7 +317,7 @@ fun code_fe (e: Expr) {
     CODE.addFirst(when (e) {
         is Expr.Unit  -> Code("", "", "", "0")
         is Expr.Nat   -> Code(CODE.removeFirst().type, "", "", e.tk_.src.native(e, e.tk))
-        is Expr.Var   -> Code("", "", "", e.tk_.str.mem(e.env(true)!!))
+        is Expr.Var   -> Code("", "", "", e.tk_.str.mem(e.env(e.tk_.str, true)!!))
         is Expr.Upref -> CODE.removeFirst().let { Code(it.type, it.pre, it.stmt, "(&" + it.expr + ")") }
         is Expr.Dnref -> CODE.removeFirst().let { Code(it.type, it.pre, it.stmt, "(*" + it.expr + ")") }
         is Expr.TDisc -> CODE.removeFirst().let { Code(it.type, it.pre, it.stmt, it.expr + "._" + e.tk_.num) }
