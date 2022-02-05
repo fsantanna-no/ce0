@@ -1,4 +1,6 @@
 - pico-ce
+- remove ^, substitute all examples with type List
+  -  Alias.xisrec: Boolean
 - parametric type @a
   - type List @a = </List @a>
 - remove Type.expand

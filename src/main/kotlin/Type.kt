@@ -132,7 +132,13 @@ fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
 }
 
 fun Type.isrec (): Boolean {
-    return (this is Type.Union) && this.isrec
+    return when (this) {
+        is Type.Union -> this.isrec     // TODO: will be false, only alias can be rec
+        is Type.Alias -> this.env(this.tk_.str)!!.toType().let {
+            it is Type.Union && it.flattenLeft().any { it is Type.Alias && it.tk_.str==this.tk_.str }
+        }
+        else -> false
+    }
 }
 
 fun Type.noalias (): Type {

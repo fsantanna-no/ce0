@@ -105,14 +105,16 @@ fun Stmt.setTypes () {
                     is Expr.UDisc -> Pair(e.tk_,e.uni)
                     else -> error("impossible case")
                 }
-                val tp = uni.wtype!!
+
+                val isrec = uni.wtype!!.isrec()
+                val tp = uni.wtype!!.noalias()
 
                 All_assert_tk(e.tk, tp is Type.Union) {
                     "invalid discriminator : not an union"
                 }
-                assert(tk_.num!=0 || tp.isrec()) { "bug found" }
+                assert(tk_.num!=0 || isrec) { "bug found" }
 
-                val (MIN, MAX) = Pair(if (tp.isrec()) 0 else 1, (tp as Type.Union).vec.size)
+                val (MIN, MAX) = Pair(if (isrec) 0 else 1, (tp as Type.Union).vec.size)
                 All_assert_tk(e.tk, MIN <= tk_.num && tk_.num <= MAX) {
                     "invalid discriminator : out of bounds"
                 }
