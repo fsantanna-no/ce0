@@ -935,7 +935,7 @@ class TExec {
             set l = <.1 <.0>:/List@LOCAL>: List
             output std /l
         """.trimIndent())
-        //assert(out == "(ln 1, col 25): invalid constructor : expected `new`") { out }
+        //assert(out == "(ln 1, col 25): invalid union constructor : expected `new`") { out }
         assert(out == "<.1 <.0>>\n") { out }
     }
     @Test
@@ -1340,13 +1340,14 @@ class TExec {
     @Test
     fun m01_scope_a () {
         val out = all("""
+            type List @[@a] = </List @[@a] @a>
             { @A
-                var pa: /</^ @LOCAL> @LOCAL
-                set pa = new <.1 <.0>: /</^ @A> @A>:</^ @A>: @A
-                var f: func @A->@[]-> ()->()
+                var pa: /List @[@LOCAL] @LOCAL
+                set pa = new <.1 <.0>: /List @[@A] @A>:List @[@A]: @A
+                var f: func @A-> ()->()
                 set f = func@A-> @[]-> ()->()[pa]{
-                    var pf: /</^ @A> @A
-                    set pf = new <.1 <.0>: /</^ @A> @A>:</^ @A>: @A
+                    var pf: /List @[@A] @A
+                    set pf = new <.1 <.0>: /List @[@A] @A>:List @[@A]: @A
                     set pa\!1 = pf
                     --output std pa
                 }
@@ -1484,11 +1485,11 @@ class TExec {
         val out = all(
             """
             var f: ( func@[]-> () -> () )
-            set f = func@[]-> () -> () {
+            set f = func () -> () {
                 set ret = arg
             }
             var g: func@[@i1]-> [func@[]-> ()->(), ()] -> ()
-            set g = func@[@i1]-> [(func@[]-> ()->()), ()] -> () {
+            set g = func@[@i1]-> [(func ()->()), ()] -> () {
                 set ret = arg.1 arg.2
             }
             output std g @[@LOCAL] [f,()]
@@ -1543,7 +1544,7 @@ class TExec {
                 var x: /</^@a1>@a1
                 set x = new <.1 <.0>:/</^@a1>@a1>: </^@a1>: @a1
                 var f: func @a1->@[]-> () -> ()
-                set f = func @a1 ->@[]->() -> () [x] {
+                set f = func @a1 ->() -> () [x] {
                     output std x
                 }
                set ret = f
@@ -1561,8 +1562,8 @@ class TExec {
             { @A
                 var xxx: _int
                 set xxx = _10:_int
-                var f: (func @A->@[]->()->_int)
-                set f = func @A->@[]->()->_int [xxx] {
+                var f: (func @A->()->_int)
+                set f = func @A->()->_int [xxx] {
                     set ret = xxx
                 }
                 set xxx = _20:_int
@@ -1598,8 +1599,8 @@ class TExec {
     fun n10_pool_closure () {
         val out = all(
             """
-            var cnst: func@[@i1]-> /_int@i1 -> (func @i1->@[]-> () -> /_int@i1)
-            set cnst = func@[@i1]-> /_int@i1 -> (func @i1->@[]-> () -> /_int@i1) {
+            var cnst: func@[@i1]-> /_int@i1 -> (func @i1-> () -> /_int@i1)
+            set cnst = func@[@i1]-> /_int@i1 -> (func @i1-> () -> /_int@i1) {
                 var x: /_int@i1
                 set x = arg
                 set ret = func@i1->@[]-> () -> /_int@i1 [x] {
@@ -1623,8 +1624,8 @@ class TExec {
     fun n11_pool_closure () {
         val out = all(
             """
-            var cnst:  func@[@i1]-> /_int@i1 -> (func @i1->@[]-> () -> /_int@i1)
-            set cnst = func@[@i1]-> /_int@i1 -> (func @i1->@[]-> () -> /_int@i1) {
+            var cnst:  func@[@i1]-> /_int@i1 -> (func @i1-> () -> /_int@i1)
+            set cnst = func@[@i1]-> /_int@i1 -> (func @i1-> () -> /_int@i1) {
                 var x: /_int@i1
                 set x = arg
                 set ret = func @i1->@[]-> () -> /_int@i1 [x]{
@@ -1646,16 +1647,16 @@ class TExec {
     fun n12_pool_closure () {
         val out = all(
             """
-            var f: func@[]-> (func@[]->()->()) -> func @GLOBAL->@[]->()->()
-            set f = func@[]-> func@[]->()->() -> (func @GLOBAL->@[]->()->()) {
+            var f: func@[]-> (func@[]->()->()) -> func @GLOBAL->()->()
+            set f = func@[]-> func@[]->()->() -> (func @GLOBAL->()->()) {
                 var ff: func@[]->()->()
                 set ff = arg
                 set ret = func @GLOBAL->@[]->()->()[ff] {
                     call ff ()
                 }
             }
-            var u: func@[]->()->()
-            set u = func@[]->()->() {
+            var u: func()->()
+            set u = func()->() {
                 output std ()
             }
             var ff: (func @GLOBAL->@[]->()->())
@@ -1704,7 +1705,7 @@ class TExec {
     @Test
     fun z01 () {
         val out = all("""
-        var inv : (func@[]-> <(),()> -> <(),()>)
+        var inv : (func <(),()> -> <(),()>)
         set inv = func@[]-> <(),()> -> <(),()> {
             if arg?1 {
                 set ret = <.2()>:<(),()>
@@ -1763,7 +1764,7 @@ class TExec {
         val out = all("""
         var i: _int; set i = _0: _int
         var f: func@[]-> ()->()
-        set f = func@[]-> ()->() {
+        set f = func ()->() {
             if _(global.i == 10): _int {
                 
             } else {
@@ -1871,8 +1872,8 @@ class TExec {
     @Test
     fun z09_output_string () {
         val out = all("""
-            var f: (func  @[]-> ()->() )
-            set f = func@[]-> ()->() {
+            var f: (func   ()->() )
+            set f = func ()->() {
                 var s1: /<[_int,/^ @LOCAL]> @LOCAL
                 set s1 = new <.1 [_1:_int,<.0>: /<[_int,/^ @LOCAL]> @LOCAL]>:<[_int,/^ @LOCAL]>: @LOCAL
                 output std s1
@@ -1885,7 +1886,7 @@ class TExec {
     fun z10_output_string () {
         val out = all("""
             var f: func@[]-> ()->()
-            set f = func@[]-> ()->() {
+            set f = func ()->() {
                 var s1: /<[_int,/^ @LOCAL]> @LOCAL
                 set s1 = new <.1 [_1:_int,<.0>: /<[_int,/^ @LOCAL]> @LOCAL]>:<[_int,/^ @LOCAL]>: @LOCAL
                 output std s1
@@ -1945,8 +1946,8 @@ class TExec {
     fun z16_rec () {
         val out = all(
             """
-            var frec : func @[]->_int->_int
-            set frec = func @[]->_int->_int {
+            var frec : func _int->_int
+            set frec = func _int->_int {
                 --output std arg
                 if _(${D}arg == 1):_int {
                     set ret = _1:_int

@@ -16,7 +16,8 @@ fun Tk.Scp1.check (up: Any) {
             it is Stmt.Var   && this.lbl==it.tk_.str.toUpperCase() && this.num==null
         } -> true
         (up.ups_first {                                     // [@i1, ...] { @i1 }
-            it is Expr.Func && (it.type.xscp1s.second?.any { it.lbl==this.lbl && it.num==this.num } ?: false)
+            it is Stmt.Typedef && (it.xscp1s.any { it.lbl==this.lbl && it.num==this.num })
+         || it is Expr.Func    && (it.type.xscp1s.second?.any { it.lbl==this.lbl && it.num==this.num } ?: false)
         } != null) -> true
         else -> false
     }
@@ -36,7 +37,7 @@ fun Expr.UCons.check () {
     val uni = this.xtype.noalias() as Type.Union
     val ok = (uni.vec.size >= this.tk_.num)
     All_assert_tk(this.tk, ok) {
-        "invalid constructor : out of bounds"
+        "invalid union constructor : out of bounds"
     }
 }
 
@@ -44,8 +45,13 @@ fun check_01_before_tps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
             is Type.Alias -> {
-                All_assert_tk(tp.tk, tp.env(tp.tk_.str) != null) {
+                val def = tp.env(tp.tk_.str)
+                All_assert_tk(tp.tk, def is Stmt.Typedef) {
                     "undeclared type \"${tp.tk_.str}\""
+                }
+                val s1 = (def as Stmt.Typedef).xscp1s.size
+                All_assert_tk(tp.tk, s1 == tp.xscp1s.size) {
+                    "invalid type : scope mismatch : expecting $s1 argument(s)"
                 }
             }
             is Type.Rec -> {
@@ -149,9 +155,10 @@ fun check_01_before_tps (s: Stmt) {
     fun fs (s: Stmt) {
         fun Any.toTk (): Tk {
             return when (this) {
-                is Type -> this.tk
-                is Stmt.Var -> this.tk
-                is Stmt.Block -> this.tk
+                is Type         -> this.tk
+                is Stmt.Var     -> this.tk
+                is Stmt.Block   -> this.tk
+                is Stmt.Typedef -> this.tk
                 else -> error("bug found")
             }
         }

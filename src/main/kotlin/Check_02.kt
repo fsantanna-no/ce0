@@ -45,8 +45,10 @@ fun check_02_after_tps (s: Stmt) {
             is Expr.UCons -> {
                 e.check()
                 val uni = e.xtype.noalias() as Type.Union
-                All_assert_tk(e.tk, uni.expand()[e.tk_.num - 1].isSupOf(e.arg.wtype!!)) {
-                    "invalid constructor : type mismatch"
+                val sup = uni.expand()[e.tk_.num - 1]
+                val sub = e.arg.wtype!!
+                All_assert_tk(e.tk, sup.isSupOf(sub)) {
+                    "invalid union constructor : type mismatch :\n    ${sup.tostr()}\n    ${sub.tostr()}"
                 }
             }
 
@@ -63,8 +65,8 @@ fun check_02_after_tps (s: Stmt) {
                 val (scps1,inp1,out1) = when (func) {
                     is Type.Spawn  -> Triple(func.tsk.xscp1s.second,func.tsk.inp,func.tsk.out)
                     is Type.Spawns -> Triple(func.tsk.xscp1s.second,func.tsk.inp,func.tsk.out)
-                    is Type.Func -> Triple(func.xscp1s.second,func.inp,func.out)
-                    is Type.Nat  -> Triple(null,func,func)
+                    is Type.Func   -> Triple(func.xscp1s.second,func.inp,func.out)
+                    is Type.Nat    -> Triple(null,func,func)
                     else -> error("impossible case")
                 }
 

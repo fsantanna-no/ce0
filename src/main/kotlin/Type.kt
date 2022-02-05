@@ -50,7 +50,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
     fun Type.aux (lin: Int, col: Int): Type {
         return when (this) {
             is Type.Unit -> Type.Unit(this.tk_.copy(lin_ = lin, col_ = col))
-            is Type.Alias -> Type.Alias(this.tk_.copy(lin_ = lin, col_ = col))
+            is Type.Alias -> Type.Alias(this.tk_.copy(lin_ = lin, col_ = col), this.xisrec, this.xscp1s, this.xscp2s)
             is Type.Nat -> Type.Nat(this.tk_.copy(lin_ = lin, col_ = col))
             is Type.Tuple -> Type.Tuple(
                 this.tk_.copy(lin_ = lin, col_ = col),
@@ -97,7 +97,7 @@ fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
     fun Type.aux (lin: Int, col: Int): Type {
         return when (this) {
             is Type.Unit -> Type.Unit(this.tk_.copy(lin_ = lin, col_ = col))
-            is Type.Alias -> Type.Alias(this.tk_.copy(lin_ = lin, col_ = col))
+            is Type.Alias -> Type.Alias(this.tk_.copy(lin_ = lin, col_ = col), this.xisrec, this.xscp1s, this.xscp2s)
             is Type.Nat -> Type.Nat(this.tk_.copy(lin_ = lin, col_ = col))
             is Type.Tuple -> Type.Tuple(
                 this.tk_.copy(lin_ = lin, col_ = col),
@@ -134,9 +134,7 @@ fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
 fun Type.isrec (): Boolean {
     return when (this) {
         is Type.Union -> this.isrec     // TODO: will be false, only alias can be rec
-        is Type.Alias -> this.env(this.tk_.str)!!.toType().let {
-            it is Type.Union && it.flattenLeft().any { it is Type.Alias && it.tk_.str==this.tk_.str }
-        }
+        is Type.Alias -> this.xisrec
         else -> false
     }
 }

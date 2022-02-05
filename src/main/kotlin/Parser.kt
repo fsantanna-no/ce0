@@ -2,7 +2,21 @@ fun parser_type (all: All, tasks: Boolean=false): Type {
     return when {
         all.accept(TK.UNIT)  -> Type.Unit(all.tk0 as Tk.Sym)
         all.accept(TK.XNAT)  -> Type.Nat(all.tk0 as Tk.Nat)
-        all.accept(TK.XTYPE) -> Type.Alias(all.tk0 as Tk.Str)
+        all.accept(TK.XTYPE) -> {
+            val tk0 = all.tk0
+            val scps = mutableListOf<Tk.Scp1>()
+            if (all.accept(TK.ATBRACK)) {
+                while (all.accept(TK.XSCPCST) || all.accept(TK.XSCPVAR)) {
+                    val tk = all.tk0 as Tk.Scp1
+                    scps.add(tk)
+                    if (!all.accept(TK.CHAR, ',')) {
+                        break
+                    }
+                }
+                all.accept_err(TK.CHAR, ']')
+            }
+            Type.Alias(tk0 as Tk.Str, false, scps.toTypedArray(), null)
+        }
         all.accept(TK.XUP)   -> Type.Rec(all.tk0 as Tk.Up)
         all.accept(TK.CHAR, '/') -> {
             val tk0 = all.tk0 as Tk.Chr
@@ -57,16 +71,17 @@ fun parser_type (all: All, tasks: Boolean=false): Type {
             } else {
                 null
             }
-            all.accept_err(TK.ATBRACK)
             val scps = mutableListOf<Tk.Scp1>()
-            while (all.accept(TK.XSCPVAR)) {
-                scps.add(all.tk0 as Tk.Scp1)
-                if (!all.accept(TK.CHAR, ',')) {
-                    break
+            if (all.accept(TK.ATBRACK)) {
+                while (all.accept(TK.XSCPVAR)) {
+                    scps.add(all.tk0 as Tk.Scp1)
+                    if (!all.accept(TK.CHAR, ',')) {
+                        break
+                    }
                 }
+                all.accept_err(TK.CHAR, ']')
+                all.accept_err(TK.ARROW)
             }
-            all.accept_err(TK.CHAR, ']')
-            all.accept_err(TK.ARROW)
             val inp = parser_type(all)
 
             val pub = if (tk0.enu != TK.FUNC) {
@@ -453,9 +468,19 @@ fun parser_stmt (all: All): Stmt {
         all.accept(TK.TYPE) -> {
             all.accept_err(TK.XTYPE)
             val tk = all.tk0 as Tk.Str
+            val scps = mutableListOf<Tk.Scp1>()
+            if (all.accept(TK.ATBRACK)) {
+                while (all.accept(TK.XSCPVAR)) {
+                    scps.add(all.tk0 as Tk.Scp1)
+                    if (!all.accept(TK.CHAR, ',')) {
+                        break
+                    }
+                }
+                all.accept_err(TK.CHAR, ']')
+            }
             all.accept_err(TK.CHAR,'=')
             val tp = parser_type(all)
-            Stmt.Typedef(tk, tp)
+            Stmt.Typedef(tk, scps.toTypedArray(), null, tp)
         }
         else -> {
             all.err_expected("statement")

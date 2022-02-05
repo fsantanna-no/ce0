@@ -123,7 +123,7 @@ class TEnv {
             set l = <.1 ()>:<()>
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
-        //assert(out == "(ln 2, col 11): invalid constructor : expected `new`") { out }
+        //assert(out == "(ln 2, col 11): invalid union constructor : expected `new`") { out }
     }
     @Test
     fun b10_user_empty_err2 () {
@@ -132,8 +132,8 @@ class TEnv {
             set l = <.1 ()>:</^ @GLOBAL>
         """.trimIndent())
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
-        assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
-        //assert(out == "(ln 2, col 11): invalid constructor : expected `new`") { out }
+        assert(out.startsWith("(ln 2, col 11): invalid union constructor : type mismatch")) { out }
+        //assert(out == "(ln 2, col 11): invalid union constructor : expected `new`") { out }
     }
     @Test
     fun b11_user_empty_err () {
@@ -152,7 +152,7 @@ class TEnv {
             --output std l!0
         """.trimIndent())
         //assert(out == "(ln 2, col 11): invalid expression : expected `new` operation modifier") { out }
-        //assert(out == "(ln 2, col 11): invalid constructor : expected `new`") { out }
+        //assert(out == "(ln 2, col 11): invalid union constructor : expected `new`") { out }
         assert(out == "OK") { out }
     }
     @Test
@@ -484,7 +484,7 @@ class TEnv {
             set x = <.0 [()]>:<()>
         """.trimIndent())
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
-        //assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
+        //assert(out == "(ln 2, col 11): invalid union constructor : type mismatch") { out }
         assert(out == "(ln 2, col 13): expected `>´ : have `[´") { out }
     }
     @Test
@@ -494,7 +494,7 @@ class TEnv {
             set x = <.0 [()]>:<()>
         """.trimIndent())
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
-        //assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
+        //assert(out == "(ln 2, col 11): invalid union constructor : type mismatch") { out }
         assert(out == "(ln 2, col 13): expected `>´ : have `[´") { out }
     }
     @Test
@@ -502,7 +502,7 @@ class TEnv {
         val out = inp2env("""
             output std <.2 ()>: <()>
         """.trimIndent())
-        assert(out == "(ln 1, col 14): invalid constructor : out of bounds") { out }
+        assert(out == "(ln 1, col 14): invalid union constructor : out of bounds") { out }
     }
 
     // POINTERS / SCOPE / @GLOBAL
@@ -1482,7 +1482,7 @@ class TEnv {
                 set p = <.1 /v>: </_int @GLOBAL>
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 15): invalid constructor : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 15): invalid union constructor : type mismatch")) { out }
     }
     @Test
     fun h09_ptr_type_err3 () {
@@ -1577,7 +1577,7 @@ class TEnv {
             var xxx: <(),</^^ @LOCAL,/^ @LOCAL>>
             set xxx  = <.1()>:<(),</^^ @LOCAL,/^ @LOCAL>>
         """.trimIndent())
-        //assert(out == "(ln 2, col 14): invalid constructor : expected `new`") { out }
+        //assert(out == "(ln 2, col 14): invalid union constructor : expected `new`") { out }
         assert(out == "OK") { out }
     }
     @Test
@@ -1603,7 +1603,7 @@ class TEnv {
             set xxx = <.0>:</^ @LOCAL>
         """.trimIndent())
         //assert(out == "(ln 2, col 9): invalid assignment : type mismatch") { out }
-        //assert(out == "(ln 2, col 13): invalid constructor : type mismatch") { out }
+        //assert(out == "(ln 2, col 13): invalid union constructor : type mismatch") { out }
         assert(out == "(ln 2, col 16): invalid type : expected pointer to union") { out }
     }
     @Test
@@ -1634,7 +1634,7 @@ class TEnv {
                -- err: ~new~ <.2>
         """.trimIndent())
         //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
-        assert(out == "(ln 2, col 15): invalid constructor : type mismatch") { out }
+        assert(out.startsWith("(ln 2, col 15): invalid union constructor : type mismatch")) { out }
     }
 
     // XEXPR
@@ -1709,7 +1709,7 @@ class TEnv {
             set x = <.1 <.0>:/</^ @LOCAL>@LOCAL>:</^ @LOCAL>
         """.trimIndent())
         //assert(out == "(ln 1, col 20): expected expression : have `<´") { out }
-        //assert(out == "(ln 2, col 11): invalid constructor : expected `new`") { out }
+        //assert(out == "(ln 2, col 11): invalid union constructor : expected `new`") { out }
         //assert(out == "(ln 1, col 20): invalid `copy` : expected recursive variable")
         //assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
         assert(out == "OK") { out }
@@ -2303,7 +2303,7 @@ class TEnv {
             output std /l
         """.trimIndent())
         //assert(out == "(ln 2, col 11): unexpected <.0> : not a pointer") { out }
-        //assert(out == "(ln 2, col 11): invalid constructor : type mismatch") { out }
+        //assert(out == "(ln 2, col 11): invalid union constructor : type mismatch") { out }
         assert(out == "(ln 2, col 14): invalid type : expected pointer to union") { out }
     }
     @Test
@@ -2910,7 +2910,7 @@ class TEnv {
     fun q01 () {
         val out = inp2env(
             """
-            type Unit = ()
+            type Unit @[] = ()
             var x: Unit
             set x = ()
             output std x
@@ -2922,7 +2922,7 @@ class TEnv {
     fun q02 () {
         val out = inp2env(
             """
-            type Unit = ()
+            type Unit @[] = ()
             var x: Unit
             var y: Unit
             set x = y
@@ -2934,7 +2934,7 @@ class TEnv {
     fun q03 () {
         val out = inp2env(
             """
-            type Unit = ()
+            type Unit @[] = ()
             var x: Unit
             var y: ()
             set y = x
@@ -2946,13 +2946,148 @@ class TEnv {
     fun q04 () {
         val out = inp2env(
             """
-            type Unit = ()
-            type Uxit = ()
+            type Unit @[] = ()
+            type Uxit @[] = ()
             var x: Unit
             var y: Uxit
             set y = x
         """.trimIndent()
         )
         assert(out == "(ln 5, col 7): invalid assignment : type mismatch") { out }
+    }
+    @Test
+    fun q05 () {
+        val out = inp2env(
+            """
+            type List @[] = </List @LOCAL>
+            var x: /List @LOCAL
+            var y: /List @LOCAL
+            set y = x
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun q06 () {
+        val out = inp2env(
+            """
+            type List @[@a] = </List @[@a] @a>
+            var x: /List @[@LOCAL] @LOCAL
+            var y: /List @[@LOCAL] @LOCAL
+            set y = x
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun q07 () {
+        val out = inp2env(
+            """
+            type List @[@a] = </List @[@a] @a>
+            type PList @[] = /<List @[@LOCAL]> @LOCAL
+            var x: PList
+            var y: PList
+            set y = x
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun q08 () {
+        val out = inp2env(
+            """
+            type List @[@a] = </List @[@a] @a>
+            var x: /List @[@LOCAL] @LOCAL
+            {
+                var y: /List @[@LOCAL] @LOCAL
+                set y = x
+            }
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun q09 () {
+        val out = inp2env(
+            """
+            type List @[@a] = </List @[@a] @a>
+            var x: /List @[@LOCAL] @LOCAL
+            {
+                var y: /List @[@LOCAL] @LOCAL
+                set x = y
+            }
+        """.trimIndent()
+        )
+        assert(out == "(ln 5, col 11): invalid assignment : type mismatch") { out }
+    }
+    @Test
+    fun q10 () {
+        val out = inp2env(
+            """
+            type List @[@a] = </List @[@a] @a>
+            var x: /List @[@LOCAL] @LOCAL
+            {
+                var y: /List @[@GLOBAL] @GLOBAL
+                set x = y
+            }
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun q11 () {
+        val out = inp2env(
+            """
+            type List @[@a] = </List @[@a] @a>
+            type PList @[] = /<List @[@LOCAL]> @LOCAL
+            var x: PList
+            {
+                var y: PList
+                set x = y
+            }
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun q12 () {
+        val out = inp2env(
+            """
+            type PList @[@a] = /<PList @[@a]> @a
+            var x: PList @[@LOCAL]
+            {
+                var y: PList @[@GLOBAL]
+                set x = y
+            }
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun q13 () {
+        val out = inp2env(
+            """
+            type Xxx @[@a] = _int
+            var x: Xxx
+        """.trimIndent()
+        )
+        assert(out == "(ln 2, col 8): invalid type : scope mismatch : expecting 1 argument(s)") { out }
+    }
+    @Test
+    fun q14 () {
+        val out = inp2env("""
+            type List @[@a] = </List @[@a] @a>
+            { @A
+                var p1: /List @[@LOCAL] @LOCAL
+                var p2: /List @[@A]     @A
+                set p1 = <.0>: /List @[@LOCAL] @LOCAL
+                set p2 = <.0>: /List @[@A]     @A
+                set p1 = new <.1 <.0>: /List @[@LOCAL] @LOCAL>:List @[@LOCAL]: @LOCAL
+                set p2 = new <.1 <.0>: /List @[@A]     @A>:    List @[@A]:     @A
+                set p1 = p2
+                set p2 = p1
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
     }
 }
