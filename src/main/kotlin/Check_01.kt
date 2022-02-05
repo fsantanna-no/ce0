@@ -36,6 +36,11 @@ fun Expr.UCons.check () {
 fun check_01_before_tps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
+            is Type.Alias -> {
+                All_assert_tk(tp.tk, tp.env(tp.tk_.str) != null) {
+                    "undeclared type \"${tp.tk_.str}\""
+                }
+            }
             is Type.Rec -> {
                 val str = "^".repeat(tp.tk_.up)
                 All_assert_tk(tp.tk, tp.wup is Type.Ptr) {

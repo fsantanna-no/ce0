@@ -31,7 +31,7 @@ fun Type.visit_ (xpd: Boolean, ft: ((Type)->Unit)?) {
     }
      */
     when (this) {
-        is Type.Unit, is Type.Nat, is Type.Rec -> {}
+        is Type.Unit, is Type.Nat, is Type.Rec, is Type.Alias -> {}
         is Type.Tuple -> this.vec.forEach { it.visit_(xpd,ft) }
         is Type.Union -> this.vec.forEach { it.visit_(xpd,ft) } //(if (xpd) this.expand() else this.vec).forEach { it.visit_(xpd,ft) }
         is Type.Func  -> { this.inp.visit_(xpd,ft) ; this.pub?.visit_(xpd,ft) ; this.out.visit_(xpd,ft) }
@@ -88,6 +88,7 @@ fun Stmt.visit_ (xpd: Boolean, fs: ((Stmt)->Unit)?, fe: ((Expr)->Unit)?, ft: ((T
         is Stmt.Loop   -> { this.block.visit(xpd,fs,fe,ft) }
         is Stmt.DLoop  -> { this.i.visit_(xpd,fs,fe,ft) ; this.tsks.visit_(xpd,fs,fe,ft) ; this.block.visit(xpd,fs,fe,ft) }
         is Stmt.Block  -> { this.body.visit(xpd,fs,fe,ft) }
+        is Stmt.Typedef -> this.type.visit(xpd, ft)
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }
     if (fs != null) {

@@ -8,6 +8,7 @@ fun Any.self_or_null (): String {
 fun Type.pos (): String {
     return when (this) {
         is Type.Rec -> TODO(this.toString())
+        is Type.Alias -> this.tk_.str
         is Type.Unit  -> "int"
         is Type.Ptr   -> this.pln.pos() + "*"
         is Type.Nat   -> this.tk_.src
@@ -20,7 +21,7 @@ fun Type.pos (): String {
 }
 
 fun Type.output_std (c: String, arg: String): String {
-    val tupuni = this is Type.Ptr && (this.pln is Type.Tuple || this.pln is Type.Union)
+    val tupuni = this is Type.Ptr && this.pln.noalias().let { it is Type.Tuple || it is Type.Union }
     return when {
         tupuni -> "output_std_${(this as Type.Ptr).pln.toce()}$c($arg);\n"
         this is Type.Ptr || this is Type.Func -> {
@@ -34,7 +35,7 @@ val TYPEX = mutableSetOf<String>()
 
 fun code_ft (tp: Type) {
     CODE.addFirst(when (tp) {
-        is Type.Nat, is Type.Rec, is Type.Unit -> ""
+        is Type.Nat, is Type.Rec, is Type.Unit, is Type.Alias -> ""
         is Type.Ptr    -> CODE.removeFirst().type
         is Type.Spawn  -> CODE.removeFirst().type
         is Type.Spawns -> CODE.removeFirst().type
@@ -271,7 +272,7 @@ fun Stmt.mem_vars (): String {
     return when (this) {
         is Stmt.Nop, is Stmt.Set, is Stmt.Native, is Stmt.SCall, is Stmt.SSpawn,
         is Stmt.DSpawn, is Stmt.Await, is Stmt.Bcast, is Stmt.Throw,
-        is Stmt.Input, is Stmt.Output, is Stmt.Return, is Stmt.Break -> ""
+        is Stmt.Input, is Stmt.Output, is Stmt.Return, is Stmt.Break, is Stmt.Typedef -> ""
 
         is Stmt.Var -> "${this.xtype!!.pos()} ${this.tk_.str};\n"
         is Stmt.Loop -> this.block.mem_vars()
@@ -564,6 +565,15 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
 fun code_fs (s: Stmt) {
     CODE.addFirst(when (s) {
         is Stmt.Nop -> Code("", "","","")
+        is Stmt.Typedef -> CODE.removeFirst().type.let {
+            val src = """
+                #define output_std_${s.tk_.str}_ output_std_${s.type.toce()}_
+                #define output_std_${s.tk_.str}  output_std_${s.type.toce()}
+                typedef ${s.type.pos()} ${s.tk_.str};
+                
+            """.trimIndent()
+            Code(it+src, "", "", "")
+        }
         is Stmt.Native -> if (s.istype) {
             Code(s.tk_.src.native(s, s.tk) + "\n", "", "", "")
         } else {

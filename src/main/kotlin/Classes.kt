@@ -15,6 +15,7 @@ sealed class Type (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     ): Type(N++, tk_, null, null)
     data class Spawn  (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
     data class Spawns (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
+    data class Alias  (val tk_: Tk.Str): Type(N++, tk_, null, null)
 }
 
 sealed class Attr (val n: Int, val tk: Tk) {
@@ -64,4 +65,5 @@ sealed class Stmt (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class DLoop  (val tk_: Tk.Key, val i: Expr.Var, val tsks: Expr, val block: Block) : Stmt(N++, tk_, null, null)
     data class Break  (val tk_: Tk.Key) : Stmt(N++, tk_, null, null)
     data class Block  (val tk_: Tk.Chr, val iscatch: Boolean, val xscp1: Tk.Scp1?, val body: Stmt) : Stmt(N++, tk_, null, null)
+    data class Typedef (val tk_: Tk.Str, val type: Type) : Stmt(N++, tk_, null, null)
 }

@@ -1,8 +1,9 @@
 fun parser_type (all: All, tasks: Boolean=false): Type {
     return when {
-        all.accept(TK.UNIT) -> Type.Unit(all.tk0 as Tk.Sym)
-        all.accept(TK.XNAT) -> Type.Nat(all.tk0 as Tk.Nat)
-        all.accept(TK.XUP)  -> Type.Rec(all.tk0 as Tk.Up)
+        all.accept(TK.UNIT)  -> Type.Unit(all.tk0 as Tk.Sym)
+        all.accept(TK.XNAT)  -> Type.Nat(all.tk0 as Tk.Nat)
+        all.accept(TK.XTYPE) -> Type.Alias(all.tk0 as Tk.Str)
+        all.accept(TK.XUP)   -> Type.Rec(all.tk0 as Tk.Up)
         all.accept(TK.CHAR, '/') -> {
             val tk0 = all.tk0 as Tk.Chr
             val pln = parser_type(all)
@@ -451,6 +452,13 @@ fun parser_stmt (all: All): Stmt {
         }
         all.accept(TK.BREAK) -> Stmt.Break(all.tk0 as Tk.Key)
         all.accept(TK.CATCH) || all.check(TK.CHAR,'{') -> parser_block(all)
+        all.accept(TK.TYPE) -> {
+            all.accept_err(TK.XTYPE)
+            val tk = all.tk0 as Tk.Str
+            all.accept_err(TK.CHAR,'=')
+            val tp = parser_type(all)
+            Stmt.Typedef(tk, tp)
+        }
         else -> {
             all.err_expected("statement")
             error("unreachable")

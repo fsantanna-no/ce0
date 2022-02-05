@@ -8,12 +8,14 @@ fun Type.link1 (up: Any): Type {
 
 fun Type.link (up: Any): Type {
     this.setUps(up)
+    this.setEnvs(up.getEnv())
     this.visit(false, { this.wenv = up.getEnv() })
     return this
 }
 
 fun Type.linkX (up: Any): Type {
     this.setUps(up)
+    this.setEnvs(up.getEnv())
     //this.visit(false, { this.env = up.getEnv() })
     return this
 }
@@ -29,6 +31,7 @@ fun Type.tostr (): String {
     }
     return when (this) {
         is Type.Unit  -> "()"
+        is Type.Alias -> this.tk_.str
         is Type.Nat   -> this.tk_.toce()
         is Type.Rec   -> "^".repeat(this.tk_.up)
         is Type.Ptr   -> this.xscp1.let { "/" + this.pln.tostr() + (it?.tostr() ?: "")}
@@ -56,7 +59,7 @@ fun Type.flattenRight (): List<Type> {
 fun Type.flattenLeft (): List<Type> {
     // TODO: func/union do not make sense?
     return when (this) {
-        is Type.Unit, is Type.Nat, is Type.Rec -> listOf(this)
+        is Type.Unit, is Type.Nat, is Type.Rec, is Type.Alias -> listOf(this)
         is Type.Tuple -> listOf(this) + this.vec.map { it.flattenLeft() }.flatten()
         is Type.Union -> listOf(this) + this.vec.map { it.flattenLeft() }.flatten()
         is Type.Func  -> listOf(this) //this.inp.flatten() + this.out.flatten()
@@ -69,6 +72,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
     fun Type.aux (lin: Int, col: Int): Type {
         return when (this) {
             is Type.Unit -> Type.Unit(this.tk_.copy(lin_ = lin, col_ = col))
+            is Type.Alias -> Type.Alias(this.tk_.copy(lin_ = lin, col_ = col))
             is Type.Nat -> Type.Nat(this.tk_.copy(lin_ = lin, col_ = col))
             is Type.Tuple -> Type.Tuple(
                 this.tk_.copy(lin_ = lin, col_ = col),
@@ -111,6 +115,7 @@ fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
     fun Type.aux (lin: Int, col: Int): Type {
         return when (this) {
             is Type.Unit -> Type.Unit(this.tk_.copy(lin_ = lin, col_ = col))
+            is Type.Alias -> Type.Alias(this.tk_.copy(lin_ = lin, col_ = col))
             is Type.Nat -> Type.Nat(this.tk_.copy(lin_ = lin, col_ = col))
             is Type.Tuple -> Type.Tuple(
                 this.tk_.copy(lin_ = lin, col_ = col),
@@ -144,8 +149,13 @@ fun Type.isrec (): Boolean {
     return (this is Type.Union) && this.isrec
 }
 
+fun Type.noalias (): Type {
+    return if (this is Type.Alias) this.env(this.tk_.str)!!.toType() else this
+}
+
 fun Type.containsRec (): Boolean {
     return when (this) {
+        is Type.Alias -> TODO()
         is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func, is Type.Spawn, is Type.Spawns -> false
         is Type.Rec   -> true
         is Type.Tuple -> this.vec.any { it.containsRec() }
@@ -173,6 +183,7 @@ fun Type.toce (): String {
         is Type.Rec    -> "Rec"
         is Type.Unit   -> "Unit"
         is Type.Ptr    -> "P_" + this.pln.toce() + "_P"
+        is Type.Alias  -> this.tk_.str
         is Type.Nat    -> this.tk_.src.replace('*','_')
         is Type.Tuple  -> "T_" + this.vec.map { it.toce() }.joinToString("_") + "_T"
         is Type.Union  -> "U_" + this.vec.map { it.toce() }.joinToString("_") + "_U"

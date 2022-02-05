@@ -29,7 +29,7 @@ fun Any.ups_first (f: (Any)->Boolean): Any? {
 fun Type.setUps (up: Any) {
     this.wup = up
     when (this) {
-        is Type.Unit, is Type.Nat, is Type.Rec -> {}
+        is Type.Unit, is Type.Nat, is Type.Rec, is Type.Alias -> {}
         is Type.Tuple -> this.vec.forEach { it.setUps(this) }
         is Type.Union -> this.vec.forEach { it.setUps(this) }
         is Type.Func  -> { this.inp.setUps(this) ; this.pub?.setUps(this) ; this.out.setUps(this) }
@@ -96,6 +96,7 @@ fun Stmt.setUps (up: Any?) {
         is Stmt.Loop  -> this.block.setUps(this)
         is Stmt.DLoop -> { this.i.setUps(this) ; this.tsks.setUps(this) ; this.block.setUps(this) }
         is Stmt.Block -> this.body.setUps(this)
+        is Stmt.Typedef -> this.type.setUps(this)
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }
 }

@@ -9,10 +9,25 @@ fun Any.getEnv (): Any? {
     }
 }
 
+fun Type.setEnvs (env: Any?) {
+    this.wenv = env
+    when (this) {
+        is Type.Unit, is Type.Nat, is Type.Rec, is Type.Alias -> {}
+        is Type.Tuple -> this.vec.forEach { it.setEnvs(this) }
+        is Type.Union -> this.vec.forEach { it.setEnvs(this) }
+        is Type.Func  -> { this.inp.setEnvs(this) ; this.pub?.setEnvs(this) ; this.out.setEnvs(this) }
+        is Type.Spawn   -> this.tsk.setEnvs(this)
+        is Type.Spawns  -> this.tsk.setEnvs(this)
+        is Type.Ptr   -> this.pln.setEnvs(this)
+        else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
+    }
+}
+
 fun Any.toType (): Type {
     return when (this) {
-        is Type     -> this
-        is Stmt.Var -> this.xtype!!
+        is Type         -> this
+        is Stmt.Var     -> this.xtype!!
+        is Stmt.Typedef -> this.type
         else -> error("bug found")
     }
 }
@@ -36,8 +51,9 @@ fun Any.env (id: String, upval: Boolean=false): Any? {
     //print(">>> ") ; println(id)
     return this.env_first {
         //println(it)
-        it is Stmt.Var   && it.tk_.str.toLowerCase()==id.toLowerCase() ||
-        it is Stmt.Block && it.xscp1?.lbl?.toUpperCase()==id.toUpperCase() ||
+        it is Stmt.Typedef && it.tk_.str.toLowerCase()==id.toLowerCase() ||
+        it is Stmt.Var     && it.tk_.str.toLowerCase()==id.toLowerCase() ||
+        it is Stmt.Block   && it.xscp1?.lbl?.toUpperCase()==id.toUpperCase() ||
         //it is Expr.Func  && (id=="arg" || id=="ret" || id=="evt")
         it is Expr.Func  && (id=="arg" || id=="pub" || id=="ret" || id=="evt" || (upval && it.ups.any { it.str==id }))
     }.let {
@@ -69,7 +85,7 @@ fun Expr.setEnvs (env: Any?) {
         tp.wenv = env
     }
     when (this) {
-        is Expr.Var -> {}
+        is Expr.Var   -> {}
         is Expr.Unit  -> this.wtype?.visit(false, ::ft)
         is Expr.Nat   -> this.xtype?.visit(false, ::ft)
         is Expr.TCons -> this.arg.forEachIndexed { _,e -> e.setEnvs(env) }
@@ -111,8 +127,8 @@ fun Stmt.setEnvs (env: Any?): Any? {
         is Stmt.DSpawn -> { this.dst.setEnvs(this) ; this.call.setEnvs(this) ; env }
         is Stmt.Await  -> { this.e.setEnvs(env) ; env }
         is Stmt.Bcast  -> { this.e.setEnvs(env) ; env }
-        is Stmt.Input    -> { this.dst?.setEnvs(env) ; this.arg.setEnvs(env) ; this.xtype?.visit(false, ::ft) ; env }
-        is Stmt.Output    -> { this.arg.setEnvs(env) ; env }
+        is Stmt.Input  -> { this.dst?.setEnvs(env) ; this.arg.setEnvs(env) ; this.xtype?.visit(false, ::ft) ; env }
+        is Stmt.Output -> { this.arg.setEnvs(env) ; env }
         is Stmt.Seq -> {
             val e1 = this.s1.setEnvs(env)
             val e2 = this.s2.setEnvs(e1)
@@ -130,6 +146,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
             this.body.setEnvs(this) // also include blocks w/o labels b/c of inference
             env
         }
+        is Stmt.Typedef -> { this.type.visit(false, ::ft) ; this }
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }
 }

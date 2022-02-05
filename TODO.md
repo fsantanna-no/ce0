@@ -47,7 +47,7 @@ type Bool = <(),()>
 ```
 
 ```
-type Player [
+type Player = [
     name: _(char*),
     age:  _int,
     sub:  <

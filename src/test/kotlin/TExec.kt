@@ -1649,6 +1649,29 @@ class TExec {
         assert(out == "()\n") { out }
     }
 
+    // TYPEDEF / ALIAS
+
+    @Test
+    fun o01_alias () {
+        val out = all("""
+        type Uxit = ()
+        var x: Uxit
+        set x = ()
+        output std x
+        """.trimIndent())
+        assert(out == "()\n") { out }
+    }
+    @Test
+    fun o02_alias () {
+        val out = all("""
+        type Pair = [_int,_int]
+        var x: Pair
+        set x = [_1:_int,_2:_int]
+        output std /x
+        """.trimIndent())
+        assert(out == "()\n") { out }
+    }
+
     // ALL
 
     @Test

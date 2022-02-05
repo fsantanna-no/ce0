@@ -900,4 +900,21 @@ class TParser {
         val tp = parser_type(all)
         assert(tp is Type.Spawns && tp.tsk is Type.Func && tp.tsk.tk.enu==TK.TASKS && tp.tsk.xscp1s.first!!.lbl=="LOCAL")
     }
+
+    // TYPEDEF
+
+    @Test
+    fun e01_typedef () {
+        val all = All_new(PushbackReader(StringReader("type Unit = ()"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.Typedef && s.tk_.str=="Unit" && s.type is Type.Unit)
+    }
+    @Test
+    fun e02_typedef () {
+        val all = All_new(PushbackReader(StringReader("var x: Unit"), 2))
+        lexer(all)
+        val s = parser_stmt(all)
+        assert(s is Stmt.Var && s.xtype is Type.Alias && (s.xtype as Type.Alias).tk_.str=="Unit")
+    }
 }

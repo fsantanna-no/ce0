@@ -2,7 +2,7 @@ val D = "\$"
 
 enum class TK {
     ERR, EOF, CHAR,
-    XVAR, XNAT, XNUM, XUP, XSCPCST, XSCPVAR,
+    XVAR, XTYPE, XNAT, XNUM, XUP, XSCPCST, XSCPVAR,
     UNIT, ARROW, ATBRACK,
     ACTIVE, AWAIT, AWAKE, BCAST, BREAK, CALL, CATCH, ELSE, FUNC, IF, IN, INPUT,
     LOOP, NATIVE, NEW, OUTPUT, RETURN, SET, SPAWN, TASK, TASKS, THROW, TYPE, VAR,
@@ -66,6 +66,7 @@ fun TK.toErr (chr: Char?): String {
         TK.CHAR    -> "`" + chr!! + "´"
         TK.XNAT    -> "`_´"
         TK.XVAR    -> "variable identifier"
+        TK.XTYPE   -> "type identifier"
         TK.XNUM    -> "number"
         TK.ARROW   -> "`->´"
         TK.ATBRACK -> "`@[´"
@@ -115,7 +116,7 @@ fun token (all: All) {
 
     var (c1,x1) = all.read()
 
-    fun lowers (): String {
+    fun letters (): String {
         var pay = ""
         do {
             pay += x1
@@ -245,9 +246,15 @@ fun token (all: All) {
             all.tk1 = Tk.Num(TK.XNUM, LIN, COL, pay.toInt())
         }
         x1.isLowerCase() -> {
-            var pay = lowers()
+            var pay = letters()
             all.tk1 = key2tk[pay].let {
                 if (it != null) Tk.Key(it, LIN, COL, pay) else Tk.Str(TK.XVAR, LIN, COL, pay)
+            }
+        }
+        x1.isUpperCase() -> {
+            var pay = letters()
+            all.tk1 = key2tk[pay].let {
+                if (it != null) Tk.Key(it, LIN, COL, pay) else Tk.Str(TK.XTYPE, LIN, COL, pay)
             }
         }
         else -> {

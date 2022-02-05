@@ -39,7 +39,7 @@ fun Type.Func.mapLabels (up: Any): Type.Func {
     val outer = this
     fun Type.aux (): Type {
         return when (this) {
-            is Type.Unit, is Type.Nat, is Type.Rec -> this
+            is Type.Unit, is Type.Nat, is Type.Rec, is Type.Alias -> this
             is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.aux() }.toTypedArray())
             is Type.Union -> Type.Union(this.tk_, this.isrec, this.vec.map { it.aux() }.toTypedArray())
             is Type.Func  -> this
@@ -71,6 +71,14 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
         (this is Type.Rec) -> ups1[this.tk_.up-1].let { it.isSupOf_(sub, isproto, ups1.drop(this.tk_.up),ups2) }
         (sub  is Type.Rec) -> ups2[sub.tk_.up-1].let { this.isSupOf_(it, isproto, ups1,ups2.drop(sub.tk_.up)) }
         (this is Type.Spawn && sub is Type.Spawns) -> this.tsk.isSupOf(sub.tsk)
+        (this is Type.Alias || sub is Type.Alias) -> {
+            when {
+                (this is Type.Alias && sub is Type.Alias) -> this.tk_.str == sub.tk_.str
+                (this is Type.Alias) -> (this.noalias()).isSupOf(sub)
+                (sub  is Type.Alias) -> this.isSupOf(sub.noalias())
+                else -> error("bug found")
+            }
+        }
         (this::class != sub::class) -> false
         (this is Type.Unit && sub is Type.Unit) -> true
         (this is Type.Func && sub is Type.Func) -> {

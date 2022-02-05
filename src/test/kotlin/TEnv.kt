@@ -2894,4 +2894,65 @@ class TEnv {
         )
         assert(out == "OK") { out }
     }
+
+    // TYPEDEF / ALIAS
+
+    @Test
+    fun q00 () {
+        val out = inp2env(
+            """
+            var x: Unit
+        """.trimIndent()
+        )
+        assert(out == "(ln 1, col 8): undeclared type \"Unit\"") { out }
+    }
+    @Test
+    fun q01 () {
+        val out = inp2env(
+            """
+            type Unit = ()
+            var x: Unit
+            set x = ()
+            output std x
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun q02 () {
+        val out = inp2env(
+            """
+            type Unit = ()
+            var x: Unit
+            var y: Unit
+            set x = y
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun q03 () {
+        val out = inp2env(
+            """
+            type Unit = ()
+            var x: Unit
+            var y: ()
+            set y = x
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun q04 () {
+        val out = inp2env(
+            """
+            type Unit = ()
+            type Uxit = ()
+            var x: Unit
+            var y: Uxit
+            set y = x
+        """.trimIndent()
+        )
+        assert(out == "(ln 5, col 7): invalid assignment : type mismatch") { out }
+    }
 }

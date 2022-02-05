@@ -108,7 +108,7 @@ fun check_02_after_tps (s: Stmt) {
                 {
                     fun Type.aux (dofunc: Boolean): Type {
                         return when (this) {
-                            is Type.Unit, is Type.Nat, is Type.Rec -> this
+                            is Type.Unit, is Type.Nat, is Type.Rec, is Type.Alias -> this
                             is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.aux(dofunc) }.toTypedArray())
                             is Type.Union -> Type.Union(this.tk_, this.isrec, this.vec.map { it.aux(dofunc) }.toTypedArray())
                             is Type.Ptr -> {
