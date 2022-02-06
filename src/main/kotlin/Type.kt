@@ -1,7 +1,7 @@
 fun Type.tostr (): String {
     fun Tk.Id?.clo (): String {
         return if (this == null) "" else
-            " @" + this.id + " -> "
+            " @" + this.id + " ->"
     }
     return when (this) {
         is Type.Unit    -> "()"

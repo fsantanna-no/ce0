@@ -299,8 +299,8 @@ class TBook {
             """
             $nums
             $lt
-            var smaller: func @[a1,a2]-> [$NumA1,$NumA2] -> $NumA2
-            set smaller = func @[a1,a2]-> [$NumA1,$NumA2] -> $NumA2 {
+            var smaller: func @[a1,a2: a2>a1]-> [$NumA1,$NumA2] -> $NumA2
+            set smaller = func @[a1,a2: a2>a1]-> [$NumA1,$NumA2] -> $NumA2 {
                 if lt @[a1,a2] arg {
                     set ret = arg.1
                 } else {

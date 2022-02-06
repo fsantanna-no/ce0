@@ -26,7 +26,7 @@ fun check_02_after_tps (s: Stmt) {
                     val var_scope = env.toType().toScp2()
                     val func = e.ups_first { it is Expr.Func } as Expr.Func
                     val clo = func.type.xscp2s!!.first?.depth ?: 0
-                    All_assert_tk(e.tk, clo>=var_scope.depth!! && func.ups.any { it.id==e.tk_.id }) {
+                    All_assert_tk(e.tk, clo>=var_scope.depth?:999 && func.ups.any { it.id==e.tk_.id }) {
                         "invalid access to \"${e.tk_.id}\" : invalid closure declaration (ln ${func.tk.lin})"
                     }
                     funcs.add(func)

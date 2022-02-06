@@ -2721,17 +2721,17 @@ class TEnv {
     fun p22_pool_closure_err() {
         val out = inp2env(
             """
-            var g: func@[a1]->() -> (func@[a1]->()->())
-            set g = func@[a1]->() -> (func@[a1]->()->()) {
-                var f: func@[b1]->() -> ()
+            var g : func @[a1]->() -> (func @[a1]->()->())
+            set g = func @[a1]->() -> (func @[a1]->()->()) {
+                var f: func @[b1]->() -> ()
                 var x: /</^@a1>@a1
                 set x = new <.1 <.0>:/</^@a1>@a1>: </^@a1>: @a1
-                set f = func@[b1]->()  -> () {
+                set f = func @[b1]->()  -> () {
                     output std x
                 }
                 set ret = f
             }
-            var f: func@[a1]->() -> ()
+            var f : func @[a1]->() -> ()
             set f = g @[LOCAL] ()
             call f @[LOCAL] ()
         """.trimIndent()
