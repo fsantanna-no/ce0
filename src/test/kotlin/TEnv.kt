@@ -77,7 +77,7 @@ class TEnv {
             var x: <(),()>
             output std(x.0)
         """.trimIndent())
-        assert(out == "(ln 2, col 14): invalid discriminator : type mismatch : expected tuple") { out }
+        assert(out.startsWith("(ln 2, col 14): invalid discriminator : type mismatch : expected tuple")) { out }
     }
     @Test
     fun b04_user_disc_cons_err () {
@@ -114,7 +114,7 @@ class TEnv {
             var y: </^ @LOCAL>
             set y = x
         """.trimIndent())
-        assert(out == "(ln 3, col 7): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 3, col 7): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun b10_user_empty_err () {
@@ -122,7 +122,7 @@ class TEnv {
             var l: </^ @GLOBAL>
             set l = <.1 ()>:<()>
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 2, col 7): invalid assignment : type mismatch")) { out }
         //assert(out == "(ln 2, col 11): invalid union constructor : expected `new`") { out }
     }
     @Test
@@ -161,7 +161,7 @@ class TEnv {
             var l: </^ @LOCAL>
             set l = new <.1 <.0>:/</^@LOCAL>@LOCAL>:</^@LOCAL>: @LOCAL
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 2, col 7): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun b14_user_empty_ok () {
@@ -230,7 +230,7 @@ class TEnv {
             var x: [()]
             set x = ()
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch")
+        assert(out.startsWith("(ln 2, col 7): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun c02_type_set () {
@@ -238,7 +238,7 @@ class TEnv {
             var x: ()
             set x = [()]
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 2, col 7): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun c03_type_func_ret () {
@@ -250,7 +250,7 @@ class TEnv {
                     return
                 }
         """.trimIndent())
-        assert(out == "(ln 4, col 17): invalid return : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 17): invalid return : type mismatch")) { out }
     }
     @Test
     fun c04_type_func_arg () {
@@ -259,7 +259,7 @@ class TEnv {
             set f = func@[]->[(),()] -> () { }
             call f @[] ()
         """.trimIndent())
-        assert(out == "(ln 3, col 6): invalid call : type mismatch") { out }
+        assert(out.startsWith("(ln 3, col 6): invalid call : type mismatch")) { out }
     }
     @Test
     fun c05_type_idx () {
@@ -275,7 +275,7 @@ class TEnv {
             var x: [(),()]
             set x.1 = [()]
         """.trimIndent())
-        assert(out == "(ln 2, col 9): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 2, col 9): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun c07_type_upref () {
@@ -283,7 +283,7 @@ class TEnv {
             var x: /() @LOCAL
             set x = ()
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 2, col 7): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun c08_type_upref () {
@@ -292,7 +292,7 @@ class TEnv {
             var x: ()
             set x = /y
         """.trimIndent())
-        assert(out == "(ln 3, col 7): invalid assignment : type mismatch")
+        assert(out.startsWith("(ln 3, col 7): invalid assignment : type mismatch"))
     }
     @Test
     fun c09_type_upref () {
@@ -310,7 +310,7 @@ class TEnv {
             var x: /()@LOCAL
             set x = /y
         """.trimIndent())
-        assert(out == "(ln 3, col 7): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 3, col 7): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun c11_type_upref () {
@@ -348,7 +348,7 @@ class TEnv {
             var z: /() @LOCAL
             set z = y\
         """.trimIndent())
-        assert(out == "(ln 5, col 7): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 5, col 7): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun c14_type_func_err () {
@@ -380,7 +380,7 @@ class TEnv {
             call arg.2 ()
         }
         """.trimIndent())
-        assert(out == "(ln 2, col 14): invalid discriminator : type mismatch : expected tuple") { out }
+        assert(out.startsWith("(ln 2, col 14): invalid discriminator : type mismatch : expected tuple")) { out }
     }
     @Test
     fun c18_type_func_err () {
@@ -389,7 +389,7 @@ class TEnv {
         set f = func@[]-><(),func@[]->()->()>->() {
         }
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 2, col 7): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun c19_arg_err () {
@@ -430,7 +430,7 @@ class TEnv {
             var x: <()>
             output std x.2
         """.trimIndent())
-        assert(out == "(ln 2, col 14): invalid discriminator : type mismatch : expected tuple")
+        assert(out.startsWith("(ln 2, col 14): invalid discriminator : type mismatch : expected tuple"))
     }
     @Test
     fun c18_uni_disc_err () {
@@ -467,7 +467,7 @@ class TEnv {
             var x: <()>
             set x = <.2()>:<(),()>
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 2, col 7): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun c22_tup_cons_err () {
@@ -475,7 +475,7 @@ class TEnv {
             var t: [(),()]
             set t = [(),(),()]
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 2, col 7): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun c23_list_zero_err () {
@@ -521,7 +521,7 @@ class TEnv {
                 --set p2 = /v
             }
         """.trimIndent())
-        assert(out == "(ln 5, col 12): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 5, col 12): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun e02_ptr_block_err () {
@@ -534,7 +534,7 @@ class TEnv {
                 set p = /y   -- no
             }
         """.trimIndent())
-        assert(out == "(ln 6, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 6, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun e03_ptr_err () {
@@ -545,7 +545,7 @@ class TEnv {
                 set pout = pin  -- no
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 14): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 14): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun e03_ptr_ok () {
@@ -675,7 +675,7 @@ class TEnv {
             }
             call f()
         """.trimIndent())
-        assert(out == "(ln 5, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch")) { out }
         //assert(out == "OK") { out }
     }
     @Test
@@ -731,7 +731,7 @@ class TEnv {
                 }
             }
         """.trimIndent())
-        assert(out == "(ln 6, col 16): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 6, col 16): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun e10_func_err () {
@@ -803,7 +803,7 @@ class TEnv {
                 }
             }
         """.trimIndent())
-        assert(out == "(ln 6, col 16): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 6, col 16): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun e13_call_ok () {
@@ -850,7 +850,7 @@ class TEnv {
         """.trimIndent())
         //assert(out == "(ln 7, col 15): invalid assignment : type mismatch") { out }
         //assert(out == "(ln 7, col 22): invalid call : type mismatch") { out }
-        assert(out == "(ln 7, col 28): invalid call : scope mismatch") { out }
+        assert(out.startsWith("(ln 7, col 28): invalid call : scope mismatch")) { out }
     }
     @Test
     fun e16_call_ok () {
@@ -986,7 +986,7 @@ class TEnv {
                 }
             }
         """.trimIndent())
-        assert(out == "(ln 6, col 17): invalid return : type mismatch") { out }
+        assert(out.startsWith("(ln 6, col 17): invalid return : type mismatch")) { out }
     }
     @Test
     fun e22_local_ok () {
@@ -1045,7 +1045,7 @@ class TEnv {
                 set p = /y
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun f02_ptr_ptr_ok () {
@@ -1070,7 +1070,7 @@ class TEnv {
                 set p = /y
             }
         """.trimIndent())
-        assert(out == "(ln 5, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun f04_ptr_ptr_err () {
@@ -1083,7 +1083,7 @@ class TEnv {
                 set p = z\
             }
         """.trimIndent())
-        assert(out == "(ln 6, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 6, col 11): invalid assignment : type mismatch")) { out }
     }
 
     // POINTERS - FUNC - CALL
@@ -1155,7 +1155,7 @@ class TEnv {
                 set ret = /v
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 13): invalid return : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 13): invalid return : type mismatch")) { out }
     }
     @Test
     fun g04_ptr_func_err () {
@@ -1167,7 +1167,7 @@ class TEnv {
                 set ret = ptr
             }
         """.trimIndent())
-        assert(out == "(ln 5, col 13): invalid return : type mismatch") { out }
+        assert(out.startsWith("(ln 5, col 13): invalid return : type mismatch")) { out }
     }
     @Test
     fun g05_ptr_caret_ok () {
@@ -1197,7 +1197,7 @@ class TEnv {
                 set ret = ptr
             }
         """.trimIndent())
-        assert(out == "(ln 6, col 13): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 6, col 13): invalid assignment : type mismatch")) { out }
     }
 
     @Test
@@ -1209,7 +1209,7 @@ class TEnv {
                 set ret = /arg
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 13): invalid return : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 13): invalid return : type mismatch")) { out }
     }
     @Test
     fun g09_ptr_arg_err () {
@@ -1221,7 +1221,7 @@ class TEnv {
                 set ret = ptr
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 13): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 13): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun g10_ptr_out_err () {
@@ -1250,7 +1250,7 @@ class TEnv {
                 }
             }
         """.trimIndent())
-        assert(out == "(ln 6, col 17): invalid return : type mismatch") { out }
+        assert(out.startsWith("(ln 6, col 17): invalid return : type mismatch")) { out }
     }
     @Test // passou a falhar qd mudei env p/ upvals
     fun g11_ptr_func_ok () {
@@ -1372,7 +1372,7 @@ class TEnv {
                 set p = /y
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun h02_ptr_user_err1 () {
@@ -1383,7 +1383,7 @@ class TEnv {
                 set p = /y.1
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun h02_ptr_user_err2 () {
@@ -1394,7 +1394,7 @@ class TEnv {
                 set p = /y.1
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun h03_ptr_tup () {
@@ -1416,7 +1416,7 @@ class TEnv {
                 set p = /v.1
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun h05_ptr_type_err () {
@@ -1427,7 +1427,7 @@ class TEnv {
                 set p = /v.1
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun h06_ptr_tup_err () {
@@ -1438,7 +1438,7 @@ class TEnv {
                 set p.2 = /v     -- err
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 13): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 13): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun h07_ptr_tup_err () {
@@ -1449,7 +1449,7 @@ class TEnv {
                 set p = [_10: _int,/v]
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun h08_ptr_type_err () {
@@ -1460,7 +1460,7 @@ class TEnv {
                 set p!1 = /v
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 13): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 13): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun h09_ptr_type_err1 () {
@@ -1471,7 +1471,7 @@ class TEnv {
                 set p = <.1 /v>: </_int @LOCAL>
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun h09_ptr_type_err2 () {
@@ -1495,7 +1495,7 @@ class TEnv {
                 }
             }
         """.trimIndent())
-        assert(out == "(ln 5, col 15): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 5, col 15): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun h10_ptr_tup_err () {
@@ -1507,7 +1507,7 @@ class TEnv {
                 set x1 = x2
             }
         """.trimIndent())
-        assert(out == "(ln 5, col 12): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 5, col 12): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun h11_ptr_type_err () {
@@ -1519,7 +1519,7 @@ class TEnv {
                 set x1 = x2
             }
         """.trimIndent())
-        assert(out == "(ln 5, col 12): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 5, col 12): invalid assignment : type mismatch")) { out }
     }
 
     // TYPE - REC - REPLACE - CLONE - BORROW
@@ -1535,7 +1535,7 @@ class TEnv {
             }
             output std p
         """.trimIndent())
-        assert(out == "(ln 5, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun i01_list_2 () {
@@ -1548,7 +1548,7 @@ class TEnv {
             }
             output std p
         """.trimIndent())
-        assert(out == "(ln 5, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun i02_list () {
@@ -1561,7 +1561,7 @@ class TEnv {
             }
             output std p
         """.trimIndent())
-        assert(out == "(ln 5, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun i03_list () {
@@ -1569,7 +1569,7 @@ class TEnv {
             var xxx: <[_int,</^ @LOCAL>]>
             set xxx = <.1()>:<()>
         """.trimIndent())
-        assert(out == "(ln 2, col 9): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 2, col 9): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun i04_uni_rec_err () {
@@ -1968,7 +1968,7 @@ class TEnv {
             set e = new <.2 new <.1()>:<(),/^ @LOCAL>: @LOCAL>:<(),/<(),/^ @LOCAL> @LOCAL>: @LOCAL
         """.trimIndent())
         //assert(out == "(ln 1, col 29): unexpected `new` : expected recursive type") { out }
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 2, col 7): invalid assignment : type mismatch")) { out }
     }
 
     // IF / FUNC
@@ -1978,7 +1978,7 @@ class TEnv {
         val out = inp2env("""
             if () {} else {}
         """.trimIndent())
-        assert(out == "(ln 1, col 1): invalid condition : type mismatch") { out }
+        assert(out.startsWith("(ln 1, col 1): invalid condition : type mismatch")) { out }
     }
     @Test
     fun k02_func_arg () {
@@ -2241,7 +2241,7 @@ class TEnv {
                 set ret = x    -- err
             }
         """.trimIndent())
-        assert(out == "(ln 5, col 13): invalid return : type mismatch") { out }
+        assert(out.startsWith("(ln 5, col 13): invalid return : type mismatch")) { out }
     }
     @Test
     fun l13_consume_err () {
@@ -2668,7 +2668,7 @@ class TEnv {
             }
         """.trimIndent()
         )
-        assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun p19_pool_closure_err() {
@@ -2882,7 +2882,7 @@ class TEnv {
             call f ()
         """.trimIndent()
         )
-        assert(out == "(ln 2, col 6): invalid call : scope mismatch") { out }
+        assert(out.startsWith("(ln 2, col 6): invalid call : scope mismatch")) { out }
     }
     @Test
     fun p34_diff_args () {
@@ -2954,7 +2954,7 @@ class TEnv {
             set y = x
         """.trimIndent()
         )
-        assert(out == "(ln 5, col 7): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 5, col 7): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun q05 () {
@@ -3019,7 +3019,7 @@ class TEnv {
             }
         """.trimIndent()
         )
-        assert(out == "(ln 5, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun q10 () {

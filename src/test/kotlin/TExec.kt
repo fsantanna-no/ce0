@@ -608,7 +608,7 @@ class TExec {
             }
             output std p1\
         """.trimIndent())
-        assert(out == "(ln 6, col 12): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 6, col 12): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun i06_ptr_block_err () {
@@ -621,7 +621,7 @@ class TExec {
                 set p = /y  -- no
             }
         """.trimIndent())
-        assert(out == "(ln 6, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 6, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun i07_ptr_func_ok () {
@@ -663,7 +663,7 @@ class TExec {
             }
             output std ()
         """.trimIndent())
-        assert(out == "(ln 4, col 13): invalid return : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 13): invalid return : type mismatch")) { out }
     }
     @Test
     fun i10_ptr_func_err () {
@@ -676,7 +676,7 @@ class TExec {
             }
             output std ()
         """.trimIndent())
-        assert(out == "(ln 5, col 13): invalid return : type mismatch") { out }
+        assert(out.startsWith("(ln 5, col 13): invalid return : type mismatch")) { out }
     }
     @Test
     fun i11_ptr_func_ok () {
@@ -1917,7 +1917,7 @@ class TExec {
             set f = func @[]->()->() {
             }
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 2, col 7): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun z12_union_tuple () {

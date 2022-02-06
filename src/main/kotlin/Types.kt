@@ -95,7 +95,7 @@ fun Stmt.setTypes () {
             }
             is Expr.TDisc -> e.tup.wtype.let {
                 All_assert_tk(e.tk, it is Type.Tuple) {
-                    "invalid discriminator : type mismatch : expected tuple"
+                    "invalid discriminator : type mismatch : expected tuple : have ${it!!.tostr()}"
                 }
                 val (MIN, MAX) = Pair(1, (it as Type.Tuple).vec.size)
                 All_assert_tk(e.tk, MIN <= e.tk_.num && e.tk_.num <= MAX) {
@@ -105,7 +105,7 @@ fun Stmt.setTypes () {
             }
             is Expr.Pub -> e.tsk.wtype.let {
                 All_assert_tk(e.tk, it is Type.Spawn) {
-                    "invalid \"pub\" : type mismatch : expected active task"
+                    "invalid \"pub\" : type mismatch : expected active task : have ${e.tsk.wtype!!.tostr()}"
                 }
                 (it as Type.Spawn).tsk.pub!!
             }

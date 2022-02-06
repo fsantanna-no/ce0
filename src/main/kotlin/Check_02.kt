@@ -48,7 +48,7 @@ fun check_02_after_tps (s: Stmt) {
                 val sup = uni.expand()[e.tk_.num - 1]
                 val sub = e.arg.wtype!!
                 All_assert_tk(e.tk, sup.isSupOf(sub)) {
-                    "invalid union constructor : type mismatch :\n    ${sup.tostr()}\n    ${sub.tostr()}"
+                    "invalid union constructor : ${mismatch(sup,sub)}"
                 }
             }
 
@@ -161,10 +161,14 @@ fun check_02_after_tps (s: Stmt) {
                 */
 
                 val run = (ret1 is Type.Spawn || ret1 is Type.Spawns)
-                All_assert_tk(e.f.tk, inp2.isSupOf(arg1) && (run || ret1.isSupOf(out2))) {
-                    //println(inp2.isSupOf(arg1))
-                    //println(ret1.isSupOf(out2))
-                    "invalid call : type mismatch"
+                val ok1 = inp2.isSupOf(arg1)
+                val ok2 = run || ret1.isSupOf(out2)
+                All_assert_tk(e.f.tk, ok1 && ok2) {
+                    if (ok1) {
+                        "invalid call : ${mismatch(ret1,out2)}"
+                    } else {
+                        "invalid call : ${mismatch(inp2,arg1)}"
+                    }
                 }
             }
         }
@@ -173,53 +177,53 @@ fun check_02_after_tps (s: Stmt) {
         when (s) {
             is Stmt.Await -> {
                 All_assert_tk(s.tk, s.e.wtype is Type.Nat) {
-                    "invalid condition : type mismatch"
+                    "invalid condition : type mismatch : expected _int : have ${s.e.wtype!!.tostr()}"
                 }
             }
             is Stmt.SSpawn -> {
                 All_assert_tk(s.dst.tk, s.dst.wtype is Type.Spawn) {
-                    "invalid `spawn` : type mismatch : expected active task"
+                    "invalid `spawn` : type mismatch : expected active task : have ${s.dst.wtype!!.tostr()}"
                 }
                 val dst  = (s.dst.wtype!! as Type.Spawn).tsk
                 val call = s.call.f.wtype!!
                 All_assert_tk(s.call.tk, call is Type.Func && call.tk.enu==TK.TASK) {
-                    "invalid `spawn` : type mismatch : expected task"
+                    "invalid `spawn` : type mismatch : expected task : have ${call.tostr()}"
                 }
                 //println("invalid `spawn` : type mismatch : ${dst.tostr()} = ${call.tostr()}")
                 All_assert_tk(s.tk, dst.isSupOf(call)) {
-                    "invalid `spawn` : type mismatch\n    ${dst.tostr()}\n    ${call.tostr()}"
+                    "invalid `spawn` : ${mismatch(dst,call)}"
                 }
             }
             is Stmt.DSpawn -> {
                 All_assert_tk(s.dst.tk, s.dst.wtype is Type.Spawns) {
-                    "invalid `spawn` : type mismatch : expected active tasks"
+                    "invalid `spawn` : type mismatch : expected active tasks : have ${s.dst.wtype!!.tostr()}"
                 }
                 val call = s.call.f.wtype!!
                 All_assert_tk(s.call.tk, call is Type.Func && call.tk.enu==TK.TASK) {
-                    "invalid `spawn` : type mismatch : expected task"
+                    "invalid `spawn` : type mismatch : expected task : have ${call.tostr()}"
                 }
                 val dst = (s.dst.wtype!! as Type.Spawns).tsk
                 //println("invalid `spawn` : type mismatch : ${dst.tostr()} = ${call.tostr()}")
                 All_assert_tk(s.tk, dst.isSupOf(call)) {
-                    "invalid `spawn` : type mismatch\n    ${dst.tostr()}\n    ${call.tostr()}"
+                    "invalid `spawn` : ${mismatch(dst,call)}"
                 }
             }
             is Stmt.If -> {
                 All_assert_tk(s.tk, s.tst.wtype is Type.Nat) {
-                    "invalid condition : type mismatch"
+                    "invalid condition : type mismatch : expected _int : have ${s.tst.wtype!!.tostr()}"
                 }
             }
             is Stmt.DLoop -> {
                 val i    = s.i.wtype!!
                 val tsks = s.tsks.wtype!!
                 All_assert_tk(s.i.tk, i is Type.Spawn) {
-                    "invalid `loop` : type mismatch : expected task type"
+                    "invalid `loop` : type mismatch : expected task type : have ${i.tostr()}"
                 }
                 All_assert_tk(s.tsks.tk, tsks is Type.Spawns) {
-                    "invalid `loop` : type mismatch : expected tasks type"
+                    "invalid `loop` : type mismatch : expected tasks type : have ${tsks.tostr()}"
                 }
                 All_assert_tk(s.tk, i.isSupOf(tsks)) {
-                    "invalid `loop` : type mismatch\n    ${i.tostr()}\n    ${tsks.tostr()}"
+                    "invalid `loop` : ${mismatch(i,tsks)}"
                 }
             }
             is Stmt.Set -> {
@@ -228,7 +232,7 @@ fun check_02_after_tps (s: Stmt) {
                 //println(">>> SET") ; println(s.dst) ; println(s.src) ; println(dst.tostr()) ; println(src.tostr())
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
                     val str = if (s.dst is Expr.Var && s.dst.tk_.id == "ret") "return" else "assignment"
-                    "invalid $str : type mismatch"
+                    "invalid $str : ${mismatch(dst,src)}"
                 }
                 if (s.dst is Expr.Var) {
                     val up = s.dst.ups_first { it is Expr.Func && it.ups.any { it.id == s.dst.tk_.id } }

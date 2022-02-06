@@ -178,3 +178,7 @@ fun Type.toce (): String {
         is Type.Spawns -> "SS_" + this.tsk.toce() + "_SS"
     }
 }
+
+fun mismatch (sup: Type, sub: Type): String {
+    return "type mismatch :\n    ${sup.tostr()}\n    ${sub.tostr()}"
+}
