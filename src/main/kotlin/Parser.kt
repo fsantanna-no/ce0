@@ -1,6 +1,6 @@
-fun parser_scopepars (all: All): Pair<Array<Tk.Id>,Array<Pair<Tk.Id,Tk.Id>>> {
+fun parser_scopepars (all: All): Array<Pair<Tk.Id,Int>> {
     val scps = mutableListOf<Tk.Id>()
-    val ctrs = mutableListOf<Pair<Tk.Id,Tk.Id>>()
+    val ctrs = mutableListOf<Pair<String,String>>()
     if (all.accept(TK.ATBRACK)) {
         while (all.accept(TK.XID)) {
             scps.add(all.tk0.asscopepar())
@@ -10,10 +10,10 @@ fun parser_scopepars (all: All): Pair<Array<Tk.Id>,Array<Pair<Tk.Id,Tk.Id>>> {
         }
         if (all.accept(TK.CHAR,':')) {
             while (all.accept(TK.XID)) {
-                val id1 = all.tk0.asscopepar()
+                val id1 = all.tk0.asscopepar().id
                 all.accept_err(TK.CHAR,'>')
                 all.accept_err(TK.XID)
-                val id2 = all.tk0.asscopepar()
+                val id2 = all.tk0.asscopepar().id
                 ctrs.add(Pair(id1,id2))
                 if (!all.accept(TK.CHAR, ',')) {
                     break
@@ -22,7 +22,25 @@ fun parser_scopepars (all: All): Pair<Array<Tk.Id>,Array<Pair<Tk.Id,Tk.Id>>> {
         }
         all.accept_err(TK.CHAR, ']')
     }
-    return Pair(scps.toTypedArray(), ctrs.toTypedArray())
+
+    // var f: (func @[a1,a2: a1>a2]->[/()@a1,/()@a2]->())
+    //      depths = {a1=1, a2=2}
+    val depths = mutableMapOf<String,Int>()
+    var cur = 1
+    val ids = scps.map { it.id }
+    val mut = ids.toMutableSet()
+    while (mut.size > 0) {
+        // remove all "super" ids X: X does not appear as a>X
+        val rem = ids.filter { X -> ctrs.none { it.second==X } }
+        mut.removeAll(rem)
+        rem.forEach {
+            depths[it] = depths[it] ?: cur
+        }
+        cur++
+        ctrs.removeAll { rem.contains(it.first) }
+    }
+    //println(depths)
+    return scps.map { Pair(it,depths[it.id]!!) }.toTypedArray()
 }
 
 fun parser_type (all: All, tasks: Boolean=false): Type {
@@ -107,7 +125,7 @@ fun parser_type (all: All, tasks: Boolean=false): Type {
                 null
             }
             val at = all.check(TK.ATBRACK)
-            val (scps,ctrs) = parser_scopepars(all)
+            val scps = parser_scopepars(all)
             if (at) {
                 all.accept_err(TK.ARROW)
             }
@@ -121,7 +139,7 @@ fun parser_type (all: All, tasks: Boolean=false): Type {
             all.accept_err(TK.ARROW)
             val out = parser_type(all) // right associative
 
-            Type.Func(tk0, Triple(clo,scps,ctrs), null, inp, pub, out)
+            Type.Func(tk0, Pair(clo,scps), null, inp, pub, out)
         }
         all.accept(TK.ACTIVE) -> {
             val tk0 = all.tk0 as Tk.Key
@@ -511,10 +529,10 @@ fun parser_stmt (all: All): Stmt {
         all.accept(TK.TYPE) -> {
             all.accept_err(TK.XID)
             val id = all.tk0.astype()
-            val (scps,ctrs) = parser_scopepars(all)
+            val scps = parser_scopepars(all)
             all.accept_err(TK.CHAR,'=')
             val tp = parser_type(all)
-            Stmt.Typedef(id, Pair(scps,ctrs), null, tp)
+            Stmt.Typedef(id, scps, null, tp)
         }
         else -> {
             all.err_expected("statement")

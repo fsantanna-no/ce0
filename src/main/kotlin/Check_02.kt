@@ -66,15 +66,26 @@ fun check_02_after_tps (s: Stmt) {
                     is Type.Spawn  -> Triple(func.tsk.xscp1s.second,func.tsk.inp,func.tsk.out)
                     is Type.Spawns -> Triple(func.tsk.xscp1s.second,func.tsk.inp,func.tsk.out)
                     is Type.Func   -> Triple(func.xscp1s.second,func.inp,func.out)
-                    is Type.Nat    -> Triple(null,func,func)
+                    is Type.Nat    -> Triple(emptyArray(),func,func)
                     else -> error("impossible case")
                 }
 
-                val s1 = scps1?.size ?: 0
+                val s1 = scps1.size
                 val s2 = e.xscp1s.first.size
                 All_assert_tk(e.tk, s1 == s2) {
                     "invalid call : scope mismatch : expecting $s1, have $s2 argument(s)"
                 }
+                var i = 0
+                e.xscp1s.first
+                    .zip(e.xscp2s!!.first.map { it.depth })
+                    .zip(scps1)     // [ call=[tk,depth], func=[tk,depth]
+                    .sortedBy { it.first.second }
+                    .forEach {
+                        All_assert_tk(it.first.first, it.second.second>=i) {
+                            "invalid call : scope mismatch : constraint mismatch"
+                        }
+                        i = it.second.second
+                    }
 
                 // Original call:
                 //      var f: (func @[a1]->/()@a1->())
@@ -82,13 +93,10 @@ fun check_02_after_tps (s: Stmt) {
 
                 // Map from f->call
                 //      { a1=(scp1(LOCAL),scp2(LOCAL) }
-                val map = if (scps1 == null) {
-                    emptyMap()
-                } else {
-                    scps1.map { it.id }
-                        .zip(e.xscp1s.first.zip(e.xscp2s!!.first))
-                        .toMap()
-                }
+                val map = scps1
+                    .map { it.first.id }
+                    .zip(e.xscp1s.first.zip(e.xscp2s!!.first))
+                    .toMap()
 
                 // Transform f->call
                 //      var f: (func @[LOCAL]->/()@LOCAL -> ())
@@ -115,7 +123,7 @@ fun check_02_after_tps (s: Stmt) {
                                 }
                                 Type.Func (
                                     this.tk_,
-                                    Triple(ret?.first,  this.xscp1s.second, this.xscp1s.third),
+                                    Pair(ret?.first,  this.xscp1s.second),
                                     Pair(ret?.second, this.xscp2s!!.second),
                                     this.inp.aux(dofunc),
                                     this.pub?.aux(dofunc),
@@ -211,7 +219,7 @@ fun check_02_after_tps (s: Stmt) {
             is Stmt.Set -> {
                 val dst = s.dst.wtype!!
                 val src = s.src.wtype!!
-                //println(">>> SET") ; println(s.dst) ; println(s.src) ; println(dst.tostr()) ; println(src.tostr())
+                println(">>> SET") ; println(s.dst) ; println(s.src) ; println(dst.tostr()) ; println(src.tostr())
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
                     val str = if (s.dst is Expr.Var && s.dst.tk_.id == "ret") "return" else "assignment"
                     "invalid $str : ${mismatch(dst,src)}"

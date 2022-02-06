@@ -703,9 +703,9 @@ class TEnv {
     @Test
     fun e08_ptr_ok () {
         val out = inp2env("""
-            var f: (func @[a1]->/()@a1->())
-            set f = func @[a1]->/()@a1->() {
-                var pf: /_int @a1
+            var f: (func @[k]->/()@k->())
+            set f = func @[k]->/()@k->() {
+                var pf: /_int @k
                 set pf = arg
             }
             {
@@ -763,8 +763,8 @@ class TEnv {
     @Test
     fun e12_call_err () {
         val out = inp2env("""
-            var f: (func @[a1,a2]->[/()@a1,/()@a2]->())
-            set f = func @[a1,a2]->[/()@a1,/()@a2]->() {}
+            var f: (func @[a1,a2: a1>a2]->[/()@a1,/()@a2]->())
+            set f = func @[a1,a2: a1>a2]->[/()@a1,/()@a2]->() {}
             { @A
                 var x: ()
                 {
@@ -774,7 +774,8 @@ class TEnv {
             }
         """.trimIndent())
         //assert(out == "(ln 7, col 14): invalid call : type mismatch") { out }
-        assert(out == "(ln 7, col 25): invalid call : scope mismatch") { out }
+        //assert(out == "(ln 7, col 25): invalid call : scope mismatch") { out }
+        assert(out == "(ln 7, col 18): invalid call : scope mismatch : constraint mismatch") { out }
 
     }
     @Test
@@ -838,8 +839,8 @@ class TEnv {
     @Test
     fun e15_call_err () {
         val out = inp2env("""
-            var f: (func@[a1,a2]->/()@a1->/()@a2)
-            set f = func@[a1,a2]->/()@a1->/()@a2 {}
+            var f: (func@[a1,a2: a1>a2]->/()@a1->/()@a2)
+            set f = func@[a1,a2: a1>a2]->/()@a1->/()@a2 {}
             { @AAA
                 var x: /() @LOCAL
                 {
@@ -850,7 +851,8 @@ class TEnv {
         """.trimIndent())
         //assert(out == "(ln 7, col 15): invalid assignment : type mismatch") { out }
         //assert(out == "(ln 7, col 22): invalid call : type mismatch") { out }
-        assert(out.startsWith("(ln 7, col 28): invalid call : scope mismatch")) { out }
+        //assert(out.startsWith("(ln 7, col 28): invalid call : scope mismatch")) { out }
+        assert(out == "(ln 7, col 21): invalid call : scope mismatch : constraint mismatch") { out }
     }
     @Test
     fun e16_call_ok () {
@@ -870,18 +872,18 @@ class TEnv {
     @Test
     fun e17_call_ok () {
         val out = inp2env("""
-            var f: (    func@[a1,a2]->[/()@a1,/()@a2]->() )
-            set f = func@[a1,a2]->[/()@a1,/()@a2]->() { }
+            var f: (func@[a1,a2: a1>a2]->[/()@a1,/()@a2]->() )
+            set f = func@[a1,a2: a1>a2]->[/()@a1,/()@a2]->() { }
         """.trimIndent())
         assert(out == "OK") { out }
     }
     @Test
     fun e18_call_err () {
         val out = inp2env("""
-            var f : func@[a1,a2]->[/()@a2,/()@a1]->()
-            set f = func@[a1,a2]->[/()@a1,/()@a2]->() { }   -- err
+            var f : func@[a1,a2: a1>a2]->[/()@a2,/()@a1]->()
+            set f = func@[a1,a2: a1>a2]->[/()@a1,/()@a2]->() { }   -- err
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 2, col 7): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun e19_call_ok () {
@@ -954,8 +956,8 @@ class TEnv {
     @Test
     fun e20_arg_ok2 () {
         val out = inp2env("""
-            var f: (func@[a1,a2]->/()@a1->/()@a2)
-            set f = func@[a1,a2]->/()@a1->/()@a2 {
+            var f: (func@[x,y: x>y]->/()@x->/()@y)
+            set f = func@[x,y: x>y]->/()@x->/()@y {
                 set ret = arg
                 return
             }

@@ -30,39 +30,40 @@ fun Type.isSupOf (sub: Type): Boolean {
 }
 
 // Convert function signatures to increasing scopes for comparison
-// var g: func @[] -> {@i1,@j1,@k1} -> [/</^@i1>@i1,/</^@j1>@j1] -> /</^@k1>@k1
+// var g: func @[] -> {@i,@j,@k} -> [/</^@i>@i,/</^@j>@j] -> /</^@k>@k
 //      becomes
-// var g: func @[] -> {@a1,@b1,@c1} -> [/</^@a1>@a1,/</^@b1>@b1] -> /</^@c1>@c1
+// var g: func @[] -> {@a,@b,@c} -> [/</^@a>@a,/</^@b>@b] -> /</^@c>@c
 fun Type.Func.mapLabels (up: Any): Type.Func {
-    val MAP = mutableMapOf<String,Char>()
-    var c = ('a'-1)
-    val outer = this
+    val fst = this.xscp1s.first.let { if (it==null) emptyList() else listOf(it) }
+    val snd = this.xscp1s.second.map { it.first }
+    val scps: List<String> = (fst + snd).map { it.id }
+    val MAP: Map<String, String> = scps.zip((1..scps.size).map { 'a'+it-1+"" }).toMap()
     fun Type.aux (): Type {
         return when (this) {
-            is Type.Unit, is Type.Nat, is Type.Rec, is Type.Alias -> this
-            is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.aux() }.toTypedArray())
-            is Type.Union -> Type.Union(this.tk_, this.isrec, this.vec.map { it.aux() }.toTypedArray())
-            is Type.Func  -> this
             is Type.Spawn, is Type.Spawns -> TODO()
-            is Type.Pointer   -> {
-                if (this.xscp1.isscopecst()) {
+            is Type.Unit, is Type.Nat, is Type.Rec, is Type.Alias -> this
+            is Type.Tuple   -> Type.Tuple(this.tk_, this.vec.map { it.aux() }.toTypedArray())
+            is Type.Union   -> Type.Union(this.tk_, this.isrec, this.vec.map { it.aux() }.toTypedArray())
+            is Type.Func    -> this
+            is Type.Pointer -> this.xscp1.let {
+                val id = MAP[it.id]
+                if (id == null) {
                     this
                 } else {
-                    val old = this.xscp1
-                    //assert(old.num == 1)
-                    val id = if (MAP[old.id] != null) MAP[old.id] else {
-                        c += 1
-                        MAP[old.id] = c
-                        c
-                    }
-                    val new = Tk.Id(TK.XID, old.lin, old.col, id.toString())
-                    Type.Pointer(this.tk_, new, new.toScp2(outer), this.pln.aux())
+                    val tk = Tk.Id(TK.XID, it.lin, it.col, id)
+                    Type.Pointer(this.tk_, tk, this.xscp2!!.copy(par=it.id), this.pln.aux())
                 }
             }
         }
     }
-    // TODO: xscp1s/xscp2s are not used in supOf, so we ignore them here
-    return Type.Func(this.tk_,this.xscp1s,this.xscp2s, this.inp.aux(), this.pub?.aux(), this.out.aux()).clone(up,this.tk.lin,this.tk.col) as Type.Func
+    return Type.Func (
+        this.tk_,
+        this.xscp1s, // TODO: xscp1s/xscp2s are not used in supOf, so we ignore them here
+        this.xscp2s,
+        this.inp.aux(),
+        this.pub?.aux(),
+        this.out.aux()
+    ).clone(up,this.tk.lin,this.tk.col) as Type.Func
 }
 
 fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: List<Type.Union>): Boolean {
@@ -113,8 +114,8 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
             } else {
                 val dst = this.xscp2!!
                 val src = sub.xscp2!!
-                //println(dst)
-                //println(src)
+                println(dst)
+                println(src)
                 // (dthis.rel==dsub.rel): abs vs abs || rel vs rel // (no @aaa vs @1)
                 // (dthis.level==dsub.level && dthis.rel==null): unless @aaa=@1 are in the same function (then always @1<=@aaa)
                 when {

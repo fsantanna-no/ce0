@@ -15,12 +15,12 @@ fun Any.ups_tolist(): List<Any> {
     }
 }
 
-fun Any.ups_first (f: (Any)->Boolean): Any? {
-    val up = this.getUp()
+fun Any.ups_first (me: Boolean=false, f: (Any)->Boolean): Any? {
+    val up = if (me) this else this.getUp()
     return when {
         (up == null) -> null
         f(up) -> up
-        else -> up.ups_first(f)
+        else -> up.ups_first(false,f)
     }
 }
 

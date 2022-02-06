@@ -544,7 +544,7 @@ _(1 + 1)     _{2 * (1+1)}
 
 ```
 Stmt ::= { Stmt [`;`] }                             -- sequence                 call f() ; call g()
-         `{´ BLOCK Stmt `}´                         -- block                    { @A call f() ; call g() }
+      |  `{´ BLOCK Stmt `}´                         -- block                    { @A call f() ; call g() }
       |  `var´ VAR `:´ Type                         -- variable declaration     var x: ()
       |  `set´ Expr `=´ (Expr|Stmt)                 -- assignment               set x = _1
       |  `native´ NAT                               -- native                   native _{ printf("hi"); }

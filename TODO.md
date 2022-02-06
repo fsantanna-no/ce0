@@ -1,6 +1,7 @@
 - change @[@a1,@a2] -> @[a,b: a>b]
+- check constraint in func comparison
 - accept @A vs var a
-- simplify scp1s check, move to separate funcion, reuse bt/w Type/Call/isSupOf
+- simplify scp1s check, move to separate funcion, reuse bt/w Type/Call/isSupOf/check01
 - verify List ... args to @[] pars
 - remove ^, substitute all examples with type List
   -  Alias.xisrec: Boolean
