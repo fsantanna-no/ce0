@@ -66,7 +66,7 @@ fun Type.Func.mapLabels (up: Any): Type.Func {
     ).clone(up,this.tk.lin,this.tk.col) as Type.Func
 }
 
-fun Scp2.isSupOf (sub: Scp2, up: Any): Boolean {
+fun Scp2.isNestIn (sub: Scp2, up: Any): Boolean {
     val bothcst = (this.par==null && sub.par==null)
     val bothpar = (this.par!=null && sub.par!=null)
 
@@ -137,7 +137,7 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
             val ok = if (isproto) { // comparing func prototypes does not depend on scope calculation
                 (this.xscp1.id == sub.xscp1.id)
             } else {
-                this.xscp2!!.isSupOf(sub.xscp2!!, this)
+                this.xscp2!!.isNestIn(sub.xscp2!!, this)
             }
             ok && this.pln.isSupOf_(sub.pln,isproto,ups1,ups2)
         }

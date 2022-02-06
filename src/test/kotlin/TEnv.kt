@@ -763,8 +763,8 @@ class TEnv {
     @Test
     fun e12_call_err () {
         val out = inp2env("""
-            var f: (func @[a1,a2: a1>a2]->[/()@a1,/()@a2]->())
-            set f = func @[a1,a2: a1>a2]->[/()@a1,/()@a2]->() {}
+            var f: (func @[a1,a2: a2>a1]->[/()@a1,/()@a2]->())
+            set f = func @[a1,a2: a2>a1]->[/()@a1,/()@a2]->() {}
             { @A
                 var x: ()
                 {
@@ -837,8 +837,8 @@ class TEnv {
     @Test
     fun e15_call_err () {
         val out = inp2env("""
-            var f: (func@[a1,a2: a1>a2]->/()@a1->/()@a2)
-            set f = func@[a1,a2: a1>a2]->/()@a1->/()@a2 {}
+            var f: (func@[a1,a2: a2>a1]->/()@a1->/()@a2)
+            set f = func@[a1,a2: a2>a1]->/()@a1->/()@a2 {}
             { @AAA
                 var x: /() @LOCAL
                 {
@@ -1316,8 +1316,8 @@ class TEnv {
     @Test
     fun g16_ptr_func_ok () {
         val out = inp2env("""
-            var f : func@[a1,a2: a1>a2]->/()@a1 -> /()@a2
-            set f = func@[a1,a2: a1>a2]->/()@a1 -> /()@a2 {
+            var f : func@[a1,a2: a2>a1]->/()@a1 -> /()@a2
+            set f = func@[a1,a2: a2>a1]->/()@a1 -> /()@a2 {
                 set ret = arg
             }
             var p: /() @LOCAL
@@ -1331,8 +1331,8 @@ class TEnv {
     @Test
     fun g17_ptr_func_err () {
         val out = inp2env("""
-            var f :func@[a1,a2]-> /()@a2 -> /()@a1
-            set f = func@[a1,a2]->/()@a2 -> /()@a1 {
+            var f : func@[a1,a2: a2>a1]-> /()@a2 -> /()@a1
+            set f = func@[a1,a2: a2>a1]-> /()@a2 -> /()@a1 {
                 set ret = arg     -- err
             }
             var p: /() @LOCAL
@@ -1346,19 +1346,20 @@ class TEnv {
     @Test
     fun g18_ptr_func_err () {
         val out = inp2env("""
-            var f : (func@[a1,a2]->/()@a1 -> /()@a2)
-            set f = func@[a1,a2]->/()@a1 -> /()@a2 {
+            var f : func@[a1,a2: a2>a1] -> /()@a1 -> /()@a2
+            set f = func@[a1,a2: a2>a1] -> /()@a1 -> /()@a2 {
                 set ret = arg
             }
             var p: /() @LOCAL
             {
                 var x: /() @LOCAL
-                set p = f @[LOCAL,GLOBAL]x     -- err: @2=p <= @1=x (false) 
+                set p = f @[LOCAL,GLOBAL] x  -- err: @2=p <= @1=x (false) 
             }
         """.trimIndent())
-        assert(out == "(ln 8, col 24): invalid call : scope mismatch") { out }
+        //assert(out == "(ln 8, col 24): invalid call : scope mismatch") { out }
         //assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }
         //assert(out == "(ln 8, col 11): invalid assignment : type mismatch") { out }
+        assert(out == "(ln 8, col 13): invalid call : scope mismatch : constraint mismatch") { out }
     }
 
     // POINTERS - TUPLE - TYPE
@@ -2499,7 +2500,8 @@ class TEnv {
             var f : func@[a1,a3]->/()@a1 -> /()@a3
         """.trimIndent()
         )
-        assert(out == "(ln 1, col 9): invalid function type : pool arguments are not continuous") { out }
+        //assert(out == "(ln 1, col 9): invalid function type : pool arguments are not continuous") { out }
+        assert(out == "OK") { out }
     }
     @Test
     fun p08_pool_err () {

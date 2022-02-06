@@ -78,11 +78,12 @@ fun check_02_after_tps (s: Stmt) {
 
                 //println(e.xscp2s!!.first.toList())
                 // [(a1, 2), (a2, 1)]
-                val pairs = scps1.first.map { it.id }.zip(e.xscp2s!!.first.map { it.depth })
-                scps1.second.forEach { ctr ->
+                val pairs = scps1.first.map { it.id }.zip(e.xscp2s!!.first)
+                scps1.second.forEach { ctr ->   // for each constraint
+                    // check if call args (x,y) respect this contraint
                     val x = pairs.find { it.first==ctr.first  }!!.second
                     val y = pairs.find { it.first==ctr.second }!!.second
-                    All_assert_tk(e.tk, x <= y) {
+                    All_assert_tk(e.tk, x.isNestIn(y,e)) {
                         "invalid call : scope mismatch : constraint mismatch"
                     }
                 }
