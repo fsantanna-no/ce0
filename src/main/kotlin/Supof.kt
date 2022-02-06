@@ -66,6 +66,31 @@ fun Type.Func.mapLabels (up: Any): Type.Func {
     ).clone(up,this.tk.lin,this.tk.col) as Type.Func
 }
 
+fun Scp2.isSupOf (sub: Scp2, up: Any): Boolean {
+    val bothcst = (this.par==null && sub.par==null)
+    val bothpar = (this.par!=null && sub.par!=null)
+
+    //println(this.xscp1)
+    //println(sub.xscp1)
+    //println(bothcst)
+    //println(bothpar)
+    //println(this)
+    //println(sub)
+    //println(this.ups_tolist())
+
+    return when {
+        (sub.par==null && sub.depth==0) -> true           // global as source is always ok
+        bothcst -> (this.depth!! >= sub.depth!!)
+        bothpar -> this.par!! == sub.par!! || (up.ups_first { it is Expr.Func } as Expr.Func).let {
+            // look for (this.id > sub.id) in constraints
+            println(it.type.xscp1s.third.toList())
+            it.type.xscp1s.third.any { it.first==this.par!! && it.second==sub.par!! }
+        }
+        else -> (sub.par!=null && this.lvl==sub.lvl)
+        // diff abs/rel -> this must be par and bot must be at the same lvl
+    }
+}
+
 fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: List<Type.Union>): Boolean {
     return when {
         (this is Type.Nat  || sub is Type.Nat) -> true
@@ -112,18 +137,7 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
             val ok = if (isproto) { // comparing func prototypes does not depend on scope calculation
                 (this.xscp1.id == sub.xscp1.id)
             } else {
-                val dst = this.xscp2!!
-                val src = sub.xscp2!!
-                //println(dst)
-                //println(src)
-                // (dthis.rel==dsub.rel): abs vs abs || rel vs rel // (no @aaa vs @1)
-                // (dthis.level==dsub.level && dthis.rel==null): unless @aaa=@1 are in the same function (then always @1<=@aaa)
-                when {
-                    (src.par==null && src.depth==0) -> true           // global as source is always ok
-                    (dst.par == src.par) -> (dst.depth >= src.depth)  // same abs/rel -> just checks depth
-                    else -> (dst.depth >= src.depth) && (dst.lvl == src.lvl && dst.par == null)
-                        // diff abs/rel -> checks depth, func level, and destiny must not be arg
-                }
+                this.xscp2!!.isSupOf(sub.xscp2!!, this)
             }
             ok && this.pln.isSupOf_(sub.pln,isproto,ups1,ups2)
         }

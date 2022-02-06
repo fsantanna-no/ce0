@@ -954,8 +954,8 @@ class TEnv {
     @Test
     fun e20_arg_ok2 () {
         val out = inp2env("""
-            var f: (func@[x,y: x>y]->/()@x->/()@y)
-            set f = func@[x,y: x>y]->/()@x->/()@y {
+            var f: (func@[x,y: y>x]->/()@x->/()@y)
+            set f = func@[x,y: y>x]->/()@x->/()@y {
                 set ret = arg
                 return
             }
@@ -1316,8 +1316,8 @@ class TEnv {
     @Test
     fun g16_ptr_func_ok () {
         val out = inp2env("""
-            var f : func@[a1,a2]->/()@a1 -> /()@a2
-            set f = func@[a1,a2]->/()@a1 -> /()@a2 {
+            var f : func@[a1,a2: a1>a2]->/()@a1 -> /()@a2
+            set f = func@[a1,a2: a1>a2]->/()@a1 -> /()@a2 {
                 set ret = arg
             }
             var p: /() @LOCAL

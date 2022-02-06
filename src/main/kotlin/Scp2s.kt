@@ -1,4 +1,4 @@
-data class Scp2 (val lvl: Int, val par: String?, val depth: Int)
+data class Scp2 (val lvl: Int, val par: String?, val depth: Int?)
 
 fun Type.toScp2 (): Scp2 {
     return when {
@@ -27,25 +27,10 @@ fun Tk.Id.toScp2 (up: Any): Scp2 {
             if (blk != null) {
                 // @A, @x, ...
                 val one = if (blk is Stmt.Block) 1 else 0
-                val umn = if (this.id=="arg")   1 else 0   // "arg" is in between Func-arg-Block
+                val umn = if (this.id=="arg")    1 else 0   // "arg" is in between Func-arg-Block
                 Scp2(lvl, null, one - umn + blk.ups_tolist().let { it.count{it is Stmt.Block} + 2*it.count{it is Expr.Func} })
             } else {
-                /*
-                // @a1, @i2, ...
-                println(this)
-                println(up.ups_tolist())
-                val depth = (up.ups_first(true) {
-                    it is Type.Func || it is Expr.Func
-                }.let {
-                    if (it is Expr) it.wtype!! else it
-                } as Type.Func).let {
-                    println(it.xscp1s.second)
-                    println(this.id)
-                    it.xscp1s.second.find { it.id==this.id }!!.second
-                }
-
-                 */
-                Scp2(lvl, this.id, 999) // TODO
+                Scp2(lvl, this.id, null)
             }
         }
     }
