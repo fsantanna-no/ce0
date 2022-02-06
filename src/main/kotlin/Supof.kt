@@ -44,19 +44,19 @@ fun Type.Func.mapLabels (up: Any): Type.Func {
             is Type.Union -> Type.Union(this.tk_, this.isrec, this.vec.map { it.aux() }.toTypedArray())
             is Type.Func  -> this
             is Type.Spawn, is Type.Spawns -> TODO()
-            is Type.Ptr   -> {
-                if (this.xscp1.enu == TK.XSCPCST) {
+            is Type.Pointer   -> {
+                if (this.xscp1.isscopecst()) {
                     this
                 } else {
                     val old = this.xscp1
                     //assert(old.num == 1)
-                    val lbl = if (MAP[old.lbl] != null) MAP[old.lbl] else {
+                    val id = if (MAP[old.id] != null) MAP[old.id] else {
                         c += 1
-                        MAP[old.lbl] = c
+                        MAP[old.id] = c
                         c
                     }
-                    val new = Tk.Scp1(TK.XSCPCST, old.lin, old.col, lbl.toString(), old.num)
-                    Type.Ptr(this.tk_, new, new.toScp2(outer), this.pln.aux())
+                    val new = Tk.Id(TK.XID, old.lin, old.col, id.toString())
+                    Type.Pointer(this.tk_, new, new.toScp2(outer), this.pln.aux())
                 }
             }
         }
@@ -74,7 +74,7 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
         (this is Type.Spawn && sub is Type.Spawns) -> this.tsk.isSupOf(sub.tsk)
         (this is Type.Alias || sub is Type.Alias) -> {
             when {
-                (this is Type.Alias && sub is Type.Alias) -> this.tk_.str == sub.tk_.str
+                (this is Type.Alias && sub is Type.Alias) -> this.tk_.id == sub.tk_.id
                 (this is Type.Alias) -> (this.noalias()).isSupOf(sub)
                 (sub  is Type.Alias) -> this.isSupOf(sub.noalias())
                 else -> error("bug found")
@@ -99,7 +99,7 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
                 )
             )
         }
-        (this is Type.Ptr && sub is Type.Ptr) -> {
+        (this is Type.Pointer && sub is Type.Pointer) -> {
             /*
             println("===")
             println(this)
@@ -109,7 +109,7 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
             println("SUPOF [$isproto] ${this.tk.lin}: ${this.scope()} = ${sub.scope()} /// ${this.scope}")
             */
             val ok = if (isproto) { // comparing func prototypes does not depend on scope calculation
-                (this.xscp1.lbl == sub.xscp1.lbl) && (this.xscp1.num == sub.xscp1.num)
+                (this.xscp1.id == sub.xscp1.id)
             } else {
                 val dst = this.xscp2!!
                 val src = sub.xscp2!!

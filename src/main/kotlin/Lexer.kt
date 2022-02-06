@@ -2,7 +2,7 @@ val D = "\$"
 
 enum class TK {
     ERR, EOF, CHAR,
-    XVAR, XTYPE, XNAT, XNUM, XUP, XSCPCST, XSCPVAR,
+    XID, XNAT, XNUM, XUP,
     UNIT, ARROW, ATBRACK,
     ACTIVE, AWAIT, AWAKE, BCAST, BREAK, CALL, CATCH, ELSE, FUNC, IF, IN, INPUT,
     LOOP, NATIVE, NEW, OUTPUT, RETURN, SET, SPAWN, TASK, TASKS, THROW, TYPE, VAR,
@@ -44,11 +44,42 @@ sealed class Tk (
     data class Sym (val enu_: TK, val lin_: Int, val col_: Int, val sym: String): Tk(enu_,lin_,col_)
     data class Chr (val enu_: TK, val lin_: Int, val col_: Int, val chr: Char):   Tk(enu_,lin_,col_)
     data class Key (val enu_: TK, val lin_: Int, val col_: Int, val key: String): Tk(enu_,lin_,col_)
-    data class Str (val enu_: TK, val lin_: Int, val col_: Int, val str: String): Tk(enu_,lin_,col_)
+    data class Id  (val enu_: TK, val lin_: Int, val col_: Int, val id: String):  Tk(enu_,lin_,col_)
     data class Nat (val enu_: TK, val lin_: Int, val col_: Int, val chr: Char?, val src: String): Tk(enu_,lin_,col_)
     data class Num (val enu_: TK, val lin_: Int, val col_: Int, val num: Int):    Tk(enu_,lin_,col_)
     data class Up  (val enu_: TK, val lin_: Int, val col_: Int, val up:  Int):    Tk(enu_,lin_,col_)
-    data class Scp1 (val enu_: TK, val lin_: Int, val col_: Int, val lbl: String, val num: Int?):Tk(enu_,lin_,col_)
+}
+
+fun Tk.astype (): Tk.Id {
+    val id = this as Tk.Id
+    All_assert_tk(this, id.id[0].isUpperCase()) { "invalid type identifier" }
+    return id
+}
+fun Tk.asvar (): Tk.Id {
+    val id = this as Tk.Id
+    All_assert_tk(this, id.id[0].isLowerCase()) { "invalid variable identifier" }
+    return id
+}
+fun Tk.asscope (): Tk.Id {
+    val id = this as Tk.Id
+    All_assert_tk(this, id.isscopecst() || id.isscopepar()) { "invalid scope identifier" }
+    return id
+}
+fun Tk.isscopepar (): Boolean {
+    val id = this as Tk.Id
+    return id.id.none { it.isUpperCase() }
+}
+fun Tk.asscopepar (): Tk.Id {
+    All_assert_tk(this, this.isscopepar()) { "invalid scope parameter identifier" }
+    return this as Tk.Id
+}
+fun Tk.isscopecst (): Boolean {
+    val id = this as Tk.Id
+    return id.id.none { it.isLowerCase() }
+}
+fun Tk.asscopecst (): Tk.Id {
+    All_assert_tk(this, this.isscopecst()) { "invalid scope constant identifier" }
+    return this as Tk.Id
 }
 
 fun Tk.Nat.toce (): String {
@@ -65,12 +96,10 @@ fun TK.toErr (chr: Char?): String {
         TK.EOF     -> "end of file"
         TK.CHAR    -> "`" + chr!! + "´"
         TK.XNAT    -> "`_´"
-        TK.XVAR    -> "variable identifier"
-        TK.XTYPE   -> "type identifier"
+        TK.XID     -> "identifier"
         TK.XNUM    -> "number"
         TK.ARROW   -> "`->´"
         TK.ATBRACK -> "`@[´"
-        TK.XSCPCST, TK.XSCPVAR -> "`@´"
         TK.ELSE    -> "`else`"
         TK.IN      -> "`in`"
         TK.INPUT   -> "`input`"
@@ -116,16 +145,6 @@ fun token (all: All) {
 
     var (c1,x1) = all.read()
 
-    fun letters (f: (c:Char)->Boolean): String {
-        var pay = ""
-        do {
-            pay += x1
-            all.read().let { c1=it.first ; x1=it.second }
-        } while (f(x1))
-        all.unread(c1)
-        return pay
-    }
-
     when {
         (c1 == -1) -> all.tk1 = Tk.Sym(TK.EOF, LIN, COL, "")
         (x1 in arrayOf(')', '{', '}', '[', ']', '<' , '>' , ';' , ':' , '=' , ',' , '\\', '/' , '.', '!' , '?')) -> {
@@ -139,50 +158,6 @@ fun token (all: All) {
             }
             all.unread(c1)
             all.tk1 = Tk.Up(TK.XUP, LIN, COL, n)
-        }
-        (x1 == '@') -> {
-            all.read().let { c1=it.first ; x1=it.second }
-
-            if (x1 == '[') {
-                all.tk1 = Tk.Sym(TK.ATBRACK, LIN, COL, "@[")
-            } else {
-                var lbl = ""
-                all.tk1 = when {
-                    // @LABEL
-                    x1.isUpperCase() -> {
-                        do {
-                            lbl += x1
-                            all.read().let { c1 = it.first; x1 = it.second }
-                        } while (x1.isUpperCase())
-                        all.unread(c1)
-                        Tk.Scp1(TK.XSCPCST, LIN, COL, lbl, null)
-                    }
-
-                    // @labelDD
-                    x1.isLowerCase() -> {
-                        do {
-                            lbl += x1
-                            all.read().let { c1 = it.first; x1 = it.second }
-                        } while (x1.isLowerCase())
-
-                        var num: Int? = null
-                        var num_ = ""
-                        while (x1.isDigit()) {
-                            num_ += x1
-                            num = num_.toInt()
-                            all.read().let { c1 = it.first; x1 = it.second }
-                        }
-
-                        all.unread(c1)
-                        Tk.Scp1(TK.XSCPVAR, LIN, COL, lbl, num ?: 1)
-                    }
-
-                    else -> {
-                        all.unread(c1)
-                        Tk.Err(TK.ERR, LIN, COL, "@")
-                    }
-                }
-            }
         }
         (x1 == '(') -> {
             val (c2,x2) = all.read()
@@ -199,6 +174,15 @@ fun token (all: All) {
                 all.tk1 = Tk.Sym(TK.ARROW, LIN, COL, "->")
             } else {
                 all.tk1 = Tk.Err(TK.ERR, LIN, COL, ""+x1+x2)
+            }
+        }
+        (x1 == '@') -> {
+            all.read().let { c1 = it.first; x1 = it.second }
+            if (x1 == '[') {
+                all.tk1 = Tk.Sym(TK.ATBRACK, LIN, COL, "@[")
+            } else {
+                all.unread(c1)
+                all.tk1 = Tk.Chr(TK.CHAR, LIN, COL, '@')
             }
         }
         (x1 == '_') -> {
@@ -245,16 +229,20 @@ fun token (all: All) {
             all.unread(c1)
             all.tk1 = Tk.Num(TK.XNUM, LIN, COL, pay.toInt())
         }
-        x1.isLowerCase() -> {
-            val pay = letters { it.isLetterOrDigit() || it=='_' }
+        x1.isLetter() -> {
+            var pay = ""
+            do {
+                pay += x1
+                all.read().let { c1=it.first ; x1=it.second }
+            } while (x1.isLetterOrDigit() || x1=='_')
+            all.unread(c1)
+
             all.tk1 = key2tk[pay].let {
-                if (it != null) Tk.Key(it, LIN, COL, pay) else Tk.Str(TK.XVAR, LIN, COL, pay)
-            }
-        }
-        x1.isUpperCase() -> {
-            val pay = letters { it.isLetterOrDigit() || it=='_' }
-            all.tk1 = key2tk[pay].let {
-                if (it != null) Tk.Key(it, LIN, COL, pay) else Tk.Str(TK.XTYPE, LIN, COL, pay)
+                if (it != null) {
+                    Tk.Key(it, LIN, COL, pay)
+                } else {
+                    Tk.Id(TK.XID, LIN, COL, pay)
+                }
             }
         }
         else -> {

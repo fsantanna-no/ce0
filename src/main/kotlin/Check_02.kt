@@ -13,7 +13,7 @@ fun check_02_after_tps (s: Stmt) {
                     }
                 }
                  */
-                val env = e.env(e.tk_.str)!!
+                val env = e.env(e.tk_.id)!!
                 val (var_fdepth,var_bdepth) = env.ups_tolist().let {
                     Pair (
                         it.filter { it is Expr.Func }.count(),
@@ -26,8 +26,8 @@ fun check_02_after_tps (s: Stmt) {
                     val var_scope = env.toType().toScp2()
                     val func = e.ups_first { it is Expr.Func } as Expr.Func
                     val clo = func.type.xscp2s!!.first?.depth ?: 0
-                    All_assert_tk(e.tk, clo>=var_scope.depth && func.ups.any { it.str==e.tk_.str }) {
-                        "invalid access to \"${e.tk_.str}\" : invalid closure declaration (ln ${func.tk.lin})"
+                    All_assert_tk(e.tk, clo>=var_scope.depth && func.ups.any { it.id==e.tk_.id }) {
+                        "invalid access to \"${e.tk_.id}\" : invalid closure declaration (ln ${func.tk.lin})"
                     }
                     funcs.add(func)
                 }
@@ -70,9 +70,10 @@ fun check_02_after_tps (s: Stmt) {
                     else -> error("impossible case")
                 }
 
-                // { [lbl]={1=depth,2=depth} }
+/*
+                // { [id]={1=depth,2=depth} }
                 // { [""]={[1]=@LOCAL, [2]=@aaa, ...}
-                val acc = mutableMapOf<String,MutableMap<Int,Pair<Tk.Scp1,Scp2>>>()
+                val acc = mutableMapOf<String,MutableMap<Int,Pair<Tk.Id,Scp2>>>()
 
                 // check scopes, build acc
                 // var f: (... -> {@i1,@_2,...} -> ...)
@@ -83,9 +84,9 @@ fun check_02_after_tps (s: Stmt) {
                     }
                     scps1.zip(e.xscp1s.first.zip(e.xscp2s!!.first)).forEach { (ff,ee) ->
                         val num   = ff.num!!
-                        acc[ff.lbl].let {
+                        acc[ff.id].let {
                             if (it == null) {
-                                acc[ff.lbl] = mutableMapOf(Pair(num,ee))
+                                acc[ff.id] = mutableMapOf(Pair(num,ee))
                             } else {
                                 val d1 = ee.second.depth
                                 val ok = it.all {
@@ -116,7 +117,7 @@ fun check_02_after_tps (s: Stmt) {
                             is Type.Union -> Type.Union(this.tk_, this.isrec, this.vec.map { it.aux(dofunc) }.toTypedArray())
                             is Type.Ptr -> {
                                 val ret = this.xscp1.let { scp ->
-                                    acc[scp.lbl].let { if (it == null) null else it[scp.num]!! }
+                                    acc[scp.id].let { if (it == null) null else it[scp.num]!! }
                                 }
                                 if (ret == null) this else {
                                     Type.Ptr(this.tk_, ret.first, ret.second, this.pln.aux(dofunc))
@@ -127,7 +128,7 @@ fun check_02_after_tps (s: Stmt) {
                                     if (scp == null) {
                                         null
                                     } else {
-                                        acc[scp.lbl].let { if (it == null) Pair(this.xscp1s.first,this.xscp2s!!.first) else it[scp.num]!! }
+                                        acc[scp.id].let { if (it == null) Pair(this.xscp1s.first,this.xscp2s!!.first) else it[scp.num]!! }
                                     }
                                 }
                                 Type.Func (
@@ -147,7 +148,8 @@ fun check_02_after_tps (s: Stmt) {
                         out1.aux(true).clone(e,e.tk.lin,e.tk.col)
                     )
                 }
-
+*/
+                val (inp2,out2) = Pair(inp1,out1)
                 /*
                 //print("INP1: ") ; println(inp1.tostr())
                 //print("INP2: ") ; println(inp2.tostr())
@@ -225,11 +227,11 @@ fun check_02_after_tps (s: Stmt) {
                 val src = s.src.wtype!!
                 //println(">>> SET") ; println(s.dst) ; println(s.src) ; println(dst.tostr()) ; println(src.tostr())
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
-                    val str = if (s.dst is Expr.Var && s.dst.tk_.str == "ret") "return" else "assignment"
+                    val str = if (s.dst is Expr.Var && s.dst.tk_.id == "ret") "return" else "assignment"
                     "invalid $str : type mismatch"
                 }
                 if (s.dst is Expr.Var) {
-                    val up = s.dst.ups_first { it is Expr.Func && it.ups.any { it.str == s.dst.tk_.str } }
+                    val up = s.dst.ups_first { it is Expr.Func && it.ups.any { it.id == s.dst.tk_.id } }
                     All_assert_tk(s.tk, up==null) {
                         "invalid assignment : cannot modify an upalue"
                     }

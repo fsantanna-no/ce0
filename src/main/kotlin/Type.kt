@@ -1,21 +1,17 @@
-fun Tk.Scp1.tostr (): String {
-    return "@" + this.lbl + (this.num?:"")
-}
-
 fun Type.tostr (): String {
-    fun Tk.Scp1?.clo (): String {
+    fun Tk.Id?.clo (): String {
         return if (this == null) "" else
-            this.tostr() + " -> "
+            this.id + " -> "
     }
     return when (this) {
-        is Type.Unit  -> "()"
-        is Type.Alias -> this.tk_.str
-        is Type.Nat   -> this.tk_.toce()
-        is Type.Rec   -> "^".repeat(this.tk_.up)
-        is Type.Ptr   -> this.xscp1.let { "/" + this.pln.tostr() + (it?.tostr() ?: "")}
-        is Type.Tuple -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
-        is Type.Union -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
-        is Type.Func  -> this.tk_.key + " " + this.xscp1s.first.clo() + "@[" + this.xscp1s.second!!.map { it.tostr() }.joinToString(",") + "] -> " + this.inp.tostr() + " -> " + this.pub.let { if (it == null) "" else it.tostr() + " -> " } + this.out.tostr()
+        is Type.Unit    -> "()"
+        is Type.Alias   -> this.tk_.id
+        is Type.Nat     -> this.tk_.toce()
+        is Type.Rec     -> "^".repeat(this.tk_.up)
+        is Type.Pointer -> this.xscp1.let { "/" + this.pln.tostr() + " @" + it.id }
+        is Type.Tuple   -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
+        is Type.Union   -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
+        is Type.Func    -> this.tk_.key + " @" + this.xscp1s.first.clo() + "@[" + this.xscp1s.second!!.map { it.id }.joinToString(",") + "] -> " + this.inp.tostr() + " -> " + this.pub.let { if (it == null) "" else it.tostr() + " -> " } + this.out.tostr()
         is Type.Spawn   -> "active " + this.tsk.tostr()
         is Type.Spawns  -> "active " + this.tsk.tostr()
     }
@@ -42,7 +38,7 @@ fun Type.flattenLeft (): List<Type> {
         is Type.Union -> listOf(this) + this.vec.map { it.flattenLeft() }.flatten()
         is Type.Func  -> listOf(this) //this.inp.flatten() + this.out.flatten()
         is Type.Spawn, is Type.Spawns -> TODO()
-        is Type.Ptr   -> listOf(this) + this.pln.flattenLeft()
+        is Type.Pointer   -> listOf(this) + this.pln.flattenLeft()
     }
 }
 
@@ -77,7 +73,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
                 this.tsk.aux(lin, col) as Type.Func
             )
             is Type.Spawns -> TODO()
-            is Type.Ptr -> Type.Ptr(
+            is Type.Pointer -> Type.Pointer(
                 this.tk_.copy(lin_ = lin, col_ = col),
                 this.xscp1?.copy(lin_=lin,col_=col),
                 this.xscp2,
@@ -120,7 +116,7 @@ fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
                 this.out.aux(lin, col)
             )
             is Type.Spawn, is Type.Spawns -> TODO()
-            is Type.Ptr -> Type.Ptr(this.tk_.copy(lin_ = lin, col_ = col), this.xscp1?.copy(lin_=lin,col_=col), this.xscp2, this.pln.aux(lin, col))
+            is Type.Pointer -> Type.Pointer(this.tk_.copy(lin_ = lin, col_ = col), this.xscp1?.copy(lin_=lin,col_=col), this.xscp2, this.pln.aux(lin, col))
             is Type.Rec -> Type.Rec(this.tk_.copy(lin_ = lin, col_ = col))
         }.let {
             it.wup  = up
@@ -140,13 +136,13 @@ fun Type.isrec (): Boolean {
 }
 
 fun Type.noalias (): Type {
-    return if (this is Type.Alias) this.env(this.tk_.str)!!.toType() else this
+    return if (this is Type.Alias) this.env(this.tk_.id)!!.toType() else this
 }
 
 fun Type.containsRec (): Boolean {
     return when (this) {
         is Type.Alias -> TODO()
-        is Type.Unit, is Type.Nat, is Type.Ptr, is Type.Func, is Type.Spawn, is Type.Spawns -> false
+        is Type.Unit, is Type.Nat, is Type.Pointer, is Type.Func, is Type.Spawn, is Type.Spawns -> false
         is Type.Rec   -> true
         is Type.Tuple -> this.vec.any { it.containsRec() }
         is Type.Union -> this.vec.any { it.containsRec() }
@@ -160,7 +156,7 @@ fun Type.Union.expand (): Array<Type> {
             is Type.Rec   -> if (up == this.tk_.up) outer else { assert(up>this.tk_.up) ; this }
             is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.aux(up) }.toTypedArray())
             is Type.Union -> Type.Union(this.tk_, this.isrec, this.vec.map { it.aux(up+1) }.toTypedArray())
-            is Type.Ptr   -> Type.Ptr(this.tk_, this.xscp1, this.xscp2, this.pln.aux(up))
+            is Type.Pointer   -> Type.Pointer(this.tk_, this.xscp1, this.xscp2, this.pln.aux(up))
             is Type.Func  -> Type.Func(this.tk_, this.xscp1s, this.xscp2s, this.inp.aux(up), this.pub?.aux(up), this.out.aux(up))
             else -> this
         }
@@ -172,8 +168,8 @@ fun Type.toce (): String {
     return when (this) {
         is Type.Rec    -> "Rec"
         is Type.Unit   -> "Unit"
-        is Type.Ptr    -> "P_" + this.pln.toce() + "_P"
-        is Type.Alias  -> this.tk_.str
+        is Type.Pointer    -> "P_" + this.pln.toce() + "_P"
+        is Type.Alias  -> this.tk_.id
         is Type.Nat    -> this.tk_.src.replace('*','_')
         is Type.Tuple  -> "T_" + this.vec.map { it.toce() }.joinToString("_") + "_T"
         is Type.Union  -> "U_" + this.vec.map { it.toce() }.joinToString("_") + "_U"

@@ -2,8 +2,8 @@ fun Stmt.setTypes () {
     fun ft (tp: Type) {
         when (tp) {
             is Type.Alias -> {
-                tp.xisrec = tp.env(tp.tk_.str)!!.toType().let {
-                    it is Type.Union && it.flattenLeft().any { it is Type.Alias && it.tk_.str==tp.tk_.str }
+                tp.xisrec = tp.env(tp.tk_.id)!!.toType().let {
+                    it is Type.Union && it.flattenLeft().any { it is Type.Alias && it.tk_.id==tp.tk_.id }
                 }
             }
         }
@@ -13,20 +13,20 @@ fun Stmt.setTypes () {
         e.wtype = when (e) {
             is Expr.Unit, is Expr.Nat, is Expr.UCons, is Expr.UNull, is Expr.Func -> e.wtype!!
             is Expr.Upref -> e.pln.wtype!!.let {
-                val lbl = e.toBaseVar()?.tk_?.str ?: "GLOBAL"
-                val scp1 = Tk.Scp1(TK.XSCPCST,e.tk.lin,e.tk.col, lbl,null)
-                Type.Ptr(e.tk_, scp1, scp1.toScp2(e), it).clone(e,e.tk.lin,e.tk.col)
+                val id = e.toBaseVar()?.tk_?.id ?: "GLOBAL"
+                val scp1 = Tk.Id(TK.XID,e.tk.lin,e.tk.col, id)
+                Type.Pointer(e.tk_, scp1, scp1.toScp2(e), it).clone(e,e.tk.lin,e.tk.col)
             }
             is Expr.Dnref -> e.ptr.wtype.let {
                 if (it is Type.Nat) it else {
-                    All_assert_tk(e.tk, it is Type.Ptr) {
+                    All_assert_tk(e.tk, it is Type.Pointer) {
                         "invalid operand to `\\´ : not a pointer"
                     }
-                    (it as Type.Ptr).pln
+                    (it as Type.Pointer).pln
                 }
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.wtype!! }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
-            is Expr.New   -> Type.Ptr(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.xscp1!!, e.xscp2!!, e.arg.wtype!!).clone(e,e.tk.lin,e.tk.col)
+            is Expr.New   -> Type.Pointer(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.xscp1!!, e.xscp2!!, e.arg.wtype!!).clone(e,e.tk.lin,e.tk.col)
             is Expr.Call -> e.f.wtype.let { tpd ->
                 when (tpd) {
                     is Type.Nat, is Type.Spawn, is Type.Spawns -> tpd
@@ -44,18 +44,18 @@ fun Stmt.setTypes () {
                             // TODO: may fail before check2, return anything
                             Type.Nat(Tk.Nat(TK.NATIVE, e.tk.lin, e.tk.col, null, "ERR")).clone(e, e.tk.lin, e.tk.col)
                         } else {
-                            val MAP: List<Pair<Tk.Scp1, Pair<Tk.Scp1, Scp2>>> =
+                            val MAP: List<Pair<Tk.Id, Pair<Tk.Id, Scp2>>> =
                                 tpd.xscp1s.second.zip(e.xscp1s.first.zip(e.xscp2s!!.first))
 
-                            fun Tk.Scp1.get(scp2: Scp2): Pair<Tk.Scp1, Scp2> {
-                                return MAP.find { it.first.let { it.lbl == this.lbl && it.num == this.num } }?.second
+                            fun Tk.Id.get(scp2: Scp2): Pair<Tk.Id, Scp2> {
+                                return MAP.find { it.first.let { it.id == this.id } }?.second
                                     ?: Pair(this, scp2)
                             }
 
                             fun Type.map(): Type {
                                 return when (this) {
-                                    is Type.Ptr -> this.xscp1.get(this.xscp2!!).let {
-                                        Type.Ptr(this.tk_, it.first, it.second, this.pln.map())
+                                    is Type.Pointer -> this.xscp1.get(this.xscp2!!).let {
+                                        Type.Pointer(this.tk_, it.first, it.second, this.pln.map())
                                             .clone(e, e.tk.lin, e.tk.col)
                                     }
                                     is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.map() }.toTypedArray())
@@ -139,7 +139,7 @@ fun Stmt.setTypes () {
                     else -> error("bug found")
                 }
             }
-            is Expr.Var -> e.env(e.tk_.str)!!.toType()
+            is Expr.Var -> e.env(e.tk_.id)!!.toType()
             else -> TODO()
         }
     }

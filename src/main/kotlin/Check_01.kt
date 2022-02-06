@@ -1,35 +1,35 @@
-fun Tk.Scp1.check (up: Any) {
+fun Tk.Id.check (up: Any) {
     val ok = when {
-        (this.lbl == "GLOBAL") -> true
-        (this.lbl == "LOCAL")  -> true
+        (this.id == "GLOBAL") -> true
+        (this.id == "LOCAL")  -> true
         (up.ups_first { it is Type.Func } != null) -> true  // (@i1 -> ...)
-        up.env(this.lbl).let {                              // { @aaa ... @aaa }
+        up.env(this.id).let {                              // { @aaa ... @aaa }
             /*
-            println(this.lbl)
+            println(this.id)
             println(up)
             println(">>>")
             println(up.env_all())
             println("<<<")
             println(it)
             */
-            it is Stmt.Block && this.lbl==it.xscp1!!.lbl && this.num==it.xscp1!!.num ||
-            it is Stmt.Var   && this.lbl==it.tk_.str.toUpperCase() && this.num==null
+            it is Stmt.Block && this.id==it.xscp1!!.id  ||
+            it is Stmt.Var   && this.id==it.tk_.id.toUpperCase()
         } -> true
         (up.ups_first {                                     // [@i1, ...] { @i1 }
-            it is Stmt.Typedef && (it.xscp1s.any { it.lbl==this.lbl && it.num==this.num })
-         || it is Expr.Func    && (it.type.xscp1s.second?.any { it.lbl==this.lbl && it.num==this.num } ?: false)
+            it is Stmt.Typedef && (it.xscp1s.any { it.id==this.id })
+         || it is Expr.Func    && (it.type.xscp1s.second?.any { it.id==this.id } ?: false)
         } != null) -> true
         else -> false
     }
     All_assert_tk(this, ok) {
-        "undeclared scope \"@$lbl${this.num?:""}\""
+        "undeclared scope \"${this.id}\""
     }
 }
 
 // need to check UNull/UCons on check_01 (Ce0) and check_02 (Ce1, b/c no type at check_01)
 
 fun Expr.UNull.check () {
-    All_assert_tk(this.xtype!!.tk, this.xtype.let { it is Type.Ptr && it.pln.noalias() is Type.Union }) { "invalid type : expected pointer to union"}
+    All_assert_tk(this.xtype!!.tk, this.xtype.let { it is Type.Pointer && it.pln.noalias() is Type.Union }) { "invalid type : expected pointer to union"}
 }
 
 fun Expr.UCons.check () {
@@ -45,9 +45,9 @@ fun check_01_before_tps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
             is Type.Alias -> {
-                val def = tp.env(tp.tk_.str)
+                val def = tp.env(tp.tk_.id)
                 All_assert_tk(tp.tk, def is Stmt.Typedef) {
-                    "undeclared type \"${tp.tk_.str}\""
+                    "undeclared type \"${tp.tk_.id}\""
                 }
                 val s1 = (def as Stmt.Typedef).xscp1s.size
                 All_assert_tk(tp.tk, s1 == tp.xscp1s.size) {
@@ -56,7 +56,7 @@ fun check_01_before_tps (s: Stmt) {
             }
             is Type.Rec -> {
                 val str = "^".repeat(tp.tk_.up)
-                All_assert_tk(tp.tk, tp.wup is Type.Ptr) {
+                All_assert_tk(tp.tk, tp.wup is Type.Pointer) {
                     "invalid `$str´ : expected pointer type"    // must be pointer b/c ups is a vector of void*
                 }
                 val unions = tp.ups_tolist().count { it is Type.Union }
@@ -65,39 +65,28 @@ fun check_01_before_tps (s: Stmt) {
                 }
 
             }
-            is Type.Ptr -> tp.xscp1?.check(tp)
+            is Type.Pointer -> tp.xscp1?.check(tp)
             is Type.Func -> {
                 tp.xscp1s.first?.check(tp)
-                val ptrs  = (tp.inp.flattenLeft() + tp.out.flattenLeft()).filter { it is Type.Ptr } as List<Type.Ptr>
+                val ptrs = (tp.inp.flattenLeft() + tp.out.flattenLeft()).filter { it is Type.Pointer } as List<Type.Pointer>
                 val ok1 = ptrs.all {
                     val ptr = it.xscp1!!
                     when {
-                        (ptr.lbl == "GLOBAL") -> true
-                        //(ptr.lbl == "LOCAL")  -> true
+                        (ptr.id == "GLOBAL") -> true
+                        //(ptr.id == "LOCAL")  -> true
                         (
-                            tp.xscp1s.first.let  { it!=null && ptr.lbl==it.lbl && ptr.num==it.num } || // {@a} ...@a
-                            tp.xscp1s.second?.any { ptr.lbl==it.lbl && ptr.num==it.num } ?: false      // (@i1 -> ...@i1...)
+                            tp.xscp1s.first.let  { it!=null && ptr.id==it.id } || // {@a} ...@a
+                            tp.xscp1s.second?.any { ptr.id==it.id } ?: false      // (@i1 -> ...@i1...)
                         ) -> true
                         (tp.ups_first {                     // { @aaa \n ...@aaa... }
-                            it is Stmt.Block && it.xscp1.let { it!=null && it.lbl==ptr.lbl && it.num==ptr.num }
+                            it is Stmt.Block && it.xscp1.let { it!=null && it.id==ptr.id }
                         } != null) -> true
                         else -> false
                     }
                 }
                 // all pointers must be listed either in "func.clo" or "func.scps"
                 All_assert_tk(tp.tk, ok1) {
-                    "invalid function type : missing pool argument"
-                }
-                val ok2 = (tp.xscp1s.second == null) || (tp.xscp1s.second!!
-                    .groupBy { it.lbl }             // { "a"=[...], "b"=[...]
-                    .all {
-                        it.value                    // [...]
-                            .map { it.num!! }       // [1,2,3,1,...]
-                            .toSet()                // [1,2,3,...]
-                            .let { (it.minOrNull() == 1) && (it.maxOrNull() == it.size) }
-                    })
-                All_assert_tk(tp.tk, ok2) {
-                    "invalid function type : pool arguments are not continuous"
+                    "invalid function type : missing scope argument"
                 }
             }
         }
@@ -105,8 +94,8 @@ fun check_01_before_tps (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.Var -> {
-                All_assert_tk(e.tk, e.env(e.tk_.str) != null) {
-                    "undeclared variable \"${e.tk_.str}\""
+                All_assert_tk(e.tk, e.env(e.tk_.id) != null) {
+                    "undeclared variable \"${e.tk_.id}\""
                 }
             }
             is Expr.Upref -> {
@@ -133,14 +122,14 @@ fun check_01_before_tps (s: Stmt) {
             is Expr.Func -> {
                 val outers = e.ups_tolist().filter { it is Expr.Func } as List<Expr.Func>
                 for (f in outers) {
-                    val err = f.type.xscp1s.second?.find { tk2 -> e.type.xscp1s.second!!.any { tk1 -> tk1.lbl==tk2.lbl } }
+                    val err = f.type.xscp1s.second?.find { tk2 -> e.type.xscp1s.second!!.any { tk1 -> tk1.id==tk2.id } }
                     All_assert_tk(e.tk, err==null) {
-                        "invalid pool : \"@${err!!.lbl}\" is already declared (ln ${err!!.lin})"
+                        "invalid scope : \"${err!!.id}\" is already declared (ln ${err!!.lin})"
                     }
                 }
                 e.ups.forEach {
-                    All_assert_tk(e.tk, e.env(it.str) != null) {
-                        "undeclared variable \"${it.str}\""
+                    All_assert_tk(e.tk, e.env(it.id) != null) {
+                        "undeclared variable \"${it.id}\""
                     }
                 }
             }
@@ -165,9 +154,9 @@ fun check_01_before_tps (s: Stmt) {
 
         when (s) {
             is Stmt.Var -> {
-                val dcl = s.env(s.tk_.str)
+                val dcl = s.env(s.tk_.id)
                 All_assert_tk(s.tk, dcl == null) {
-                    "invalid declaration : \"${s.tk_.str}\" is already declared (ln ${dcl!!.toTk().lin})"
+                    "invalid declaration : \"${s.tk_.id}\" is already declared (ln ${dcl!!.toTk().lin})"
                 }
             }
             is Stmt.Return -> {
@@ -178,12 +167,9 @@ fun check_01_before_tps (s: Stmt) {
             }
             is Stmt.Block -> {
                 s.xscp1?.let {
-                    All_assert_tk(it, it.num == null) {
-                        "invalid pool : unexpected `_${it.num}´ depth"
-                    }
-                    val dcl = s.env(it.lbl)
+                    val dcl = s.env(it.id)
                     All_assert_tk(it, dcl == null) {
-                        "invalid pool : \"@${it.lbl}\" is already declared (ln ${dcl!!.toTk().lin})"
+                        "invalid scope : \"${it.id}\" is already declared (ln ${dcl!!.toTk().lin})"
                     }
                 }
                 if (s.iscatch) {

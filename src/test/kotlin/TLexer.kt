@@ -78,10 +78,10 @@ class TLexer {
     @Test
     fun b05_lexer_keys () {
         val all = All_new(PushbackReader(StringReader("xvar var else varx type output //@rec"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.XVAR && (all.tk1 as Tk.Str).str=="xvar")
+        lexer(all) ; assert(all.tk1.enu==TK.XID && (all.tk1 as Tk.Id).id=="xvar")
         lexer(all) ; assert(all.tk1.enu==TK.VAR)
         lexer(all) ; assert(all.tk1.enu==TK.ELSE)
-        lexer(all) ; assert(all.tk1.enu==TK.XVAR && (all.tk1 as Tk.Str).str=="varx")
+        lexer(all) ; assert(all.tk1.enu==TK.XID && (all.tk1 as Tk.Id).id=="varx")
         lexer(all) ; assert(all.tk1.enu==TK.TYPE)
         lexer(all) ; assert(all.tk1.enu==TK.OUTPUT)
         //lexer(all) ; assert(all.tk1.enu==TK.AREC && (all.tk1 as Tk.Key).key=="@rec")
@@ -92,16 +92,16 @@ class TLexer {
     @Test
     fun b06_lexer_xs () {
         val all = All_new(PushbackReader(StringReader("c1\nc2 c3  \n    \nc4"), 2))
-        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XVAR && (all.tk1 as Tk.Str).str=="c1")
-        lexer(all) ; assert(all.tk1.lin==2 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XVAR && (all.tk1 as Tk.Str).str=="c2")
-        lexer(all) ; assert(all.tk1.lin==2 && all.tk1.col==4) ; assert(all.tk1.enu==TK.XVAR && (all.tk1 as Tk.Str).str=="c3")
-        lexer(all) ; assert(all.tk1.lin==4 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XVAR && (all.tk1 as Tk.Str).str=="c4")
+        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XID && (all.tk1 as Tk.Id).id=="c1")
+        lexer(all) ; assert(all.tk1.lin==2 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XID && (all.tk1 as Tk.Id).id=="c2")
+        lexer(all) ; assert(all.tk1.lin==2 && all.tk1.col==4) ; assert(all.tk1.enu==TK.XID && (all.tk1 as Tk.Id).id=="c3")
+        lexer(all) ; assert(all.tk1.lin==4 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XID && (all.tk1 as Tk.Id).id=="c4")
     }
     @Test
     fun b07_lexer_xs () {
         val all = All_new(PushbackReader(StringReader("c1 a"), 2))
-        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XVAR  && (all.tk1 as Tk.Str).str=="c1")
-        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==4) ; assert(all.tk1.enu==TK.XVAR  && (all.tk1 as Tk.Str).str=="a")
+        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XID  && (all.tk1 as Tk.Id).id=="c1")
+        lexer(all) ; assert(all.tk1.lin==1 && all.tk1.col==4) ; assert(all.tk1.enu==TK.XID  && (all.tk1 as Tk.Id).id=="a")
     }
 
     // XNAT
@@ -138,27 +138,28 @@ class TLexer {
 
     @Test
     fun c01_scope () {
-        val all = All_new(PushbackReader(StringReader("@GLOBAL"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.XSCPCST && (all.tk1 as Tk.Scp1).lbl=="GLOBAL" && (all.tk1 as Tk.Scp1).num==null)
+        val all = All_new(PushbackReader(StringReader("GLOBAL"), 2))
+        lexer(all) ; assert(all.tk1.isscopecst() && (all.tk1.asscopecst()).id=="GLOBAL")
     }
     @Test
     fun c02_scope () {
-        val all = All_new(PushbackReader(StringReader("@i1"), 2))
+        val all = All_new(PushbackReader(StringReader("i1"), 2))
         lexer(all)
         //assert(all.tk1.enu==TK.ERR && (all.tk1 as Tk.Err).err=="@")
-        assert(all.tk1.enu==TK.XSCPVAR && (all.tk1 as Tk.Scp1).lbl=="i" && (all.tk1 as Tk.Scp1).num==1)
+        assert(all.tk1.isscopepar() && (all.tk1.asscopepar().id=="i1"))
     }
     @Test
     fun c03_scope () {
-        val all = All_new(PushbackReader(StringReader("@x11"), 2))
-        lexer(all) ; assert(all.tk1.enu==TK.XSCPVAR && (all.tk1 as Tk.Scp1).lbl=="x" && (all.tk1 as Tk.Scp1).num==11)
+        val all = All_new(PushbackReader(StringReader("x11"), 2))
+        lexer(all) ; assert(all.tk1.isscopepar() && (all.tk1.asscopepar().id=="x11"))
     }
     @Test
     fun c04_scope () {
-        val all = All_new(PushbackReader(StringReader("@1"), 2))
+        val all = All_new(PushbackReader(StringReader("@[]"), 2))
         lexer(all)
         //println(all.tk1)
         //assert(all.tk1.enu==TK.XSCPCST && (all.tk1 as Tk.Scp1).lbl=="" && (all.tk1 as Tk.Scp1).num==null)
-        assert(all.tk1.enu==TK.ERR && (all.tk1 as Tk.Err).err=="@")
+        //assert(all.tk1.enu==TK.ERR && (all.tk1 as Tk.Err).err=="@")
+        assert(all.tk1.enu==TK.ATBRACK)
     }
 }

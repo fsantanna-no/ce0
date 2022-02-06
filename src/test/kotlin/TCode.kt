@@ -31,10 +31,10 @@ class TCode {
     }
     @Test
     fun b02_expr_var () {
-        val e = Expr.Var(Tk.Str(TK.XVAR,1,1,"xxx"))
+        val e = Expr.Var(Tk.Id(TK.XID,1,1,"xxx"))
         e.wenv =
             Stmt.Var (
-                Tk.Str(TK.XVAR,1,1,"xxx"),
+                Tk.Id(TK.XID,1,1,"xxx"),
                 Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
             )
         e.wtype = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
@@ -43,10 +43,10 @@ class TCode {
     }
     @Test
     fun b03_expr_nat () {
-        val e = Expr.Var(Tk.Str(TK.XNAT,1,1,"xxx"))
+        val e = Expr.Var(Tk.Id(TK.XNAT,1,1,"xxx"))
         e.wenv =
             Stmt.Var (
-                Tk.Str(TK.XVAR,1,1,"xxx"),
+                Tk.Id(TK.XID,1,1,"xxx"),
                 Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
             )
         e.wtype = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
@@ -74,11 +74,11 @@ class TCode {
     fun b05_expr_index () {
         val e = Expr.TDisc (
             Tk.Num(TK.XNUM,1,1,1),
-            Expr.Var(Tk.Str(TK.XVAR,1,1,"x"))
+            Expr.Var(Tk.Id(TK.XID,1,1,"x"))
         )
         e.tup.wenv =
             Stmt.Var (
-                Tk.Str(TK.XVAR,1,1,"x"),
+                Tk.Id(TK.XID,1,1,"x"),
                 Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), arrayOf(Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))))
             )
         e.wtype = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))

@@ -78,10 +78,9 @@ fun All.err_expected (str: String) {
             (this is Tk.Err)     -> '"' + this.err + '"'
             (this is Tk.Chr)     -> "`" + this.chr + "´"
             (this is Tk.Sym)     -> '`' + this.sym + '´'
-            (this is Tk.Str)     -> '"' + this.str + '"'
+            (this is Tk.Id)      -> '"' + this.id + '"'
             (this is Tk.Num)     -> "" + this.num
-            (this is Tk.Key)     -> this.key
-            (this is Tk.Scp1)   -> "`@" + this.lbl + '´'
+            (this is Tk.Key)     -> '`' + this.key + '`'
             (this is Tk.Nat)     -> '"' + this.src + '"'
             else -> TODO(this.toString())
         }
@@ -109,7 +108,7 @@ inline fun All.assert_tk (tk: Tk, value: Boolean, lazyMessage: () -> String = {"
 }
 
 fun All.checkExpr (): Boolean {
-    return this.check(TK.CHAR, '(') || this.check(TK.UNIT) || this.check(TK.XVAR) || this.check(TK.XNAT)
+    return this.check(TK.CHAR, '(') || this.check(TK.UNIT) || this.check(TK.XID) || this.check(TK.XNAT)
             || this.check(TK.CHAR, '[') || this.check(TK.CHAR, '<') || this.check(TK.NEW)
             || this.check(TK.CHAR, '/') || this.check(TK.FUNC) || this.check(TK.TASK)
 }

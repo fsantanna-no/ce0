@@ -55,7 +55,7 @@ class TTask {
             set x = spawn f ()
             output std _2:_int
             --awake x _1:_int
-            bcast @GLOBAL _1:_int
+            bcast _1:_int
         """.trimIndent())
         assert(out == "1\n2\n3\n") { out }
     }
@@ -191,8 +191,8 @@ class TTask {
     @Test
     fun a06_par2 () {
         val out = all("""
-            var build : func @[@r1] -> () -> task @r1->@[]->()->()->()
-            set build = func @[@r1] -> () -> task @r1->@[]->()->()->() {
+            var build : func @[r1] -> () -> task @r1->@[]->()->()->()
+            set build = func @[r1] -> () -> task @r1->@[]->()->()->() {
                 set ret = task @r1->@[]->()->()->() {
                     output std _1:_int
                     await _(${D}evt != 0):_int
@@ -200,9 +200,9 @@ class TTask {
                 }
             }
             var f: task @LOCAL->@[]->()->()->()
-            set f = build @[@LOCAL] ()
+            set f = build @[LOCAL] ()
             var g: task @LOCAL->@[]->()->()->()
-            set g = build @[@LOCAL] ()
+            set g = build @[LOCAL] ()
             output std _10:_int
             var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
