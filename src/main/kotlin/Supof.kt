@@ -114,8 +114,8 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
             } else {
                 val dst = this.xscp2!!
                 val src = sub.xscp2!!
-                println(dst)
-                println(src)
+                //println(dst)
+                //println(src)
                 // (dthis.rel==dsub.rel): abs vs abs || rel vs rel // (no @aaa vs @1)
                 // (dthis.level==dsub.level && dthis.rel==null): unless @aaa=@1 are in the same function (then always @1<=@aaa)
                 when {

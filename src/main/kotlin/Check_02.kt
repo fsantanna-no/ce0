@@ -63,32 +63,29 @@ fun check_02_after_tps (s: Stmt) {
                 val arg1 = e.arg.wtype!!
 
                 val (scps1,inp1,out1) = when (func) {
-                    is Type.Spawn  -> Triple(func.tsk.xscp1s.second,func.tsk.inp,func.tsk.out)
-                    is Type.Spawns -> Triple(func.tsk.xscp1s.second,func.tsk.inp,func.tsk.out)
-                    is Type.Func   -> Triple(func.xscp1s.second,func.inp,func.out)
-                    is Type.Nat    -> Triple(emptyArray(),func,func)
+                    is Type.Spawn  -> Triple(Pair(func.tsk.xscp1s.second,func.tsk.xscp1s.third),func.tsk.inp,func.tsk.out)
+                    is Type.Spawns -> Triple(Pair(func.tsk.xscp1s.second,func.tsk.xscp1s.third),func.tsk.inp,func.tsk.out)
+                    is Type.Func   -> Triple(Pair(func.xscp1s.second,func.xscp1s.third),func.inp,func.out)
+                    is Type.Nat    -> Triple(Pair(emptyArray(),emptyArray()),func,func)
                     else -> error("impossible case")
                 }
 
-                val s1 = scps1.size
+                val s1 = scps1.first.size
                 val s2 = e.xscp1s.first.size
                 All_assert_tk(e.tk, s1 == s2) {
                     "invalid call : scope mismatch : expecting $s1, have $s2 argument(s)"
                 }
 
-                /*
-                var i = 0
-                e.xscp1s.first
-                    .zip(e.xscp2s!!.first.map { it.depth })
-                    .zip(scps1)     // [ call=[tk,depth], func=[tk,depth]
-                    .sortedBy { it.first.second }
-                    .forEach {
-                        All_assert_tk(it.first.first, it.second.second>=i) {
-                            "invalid call : scope mismatch : constraint mismatch"
-                        }
-                        i = it.second.second
+                //println(e.xscp2s!!.first.toList())
+                // [(a1, 2), (a2, 1)]
+                val pairs = scps1.first.map { it.id }.zip(e.xscp2s!!.first.map { it.depth })
+                scps1.second.forEach { ctr ->
+                    val x = pairs.find { it.first==ctr.first  }!!.second
+                    val y = pairs.find { it.first==ctr.second }!!.second
+                    All_assert_tk(e.tk, x <= y) {
+                        "invalid call : scope mismatch : constraint mismatch"
                     }
-                 */
+                }
 
                 // Original call:
                 //      var f: (func @[a1]->/()@a1->())
@@ -96,7 +93,7 @@ fun check_02_after_tps (s: Stmt) {
 
                 // Map from f->call
                 //      { a1=(scp1(LOCAL),scp2(LOCAL) }
-                val map = scps1
+                val map = scps1.first
                     .map { it.id }
                     .zip(e.xscp1s.first.zip(e.xscp2s!!.first))
                     .toMap()
@@ -222,7 +219,7 @@ fun check_02_after_tps (s: Stmt) {
             is Stmt.Set -> {
                 val dst = s.dst.wtype!!
                 val src = s.src.wtype!!
-                println(">>> SET") ; println(s.dst) ; println(s.src) ; println(dst.tostr()) ; println(src.tostr())
+                //println(">>> SET") ; println(s.dst) ; println(s.src) ; println(dst.tostr()) ; println(src.tostr())
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
                     val str = if (s.dst is Expr.Var && s.dst.tk_.id == "ret") "return" else "assignment"
                     "invalid $str : ${mismatch(dst,src)}"

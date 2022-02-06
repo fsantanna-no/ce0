@@ -773,9 +773,7 @@ class TEnv {
                 }
             }
         """.trimIndent())
-        //assert(out == "(ln 7, col 14): invalid call : type mismatch") { out }
-        //assert(out == "(ln 7, col 25): invalid call : scope mismatch") { out }
-        assert(out == "(ln 7, col 18): invalid call : scope mismatch : constraint mismatch") { out }
+        assert(out == "(ln 7, col 14): invalid call : scope mismatch : constraint mismatch") { out }
 
     }
     @Test
@@ -852,7 +850,7 @@ class TEnv {
         //assert(out == "(ln 7, col 15): invalid assignment : type mismatch") { out }
         //assert(out == "(ln 7, col 22): invalid call : type mismatch") { out }
         //assert(out.startsWith("(ln 7, col 28): invalid call : scope mismatch")) { out }
-        assert(out == "(ln 7, col 21): invalid call : scope mismatch : constraint mismatch") { out }
+        assert(out == "(ln 7, col 17): invalid call : scope mismatch : constraint mismatch") { out }
     }
     @Test
     fun e16_call_ok () {
