@@ -13,7 +13,29 @@ fun check_02_after_tps (s: Stmt) {
                     }
                 }
                  */
+
                 val env = e.env(e.tk_.id)!!
+                val dcl = env.toType().toScp2().lvl
+
+                //println(e)
+                //println(e.tk_.id)
+                //println(env.toType().toScp2())
+                //println(dcl)
+
+                // these special variables and globals dont need closures
+                if (e.tk_.id in arrayOf("arg","evt","pub","ret")) return
+                if (env.ups_tolist().count { it is Expr.Func || it is Stmt.Block } == 0) return
+
+                // take all funcs in between myself -> dcl level: check if they have closure
+                val fs  = e.ups_tolist().filter { it is Expr.Func }.dropLast(dcl) as List<Expr.Func>
+                fs.forEach {
+                    funcs.add(it)
+                    All_assert_tk(e.tk, it.ups.any { it.id==e.tk_.id }) {
+                        "invalid access to \"${e.tk_.id}\" : invalid closure declaration (ln ${it.tk.lin})"
+                    }
+
+                }
+/*
                 val (var_fdepth,var_bdepth) = env.ups_tolist().let {
                     Pair (
                         it.filter { it is Expr.Func }.count(),
@@ -26,18 +48,21 @@ fun check_02_after_tps (s: Stmt) {
                     val var_scope = env.toType().toScp2()
                     val func = e.ups_first { it is Expr.Func } as Expr.Func
                     val clo = func.type.xscp2s!!.first?.depth ?: 0
+                    println(clo)
+                    println(var_scope)
+                    // TODO: remove ? HACK: from above and below
                     All_assert_tk(e.tk, clo>=var_scope.depth?:999 && func.ups.any { it.id==e.tk_.id }) {
                         "invalid access to \"${e.tk_.id}\" : invalid closure declaration (ln ${func.tk.lin})"
                     }
                     funcs.add(func)
                 }
+ */
             }
             is Expr.Func -> {
-                All_assert_tk(e.tk, e.tk.enu==TK.TASK || funcs.contains(e) || e.type.xscp1s.first==null) {
-                    "invalid function : unexpected closure declaration"
-                }
-                All_assert_tk(e.tk, !funcs.contains(e) || e.type.xscp1s.first!=null) {
-                    "invalid function : expected closure declaration"
+                if (e.ups.size > 0) {
+                    All_assert_tk(e.tk, e.tk.enu == TK.TASK || funcs.contains(e)) {
+                        "invalid function : unexpected closure declaration"
+                    }
                 }
             }
 
