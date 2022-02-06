@@ -70,6 +70,12 @@ fun check_02_after_tps (s: Stmt) {
                     else -> error("impossible case")
                 }
 
+                val s1 = scps1?.size ?: 0
+                val s2 = e.xscp1s.first.size
+                All_assert_tk(e.tk, s1 == s2) {
+                    "invalid call : scope mismatch : expecting $s1, have $s2 argument(s)"
+                }
+
                 // Original call:
                 //      var f: (func @[a1]->/()@a1->())
                 //      call f @[LOCAL] /x
@@ -81,10 +87,7 @@ fun check_02_after_tps (s: Stmt) {
                 } else {
                     scps1.map { it.id }
                         .zip(e.xscp1s.first.zip(e.xscp2s!!.first))
-                        .toMap().let {
-                            println(it)
-                            it
-                        }
+                        .toMap()
                 }
 
                 // Transform f->call
@@ -208,7 +211,7 @@ fun check_02_after_tps (s: Stmt) {
             is Stmt.Set -> {
                 val dst = s.dst.wtype!!
                 val src = s.src.wtype!!
-                println(">>> SET") ; println(s.dst) ; println(s.src) ; println(dst.tostr()) ; println(src.tostr())
+                //println(">>> SET") ; println(s.dst) ; println(s.src) ; println(dst.tostr()) ; println(src.tostr())
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
                     val str = if (s.dst is Expr.Var && s.dst.tk_.id == "ret") "return" else "assignment"
                     "invalid $str : ${mismatch(dst,src)}"

@@ -971,7 +971,7 @@ class TEnv {
                 return
             }
         """.trimIndent())
-        assert(out == "(ln 3, col 13): invalid return : type mismatch") { out }
+        assert(out.startsWith("(ln 3, col 13): invalid return : type mismatch")) { out }
     }
     @Test
     fun e21_local_err () {
@@ -1233,7 +1233,7 @@ class TEnv {
                 set ret = /ptr
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 13): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 13): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun g11_ptr_func_err () {
@@ -1279,7 +1279,7 @@ class TEnv {
                 set v = arg
             }
         """.trimIndent())
-        assert(out == "(ln 4, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 4, col 11): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun g14_ptr_func_err () {
@@ -1294,7 +1294,7 @@ class TEnv {
                 set p = f @[LOCAL] x: @GLOBAL    -- err: call p/x have diff scopes (@ will be x which is greater)
             }
         """.trimIndent())
-        assert(out == "(ln 8, col 11): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 8, col 11): invalid assignment : type mismatch")) { out }
         //assert(out == "(ln 8, col 13): invalid call : type mismatch") { out }
         //assert(out == "(ln 8, col 11): invalid assignment : type mismatch") { out }
     }
@@ -1341,7 +1341,7 @@ class TEnv {
                 set x = f @[LOCAL,GLOBAL] p
             }
         """.trimIndent())
-        assert(out == "(ln 3, col 13): invalid return : type mismatch") { out }
+        assert(out.startsWith("(ln 3, col 13): invalid return : type mismatch")) { out }
     }
     @Test
     fun g18_ptr_func_err () {
@@ -2277,7 +2277,7 @@ class TEnv {
             var f: / (func@[i1]->()->())@LOCAL
             call f\ ()
         """.trimIndent())
-        assert(out == "(ln 2, col 7): invalid call : scope mismatch") { out }
+        assert(out == "(ln 2, col 7): invalid call : scope mismatch : expecting 1, have 0 argument(s)") { out }
     }
 
     // UNION SELF POINTER
@@ -2882,7 +2882,7 @@ class TEnv {
             call f ()
         """.trimIndent()
         )
-        assert(out.startsWith("(ln 2, col 6): invalid call : scope mismatch")) { out }
+        assert(out == "(ln 2, col 6): invalid call : scope mismatch : expecting 2, have 0 argument(s)") { out }
     }
     @Test
     fun p34_diff_args () {
@@ -3072,7 +3072,7 @@ class TEnv {
             var x: Xxx
         """.trimIndent()
         )
-        assert(out == "(ln 2, col 8): invalid type : scope mismatch : expecting 1 argument(s)") { out }
+        assert(out == "(ln 2, col 8): invalid type : scope mismatch : expecting 1, have 0 argument(s)") { out }
     }
     @Test
     fun q14 () {

@@ -1,4 +1,4 @@
-data class Scp2 (val lvl: Int, val arg: String?, val depth: Int)
+data class Scp2 (val lvl: Int, val par: String?, val depth: Int)
 
 fun Type.toScp2 (): Scp2 {
     return when {
@@ -11,7 +11,7 @@ fun Type.toScp2 (): Scp2 {
 fun Tk.Id.toScp2 (up: Any): Scp2 {
     val lvl = up.ups_tolist().filter { it is Expr.Func }.count() // level of function nesting
     return when (this.id) { // 2xExpr.Func, otherwise no level between outer/arg/body
-        "GLOBAL" -> Scp2(lvl, null, 0)
+        "GLOBAL" -> Scp2(0, null, 0)
         "LOCAL"  -> {
             // umn=-2: @LOCAL must be clo annotation, so remove further 2*Expr.Func
             val umn = if (up is Type.Func && up.wup is Expr.Func) -2 else 0

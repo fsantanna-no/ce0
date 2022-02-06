@@ -106,19 +106,21 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
             println(sub)
             println(this.tostr())
             println(sub.tostr())
-            println("SUPOF [$isproto] ${this.tk.lin}: ${this.scope()} = ${sub.scope()} /// ${this.scope}")
+            //println("SUPOF [$isproto] ${this.tk.lin}: ${this.scope()} = ${sub.scope()} /// ${this.scope}")
             */
             val ok = if (isproto) { // comparing func prototypes does not depend on scope calculation
                 (this.xscp1.id == sub.xscp1.id)
             } else {
                 val dst = this.xscp2!!
                 val src = sub.xscp2!!
+                //println(dst)
+                //println(src)
                 // (dthis.rel==dsub.rel): abs vs abs || rel vs rel // (no @aaa vs @1)
                 // (dthis.level==dsub.level && dthis.rel==null): unless @aaa=@1 are in the same function (then always @1<=@aaa)
                 when {
-                    (src.depth == 0) -> true                          // global as source is always ok
-                    (dst.arg == src.arg) -> (dst.depth >= src.depth)  // same abs/rel -> just checks depth
-                    else -> (dst.depth >= src.depth) && (dst.lvl == src.lvl && dst.arg == null)
+                    (src.par==null && src.depth==0) -> true           // global as source is always ok
+                    (dst.par == src.par) -> (dst.depth >= src.depth)  // same abs/rel -> just checks depth
+                    else -> (dst.depth >= src.depth) && (dst.lvl == src.lvl && dst.par == null)
                         // diff abs/rel -> checks depth, func level, and destiny must not be arg
                 }
             }

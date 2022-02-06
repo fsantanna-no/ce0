@@ -50,8 +50,9 @@ fun check_01_before_tps (s: Stmt) {
                     "undeclared type \"${tp.tk_.id}\""
                 }
                 val s1 = (def as Stmt.Typedef).xscp1s.size
-                All_assert_tk(tp.tk, s1 == tp.xscp1s.size) {
-                    "invalid type : scope mismatch : expecting $s1 argument(s)"
+                val s2 = tp.xscp1s.size
+                All_assert_tk(tp.tk, s1 == s2) {
+                    "invalid type : scope mismatch : expecting $s1, have $s2 argument(s)"
                 }
             }
             is Type.Rec -> {
