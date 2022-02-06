@@ -1,11 +1,13 @@
 data class Scp2 (val lvl: Int, val par: String?, val depth: Int?)
 
 fun Type.toScp2 (): Scp2 {
-    val lvl = this.ups_tolist().filter { it is Expr.Func }.count() // level of function nesting
     return when {
         this is Type.Pointer -> this.xscp2!!
         (this is Type.Func) && (this.xscp1s.first!=null) -> this.xscp2s!!.first!! // body holds pointers in clo
-        else -> Scp2(lvl, null, 0)
+        else -> {
+            val lvl = this.ups_tolist().filter { it is Expr.Func }.count() // level of function nesting
+            Scp2(lvl, null, 0)
+        }
     }
 }
 

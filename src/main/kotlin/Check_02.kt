@@ -2,25 +2,10 @@ fun check_02_after_tps (s: Stmt) {
     val funcs = mutableSetOf<Expr.Func>()   // funcs with checked [@] closure
     fun fe (e: Expr) {
         when (e) {
-            is Expr.Var -> {    // check closures
-                /*
-                // ignore upvals declarations, search above if found
-                val env = e.ups_first { it is Expr.Func }.let {
-                    if (it != null && (it as Expr.Func).ups.any { it.str == e.tk_.str }) {
-                        it.env(e.tk_.str)!!
-                    } else {
-                        e.env(e.tk_.str)!!
-                    }
-                }
-                 */
-
+            // >>> check closures
+            is Expr.Var -> {
                 val env = e.env(e.tk_.id)!!
-                val dcl = env.toType().toScp2().lvl
-
-                //println(e)
-                //println(e.tk_.id)
-                //println(env.toType().toScp2())
-                //println(dcl)
+                val dcl = env.ups_tolist().count { it is Expr.Func }
 
                 // these special variables and globals dont need closures
                 if (e.tk_.id in arrayOf("arg","evt","pub","ret")) return
@@ -35,36 +20,15 @@ fun check_02_after_tps (s: Stmt) {
                     }
 
                 }
-/*
-                val (var_fdepth,var_bdepth) = env.ups_tolist().let {
-                    Pair (
-                        it.filter { it is Expr.Func }.count(),
-                        it.filter { it is Stmt.Block }.count()
-                    )
-                }
-                val exp_fdepth = e.ups_tolist().filter { it is Expr.Func }.count()
-                if (var_bdepth>0 && var_fdepth<exp_fdepth) {
-                    // access is inside function, declaration is outside
-                    val var_scope = env.toType().toScp2()
-                    val func = e.ups_first { it is Expr.Func } as Expr.Func
-                    val clo = func.type.xscp2s!!.first?.depth ?: 0
-                    println(clo)
-                    println(var_scope)
-                    // TODO: remove ? HACK: from above and below
-                    All_assert_tk(e.tk, clo>=var_scope.depth?:999 && func.ups.any { it.id==e.tk_.id }) {
-                        "invalid access to \"${e.tk_.id}\" : invalid closure declaration (ln ${func.tk.lin})"
-                    }
-                    funcs.add(func)
-                }
- */
             }
             is Expr.Func -> {
-                if (e.ups.size > 0) {
-                    All_assert_tk(e.tk, e.tk.enu == TK.TASK || funcs.contains(e)) {
+                if (e.type.xscp1s.first != null) {
+                    All_assert_tk(e.tk, e.tk.enu==TK.TASK || funcs.contains(e)) {
                         "invalid function : unexpected closure declaration"
                     }
                 }
             }
+            // <<< check closures
 
             is Expr.UNull -> e.check()
             is Expr.UCons -> {

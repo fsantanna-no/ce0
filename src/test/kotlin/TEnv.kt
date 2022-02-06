@@ -2708,7 +2708,7 @@ class TEnv {
     fun p21_pool_closure_err() {
         val out = inp2env(
             """
-            var f: func @LOCAL->@[]->() -> ()
+            var f : func @LOCAL->@[]->() -> ()
             set f = func @LOCAL->@[]->() -> () {
                 var x: ()
                 output std x
