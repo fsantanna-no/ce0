@@ -3110,4 +3110,28 @@ class TEnv {
         )
         assert(out == "(ln 7, col 17): invalid type : scope mismatch : constraint mismatch") { out }
     }
+    @Test
+    fun q16 () {
+        val out = inp2env("""
+            type T @[a] = [/_int@a]
+            { @A
+                var x: _int
+                var t1: T @[LOCAL]
+                set t1 = [/x]
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun q17 () {
+        val out = inp2env("""
+            type T @[a] = </_int@a>
+            { @A
+                var x: _int
+                var t1: T @[LOCAL]
+                set t1 = <.1 /x>: T @[LOCAL]
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
 }

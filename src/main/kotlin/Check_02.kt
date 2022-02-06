@@ -94,56 +94,13 @@ fun check_02_after_tps (s: Stmt) {
                     "invalid call : scope mismatch : constraint mismatch"
                 }
 
-                // Original call:
-                //      var f: (func @[a1]->/()@a1->())
-                //      call f @[LOCAL] /x
-
-                // Map from f->call
-                //      { a1=(scp1(LOCAL),scp2(LOCAL) }
-                val map = scp1s.first
-                    .map { it.id }
-                    .zip(e.xscp1s.first.zip(e.xscp2s!!.first))
-                    .toMap()
-
-                // Transform f->call
-                //      var f: (func @[LOCAL]->/()@LOCAL -> ())
-                //      call f @[LOCAL] /x
-                val (inp2,out2) = if (func !is Type.Func) Pair(inp1,out1) else
-                {
-                    fun Type.aux (dofunc: Boolean): Type {
-                        return when (this) {
-                            is Type.Unit, is Type.Nat, is Type.Rec, is Type.Alias -> this
-                            is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.aux(dofunc) }.toTypedArray())
-                            is Type.Union -> Type.Union(this.tk_, this.isrec, this.vec.map { it.aux(dofunc) }.toTypedArray())
-                            is Type.Pointer -> {
-                                map[this.xscp1.id].let {
-                                    if (it == null) {
-                                        this
-                                    } else {
-                                        Type.Pointer(this.tk_, it.first, it.second, this.pln.aux(dofunc))
-                                    }
-                                }
-                            }
-                            is Type.Func -> if (!dofunc) this else {
-                                val ret = this.xscp1s.first?.let { me ->
-                                    map[me.id].let { it ?: Pair(this.xscp1s.first,this.xscp2s!!.first) }
-                                }
-                                Type.Func (
-                                    this.tk_,
-                                    Triple(ret?.first,  this.xscp1s.second, this.xscp1s.third),
-                                    Pair(ret?.second, this.xscp2s!!.second),
-                                    this.inp.aux(dofunc),
-                                    this.pub?.aux(dofunc),
-                                    this.out.aux(dofunc)
-                                )
-                            }
-                            is Type.Spawn, is Type.Spawns -> TODO()
-                        }
-                    }
+                val (inp2,out2) = if (func is Type.Func) {
                     Pair (
-                        inp1.aux(false).clone(e,e.tk.lin,e.tk.col),
-                        out1.aux(true).clone(e,e.tk.lin,e.tk.col)
+                        inp1.mapScps(scp1s.first, e.xscp1s.first, e.xscp2s!!.first, false).clone(e,e.tk.lin,e.tk.col),
+                        out1.mapScps(scp1s.first, e.xscp1s.first, e.xscp2s!!.first, true).clone(e,e.tk.lin,e.tk.col)
                     )
+                } else {
+                    Pair(inp1,out1)
                 }
 
                 //val (inp2,out2) = Pair(inp1,out1)

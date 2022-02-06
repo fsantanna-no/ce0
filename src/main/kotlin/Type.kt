@@ -5,7 +5,7 @@ fun Type.tostr (): String {
     }
     return when (this) {
         is Type.Unit    -> "()"
-        is Type.Alias   -> this.tk_.id
+        is Type.Alias   -> this.tk_.id + this.xscp1s.let { if (it.size==0) "" else " @["+it.map { it.id }.joinToString(",")+"]" }
         is Type.Nat     -> this.tk_.toce()
         is Type.Rec     -> "^".repeat(this.tk_.up)
         is Type.Pointer -> this.xscp1.let { "/" + this.pln.tostr() + " @" + it.id }
@@ -138,7 +138,23 @@ fun Type.isrec (): Boolean {
 }
 
 fun Type.noalias (): Type {
-    return if (this is Type.Alias) this.env(this.tk_.id)!!.toType() else this
+    return if (this !is Type.Alias) this else {
+        val def = this.env(this.tk_.id)!! as Stmt.Typedef
+
+        // Original constructor:
+        //      typedef Pair @[a] = [/_int@a,/_int@a]
+        //      var xy: Pair @[LOCAL] = [/x,/y]
+
+        // Map from typedef(type List = ...) -> type(List ...)
+        //      { a=scp1(LOCAL) }
+        val map: Map<String, Pair<Tk.Id, Scp2>> = def.xscp1s.first
+            .map { it.id }
+            .zip(this.xscp1s.zip(this.xscp2s ?: emptyArray()))
+            .toMap()
+        println(this.tostr())
+        println(map)
+        def.toType().mapScps(def.xscp1s.first, this.xscp1s, this.xscp2s ?: emptyArray(), false)
+    }
 }
 
 fun Type.containsRec (): Boolean {
@@ -183,4 +199,54 @@ fun Type.toce (): String {
 
 fun mismatch (sup: Type, sub: Type): String {
     return "type mismatch :\n    ${sup.tostr()}\n    ${sub.tostr()}"
+}
+
+// Original call:
+//      var f: (func @[a1]->/()@a1->())
+//      call f @[LOCAL] /x
+// Map from f->call
+//      { a1=(scp1(LOCAL),scp2(LOCAL) }
+// Transform f->call
+//      var f: (func @[LOCAL]->/()@LOCAL -> ())
+//      call f @[LOCAL] /x
+// Transform typedef -> type
+//      typedef Pair @[LOCAL] = [/_int@LOCAL,/_int@LOCAL]
+//      var xy: Pair @[LOCAL] = [/x,/y]
+fun Type.mapScps (dcl_scp1s: Array<Tk.Id>, use_scp1s: Array<Tk.Id>, use_scp2s: Array<Scp2>, dofunc: Boolean): Type {
+    val map: Map<String, Pair<Tk.Id, Scp2?>> = dcl_scp1s
+        .map { it.id }
+        .zip(use_scp1s.zip(use_scp2s))
+        .toMap()
+
+    fun Type.aux (dofunc: Boolean): Type {
+        return when (this) {
+            is Type.Unit, is Type.Nat, is Type.Rec, is Type.Alias -> this
+            is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.aux(dofunc) }.toTypedArray())
+            is Type.Union -> Type.Union(this.tk_, this.isrec, this.vec.map { it.aux(dofunc) }.toTypedArray())
+            is Type.Pointer -> {
+                map[this.xscp1.id].let {
+                    if (it == null) {
+                        this
+                    } else {
+                        Type.Pointer(this.tk_, it.first, it.second, this.pln.aux(dofunc))
+                    }
+                }
+            }
+            is Type.Func -> if (!dofunc) this else {
+                val ret = this.xscp1s.first?.let { me ->
+                    map[me.id].let { it ?: Pair(this.xscp1s.first, this.xscp2s!!.first) }
+                }
+                Type.Func(
+                    this.tk_,
+                    Triple(ret?.first, this.xscp1s.second, this.xscp1s.third),
+                    Pair(ret?.second, this.xscp2s!!.second),
+                    this.inp.aux(dofunc),
+                    this.pub?.aux(dofunc),
+                    this.out.aux(dofunc)
+                )
+            }
+            is Type.Spawn, is Type.Spawns -> TODO()
+        }
+    }
+    return this.aux(dofunc)
 }
