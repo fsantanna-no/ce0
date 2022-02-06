@@ -1,3 +1,30 @@
+fun parser_scopepars (all: All): Pair<Array<Tk.Id>,Array<Pair<Tk.Id,Tk.Id>>> {
+    val scps = mutableListOf<Tk.Id>()
+    val ctrs = mutableListOf<Pair<Tk.Id,Tk.Id>>()
+    if (all.accept(TK.ATBRACK)) {
+        while (all.accept(TK.XID)) {
+            scps.add(all.tk0.asscopepar())
+            if (!all.accept(TK.CHAR, ',')) {
+                break
+            }
+        }
+        if (all.accept(TK.CHAR,':')) {
+            while (all.accept(TK.XID)) {
+                val id1 = all.tk0.asscopepar()
+                all.accept_err(TK.CHAR,'>')
+                all.accept_err(TK.XID)
+                val id2 = all.tk0.asscopepar()
+                ctrs.add(Pair(id1,id2))
+                if (!all.accept(TK.CHAR, ',')) {
+                    break
+                }
+            }
+        }
+        all.accept_err(TK.CHAR, ']')
+    }
+    return Pair(scps.toTypedArray(), ctrs.toTypedArray())
+}
+
 fun parser_type (all: All, tasks: Boolean=false): Type {
     return when {
         all.accept(TK.UNIT) -> Type.Unit(all.tk0 as Tk.Sym)
@@ -79,15 +106,9 @@ fun parser_type (all: All, tasks: Boolean=false): Type {
             } else {
                 null
             }
-            val scps = mutableListOf<Tk.Id>()
-            if (all.accept(TK.ATBRACK)) {
-                while (all.accept(TK.XID)) {
-                    scps.add(all.tk0.asscopepar())
-                    if (!all.accept(TK.CHAR, ',')) {
-                        break
-                    }
-                }
-                all.accept_err(TK.CHAR, ']')
+            val at = all.check(TK.ATBRACK)
+            val (scps,_) = parser_scopepars(all)
+            if (at) {
                 all.accept_err(TK.ARROW)
             }
             val inp = parser_type(all)
@@ -100,7 +121,7 @@ fun parser_type (all: All, tasks: Boolean=false): Type {
             all.accept_err(TK.ARROW)
             val out = parser_type(all) // right associative
 
-            Type.Func(tk0, Pair(clo,scps.toTypedArray()), null, inp, pub, out)
+            Type.Func(tk0, Pair(clo,scps), null, inp, pub, out)
         }
         all.accept(TK.ACTIVE) -> {
             val tk0 = all.tk0 as Tk.Key
@@ -490,19 +511,10 @@ fun parser_stmt (all: All): Stmt {
         all.accept(TK.TYPE) -> {
             all.accept_err(TK.XID)
             val id = all.tk0.astype()
-            val scps = mutableListOf<Tk.Id>()
-            if (all.accept(TK.ATBRACK)) {
-                while (all.accept(TK.XID)) {
-                    scps.add(all.tk0.asscopepar())
-                    if (!all.accept(TK.CHAR, ',')) {
-                        break
-                    }
-                }
-                all.accept_err(TK.CHAR, ']')
-            }
+            val (scps,_) = parser_scopepars(all)
             all.accept_err(TK.CHAR,'=')
             val tp = parser_type(all)
-            Stmt.Typedef(id, scps.toTypedArray(), null, tp)
+            Stmt.Typedef(id, scps, null, tp)
         }
         else -> {
             all.err_expected("statement")
