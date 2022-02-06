@@ -72,7 +72,7 @@ fun Stmt.setTypes () {
                                             .unzip()
                                         Type.Func(
                                             this.tk_,
-                                            Pair(clo?.first, x1.toTypedArray()),
+                                            Triple(clo?.first, x1.toTypedArray(), this.xscp1s.third), // TODO: third is wrong (no modification)
                                             Pair(clo?.second, x2.toTypedArray()),
                                             this.inp.map(),
                                             this.pub?.map(),

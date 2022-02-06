@@ -59,9 +59,10 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
             )
             is Type.Func -> Type.Func(
                 this.tk_.copy(lin_ = lin, col_ = col),
-                Pair (
+                Triple (
                     this.xscp1s.first?.copy(lin_ = lin, col_ = col),
-                    this.xscp1s.second!!.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray()
+                    this.xscp1s.second!!.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray(),
+                    this.xscp1s.third.map { Pair(it.first.copy(lin_ = lin, col_ = col),it.second.copy(lin_ = lin, col_ = col)) }.toTypedArray()
                 ),
                 this.xscp2s,
                 this.inp.aux(lin, col),
@@ -106,9 +107,10 @@ fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
             )
             is Type.Func -> Type.Func(
                 this.tk_.copy(lin_ = lin, col_ = col),
-                Pair (
+                Triple (
                     this.xscp1s.first?.copy(lin_ = lin, col_ = col),
-                    this.xscp1s.second!!.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray()
+                    this.xscp1s.second!!.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray(),
+                    this.xscp1s.third.map { Pair(it.first.copy(lin_ = lin, col_ = col),it.second.copy(lin_ = lin, col_ = col)) }.toTypedArray()
                 ),
                 this.xscp2s,
                 this.inp.aux(lin, col),

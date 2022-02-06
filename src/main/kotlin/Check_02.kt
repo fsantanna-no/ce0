@@ -115,7 +115,7 @@ fun check_02_after_tps (s: Stmt) {
                                 }
                                 Type.Func (
                                     this.tk_,
-                                    Pair(ret?.first,  this.xscp1s.second),
+                                    Triple(ret?.first,  this.xscp1s.second, this.xscp1s.third),
                                     Pair(ret?.second, this.xscp2s!!.second),
                                     this.inp.aux(dofunc),
                                     this.pub?.aux(dofunc),

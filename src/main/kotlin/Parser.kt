@@ -107,7 +107,7 @@ fun parser_type (all: All, tasks: Boolean=false): Type {
                 null
             }
             val at = all.check(TK.ATBRACK)
-            val (scps,_) = parser_scopepars(all)
+            val (scps,ctrs) = parser_scopepars(all)
             if (at) {
                 all.accept_err(TK.ARROW)
             }
@@ -121,7 +121,7 @@ fun parser_type (all: All, tasks: Boolean=false): Type {
             all.accept_err(TK.ARROW)
             val out = parser_type(all) // right associative
 
-            Type.Func(tk0, Pair(clo,scps), null, inp, pub, out)
+            Type.Func(tk0, Triple(clo,scps,ctrs), null, inp, pub, out)
         }
         all.accept(TK.ACTIVE) -> {
             val tk0 = all.tk0 as Tk.Key
@@ -511,10 +511,10 @@ fun parser_stmt (all: All): Stmt {
         all.accept(TK.TYPE) -> {
             all.accept_err(TK.XID)
             val id = all.tk0.astype()
-            val (scps,_) = parser_scopepars(all)
+            val (scps,ctrs) = parser_scopepars(all)
             all.accept_err(TK.CHAR,'=')
             val tp = parser_type(all)
-            Stmt.Typedef(id, scps, null, tp)
+            Stmt.Typedef(id, Pair(scps,ctrs), null, tp)
         }
         else -> {
             all.err_expected("statement")

@@ -16,7 +16,7 @@ fun Tk.Id.check (up: Any) {
             it is Stmt.Var   && this.id==it.tk_.id.toUpperCase()
         } -> true
         (up.ups_first {                                     // [@i1, ...] { @i1 }
-            it is Stmt.Typedef && (it.xscp1s.any { it.id==this.id })
+            it is Stmt.Typedef && (it.xscp1s.first.any { it.id==this.id })
          || it is Expr.Func    && (it.type.xscp1s.second?.any { it.id==this.id } ?: false)
         } != null) -> true
         else -> false
@@ -49,7 +49,7 @@ fun check_01_before_tps (s: Stmt) {
                 All_assert_tk(tp.tk, def is Stmt.Typedef) {
                     "undeclared type \"${tp.tk_.id}\""
                 }
-                val s1 = (def as Stmt.Typedef).xscp1s.size
+                val s1 = (def as Stmt.Typedef).xscp1s.first.size
                 val s2 = tp.xscp1s.size
                 All_assert_tk(tp.tk, s1 == s2) {
                     "invalid type : scope mismatch : expecting $s1, have $s2 argument(s)"

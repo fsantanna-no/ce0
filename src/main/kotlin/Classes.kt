@@ -11,7 +11,7 @@ sealed class Type (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Spawns  (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
     data class Func (
         val tk_: Tk.Key,
-        val xscp1s: Pair<Tk.Id?,Array<Tk.Id>>,   // first=closure scope, second=input scopes
+        val xscp1s: Triple<Tk.Id?,Array<Tk.Id>,Array<Pair<Tk.Id,Tk.Id>>>,   // first=closure scope, second=input scopes, third=input constraints
         var xscp2s: Pair<Scp2?,Array<Scp2>>?,
         val inp: Type, val pub: Type?, val out: Type
     ): Type(N++, tk_, null, null)
@@ -72,7 +72,7 @@ sealed class Stmt (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Block  (val tk_: Tk.Chr, val iscatch: Boolean, val xscp1: Tk.Id?, val body: Stmt) : Stmt(N++, tk_, null, null)
     data class Typedef (
         val tk_: Tk.Id,
-        val xscp1s: Array<Tk.Id>,
+        val xscp1s: Pair<Array<Tk.Id>,Array<Pair<Tk.Id,Tk.Id>>>,
         var xscp2s: Array<Scp2>?,
         val type: Type
     ) : Stmt(N++, tk_, null, null)
