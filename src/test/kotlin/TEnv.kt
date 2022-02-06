@@ -3093,4 +3093,21 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK") { out }
     }
+    @Test
+    fun q15 () {
+        val out = inp2env(
+            """
+            type Pair @[a,b: b>a] = [/_int@a, /_int@b]
+            {
+                var x: _int
+                {
+                    var y: _int
+                    var xy: Pair @[x,y]     -- OK
+                    var yx: Pair @[y,x]     -- NO
+                }
+            }
+        """.trimIndent()
+        )
+        assert(out == "(ln 7, col 17): invalid type : scope mismatch : constraint mismatch") { out }
+    }
 }

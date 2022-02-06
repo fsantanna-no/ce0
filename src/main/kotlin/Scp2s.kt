@@ -42,6 +42,9 @@ fun Tk.Id.toScp2 (up: Any): Scp2 {
 fun Stmt.setScp2s () {
     fun ft (tp: Type) {
         when (tp) {
+            is Type.Alias -> {
+                tp.xscp2s = tp.xscp1s.map { it.toScp2(tp) }.toTypedArray()
+            }
             is Type.Pointer -> {
                 tp.xscp2 = tp.xscp1?.toScp2(tp)
             }

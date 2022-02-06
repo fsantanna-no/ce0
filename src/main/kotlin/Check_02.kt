@@ -1,4 +1,30 @@
+
+
+fun check_ctrs (up: Any, dcl_xscp1s: Pair<Array<Tk.Id>, Array<Pair<String, String>>>, use_xscp2s: Array<Scp2>): Boolean {
+    val pairs = dcl_xscp1s.first.map { it.id }.zip(use_xscp2s!!)
+    dcl_xscp1s.second.forEach { ctr ->   // for each constraint
+        // check if call args (x,y) respect this contraint
+        val x = pairs.find { it.first==ctr.first  }!!.second
+        val y = pairs.find { it.first==ctr.second }!!.second
+        if (!x.isNestIn(y,up)) {
+            return false
+        }
+    }
+    return true
+}
+
 fun check_02_after_tps (s: Stmt) {
+    fun ft (tp: Type) {
+        when (tp) {
+            is Type.Alias -> {
+                val def = tp.env(tp.tk_.id) as Stmt.Typedef
+                All_assert_tk(tp.tk, check_ctrs(tp,def.xscp1s,tp.xscp2s!!)) {
+                    "invalid type : scope mismatch : constraint mismatch"
+                }
+            }
+        }
+    }
+
     val funcs = mutableSetOf<Expr.Func>()   // funcs with checked [@] closure
     fun fe (e: Expr) {
         when (e) {
@@ -51,7 +77,7 @@ fun check_02_after_tps (s: Stmt) {
                 val ret1 = e.wtype!!
                 val arg1 = e.arg.wtype!!
 
-                val (scps1,inp1,out1) = when (func) {
+                val (scp1s,inp1,out1) = when (func) {
                     is Type.Spawn  -> Triple(Pair(func.tsk.xscp1s.second,func.tsk.xscp1s.third),func.tsk.inp,func.tsk.out)
                     is Type.Spawns -> Triple(Pair(func.tsk.xscp1s.second,func.tsk.xscp1s.third),func.tsk.inp,func.tsk.out)
                     is Type.Func   -> Triple(Pair(func.xscp1s.second,func.xscp1s.third),func.inp,func.out)
@@ -59,22 +85,13 @@ fun check_02_after_tps (s: Stmt) {
                     else -> error("impossible case")
                 }
 
-                val s1 = scps1.first.size
+                val s1 = scp1s.first.size
                 val s2 = e.xscp1s.first.size
                 All_assert_tk(e.tk, s1 == s2) {
                     "invalid call : scope mismatch : expecting $s1, have $s2 argument(s)"
                 }
-
-                //println(e.xscp2s!!.first.toList())
-                // [(a1, 2), (a2, 1)]
-                val pairs = scps1.first.map { it.id }.zip(e.xscp2s!!.first)
-                scps1.second.forEach { ctr ->   // for each constraint
-                    // check if call args (x,y) respect this contraint
-                    val x = pairs.find { it.first==ctr.first  }!!.second
-                    val y = pairs.find { it.first==ctr.second }!!.second
-                    All_assert_tk(e.tk, x.isNestIn(y,e)) {
-                        "invalid call : scope mismatch : constraint mismatch"
-                    }
+                All_assert_tk(e.tk, check_ctrs(e,scp1s,e.xscp2s!!.first)) {
+                    "invalid call : scope mismatch : constraint mismatch"
                 }
 
                 // Original call:
@@ -83,7 +100,7 @@ fun check_02_after_tps (s: Stmt) {
 
                 // Map from f->call
                 //      { a1=(scp1(LOCAL),scp2(LOCAL) }
-                val map = scps1.first
+                val map = scp1s.first
                     .map { it.id }
                     .zip(e.xscp1s.first.zip(e.xscp2s!!.first))
                     .toMap()
@@ -223,5 +240,5 @@ fun check_02_after_tps (s: Stmt) {
             }
         }
     }
-    s.visit(false, ::fs, ::fe, null)
+    s.visit(false, ::fs, ::fe, ::ft)
 }
