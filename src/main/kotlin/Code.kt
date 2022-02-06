@@ -58,7 +58,7 @@ fun code_ft (tp: Type) {
                         Block* blks[${tp.xscp1s.second.size}];
                         struct {
                             ${tp.xscp1s.second.let { if (it.size == 0) "" else
-                    it.map { "Block* ${it.first.id};\n" }.joinToString("") }
+                    it.map { "Block* ${it.id};\n" }.joinToString("") }
                 }
                         };
                     };

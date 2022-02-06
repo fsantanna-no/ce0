@@ -75,6 +75,8 @@ fun check_02_after_tps (s: Stmt) {
                 All_assert_tk(e.tk, s1 == s2) {
                     "invalid call : scope mismatch : expecting $s1, have $s2 argument(s)"
                 }
+
+                /*
                 var i = 0
                 e.xscp1s.first
                     .zip(e.xscp2s!!.first.map { it.depth })
@@ -86,6 +88,7 @@ fun check_02_after_tps (s: Stmt) {
                         }
                         i = it.second.second
                     }
+                 */
 
                 // Original call:
                 //      var f: (func @[a1]->/()@a1->())
@@ -94,7 +97,7 @@ fun check_02_after_tps (s: Stmt) {
                 // Map from f->call
                 //      { a1=(scp1(LOCAL),scp2(LOCAL) }
                 val map = scps1
-                    .map { it.first.id }
+                    .map { it.id }
                     .zip(e.xscp1s.first.zip(e.xscp2s!!.first))
                     .toMap()
 
@@ -123,7 +126,7 @@ fun check_02_after_tps (s: Stmt) {
                                 }
                                 Type.Func (
                                     this.tk_,
-                                    Pair(ret?.first,  this.xscp1s.second),
+                                    Triple(ret?.first,  this.xscp1s.second, this.xscp1s.third),
                                     Pair(ret?.second, this.xscp2s!!.second),
                                     this.inp.aux(dofunc),
                                     this.pub?.aux(dofunc),

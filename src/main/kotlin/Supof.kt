@@ -35,7 +35,7 @@ fun Type.isSupOf (sub: Type): Boolean {
 // var g: func @[] -> {@a,@b,@c} -> [/</^@a>@a,/</^@b>@b] -> /</^@c>@c
 fun Type.Func.mapLabels (up: Any): Type.Func {
     val fst = this.xscp1s.first.let { if (it==null) emptyList() else listOf(it) }
-    val snd = this.xscp1s.second.map { it.first }
+    val snd = this.xscp1s.second.map { it }
     val scps: List<String> = (fst + snd).map { it.id }
     val MAP: Map<String, String> = scps.zip((1..scps.size).map { 'a'+it-1+"" }).toMap()
     fun Type.aux (): Type {

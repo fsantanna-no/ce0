@@ -45,7 +45,7 @@ fun Stmt.setTypes () {
                             Type.Nat(Tk.Nat(TK.NATIVE, e.tk.lin, e.tk.col, null, "ERR")).clone(e, e.tk.lin, e.tk.col)
                         } else {
                             val MAP: List<Pair<Tk.Id, Pair<Tk.Id, Scp2>>> =
-                                tpd.xscp1s.second.map { it.first }.zip(e.xscp1s.first.zip(e.xscp2s!!.first))
+                                tpd.xscp1s.second.zip(e.xscp1s.first.zip(e.xscp2s!!.first))
 
                             fun Tk.Id.get(scp2: Scp2): Pair<Tk.Id, Scp2> {
                                 return MAP.find { it.first.let { it.id == this.id } }?.second
@@ -68,11 +68,11 @@ fun Stmt.setTypes () {
                                     is Type.Func -> {
                                         val clo = this.xscp1s.first?.get(this.xscp2s!!.first!!)
                                         val (x1, x2) = this.xscp1s.second.zip(this.xscp2s!!.second)
-                                            .map { it.first.first.get(it.second) }
+                                            .map { it.first.get(it.second) }
                                             .unzip()
                                         Type.Func(
                                             this.tk_,
-                                            Pair(clo?.first, x1.map { Pair(it,0) }.toTypedArray()), // TODO: depth=0??
+                                            Triple(clo?.first, x1.toTypedArray(), this.xscp1s.third), // TODO: third
                                             Pair(clo?.second, x2.toTypedArray()),
                                             this.inp.map(),
                                             this.pub?.map(),

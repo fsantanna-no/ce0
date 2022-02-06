@@ -11,7 +11,7 @@ fun Type.tostr (): String {
         is Type.Pointer -> this.xscp1.let { "/" + this.pln.tostr() + " @" + it.id }
         is Type.Tuple   -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union   -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
-        is Type.Func    -> this.tk_.key + this.xscp1s.first.clo() + " @[" + this.xscp1s.second!!.map { it.first.id }.joinToString(",") + "] -> " + this.inp.tostr() + " -> " + this.pub.let { if (it == null) "" else it.tostr() + " -> " } + this.out.tostr()
+        is Type.Func    -> this.tk_.key + this.xscp1s.first.clo() + " @[" + this.xscp1s.second!!.map { it.id }.joinToString(",") + "] -> " + this.inp.tostr() + " -> " + this.pub.let { if (it == null) "" else it.tostr() + " -> " } + this.out.tostr()
         is Type.Spawn   -> "active " + this.tsk.tostr()
         is Type.Spawns  -> "active " + this.tsk.tostr()
     }
@@ -59,9 +59,10 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
             )
             is Type.Func -> Type.Func(
                 this.tk_.copy(lin_ = lin, col_ = col),
-                Pair (
+                Triple (
                     this.xscp1s.first?.copy(lin_ = lin, col_ = col),
-                    this.xscp1s.second.map { Pair(it.first.copy(lin_ = lin, col_ = col),it.second) }.toTypedArray()
+                    this.xscp1s.second.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray(),
+                    this.xscp1s.third
                 ),
                 this.xscp2s,
                 this.inp.aux(lin, col),
@@ -106,9 +107,10 @@ fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
             )
             is Type.Func -> Type.Func(
                 this.tk_.copy(lin_ = lin, col_ = col),
-                Pair (
+                Triple (
                     this.xscp1s.first?.copy(lin_ = lin, col_ = col),
-                    this.xscp1s.second!!.map { Pair(it.first.copy(lin_ = lin, col_ = col),it.second) }.toTypedArray()
+                    this.xscp1s.second!!.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray(),
+                    this.xscp1s.third
                 ),
                 this.xscp2s,
                 this.inp.aux(lin, col),

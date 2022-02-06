@@ -30,6 +30,7 @@ fun Tk.Id.toScp2 (up: Any): Scp2 {
                 val umn = if (this.id=="arg")   1 else 0   // "arg" is in between Func-arg-Block
                 Scp2(lvl, null, one - umn + blk.ups_tolist().let { it.count{it is Stmt.Block} + 2*it.count{it is Expr.Func} })
             } else {
+                /*
                 // @a1, @i2, ...
                 println(this)
                 println(up.ups_tolist())
@@ -40,9 +41,11 @@ fun Tk.Id.toScp2 (up: Any): Scp2 {
                 } as Type.Func).let {
                     println(it.xscp1s.second)
                     println(this.id)
-                    it.xscp1s.second.find { it.first.id==this.id }!!.second
+                    it.xscp1s.second.find { it.id==this.id }!!.second
                 }
-                Scp2(lvl, this.id, depth)
+
+                 */
+                Scp2(lvl, this.id, 999) // TODO
             }
         }
     }
@@ -55,7 +58,7 @@ fun Stmt.setScp2s () {
                 tp.xscp2 = tp.xscp1?.toScp2(tp)
             }
             is Type.Func -> {
-                tp.xscp2s = Pair(tp.xscp1s.first?.toScp2(tp), tp.xscp1s.second!!.map { it.first.toScp2(tp) }.toTypedArray())
+                tp.xscp2s = Pair(tp.xscp1s.first?.toScp2(tp), tp.xscp1s.second!!.map { it.toScp2(tp) }.toTypedArray())
             }
         }
     }

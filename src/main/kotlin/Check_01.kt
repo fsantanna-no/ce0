@@ -16,8 +16,8 @@ fun Tk.Id.check (up: Any) {
             it is Stmt.Var   && this.id==it.tk_.id.toUpperCase()
         } -> true
         (up.ups_first {                                     // [@i1, ...] { @i1 }
-            it is Stmt.Typedef && (it.xscp1s.any { it.first.id==this.id })
-         || it is Expr.Func    && (it.type.xscp1s.second?.any { it.first.id==this.id } ?: false)
+            it is Stmt.Typedef && (it.xscp1s.first.any { it.id==this.id })
+         || it is Expr.Func    && (it.type.xscp1s.second?.any { it.id==this.id } ?: false)
         } != null) -> true
         else -> false
     }
@@ -49,7 +49,7 @@ fun check_01_before_tps (s: Stmt) {
                 All_assert_tk(tp.tk, def is Stmt.Typedef) {
                     "undeclared type \"${tp.tk_.id}\""
                 }
-                val s1 = (def as Stmt.Typedef).xscp1s.size
+                val s1 = (def as Stmt.Typedef).xscp1s.first.size
                 val s2 = tp.xscp1s.size
                 All_assert_tk(tp.tk, s1 == s2) {
                     "invalid type : scope mismatch : expecting $s1, have $s2 argument(s)"
@@ -77,7 +77,7 @@ fun check_01_before_tps (s: Stmt) {
                         //(ptr.id == "LOCAL")  -> true
                         (
                             tp.xscp1s.first.let  { it!=null && ptr.id==it.id } || // {@a} ...@a
-                            tp.xscp1s.second?.any { ptr.id==it.first.id } ?: false      // (@i1 -> ...@i1...)
+                            tp.xscp1s.second?.any { ptr.id==it.id } ?: false      // (@i1 -> ...@i1...)
                         ) -> true
                         (tp.ups_first {                     // { @aaa \n ...@aaa... }
                             it is Stmt.Block && it.xscp1.let { it!=null && it.id==ptr.id }
@@ -123,7 +123,7 @@ fun check_01_before_tps (s: Stmt) {
             is Expr.Func -> {
                 val outers = e.ups_tolist().filter { it is Expr.Func } as List<Expr.Func>
                 for (f in outers) {
-                    val err = f.type.xscp1s.second?.find { scp2 -> e.type.xscp1s.second!!.any { scp1 -> scp1.first.id==scp2.first.id } }?.first
+                    val err = f.type.xscp1s.second?.find { scp2 -> e.type.xscp1s.second!!.any { scp1 -> scp1.id==scp2.id } }
                     All_assert_tk(e.tk, err==null) {
                         "invalid scope : \"${err!!.id}\" is already declared (ln ${err!!.lin})"
                     }
