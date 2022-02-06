@@ -70,44 +70,26 @@ fun check_02_after_tps (s: Stmt) {
                     else -> error("impossible case")
                 }
 
-/*
-                // { [id]={1=depth,2=depth} }
-                // { [""]={[1]=@LOCAL, [2]=@aaa, ...}
-                val acc = mutableMapOf<String,MutableMap<Int,Pair<Tk.Id,Scp2>>>()
+                // Original call:
+                //      var f: (func @[a1]->/()@a1->())
+                //      call f @[LOCAL] /x
 
-                // check scopes, build acc
-                // var f: (... -> {@i1,@_2,...} -> ...)
-                // call f {@a,@b,...} ...
-                if (scps1 != null) {
-                    All_assert_tk(e.tk, scps1.size == e.xscp1s.first.size) {
-                        "invalid call : scope mismatch"
-                    }
-                    scps1.zip(e.xscp1s.first.zip(e.xscp2s!!.first)).forEach { (ff,ee) ->
-                        val num   = ff.num!!
-                        acc[ff.id].let {
-                            if (it == null) {
-                                acc[ff.id] = mutableMapOf(Pair(num,ee))
-                            } else {
-                                val d1 = ee.second.depth
-                                val ok = it.all {
-                                    val d2 = it.value.second.depth
-                                    when {
-                                        (it.key == num) -> (d2 == d1)
-                                        (it.key > num)  -> (d2 >= d1)
-                                        (it.key < num)  -> (d2 <= d1)
-                                        else -> error("bug found")
-                                    }
-                                }
-                                All_assert_tk(ee.first, ok) {
-                                    "invalid call : scope mismatch"
-                                }
-                                it[num] = ee
-                            }
+                // Map from f->call
+                //      { a1=(scp1(LOCAL),scp2(LOCAL) }
+                val map = if (scps1 == null) {
+                    emptyMap()
+                } else {
+                    scps1.map { it.id }
+                        .zip(e.xscp1s.first.zip(e.xscp2s!!.first))
+                        .toMap().let {
+                            println(it)
+                            it
                         }
-                    }
                 }
 
-                // transform inp2, out2 to use scopes from the call @LOCAL... (vs arg scopes @a1...)
+                // Transform f->call
+                //      var f: (func @[LOCAL]->/()@LOCAL -> ())
+                //      call f @[LOCAL] /x
                 val (inp2,out2) = if (func !is Type.Func) Pair(inp1,out1) else
                 {
                     fun Type.aux (dofunc: Boolean): Type {
@@ -115,21 +97,18 @@ fun check_02_after_tps (s: Stmt) {
                             is Type.Unit, is Type.Nat, is Type.Rec, is Type.Alias -> this
                             is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.aux(dofunc) }.toTypedArray())
                             is Type.Union -> Type.Union(this.tk_, this.isrec, this.vec.map { it.aux(dofunc) }.toTypedArray())
-                            is Type.Ptr -> {
-                                val ret = this.xscp1.let { scp ->
-                                    acc[scp.id].let { if (it == null) null else it[scp.num]!! }
-                                }
-                                if (ret == null) this else {
-                                    Type.Ptr(this.tk_, ret.first, ret.second, this.pln.aux(dofunc))
+                            is Type.Pointer -> {
+                                map[this.xscp1.id].let {
+                                    if (it == null) {
+                                        this
+                                    } else {
+                                        Type.Pointer(this.tk_, it.first, it.second, this.pln.aux(dofunc))
+                                    }
                                 }
                             }
                             is Type.Func -> if (!dofunc) this else {
-                                val ret = this.xscp1s.first.let { scp ->
-                                    if (scp == null) {
-                                        null
-                                    } else {
-                                        acc[scp.id].let { if (it == null) Pair(this.xscp1s.first,this.xscp2s!!.first) else it[scp.num]!! }
-                                    }
+                                val ret = this.xscp1s.first?.let { me ->
+                                    map[me.id].let { it ?: Pair(this.xscp1s.first,this.xscp2s!!.first) }
                                 }
                                 Type.Func (
                                     this.tk_,
@@ -148,8 +127,8 @@ fun check_02_after_tps (s: Stmt) {
                         out1.aux(true).clone(e,e.tk.lin,e.tk.col)
                     )
                 }
-*/
-                val (inp2,out2) = Pair(inp1,out1)
+
+                //val (inp2,out2) = Pair(inp1,out1)
                 /*
                 //print("INP1: ") ; println(inp1.tostr())
                 //print("INP2: ") ; println(inp2.tostr())
@@ -229,7 +208,7 @@ fun check_02_after_tps (s: Stmt) {
             is Stmt.Set -> {
                 val dst = s.dst.wtype!!
                 val src = s.src.wtype!!
-                //println(">>> SET") ; println(s.dst) ; println(s.src) ; println(dst.tostr()) ; println(src.tostr())
+                println(">>> SET") ; println(s.dst) ; println(s.src) ; println(dst.tostr()) ; println(src.tostr())
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
                     val str = if (s.dst is Expr.Var && s.dst.tk_.id == "ret") "return" else "assignment"
                     "invalid $str : ${mismatch(dst,src)}"

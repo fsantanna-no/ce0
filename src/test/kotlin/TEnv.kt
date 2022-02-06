@@ -833,7 +833,7 @@ class TEnv {
                 }
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 15): invalid assignment : type mismatch") { out }
+        assert(out.startsWith("(ln 7, col 15): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun e15_call_err () {
@@ -878,7 +878,7 @@ class TEnv {
     @Test
     fun e18_call_err () {
         val out = inp2env("""
-            var f:       func@[a1,a2]->[/()@a2,/()@a1]->()
+            var f : func@[a1,a2]->[/()@a2,/()@a1]->()
             set f = func@[a1,a2]->[/()@a1,/()@a2]->() { }   -- err
         """.trimIndent())
         assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
@@ -965,8 +965,8 @@ class TEnv {
     @Test
     fun e20_arg_err () {
         val out = inp2env("""
-            var f: /(func@[a1,a2]->/()@a2->/()@a1)@LOCAL
-            set f = func@[a1,a2]->/()@a2->/()@a1 {
+            var f : /(func@[a1,a2]->/()@a2->/()@a1)@LOCAL
+            set f =   func@[a1,a2]->/()@a2->/()@a1 {
                 set ret = arg
                 return
             }
