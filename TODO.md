@@ -1,9 +1,15 @@
-- remove type visit hack
+- ce1 <- ce0 (type)
+  - type List = </List>
+    - must infer @[a]
+      - type List @[a] = </List @[a] @a>
+    - and not
+      - type List = </List @LOCAL>
+  
+- pico-ce
 - type List = List
 - change @[@a1,@a2] -> @[a,b: a>b]
   - check constraint in func comparison
 - accept @A vs var a
-- pico-ce
 - var z = spawn h ()
   - optional in ce0?
   - optional in ce1?

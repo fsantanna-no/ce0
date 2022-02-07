@@ -16,7 +16,7 @@ fun Tk.Id.check (up: Any) {
             it is Stmt.Var   && this.id==it.tk_.id.toUpperCase()
         } -> true
         (up.ups_first {                                     // [@i1, ...] { @i1 }
-            it is Stmt.Typedef && (it.xscp1s.first.any { it.id==this.id })
+            it is Stmt.Typedef && (it.xscp1s.first!!.any { it.id==this.id })
          || it is Expr.Func    && (it.type.xscp1s.second?.any { it.id==this.id } ?: false)
         } != null) -> true
         else -> false
@@ -33,8 +33,8 @@ fun Expr.UNull.check () {
 }
 
 fun Expr.UCons.check () {
-    All_assert_tk(this.xtype!!.tk, this.xtype.let { it.noalias() is Type.Union }) { "invalid type : expected union"}
-    val uni = this.xtype.noalias() as Type.Union
+    All_assert_tk(this.xtype!!.tk, this.xtype.let { it?.noalias() is Type.Union }) { "invalid type : expected union"}
+    val uni = this.xtype?.noalias() as Type.Union
     val ok = (uni.vec.size >= this.tk_.num)
     All_assert_tk(this.tk, ok) {
         "invalid union constructor : out of bounds"
@@ -49,8 +49,8 @@ fun check_01_before_tps (s: Stmt) {
                 All_assert_tk(tp.tk, def is Stmt.Typedef) {
                     "undeclared type \"${tp.tk_.id}\""
                 }
-                val s1 = (def as Stmt.Typedef).xscp1s.first.size
-                val s2 = tp.xscp1s.size
+                val s1 = (def as Stmt.Typedef).xscp1s.first!!.size
+                val s2 = tp.xscp1s!!.size
                 All_assert_tk(tp.tk, s1 == s2) {
                     "invalid type : scope mismatch : expecting $s1, have $s2 argument(s)"
                 }
@@ -59,7 +59,7 @@ fun check_01_before_tps (s: Stmt) {
             is Type.Func -> {
                 tp.xscp1s.first?.check(tp)
                 val ptrs = (tp.inp.flattenLeft() + tp.out.flattenLeft()).filter { it is Type.Pointer } as List<Type.Pointer>
-                val ok1 = ptrs.all {
+                val ok = ptrs.all {
                     val ptr = it.xscp1!!
                     when {
                         (ptr.id == "GLOBAL") -> true
@@ -75,7 +75,7 @@ fun check_01_before_tps (s: Stmt) {
                     }
                 }
                 // all pointers must be listed either in "func.clo" or "func.scps"
-                All_assert_tk(tp.tk, ok1) {
+                All_assert_tk(tp.tk, ok) {
                     "invalid function type : missing scope argument"
                 }
             }

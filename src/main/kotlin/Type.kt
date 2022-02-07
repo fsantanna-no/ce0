@@ -5,9 +5,9 @@ fun Type.tostr (): String {
     }
     return when (this) {
         is Type.Unit    -> "()"
-        is Type.Alias   -> this.tk_.id + this.xscp1s.let { if (it.size==0) "" else " @["+it.map { it.id }.joinToString(",")+"]" }
+        is Type.Alias   -> this.tk_.id + this.xscp1s!!.let { if (it.size==0) "" else " @["+it.map { it.id }.joinToString(",")+"]" }
         is Type.Nat     -> this.tk_.toce()
-        is Type.Pointer -> this.xscp1.let { "/" + this.pln.tostr() + " @" + it.id }
+        is Type.Pointer -> this.xscp1!!.let { "/" + this.pln.tostr() + "@" + it.id }
         is Type.Tuple   -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union   -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
         is Type.Func    -> this.tk_.key + this.xscp1s.first.clo() + " @[" + this.xscp1s.second!!.map { it.id }.joinToString(",") + "] -> " + this.inp.tostr() + " -> " + this.pub.let { if (it == null) "" else it.tostr() + " -> " } + this.out.tostr()
@@ -59,7 +59,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
                 this.tk_.copy(lin_ = lin, col_ = col),
                 Triple (
                     this.xscp1s.first?.copy(lin_ = lin, col_ = col),
-                    this.xscp1s.second.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray(),
+                    this.xscp1s.second!!.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray(),
                     this.xscp1s.third
                 ),
                 this.xscp2s,
@@ -104,7 +104,7 @@ fun Type.noalias (): Type {
         //      typedef Pair @[LOCAL] = [/_int@LOCAL,/_int@LOCAL]
         //      var xy: Pair @[LOCAL] = [/x,/y]
 
-        def.toType().mapScps(this.tk,this, Pair(def.xscp1s.first, this.xscp1s.zip(this.xscp2s ?: emptyArray()).toTypedArray()), false)
+        def.toType().mapScps(this.tk,this, Pair(def.xscp1s.first!!, this.xscp1s!!.zip(this.xscp2s ?: emptyArray()).toTypedArray()), false)
     }
 }
 
@@ -154,7 +154,7 @@ fun Type.mapScps (tk: Tk, up: Any, scps: Pair<Array<Tk.Id>, Array<Pair<Tk.Id,Scp
             is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.aux(dofunc) }.toTypedArray())
             is Type.Union -> Type.Union(this.tk_, this.vec.map { it.aux(dofunc) }.toTypedArray())
             is Type.Pointer -> {
-                map[this.xscp1.id].let {
+                map[this.xscp1!!.id].let {
                     if (it == null) {
                         this
                     } else {

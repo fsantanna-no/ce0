@@ -43,10 +43,10 @@ fun Stmt.setScp2s () {
     fun ft (tp: Type) {
         when (tp) {
             is Type.Alias -> {
-                tp.xscp2s = tp.xscp1s.map { it.toScp2(tp) }.toTypedArray()
+                tp.xscp2s = tp.xscp1s!!.map { it.toScp2(tp) }.toTypedArray()
             }
             is Type.Pointer -> {
-                tp.xscp2 = tp.xscp1?.toScp2(tp)
+                tp.xscp2 = tp.xscp1!!.toScp2(tp)
             }
             is Type.Func -> {
                 tp.xscp2s = Pair(tp.xscp1s.first?.toScp2(tp), tp.xscp1s.second!!.map { it.toScp2(tp) }.toTypedArray())
