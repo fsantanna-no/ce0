@@ -18,6 +18,11 @@ fun check_02_after_tps (s: Stmt) {
         when (tp) {
             is Type.Alias -> {
                 val def = tp.env(tp.tk_.id) as Stmt.Typedef
+                val s1 = def.xscp1s.first!!.size
+                val s2 = tp.xscp1s!!.size
+                All_assert_tk(tp.tk, s1 == s2) {    // xsc1ps may not be available in Check_01
+                    "invalid type : scope mismatch : expecting $s1, have $s2 argument(s)"
+                }
                 All_assert_tk(tp.tk, check_ctrs(tp,def.xscp1s,tp.xscp2s!!)) {
                     "invalid type : scope mismatch : constraint mismatch"
                 }

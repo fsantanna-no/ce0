@@ -49,11 +49,6 @@ fun check_01_before_tps (s: Stmt) {
                 All_assert_tk(tp.tk, def is Stmt.Typedef) {
                     "undeclared type \"${tp.tk_.id}\""
                 }
-                val s1 = (def as Stmt.Typedef).xscp1s.first!!.size
-                val s2 = tp.xscp1s!!.size
-                All_assert_tk(tp.tk, s1 == s2) {
-                    "invalid type : scope mismatch : expecting $s1, have $s2 argument(s)"
-                }
             }
             is Type.Pointer -> tp.xscp1?.check(tp)
             is Type.Func -> {
