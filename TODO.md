@@ -3,8 +3,6 @@
 - retomar TEnv.q14,m01_scope_a
 - check constraint in func comparison
 - accept @A vs var a
-- simplify scp1s check, move to separate funcion, reuse bt/w Type/Call/isSupOf/check01
-- verify List ... args to @[] pars
 - remove ^, substitute all examples with type List
   -  Alias.xisrec: Boolean
 - parametric type @a

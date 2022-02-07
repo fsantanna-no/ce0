@@ -1780,11 +1780,12 @@ class TExec {
     @Test
     fun z06_type_complex () {
         val out = all("""
-            var x: /<[(),/^ @LOCAL]> @LOCAL
-            set x = new <.1 [(),<.0>: /<[(),/^ @LOCAL]>@LOCAL]>:<[(),/^ @LOCAL]>: @LOCAL
-            var y: [(),/<[(),/^ @LOCAL]> @LOCAL]
-            set y = [(), new <.1 [(),<.0>: /<[(),/^ @LOCAL]>@LOCAL]>:<[(),/^ @LOCAL]>: @LOCAL]
-            var z: [(),//<[(),/^ @LOCAL]> @LOCAL @LOCAL]
+            type List @[a] = <[(),/List@[a]@a]>
+            var x: /(List @[LOCAL]) @LOCAL
+            set x = new <.1 [(),<.0>: /(List @[LOCAL])@LOCAL]>:(List @[LOCAL]): @LOCAL
+            var y: [(),/(List @[LOCAL]) @LOCAL]
+            set y = [(), new <.1 [(),<.0>: /(List @[LOCAL])@LOCAL]>:(List @[LOCAL]): @LOCAL]
+            var z: [(),//(List @[LOCAL]) @LOCAL @LOCAL]
             set z = [(), /x]
             output std z.2\\!1.2\!0
         """.trimIndent())
@@ -1793,9 +1794,10 @@ class TExec {
     @Test
     fun z07_type_complex_bug () {
         val out = all("""
-            var x: /<[(),/^ @LOCAL]> @LOCAL
-            set x = <.0>: /<[(),/^ @LOCAL]> @LOCAL
-            var z: [(),//<[(),/^ @LOCAL]> @LOCAL @LOCAL]
+            type List @[a] = <[(),/List@[a]@a]>
+            var x: /(List @[LOCAL]) @LOCAL
+            set x = <.0>: /(List @[LOCAL]) @LOCAL
+            var z: [(),//(List @[LOCAL]) @LOCAL @LOCAL]
             set z = [(), /x]
             output std z.2\\!0
         """.trimIndent())
@@ -1804,9 +1806,10 @@ class TExec {
     @Test
     fun z07_type_complex () {
         val out = all("""
-            var x: /<[(),/^ @LOCAL]> @LOCAL
-            set x = <.0>: /<[(),/^ @LOCAL]> @LOCAL
-            var z: [(),//<[(),/^ @LOCAL]> @LOCAL @LOCAL]
+            type List @[a] = <[(),/List@[a]@a]>
+            var x: /(List @[LOCAL]) @LOCAL
+            set x = <.0>: /(List @[LOCAL]) @LOCAL
+            var z: [(),//(List @[LOCAL]) @LOCAL @LOCAL]
             set z = [(), /x]
             output std z.2\\!0
         """.trimIndent())
@@ -1825,8 +1828,9 @@ class TExec {
     @Test
     fun z08_type_complex () {
         val out = all("""
-            var y : [(),/<[(),/^ @LOCAL]> @LOCAL]
-            set y = [(), new <.1 [(),<.0>:/<[(),/^ @LOCAL]> @LOCAL]>:<[(),/^ @LOCAL]>: @LOCAL]
+            type List @[a] = <[(),/List@[a]@a]>
+            var y : [(),/(List @[LOCAL]) @LOCAL]
+            set y = [(), new <.1 [(),<.0>:/(List @[LOCAL]) @LOCAL]>:(List @[LOCAL]): @LOCAL]
             output std /y
         """.trimIndent())
         assert(out == "[(),<.1 [(),<.0>]>]\n") { out }
@@ -1872,10 +1876,11 @@ class TExec {
     @Test
     fun z09_output_string () {
         val out = all("""
+            type List @[a] = <[_int,/List @[a] @a]>
             var f: (func   ()->() )
             set f = func ()->() {
-                var s1: /<[_int,/^ @LOCAL]> @LOCAL
-                set s1 = new <.1 [_1:_int,<.0>: /<[_int,/^ @LOCAL]> @LOCAL]>:<[_int,/^ @LOCAL]>: @LOCAL
+                var s1: /(List @[LOCAL]) @LOCAL
+                set s1 = new <.1 [_1:_int,<.0>: /(List @[LOCAL]) @LOCAL]>:(List @[LOCAL]): @LOCAL
                 output std s1
             }
             call f ()
@@ -1885,10 +1890,11 @@ class TExec {
     @Test
     fun z10_output_string () {
         val out = all("""
+            type List @[a] = <[_int,/List @[a] @a]>
             var f: func@[]-> ()->()
             set f = func ()->() {
-                var s1: /<[_int,/^ @LOCAL]> @LOCAL
-                set s1 = new <.1 [_1:_int,<.0>: /<[_int,/^ @LOCAL]> @LOCAL]>:<[_int,/^ @LOCAL]>: @LOCAL
+                var s1: /(List @[LOCAL]) @LOCAL
+                set s1 = new <.1 [_1:_int,<.0>: /(List @[LOCAL]) @LOCAL]>:(List @[LOCAL]): @LOCAL
                 output std s1
             }
             call f ()
@@ -1898,13 +1904,14 @@ class TExec {
     @Test
     fun z10_return_move () {
         val out = all("""
-            var f: func@[i1]-> ()-><(),_int,/<[_int,/^@i1]>@i1>
-            set f = func@[i1]-> ()-><(),_int,/<[_int,/^@i1]>@i1> {
-                var str: /<[_int,/^@i1]> @i1
-                set str = <.0>: /<[_int,/^@i1]> @i1
-                set ret = <.3 str>:<(),_int,/<[_int,/^@i1]>@i1>
+            type List @[a] = <[_int,/List @[a] @a]>
+            var f: func@[i]-> ()-><(),_int,/(List @[i])@i>
+            set f = func@[i]-> ()-><(),_int,/(List @[i])@i> {
+                var str: /(List @[i]) @i
+                set str = <.0>: /(List @[i]) @i
+                set ret = <.3 str>:<(),_int,/(List @[i])@i>
             }
-            var x: <(),_int,/<[_int,/^@LOCAL]>@LOCAL>
+            var x: <(),_int,/(List @[LOCAL])@LOCAL>
             set x = f @[LOCAL] ()
             output std x!3
         """.trimIndent())
@@ -1922,9 +1929,10 @@ class TExec {
     @Test
     fun z12_union_tuple () {
         val out = all("""
-            var tk2: <(),_int,/<[_int,/^ @LOCAL]> @LOCAL>
-            set tk2 = <.3 <.0>:/<[_int,/^ @LOCAL]> @LOCAL>: <(),_int,/<[_int,/^ @LOCAL]> @LOCAL>
-            var s21: /<(),_int,/<[_int,/^ @LOCAL]> @LOCAL> @LOCAL
+            type List @[a] = <[_int,/List @[a] @a]>
+            var tk2: <(),_int,/(List @[LOCAL]) @LOCAL>
+            set tk2 = <.3 <.0>:/(List @[LOCAL]) @LOCAL>: <(),_int,/(List @[LOCAL]) @LOCAL>
+            var s21: /<(),_int,/(List @[LOCAL]) @LOCAL> @LOCAL
             set s21 = /tk2
             output std s21\!3
         """.trimIndent())
