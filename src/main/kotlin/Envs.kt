@@ -82,14 +82,14 @@ fun Expr.setEnvs (env: Any?) {
     }
     when (this) {
         is Expr.Var   -> {}
-        is Expr.Unit  -> this.wtype?.visit(false, ::ft)
-        is Expr.Nat   -> this.xtype?.visit(false, ::ft)
+        is Expr.Unit  -> this.wtype?.visit(::ft)
+        is Expr.Nat   -> this.xtype?.visit(::ft)
         is Expr.TCons -> this.arg.forEachIndexed { _,e -> e.setEnvs(env) }
         is Expr.UCons -> {
-            this.xtype?.visit(false, ::ft)
+            this.xtype?.visit(::ft)
             this.arg.setEnvs(env)
         }
-        is Expr.UNull -> this.xtype?.visit(false, ::ft)
+        is Expr.UNull -> this.xtype?.visit(::ft)
         is Expr.New   -> this.arg.setEnvs(env)
         is Expr.Dnref -> this.ptr.setEnvs(env)
         is Expr.Upref -> this.pln.setEnvs(env)
@@ -102,7 +102,7 @@ fun Expr.setEnvs (env: Any?) {
             this.arg.setEnvs(env)
         }
         is Expr.Func  -> {
-            this.type?.visit(false, ::ft)
+            this.type?.visit(::ft)
             this.block.setEnvs(this)
         }
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
@@ -116,14 +116,14 @@ fun Stmt.setEnvs (env: Any?): Any? {
     }
     return when (this) {
         is Stmt.Nop, is Stmt.Native, is Stmt.Return, is Stmt.Break, is Stmt.Throw -> env
-        is Stmt.Var    -> { this.xtype?.visit(false, ::ft) ; this }
+        is Stmt.Var    -> { this.xtype?.visit(::ft) ; this }
         is Stmt.Set    -> { this.dst.setEnvs(env) ; this.src.setEnvs(env) ; env }
         is Stmt.SCall  -> { this.e.setEnvs(env) ; env }
         is Stmt.SSpawn -> { this.dst.setEnvs(env) ; this.call.setEnvs(env) ; env }
         is Stmt.DSpawn -> { this.dst.setEnvs(this) ; this.call.setEnvs(this) ; env }
         is Stmt.Await  -> { this.e.setEnvs(env) ; env }
         is Stmt.Bcast  -> { this.e.setEnvs(env) ; env }
-        is Stmt.Input  -> { this.dst?.setEnvs(env) ; this.arg.setEnvs(env) ; this.xtype?.visit(false, ::ft) ; env }
+        is Stmt.Input  -> { this.dst?.setEnvs(env) ; this.arg.setEnvs(env) ; this.xtype?.visit(::ft) ; env }
         is Stmt.Output -> { this.arg.setEnvs(env) ; env }
         is Stmt.Seq -> {
             val e1 = this.s1.setEnvs(env)
@@ -142,7 +142,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
             this.body.setEnvs(this) // also include blocks w/o labels b/c of inference
             env
         }
-        is Stmt.Typedef -> { this.type.visit(false, ::ft) ; this }
+        is Stmt.Typedef -> { this.type.visit(::ft) ; this }
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }
 }

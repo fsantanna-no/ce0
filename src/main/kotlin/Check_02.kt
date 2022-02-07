@@ -197,5 +197,5 @@ fun check_02_after_tps (s: Stmt) {
             }
         }
     }
-    s.visit(false, ::fs, ::fe, ::ft)
+    s.visit(::fs, ::fe, ::ft)
 }

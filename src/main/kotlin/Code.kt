@@ -745,7 +745,7 @@ fun code_fs (s: Stmt) {
 
 fun Stmt.code (): String {
     TYPEX.clear()
-    this.visit(true, ::code_fs, ::code_fe, ::code_ft)
+    this.visit(::code_fs, ::code_fe, ::code_ft)
 
     val code = CODE.removeFirst()
     assert(CODE.size == 0)

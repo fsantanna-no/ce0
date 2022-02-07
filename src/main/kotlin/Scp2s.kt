@@ -63,5 +63,5 @@ fun Stmt.setScp2s () {
             }
         }
     }
-    this.visit(false, null, ::fe, ::ft)
+    this.visit(null, ::fe, ::ft)
 }

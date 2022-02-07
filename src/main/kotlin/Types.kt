@@ -145,5 +145,5 @@ fun Stmt.setTypes () {
             else -> TODO()
         }
     }
-    this.visit(false, null, ::fe, ::ft)
+    this.visit(null, ::fe, ::ft)
 }
