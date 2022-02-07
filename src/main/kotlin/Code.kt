@@ -125,8 +125,7 @@ fun code_ft (tp: Type) {
             Code(types+type,pres+pre, "", "")
         }
         is Type.Union -> {
-            val ce    = tp.toce()
-            val tpexp = tp.expand()
+            val ce = tp.toce()
 
             val struct = Pair ("""
                 struct $ce;
@@ -136,7 +135,7 @@ fun code_ft (tp: Type) {
                 struct $ce {
                     int tag;
                     union {
-                        ${tpexp  // do not filter to keep correct i
+                        ${tp.vec  // do not filter to keep correct i
                             .mapIndexed { i,sub -> "${sub.pos()} _${i+1};\n" }
                             .joinToString("")
                         }
@@ -162,7 +161,7 @@ fun code_ft (tp: Type) {
                     }
                     printf("<.%d", v->tag);
                     switch (v->tag) {
-                        ${tpexp
+                        ${tp.vec
                             .mapIndexed { i,sub ->
                                 val s = when (sub) {
                                     is Type.Unit -> ""

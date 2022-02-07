@@ -135,7 +135,7 @@ fun Stmt.setTypes () {
                     is Expr.UDisc -> if (e.tk_.num == 0) {
                         Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).clone(e,e.tk.lin,e.tk.col)
                     } else {
-                        tp.expand()[e.tk_.num - 1]
+                        tp.vec[e.tk_.num - 1]
                     }
                     is Expr.UPred -> Type.Nat(Tk.Nat(TK.XNAT, e.tk.lin, e.tk.col, null, "int")).clone(e,e.tk.lin,e.tk.col)
                     else -> error("bug found")

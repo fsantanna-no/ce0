@@ -1,11 +1,8 @@
+- remove type visit hack
 - type List = List
 - change @[@a1,@a2] -> @[a,b: a>b]
   - check constraint in func comparison
 - accept @A vs var a
-- remove Type.expand
-  - fix cloneX, etc
-  - all double rec will fail
-  - need `type`
 - pico-ce
 - var z = spawn h ()
   - optional in ce0?

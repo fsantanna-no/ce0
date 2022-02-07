@@ -87,43 +87,6 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
     return this.aux(lin,col)
 }
 
-fun Type.cloneX (up: Any, lin: Int, col: Int): Type {
-    fun Type.aux (lin: Int, col: Int): Type {
-        return when (this) {
-            is Type.Unit -> Type.Unit(this.tk_.copy(lin_ = lin, col_ = col))
-            is Type.Alias -> Type.Alias(this.tk_.copy(lin_ = lin, col_ = col), this.xisrec, this.xscp1s, this.xscp2s)
-            is Type.Nat -> Type.Nat(this.tk_.copy(lin_ = lin, col_ = col))
-            is Type.Tuple -> Type.Tuple(
-                this.tk_.copy(lin_ = lin, col_ = col),
-                this.vec.map { it.aux(lin, col) }.toTypedArray()
-            )
-            is Type.Union -> Type.Union(
-                this.tk_.copy(lin_ = lin, col_ = col),
-                this.vec.map { it.aux(lin, col) }.toTypedArray()
-            )
-            is Type.Func -> Type.Func(
-                this.tk_.copy(lin_ = lin, col_ = col),
-                Triple (
-                    this.xscp1s.first?.copy(lin_ = lin, col_ = col),
-                    this.xscp1s.second!!.map { it.copy(lin_ = lin, col_ = col) }.toTypedArray(),
-                    this.xscp1s.third
-                ),
-                this.xscp2s,
-                this.inp.aux(lin, col),
-                this.pub?.aux(lin, col),
-                this.out.aux(lin, col)
-            )
-            is Type.Spawn, is Type.Spawns -> TODO()
-            is Type.Pointer -> Type.Pointer(this.tk_.copy(lin_ = lin, col_ = col), this.xscp1?.copy(lin_=lin,col_=col), this.xscp2, this.pln.aux(lin, col))
-        }.let {
-            it.wup  = up
-            it.wenv = up.getEnv()
-            it
-        }
-    }
-    return this.aux(lin,col)
-}
-
 fun Type.isrec (): Boolean {
     return (this is Type.Alias && this.xisrec)
 }
@@ -152,20 +115,6 @@ fun Type.containsRec (): Boolean {
         is Type.Tuple -> this.vec.any { it.containsRec() }
         is Type.Union -> this.vec.any { it.containsRec() }
     }
-}
-
-fun Type.Union.expand (): Array<Type> {
-    val outer = this
-    fun Type.aux (up: Int): Type {
-        return when (this) {
-            is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.aux(up) }.toTypedArray())
-            is Type.Union -> Type.Union(this.tk_, this.vec.map { it.aux(up+1) }.toTypedArray())
-            is Type.Pointer   -> Type.Pointer(this.tk_, this.xscp1, this.xscp2, this.pln.aux(up))
-            is Type.Func  -> Type.Func(this.tk_, this.xscp1s, this.xscp2s, this.inp.aux(up), this.pub?.aux(up), this.out.aux(up))
-            else -> this
-        }
-    }
-    return this.vec.map { it.aux(1).cloneX(this,this.tk.lin,this.tk.col) }.toTypedArray()
 }
 
 fun Type.toce (): String {

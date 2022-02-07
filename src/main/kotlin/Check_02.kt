@@ -60,7 +60,7 @@ fun check_02_after_tps (s: Stmt) {
             is Expr.UCons -> {
                 e.check()
                 val uni = e.xtype.noalias() as Type.Union
-                val sup = uni.expand()[e.tk_.num - 1]
+                val sup = uni.vec[e.tk_.num - 1]
                 val sub = e.arg.wtype!!
                 All_assert_tk(e.tk, sup.isSupOf(sub)) {
                     "invalid union constructor : ${mismatch(sup,sub)}"

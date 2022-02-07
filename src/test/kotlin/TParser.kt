@@ -162,7 +162,7 @@ class TParser {
         lexer(all)
         val tp1 = parser_type(all)
         tp1.visit(false, { it.wup = Any() })
-        val tp2 = (tp1 as Type.Union).expand()[1]
+        val tp2 = (tp1 as Type.Union).vec[1]
         // <(),<(),^^>> = <(),<(),<(),^^>>>
         val ok1 = tp1.isSupOf(tp2)
         val ok2 = tp2.isSupOf(tp1)
