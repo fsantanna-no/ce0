@@ -139,21 +139,18 @@ fun Type.isrec (): Boolean {
 
 fun Type.noalias (): Type {
     return if (this !is Type.Alias) this else {
+        //println(this.tk_.id)
+        //println(this.env(this.tk_.id))
         val def = this.env(this.tk_.id)!! as Stmt.Typedef
 
         // Original constructor:
         //      typedef Pair @[a] = [/_int@a,/_int@a]
         //      var xy: Pair @[LOCAL] = [/x,/y]
+        // Transform typedef -> type
+        //      typedef Pair @[LOCAL] = [/_int@LOCAL,/_int@LOCAL]
+        //      var xy: Pair @[LOCAL] = [/x,/y]
 
-        // Map from typedef(type List = ...) -> type(List ...)
-        //      { a=scp1(LOCAL) }
-        val map: Map<String, Pair<Tk.Id, Scp2>> = def.xscp1s.first
-            .map { it.id }
-            .zip(this.xscp1s.zip(this.xscp2s ?: emptyArray()))
-            .toMap()
-        println(this.tostr())
-        println(map)
-        def.toType().mapScps(def.xscp1s.first, this.xscp1s, this.xscp2s ?: emptyArray(), false)
+        def.toType().mapScps(this.tk,this, Pair(def.xscp1s.first, this.xscp1s.zip(this.xscp2s ?: emptyArray()).toTypedArray()), false)
     }
 }
 
@@ -212,12 +209,8 @@ fun mismatch (sup: Type, sub: Type): String {
 // Transform typedef -> type
 //      typedef Pair @[LOCAL] = [/_int@LOCAL,/_int@LOCAL]
 //      var xy: Pair @[LOCAL] = [/x,/y]
-fun Type.mapScps (dcl_scp1s: Array<Tk.Id>, use_scp1s: Array<Tk.Id>, use_scp2s: Array<Scp2>, dofunc: Boolean): Type {
-    val map: Map<String, Pair<Tk.Id, Scp2?>> = dcl_scp1s
-        .map { it.id }
-        .zip(use_scp1s.zip(use_scp2s))
-        .toMap()
-
+fun Type.mapScps (tk: Tk, up: Any, scps: Pair<Array<Tk.Id>, Array<Pair<Tk.Id,Scp2>>>, dofunc: Boolean): Type {
+    val map: Map<String, Pair<Tk.Id, Scp2?>> = scps.first.map { it.id }.zip(scps.second).toMap()
     fun Type.aux (dofunc: Boolean): Type {
         return when (this) {
             is Type.Unit, is Type.Nat, is Type.Rec, is Type.Alias -> this
@@ -248,5 +241,5 @@ fun Type.mapScps (dcl_scp1s: Array<Tk.Id>, use_scp1s: Array<Tk.Id>, use_scp2s: A
             is Type.Spawn, is Type.Spawns -> TODO()
         }
     }
-    return this.aux(dofunc)
+    return this.aux(dofunc).clone(up,tk.lin,tk.col)
 }

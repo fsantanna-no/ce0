@@ -96,8 +96,8 @@ fun check_02_after_tps (s: Stmt) {
 
                 val (inp2,out2) = if (func is Type.Func) {
                     Pair (
-                        inp1.mapScps(scp1s.first, e.xscp1s.first, e.xscp2s!!.first, false).clone(e,e.tk.lin,e.tk.col),
-                        out1.mapScps(scp1s.first, e.xscp1s.first, e.xscp2s!!.first, true).clone(e,e.tk.lin,e.tk.col)
+                        inp1.mapScps(e.tk,e, Pair(scp1s.first, e.xscp1s.first.zip(e.xscp2s!!.first).toTypedArray()), false),
+                        out1.mapScps(e.tk,e, Pair(scp1s.first, e.xscp1s.first.zip(e.xscp2s!!.first).toTypedArray()), true)
                     )
                 } else {
                     Pair(inp1,out1)

@@ -83,7 +83,6 @@ fun Scp2.isNestIn (sub: Scp2, up: Any): Boolean {
         bothcst -> (this.depth!! >= sub.depth!!)
         bothpar -> this.par!! == sub.par!! || (up.ups_first { it is Expr.Func } as Expr.Func).let {
             // look for (this.id > sub.id) in constraints
-            println(it.type.xscp1s.third.toList())
             it.type.xscp1s.third.any { it.first==this.par!! && it.second==sub.par!! }
         }
         else -> (sub.par!=null && this.lvl==sub.lvl)
