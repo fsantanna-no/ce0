@@ -497,7 +497,7 @@ class TExec {
         val out = all("""
             output std ()?1
         """.trimIndent())
-        assert(out == "(ln 1, col 15): invalid discriminator : not an union") { out }
+        assert(out == "(ln 1, col 15): invalid predicate : not an union") { out }
     }
     @Test
     fun f14_user_dots_err () {
@@ -1117,6 +1117,7 @@ class TExec {
         """.trimIndent())
         assert(out == "<.1 <.1 <.0>>>\n") { out }
     }
+    @Disabled // ^^
     @Test
     fun j11_rec_double2 () {
         val out = all("""
@@ -1274,6 +1275,7 @@ class TExec {
 
     // UNION SELF POINTER / HOLD
 
+    @Disabled // ^^
     @Test
     fun l02_hold_ok () {
         val out = all("""
@@ -1290,6 +1292,7 @@ class TExec {
         //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
         assert(out == "(ln 6, col 17): invalid operand to `/´ : union discriminator") { out }
     }
+    @Disabled // ^^
     @Test
     fun l02_hold_ok1 () {
         val out = all("""
@@ -1308,6 +1311,7 @@ class TExec {
         //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
         //assert(out == "(ln 4, col 17): invalid operand to `/´ : union discriminator") { out }
     }
+    @Disabled // ^^
     @Test
     fun l02_hold_ok2 () {
         val out = all("""
@@ -1360,15 +1364,16 @@ class TExec {
     @Test
     fun m01_scope_f () {
         val out = all("""
-            var f: func@[i1]-> /</^@i1>@i1->()
-            set f = func@[i1]-> /</^@i1>@i1->() {
-                var pf: /</^@i1> @i1
+            type List @[a] = </List @[a] @a>
+            var f: func@[i1]-> /(List @[i1])@i1->()
+            set f = func@[i1]-> /(List @[i1])@i1->() {
+                var pf: /(List @[i1]) @i1
                 set pf = arg
                 output std pf
             }
             {
-                var x: /</^ @LOCAL> @LOCAL
-                set x = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>: @LOCAL
+                var x: /(List @[LOCAL]) @LOCAL
+                set x = new <.1 <.0>: /(List @[LOCAL]) @LOCAL>:(List @[LOCAL]): @LOCAL
                 call f @[LOCAL] x
             }
         """.trimIndent())
@@ -1377,13 +1382,14 @@ class TExec {
     @Test
     fun m02_scope_f () {
         val out = all("""
-            var f: func @[i1]->/</^@i1>@i1->()
-            set f = func@[i1]-> /</^@i1>@i1->() {
-                set arg\!1 = new <.1 <.0>:/</^@i1>@i1>:</^@i1>: @i1
+            type List @[a] = </List @[a] @a>
+            var f: func @[i1]->/(List @[i1])@i1->()
+            set f = func@[i1]-> /(List @[i1])@i1->() {
+                set arg\!1 = new <.1 <.0>:/(List @[i1])@i1>:(List @[i1]): @i1
             }
             {
-                var x: /</^ @LOCAL> @LOCAL
-                set x = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>: @LOCAL
+                var x: /(List @[LOCAL]) @LOCAL
+                set x = new <.1 <.0>: /(List @[LOCAL]) @LOCAL>:(List @[LOCAL]): @LOCAL
                 call f @[LOCAL] x
                 output std x
             }
@@ -1393,14 +1399,15 @@ class TExec {
     @Test
     fun m03_scope_f () {
         val out = all("""
-            var f: func @[a1,a2] -> [/</^@a1>@a1,/</^@a2>@a2]->()
-            set f = func @[a1,a2]->[/</^@a1>@a1,/</^@a2>@a2]->() {
-                set arg.1\!1 = new <.1 <.0>:/</^@a1>@a1>:</^@a1>: @a1
-                set arg.2\!1 = new <.1 <.0>:/</^@a2>@a2>:</^@a2>: @a2
+            type List @[a] = </List @[a] @a>
+            var f: func @[a1,a2] -> [/(List @[a1])@a1,/(List @[a2])@a2]->()
+            set f = func @[a1,a2]->[/(List @[a1])@a1,/(List @[a2])@a2]->() {
+                set arg.1\!1 = new <.1 <.0>:/(List @[a1])@a1>:(List @[a1]): @a1
+                set arg.2\!1 = new <.1 <.0>:/(List @[a2])@a2>:(List @[a2]): @a2
             }
             {
-                var x: /</^ @LOCAL> @LOCAL
-                set x = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>: @LOCAL
+                var x: /(List @[LOCAL]) @LOCAL
+                set x = new <.1 <.0>: /(List @[LOCAL]) @LOCAL>:(List @[LOCAL]): @LOCAL
                 call f @[LOCAL,LOCAL] [x,x]
                 output std x
             }
@@ -1410,13 +1417,14 @@ class TExec {
     @Test
     fun m04_scope_f () {
         val out = all("""
-            var f: func @[i1]->/</^@i1>@i1->()
-            set f = func @[i1]->/</^@i1>@i1->() {
-                set arg\!1 = new <.1 <.0>:/</^@i1>@i1>:</^@i1>: @i1
+            type List @[a] = </List @[a] @a>
+            var f: func @[i1]->/(List @[i1])@i1->()
+            set f = func @[i1]->/(List @[i1])@i1->() {
+                set arg\!1 = new <.1 <.0>:/(List @[i1])@i1>:(List @[i1]): @i1
             }
             {
-                var x: /</^ @LOCAL> @LOCAL
-                set x = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>: @LOCAL
+                var x: /(List @[LOCAL]) @LOCAL
+                set x = new <.1 <.0>: /(List @[LOCAL]) @LOCAL>:(List @[LOCAL]): @LOCAL
                 call f @[LOCAL] x
                 output std x
             }
@@ -1539,10 +1547,11 @@ class TExec {
     fun n08_pool_closure() {
         val out = all(
             """
+            type List @[a] = </List @[a] @a>
             var g: func @[a1]->() -> func @a1->@[]-> ()->()
             set g = func@[a1]->() -> func @a1->@[]-> ()->() {
-                var x: /</^@a1>@a1
-                set x = new <.1 <.0>:/</^@a1>@a1>: </^@a1>: @a1
+                var x: /(List @[a1])@a1
+                set x = new <.1 <.0>:/(List @[a1])@a1>: (List @[a1]): @a1
                 var f: func @a1->@[]-> () -> ()
                 set f = func @a1 ->() -> () [x] {
                     output std x
@@ -1578,11 +1587,12 @@ class TExec {
     fun n09_pool_closure_err() {
         val out = all(
             """
+            type List @[a] = </List @[a] @a>
             var g: /func @[i1]->() -> func@[i1]-> ()->()@LOCAL
             set g = func@[i1]-> () -> func@[i1]-> ()->() {
                 var f: /func@[a1]-> () -> ()@LOCAL
-                var x: /</^@LOCAL>@LOCAL
-                set x = new <.1 <.0>:/</^@LOCAL>@LOCAL>: </^@LOCAL>: @LOCAL
+                var x: /(List @[LOCAL])@LOCAL
+                set x = new <.1 <.0>:/(List @[LOCAL])@LOCAL>: (List @[LOCAL]): @LOCAL
                 set f = func@[a1]-> () -> () {
                     output std x    -- f uses x in @LOCAL
                 }
@@ -1593,7 +1603,7 @@ class TExec {
             call f\ @[LOCAL] ()
         """.trimIndent()
         )
-        assert(out == "(ln 7, col 20): invalid access to \"x\" : invalid closure declaration (ln 6)") { out }
+        assert(out == "(ln 8, col 20): invalid access to \"x\" : invalid closure declaration (ln 7)") { out }
     }
     @Test
     fun n10_pool_closure () {
@@ -1838,17 +1848,18 @@ class TExec {
     @Test
     fun z08_func_arg () {
         val out = all("""
-            var x1: /</^ @LOCAL> @LOCAL
-            set x1 = <.0>: /</^ @LOCAL> @LOCAL
+            type List @[a] = </List @[a] @a>
+            var x1: /(List @[LOCAL]) @LOCAL
+            set x1 = <.0>: /(List @[LOCAL]) @LOCAL
             var z1: _int
             set z1 = x1\?0
-            var x2: //</^ @LOCAL> @LOCAL @LOCAL
+            var x2: //(List @[LOCAL]) @LOCAL @LOCAL
             set x2 = /x1
             var z2: _int
             set z2 = x2\\?1
-            set x2\ = new <.1 <.0>: /</^ @LOCAL> @LOCAL>:</^ @LOCAL>: @LOCAL
-            var f: func@[i1]-> //</^@i1>@i1@i1->_int
-            set f = func@[i1]-> //</^@i1>@i1@i1->_int {
+            set x2\ = new <.1 <.0>: /(List @[LOCAL]) @LOCAL>:(List @[LOCAL]): @LOCAL
+            var f: func@[i1]-> //(List @[i1])@i1@i1->_int
+            set f = func@[i1]-> //(List @[i1])@i1@i1->_int {
                 set ret = arg\\?1
             }
             var z3: _int
@@ -1941,9 +1952,10 @@ class TExec {
     @Test
     fun z15_acc_move_sub () {
         val out = all("""
-            var x: /<(),/^ @LOCAL> @LOCAL
-            set x = new <.2 new <.1()>:<(),/^ @LOCAL>: @LOCAL>:<(),/^ @LOCAL>: @LOCAL
-            var y: /<(),/^ @LOCAL> @LOCAL
+            type List = <(),/List@LOCAL>
+            var x: /List @LOCAL
+            set x = new <.2 new <.1()>:List: @LOCAL>:List: @LOCAL
+            var y: /List @LOCAL
             set y = x\!2
             output std x
             output std y

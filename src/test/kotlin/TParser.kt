@@ -1,3 +1,4 @@
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
@@ -142,18 +143,19 @@ class TParser {
     }
     @Test
     fun a10_parser_type_ptr1 () {
-        val all = All_new(PushbackReader(StringReader("/<[^]>@GLOBAL"), 2))
+        val all = All_new(PushbackReader(StringReader("/List@GLOBAL"), 2))
         lexer(all)
         val tp = parser_type(all)
         assert(tp is Type.Pointer)      // error on check
     }
     @Test
     fun a10_parser_type_ptr2 () {
-        val all = All_new(PushbackReader(StringReader("/<[/^@GLOBAL]>@LOCAL"), 2))
+        val all = All_new(PushbackReader(StringReader("/<[/List@GLOBAL]>@LOCAL"), 2))
         lexer(all)
         val tp = parser_type(all)
         assert(tp is Type.Pointer)
     }
+    @Disabled
     @Test
     fun a11_parser_type_issupof () {
         val all = All_new(PushbackReader(StringReader("<(),<(),^^>>"), 2))
