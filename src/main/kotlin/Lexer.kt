@@ -2,7 +2,7 @@ val D = "\$"
 
 enum class TK {
     ERR, EOF, CHAR,
-    XID, XNAT, XNUM, XUP,
+    XID, XNAT, XNUM,
     UNIT, ARROW, ATBRACK,
     ACTIVE, AWAIT, AWAKE, BCAST, BREAK, CALL, CATCH, ELSE, FUNC, IF, IN, INPUT,
     LOOP, NATIVE, NEW, OUTPUT, RETURN, SET, SPAWN, TASK, TASKS, THROW, TYPE, VAR,
@@ -149,15 +149,6 @@ fun token (all: All) {
         (c1 == -1) -> all.tk1 = Tk.Sym(TK.EOF, LIN, COL, "")
         (x1 in arrayOf(')', '{', '}', '[', ']', '<' , '>' , ';' , ':' , '=' , ',' , '\\', '/' , '.', '!' , '?')) -> {
             all.tk1 = Tk.Chr(TK.CHAR, LIN, COL, x1)
-        }
-        (x1 == '^') -> {
-            var n = 0
-            while (x1 == '^') {
-                n++
-                all.read().let { c1=it.first ; x1=it.second }
-            }
-            all.unread(c1)
-            all.tk1 = Tk.Up(TK.XUP, LIN, COL, n)
         }
         (x1 == '(') -> {
             val (c2,x2) = all.read()

@@ -31,7 +31,7 @@ fun Type.visit_ (xpd: Boolean, ft: ((Type)->Unit)?) {
     }
      */
     when (this) {
-        is Type.Unit, is Type.Nat, is Type.Rec, is Type.Alias -> {}
+        is Type.Unit, is Type.Nat, is Type.Alias -> {}
         is Type.Tuple -> this.vec.forEach { it.visit_(xpd,ft) }
         is Type.Union -> this.vec.forEach { it.visit_(xpd,ft) } //(if (xpd) this.expand() else this.vec).forEach { it.visit_(xpd,ft) }
         is Type.Func  -> { this.inp.visit_(xpd,ft) ; this.pub?.visit_(xpd,ft) ; this.out.visit_(xpd,ft) }

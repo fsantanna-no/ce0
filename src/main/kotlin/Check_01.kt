@@ -55,17 +55,6 @@ fun check_01_before_tps (s: Stmt) {
                     "invalid type : scope mismatch : expecting $s1, have $s2 argument(s)"
                 }
             }
-            is Type.Rec -> {
-                val str = "^".repeat(tp.tk_.up)
-                All_assert_tk(tp.tk, tp.wup is Type.Pointer) {
-                    "invalid `$str´ : expected pointer type"    // must be pointer b/c ups is a vector of void*
-                }
-                val unions = tp.ups_tolist().count { it is Type.Union }
-                All_assert_tk(tp.tk, unions >= tp.tk_.up) {
-                    "invalid `$str´ : missing enclosing recursive type"
-                }
-
-            }
             is Type.Pointer -> tp.xscp1?.check(tp)
             is Type.Func -> {
                 tp.xscp1s.first?.check(tp)

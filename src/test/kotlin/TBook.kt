@@ -5,32 +5,33 @@ import org.junit.jupiter.api.TestMethodOrder
 import java.io.File
 
 val nums = """
-    var zero: /</^ @LOCAL>@LOCAL
-    set zero = <.0>: /</^ @LOCAL> @LOCAL
-    var one: /</^ @LOCAL>@LOCAL
-    set one = new <.1 zero>:</^ @LOCAL>: @LOCAL
-    var two: /</^@LOCAL>@LOCAL
-    set two = new <.1 one>:</^ @LOCAL>: @LOCAL
-    var three: /</^ @LOCAL>@LOCAL
-    set three = new <.1 two>:</^@LOCAL>: @LOCAL
-    var four: /</^ @LOCAL>@LOCAL
-    set four = new <.1 three>:</^@LOCAL>: @LOCAL
-    var five: /</^ @LOCAL>@LOCAL
-    set five = new <.1 four>:</^@LOCAL>: @LOCAL
+    type Num @[s] = </Num @[s] @s>
+    var zero: /(Num @[LOCAL])@LOCAL
+    set zero = <.0>: /(Num @[LOCAL]) @LOCAL
+    var one: /(Num @[LOCAL])@LOCAL
+    set one = new <.1 zero>:(Num @[LOCAL]): @LOCAL
+    var two: /(Num @[LOCAL])@LOCAL
+    set two = new <.1 one>:(Num @[LOCAL]): @LOCAL
+    var three: /(Num @[LOCAL])@LOCAL
+    set three = new <.1 two>:(Num @[LOCAL]): @LOCAL
+    var four: /(Num @[LOCAL])@LOCAL
+    set four = new <.1 three>:(Num @[LOCAL]): @LOCAL
+    var five: /(Num @[LOCAL])@LOCAL
+    set five = new <.1 four>:(Num @[LOCAL]): @LOCAL
 """.trimIndent()
 
 fun Num (ptr: Boolean, scope: String): String {
-    val ret = "</^$scope>"
-    return if (!ptr) ret else "/"+ret+scope
+    val ret = "(Num @[$scope])"
+    return if (!ptr) ret else "/"+ret+"@"+scope
 }
-val NumTL  = Num(true,  "@LOCAL")
-val NumA1  = Num(true,  "@a1")
-val NumA2  = Num(true,  "@a2")
-val NumB1  = Num(true,  "@b1")
-val NumC1  = Num(true,  "@c1")
-val NumR1  = Num(true,  "@r1")
-val _NumR1 = Num(false, "@r1")
-val NumS1  = Num(true,  "@s1")
+val NumTL  = Num(true,  "LOCAL")
+val NumA1  = Num(true,  "a1")
+val NumA2  = Num(true,  "a2")
+val NumB1  = Num(true,  "b1")
+val NumC1  = Num(true,  "c1")
+val NumR1  = Num(true,  "r1")
+val _NumR1 = Num(false, "r1")
+val NumS1  = Num(true,  "s1")
 
 val clone = """
     var clone : func @[r1,a1]-> $NumA1 -> $NumR1
@@ -188,12 +189,13 @@ class TBook {
     fun pre_01_nums() {
         val out = all(
             """
-            var zero: /</^ @LOCAL>@LOCAL
-            set zero = <.0>: /</^@LOCAL> @LOCAL
-            var one: </^@LOCAL>
-            set one = <.1 zero>: </^ @LOCAL>
-            var two: </^@LOCAL>
-            set two = <.1 /one>: </^@LOCAL>
+            type Num @[s] = </Num @[s] @s>
+            var zero: /(Num @[LOCAL])@LOCAL
+            set zero = <.0>: /(Num @[LOCAL]) @LOCAL
+            var one: (Num @[LOCAL])
+            set one = <.1 zero>: (Num @[LOCAL])
+            var two: (Num @[LOCAL])
+            set two = <.1 /one>: (Num @[LOCAL])
             output std /two
         """.trimIndent()
         )

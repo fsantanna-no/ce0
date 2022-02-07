@@ -4,9 +4,8 @@ sealed class Type (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Unit    (val tk_: Tk.Sym): Type(N++, tk_, null, null)
     data class Nat     (val tk_: Tk.Nat): Type(N++, tk_, null, null)
     data class Tuple   (val tk_: Tk.Chr, val vec: Array<Type>): Type(N++, tk_, null, null)
-    data class Union   (val tk_: Tk.Chr, val isrec: Boolean, val vec: Array<Type>): Type(N++, tk_, null, null)
+    data class Union   (val tk_: Tk.Chr, val vec: Array<Type>): Type(N++, tk_, null, null)
     data class Pointer (val tk_: Tk.Chr, val xscp1: Tk.Id, var xscp2: Scp2?, val pln: Type): Type(N++, tk_, null, null)
-    data class Rec     (val tk_: Tk.Up): Type(N++, tk_, null, null)
     data class Spawn   (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
     data class Spawns  (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
     data class Func (

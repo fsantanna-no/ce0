@@ -1,7 +1,5 @@
 - change @[@a1,@a2] -> @[a,b: a>b]
-  - check ctrs in func comparison
-- retomar TEnv.q14,m01_scope_a
-- check constraint in func comparison
+  - check constraint in func comparison
 - accept @A vs var a
 - remove ^, substitute all examples with type List
   -  Alias.xisrec: Boolean

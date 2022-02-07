@@ -44,7 +44,6 @@ fun parser_type (all: All, tasks: Boolean=false): Type {
             }
             Type.Alias(tk0, false, scps.toTypedArray(), null)
         }
-        all.accept(TK.XUP) -> Type.Rec(all.tk0 as Tk.Up)
         all.accept(TK.CHAR, '/') -> {
             val tk0 = all.tk0 as Tk.Chr
             val pln = parser_type(all)
@@ -77,21 +76,8 @@ fun parser_type (all: All, tasks: Boolean=false): Type {
                 Type.Tuple(tk0, tps.toTypedArray())
             } else {
                 all.accept_err(TK.CHAR, '>')
-                fun f(tp: Type, n: Int): Boolean {
-                    return when (tp) {
-                        is Type.Pointer -> tp.pln.let {
-                            f(it, n) || (it is Type.Rec && n == it.tk_.up)
-                        }
-                        //is Type.Rec   -> return n <= tp.tk_.up
-                        is Type.Tuple -> tp.vec.any { f(it, n) }
-                        is Type.Union -> tp.vec.any { f(it, n + 1) }
-                        else -> false
-                    }
-                }
-
                 val vec = tps.toTypedArray()
-                val isrec = vec.any { f(it, 1) }
-                Type.Union(tk0, isrec, vec)
+                Type.Union(tk0, vec)
             }
         }
         all.accept(TK.FUNC) || all.accept(TK.TASK) || (tasks && all.accept(TK.TASKS)) -> {

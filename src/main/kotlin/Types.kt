@@ -62,7 +62,6 @@ fun Stmt.setTypes () {
                                         .clone(e, e.tk.lin, e.tk.col)
                                     is Type.Union -> Type.Union(
                                         this.tk_,
-                                        this.isrec,
                                         this.vec.map { it.map() }.toTypedArray()
                                     ).clone(e, e.tk.lin, e.tk.col)
                                     is Type.Func -> {

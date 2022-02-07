@@ -12,7 +12,7 @@ fun Any.getEnv (): Any? {
 fun Type.setEnvs (env: Any?) {
     this.wenv = env
     when (this) {
-        is Type.Unit, is Type.Nat, is Type.Rec, is Type.Alias -> {}
+        is Type.Unit, is Type.Nat, is Type.Alias -> {}
         is Type.Tuple -> this.vec.forEach { it.setEnvs(this) }
         is Type.Union -> this.vec.forEach { it.setEnvs(this) }
         is Type.Func  -> { this.inp.setEnvs(this) ; this.pub?.setEnvs(this) ; this.out.setEnvs(this) }

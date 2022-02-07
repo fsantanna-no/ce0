@@ -25,10 +25,6 @@
 
 val xxx: MutableSet<Pair<String,String>> = mutableSetOf()
 
-fun Type.isSupOf (sub: Type): Boolean {
-    return this.isSupOf_(sub, false, emptyList(), emptyList())
-}
-
 // Convert function signatures to increasing scopes for comparison
 // var g: func @[] -> {@i,@j,@k} -> [/</^@i>@i,/</^@j>@j] -> /</^@k>@k
 //      becomes
@@ -41,9 +37,9 @@ fun Type.Func.mapLabels (up: Any): Type.Func {
     fun Type.aux (): Type {
         return when (this) {
             is Type.Spawn, is Type.Spawns -> TODO()
-            is Type.Unit, is Type.Nat, is Type.Rec, is Type.Alias -> this
+            is Type.Unit, is Type.Nat, is Type.Alias -> this
             is Type.Tuple   -> Type.Tuple(this.tk_, this.vec.map { it.aux() }.toTypedArray())
-            is Type.Union   -> Type.Union(this.tk_, this.isrec, this.vec.map { it.aux() }.toTypedArray())
+            is Type.Union   -> Type.Union(this.tk_, this.vec.map { it.aux() }.toTypedArray())
             is Type.Func    -> this
             is Type.Pointer -> this.xscp1.let {
                 val id = MAP[it.id]
@@ -90,12 +86,9 @@ fun Scp2.isNestIn (sub: Scp2, up: Any): Boolean {
     }
 }
 
-fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: List<Type.Union>): Boolean {
+fun Type.isSupOf (sub: Type, isproto: Boolean=false): Boolean {
     return when {
         (this is Type.Nat  || sub is Type.Nat) -> true
-        (this is Type.Rec  && sub is Type.Rec)  -> (this.tk_.up == sub.tk_.up)
-        (this is Type.Rec) -> ups1[this.tk_.up-1].let { it.isSupOf_(sub, isproto, ups1.drop(this.tk_.up),ups2) }
-        (sub  is Type.Rec) -> ups2[sub.tk_.up-1].let { this.isSupOf_(it, isproto, ups1,ups2.drop(sub.tk_.up)) }
         (this is Type.Spawn && sub is Type.Spawns) -> this.tsk.isSupOf(sub.tsk)
         (this is Type.Alias || sub is Type.Alias) -> {
             when {
@@ -112,15 +105,15 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
             val sub2 = sub.mapLabels(sub.wup!!)
             (
                 sup2.xscp2s!!.first?.depth == sub2.xscp2s!!.first?.depth &&
-                sup2.inp.isSupOf_(sub2.inp,true,ups1,ups2) &&
-                sub2.inp.isSupOf_(sup2.inp,true,ups1,ups2) &&
-                sup2.out.isSupOf_(sub2.out,true,ups1,ups2) &&
-                sub2.out.isSupOf_(sup2.out,true,ups1,ups2) &&
+                sup2.inp.isSupOf(sub2.inp,true) &&
+                sub2.inp.isSupOf(sup2.inp,true) &&
+                sup2.out.isSupOf(sub2.out,true) &&
+                sub2.out.isSupOf(sup2.out,true) &&
                 (
                     (sup2.pub==null && sub2.pub==null) ||
                     ( sup2.pub!=null && sub2.pub!=null &&
-                      sup2.pub.isSupOf_(sub2.pub,true,ups1,ups2) &&
-                      sub2.pub.isSupOf_(sup2.pub,true,ups1,ups2) )
+                      sup2.pub.isSupOf(sub2.pub,true) &&
+                      sub2.pub.isSupOf(sup2.pub,true) )
                 )
             )
         }
@@ -138,12 +131,12 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
             } else {
                 this.xscp2!!.isNestIn(sub.xscp2!!, this)
             }
-            ok && this.pln.isSupOf_(sub.pln,isproto,ups1,ups2)
+            ok && this.pln.isSupOf(sub.pln,isproto)
         }
         (this is Type.Tuple && sub is Type.Tuple) ->
-            (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf_(y,isproto,ups1,ups2) }
+            (this.vec.size==sub.vec.size) && this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y,isproto) }
         (this is Type.Union && sub is Type.Union) -> {
-            if ((this.isrec == sub.isrec) && (this.vec.size == sub.vec.size)) {
+            if ((this.vec.size == sub.vec.size)) {
                 // ok
             } else {
                 return false
@@ -153,7 +146,7 @@ fun Type.isSupOf_ (sub: Type, isproto: Boolean, ups1: List<Type.Union>, ups2: Li
                 return true
             }
             xxx.add(pair)
-            return this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf_(y,isproto,listOf(this)+ups1,listOf(sub)+ups2) }
+            return this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y,isproto) }
         }
         else -> false
     }
