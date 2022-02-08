@@ -53,13 +53,17 @@ fun Stmt.setScp2s () {
             }
         }
     }
+
+    // TODO: both New/Call should have xscp1!!
     fun fe (e: Expr) {
         when (e) {
             is Expr.New -> {
                 e.xscp2 = e.xscp1?.toScp2(e)
             }
             is Expr.Call -> {
-                e.xscp2s = Pair(e.xscp1s.first!!.map { it.toScp2(e) }.toTypedArray(), e.xscp1s.second?.toScp2(e))
+                if (e.xscp1s.first != null) {
+                    e.xscp2s = Pair(e.xscp1s.first!!.map { it.toScp2(e) }.toTypedArray(), e.xscp1s.second?.toScp2(e))
+                }
             }
         }
     }

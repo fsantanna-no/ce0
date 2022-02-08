@@ -1,3 +1,7 @@
+- // TODO: both New/Call should have xscp1!!
+- unify parser_scp1s, parser_scopepars
+- infer Type @[...]
+
 - ce1 <- ce0 (type)
   - type List = </List>
     - must infer @[a]
