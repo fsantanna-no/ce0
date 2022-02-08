@@ -7,7 +7,7 @@ fun Type.tostr (): String {
         is Type.Unit    -> "()"
         is Type.Alias   -> this.tk_.id + this.xscp1s!!.let { if (it.size==0) "" else " @["+it.map { it.id }.joinToString(",")+"]" }
         is Type.Nat     -> this.tk_.toce()
-        is Type.Pointer -> this.xscp1!!.let { "/" + this.pln.tostr() + "@" + it.id }
+        is Type.Pointer -> this.xscp1!!.let { "/" + this.pln.tostr() + " @" + it.id }
         is Type.Tuple   -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union   -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
         is Type.Func    -> this.tk_.key + this.xscp1s.first.clo() + " @[" + this.xscp1s.second!!.map { it.id }.joinToString(",") + "] -> " + this.inp.tostr() + " -> " + this.pub.let { if (it == null) "" else it.tostr() + " -> " } + this.out.tostr()
