@@ -1,14 +1,4 @@
 fun Stmt.setTypes () {
-    fun ft (tp: Type) {
-        when (tp) {
-            is Type.Alias -> {
-                tp.xisrec = tp.env(tp.tk_.id)!!.toType().let {
-                    it is Type.Union && it.flattenLeft().any { it is Type.Alias && it.tk_.id==tp.tk_.id }
-                }
-            }
-        }
-    }
-
     fun fe (e: Expr) {
         e.wtype = when (e) {
             is Expr.Unit, is Expr.Nat, is Expr.UCons, is Expr.UNull, is Expr.Func -> e.wtype!!
@@ -145,5 +135,5 @@ fun Stmt.setTypes () {
             else -> TODO()
         }
     }
-    this.visit(null, ::fe, ::ft)
+    this.visit(null, ::fe, null)
 }

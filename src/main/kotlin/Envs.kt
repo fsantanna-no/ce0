@@ -9,20 +9,6 @@ fun Any.getEnv (): Any? {
     }
 }
 
-fun Type.setEnvs (env: Any?) {
-    this.wenv = env
-    when (this) {
-        is Type.Unit, is Type.Nat, is Type.Alias -> {}
-        is Type.Tuple -> this.vec.forEach { it.setEnvs(this) }
-        is Type.Union -> this.vec.forEach { it.setEnvs(this) }
-        is Type.Func  -> { this.inp.setEnvs(this) ; this.pub?.setEnvs(this) ; this.out.setEnvs(this) }
-        is Type.Spawn   -> this.tsk.setEnvs(this)
-        is Type.Spawns  -> this.tsk.setEnvs(this)
-        is Type.Pointer   -> this.pln.setEnvs(this)
-        else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
-    }
-}
-
 fun Any.toType (): Type {
     return when (this) {
         is Type         -> this
@@ -74,70 +60,48 @@ fun Any.env (id: String, upval: Boolean=false): Any? {
 
 //////////////////////////////////////////////////////////////////////////////
 
-private
-fun Expr.setEnvs (env: Any?) {
-    this.wenv = env
-    fun ft (tp: Type) {
-        tp.wenv = env
-    }
-    when (this) {
-        is Expr.Var   -> {}
-        is Expr.Unit  -> this.wtype?.visit(::ft)
-        is Expr.Nat   -> this.xtype?.visit(::ft)
-        is Expr.TCons -> this.arg.forEachIndexed { _,e -> e.setEnvs(env) }
-        is Expr.UCons -> {
-            this.xtype?.visit(::ft)
-            this.arg.setEnvs(env)
-        }
-        is Expr.UNull -> this.xtype?.visit(::ft)
-        is Expr.New   -> this.arg.setEnvs(env)
-        is Expr.Dnref -> this.ptr.setEnvs(env)
-        is Expr.Upref -> this.pln.setEnvs(env)
-        is Expr.TDisc -> this.tup.setEnvs(env)
-        is Expr.Pub   -> this.tsk.setEnvs(env)
-        is Expr.UDisc -> this.uni.setEnvs(env)
-        is Expr.UPred -> this.uni.setEnvs(env)
-        is Expr.Call  -> {
-            this.f.setEnvs(env)
-            this.arg.setEnvs(env)
-        }
-        is Expr.Func  -> {
-            this.type?.visit(::ft)
-            this.block.setEnvs(this)
-        }
-        else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
-    }
-}
-
 fun Stmt.setEnvs (env: Any?): Any? {
     this.wenv = env
     fun ft (tp: Type) { // recursive typedef
         tp.wenv = if (this is Stmt.Typedef) this else env
+        when (tp) {
+            is Type.Alias -> {
+                tp.xisrec = tp.env(tp.tk_.id)?.toType().let {
+                    it is Type.Union && it.flattenLeft().any { it is Type.Alias && it.tk_.id==tp.tk_.id }
+                }
+            }
+        }
+    }
+    fun fe (e: Expr) {
+        e.wenv = env
+        when (e) {
+            is Expr.Func -> e.block.setEnvs(e)
+        }
     }
     return when (this) {
         is Stmt.Nop, is Stmt.Native, is Stmt.Return, is Stmt.Break, is Stmt.Throw -> env
         is Stmt.Var    -> { this.xtype?.visit(::ft) ; this }
-        is Stmt.Set    -> { this.dst.setEnvs(env) ; this.src.setEnvs(env) ; env }
-        is Stmt.SCall  -> { this.e.setEnvs(env) ; env }
-        is Stmt.SSpawn -> { this.dst.setEnvs(env) ; this.call.setEnvs(env) ; env }
-        is Stmt.DSpawn -> { this.dst.setEnvs(this) ; this.call.setEnvs(this) ; env }
-        is Stmt.Await  -> { this.e.setEnvs(env) ; env }
-        is Stmt.Bcast  -> { this.e.setEnvs(env) ; env }
-        is Stmt.Input  -> { this.dst?.setEnvs(env) ; this.arg.setEnvs(env) ; this.xtype?.visit(::ft) ; env }
-        is Stmt.Output -> { this.arg.setEnvs(env) ; env }
+        is Stmt.Set    -> { this.dst.visit(null,::fe,::ft) ; this.src.visit(null,::fe,::ft) ; env }
+        is Stmt.SCall  -> { this.e.visit(null,::fe,::ft) ; env }
+        is Stmt.SSpawn -> { this.dst.visit(null,::fe,::ft) ; this.call.visit(null,::fe,::ft) ; env }
+        is Stmt.DSpawn -> { this.dst.visit(null,::fe,::ft) ; this.call.visit(null,::fe,::ft) ; env }
+        is Stmt.Await  -> { this.e.visit(null,::fe,::ft) ; env }
+        is Stmt.Bcast  -> { this.e.visit(null,::fe,::ft) ; env }
+        is Stmt.Input  -> { this.dst?.visit(null,::fe,::ft) ; this.arg.visit(null,::fe,::ft) ; this.xtype?.visit(::ft) ; env }
+        is Stmt.Output -> { this.arg.visit(null,::fe,::ft) ; env }
         is Stmt.Seq -> {
             val e1 = this.s1.setEnvs(env)
             val e2 = this.s2.setEnvs(e1)
             e2
         }
         is Stmt.If -> {
-            this.tst.setEnvs(env)
+            this.tst.visit(null,::fe,::ft)
             this.true_.setEnvs(env)
             this.false_.setEnvs(env)
             env
         }
         is Stmt.Loop  -> { this.block.setEnvs(env) ; env }
-        is Stmt.DLoop -> { this.i.setEnvs(env) ; this.tsks.setEnvs(env) ; this.block.setEnvs(env) ; env }
+        is Stmt.DLoop -> { this.i.visit(null,::fe,::ft) ; this.tsks.visit(null,::fe,::ft) ; this.block.setEnvs(env) ; env }
         is Stmt.Block -> {
             this.body.setEnvs(this) // also include blocks w/o labels b/c of inference
             env

@@ -106,7 +106,7 @@ class TEnv {
         val out = inp2env("""
             type List = List
         """.trimIndent())
-        assert(out == "(ln 1, col 9): invalid `_int´ : expected pointer type") { out }
+        assert(out == "ERR: recursive must be pointer") { out }
     }
     @Test
     fun b10_user_err () {
