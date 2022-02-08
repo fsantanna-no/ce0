@@ -278,7 +278,7 @@ fun parser_expr (all: All): Expr {
 
     if (all.checkExpr() || all.check(TK.ATBRACK)) {
         val iscps = if (all.accept(TK.ATBRACK)) {
-            val ret = parser_scp1s(all, { it.asscopepar() })
+            val ret = parser_scp1s(all, { it.asscope() })
             all.accept_err(TK.CHAR, ']')
             ret
         } else {
