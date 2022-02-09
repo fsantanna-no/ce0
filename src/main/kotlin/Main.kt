@@ -14,7 +14,7 @@ fun ce2c (ce: String): Pair<Boolean,String> {
     All_new(PushbackReader(StringReader(ce), 2))
     Lexer.lex()
     try {
-        val s = Parser.stmts()
+        val s = Parser().stmts()
         s.setUps(null)
         s.setEnvs(null)
         check_01_before_tps(s)

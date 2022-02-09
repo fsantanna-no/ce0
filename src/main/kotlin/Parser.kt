@@ -1,4 +1,4 @@
-object Parser {
+class Parser {
 
     fun scp1s (f: (Tk) -> Tk.Id): Array<Tk.Id> {
         val scps = mutableListOf<Tk.Id>()
