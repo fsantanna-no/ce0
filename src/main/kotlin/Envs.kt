@@ -66,9 +66,9 @@ fun Stmt.setEnvs (env: Any?): Any? {
         tp.wenv = if (this is Stmt.Typedef) this else env
         when (tp) {
             is Type.Alias -> {
-                tp.xisrec = tp.env(tp.tk_.id)?.toType()!!.let {
+                tp.xisrec = tp.env(tp.tk_.id)?.toType()?.let {
                     it.flattenLeft().any { it is Type.Alias && it.tk_.id==tp.tk_.id }
-                }
+                } ?: false
             }
         }
     }
