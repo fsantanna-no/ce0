@@ -1,5 +1,6 @@
+- type List @[s] = /<List @[s]>@s
 - unify ce0/ce1 as most as possible
-- unify parser_scp1s, parser_scopepars
+  - XTypes / Type.map
 
 - pico-ce
 - change @[@a1,@a2] -> @[a,b: a>b]
@@ -29,14 +30,8 @@
   - throw inside DLoop
     - loop tk in @block { stack tk }
     - break if NULL?
-
-- Parser in parts to simplify ce1:
-
-```
-var table_types: MutableMap<String, Pair<(All)->Boolean,(All)->Type>> = mutableMapOf (
-"Unit" to Pair({ it.accept(TK.UNIT) }, {Type.Unit(it.tk0 as Tk.Sym)})
-)
-```
+- output std ? --> toString ?
+  - output std toString /x
 
 # Subtyping
     - structural:   [(),()] <: [()]

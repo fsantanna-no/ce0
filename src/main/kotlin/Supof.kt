@@ -1,30 +1,3 @@
-// Are these types the same?
-// <(),<(),^^>> = <(),<(),<(),^^>>>
-//
-// They have the same prefixes (1,2):
-// <(),<(),^^>> = <(),<(),<(),^^>>>
-//   1  2  ?       1   2  ?
-// So, is `?` the same in both types?
-//
-// We can remove the parts in common:
-// ^^ = <(),^^>
-//
-// To answer if they are the same, we want to find an expansion that makes them different.
-// If we cannot find a conflicting expansion and we converge to tested/non-conflicting types only,
-// then we can say that the types are the same.
-//
-// We expand the simplified types above:
-// <(),<(),^^>> = <(),<(),<(),^^>>>
-//
-// We now reached the same initial state:
-// - We could not find a conflicting expansion.
-// - We tested all possible expansions.
-// - All prefixes in the expansions matched.
-//
-// Hence, the types are equivalent.
-
-val xxx: MutableSet<Pair<String,String>> = mutableSetOf()
-
 // Convert function signatures to increasing scopes for comparison
 // var g: func @[] -> {@i,@j,@k} -> [/</^@i>@i,/</^@j>@j] -> /</^@k>@k
 //      becomes
@@ -141,11 +114,6 @@ fun Type.isSupOf (sub: Type, isproto: Boolean=false): Boolean {
             } else {
                 return false
             }
-            val pair = Pair(this.toString(),sub.toString())
-            if (xxx.contains(pair)) {
-                return true
-            }
-            xxx.add(pair)
             return this.vec.zip(sub.vec).all { (x,y) -> x.isSupOf(y,isproto) }
         }
         else -> false

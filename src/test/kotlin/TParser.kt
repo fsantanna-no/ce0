@@ -759,10 +759,10 @@ class TParser {
     }
     @Test
     fun c16_parser_nat () {
-        All_new(PushbackReader(StringReader("native _{${xxx}}"), 2))
+        All_new(PushbackReader(StringReader("native _{${D}xxx}"), 2))
         Lexer.lex()
         val s = Parser().stmt()
-        assert(s is Stmt.Native && s.tk_.src=="${xxx}")
+        assert(s is Stmt.Native && s.tk_.src=="${D}xxx")
     }
 
     // STMT_LOOP
