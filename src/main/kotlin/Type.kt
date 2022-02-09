@@ -104,7 +104,12 @@ fun Type.noalias (): Type {
         //      typedef Pair @[LOCAL] = [/_int@LOCAL,/_int@LOCAL]
         //      var xy: Pair @[LOCAL] = [/x,/y]
 
-        def.toType().mapScps(this.tk,this, Pair(def.xscp1s.first!!, this.xscp1s!!.zip(this.xscp2s ?: emptyArray()).toTypedArray()), false)
+        def.toType().mapScps (
+            this.tk,
+            this,
+            Pair(def.xscp1s.first!!, this.xscp1s!!.zip(this.xscp2s ?: emptyArray()).toTypedArray()),
+            false
+        )
     }
 }
 
@@ -147,10 +152,16 @@ fun mismatch (sup: Type, sub: Type): String {
 //      typedef Pair @[LOCAL] = [/_int@LOCAL,/_int@LOCAL]
 //      var xy: Pair @[LOCAL] = [/x,/y]
 fun Type.mapScps (tk: Tk, up: Any, scps: Pair<Array<Tk.Id>, Array<Pair<Tk.Id,Scp2>>>, dofunc: Boolean): Type {
+    // from = scps.first
+    // to   = scps.second
     val map: Map<String, Pair<Tk.Id, Scp2?>> = scps.first.map { it.id }.zip(scps.second).toMap()
     fun Type.aux (dofunc: Boolean): Type {
         return when (this) {
-            is Type.Unit, is Type.Nat, is Type.Alias -> this
+            is Type.Unit, is Type.Nat -> this
+            is Type.Alias -> scps.second.unzip().let {
+                // TODO: this works if Alias is the same as enclosing call, what if it is not?
+                Type.Alias(this.tk_, this.xisrec, it.first.toTypedArray(), it.second.toTypedArray())
+            }
             is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.aux(dofunc) }.toTypedArray())
             is Type.Union -> Type.Union(this.tk_, this.vec.map { it.aux(dofunc) }.toTypedArray())
             is Type.Pointer -> {

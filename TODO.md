@@ -1,6 +1,8 @@
+- it is Type.Pointer || *also Type.Alias*
 - // TODO: both New/Call should have xscp1!!
 - unify parser_scp1s, parser_scopepars
 - infer Type @[...]
+- unify ce0/ce1 as most as possible
 
 - ce1 <- ce0 (type)
   - type List = </List>

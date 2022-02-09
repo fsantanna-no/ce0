@@ -2,7 +2,7 @@ fun Tk.Id.check (up: Any) {
     val ok = when {
         (this.id == "GLOBAL") -> true
         (this.id == "LOCAL")  -> true
-        (up.ups_first { it is Type.Func } != null) -> true  // (@i1 -> ...)
+        (up.ups_first { it is Type.Func || it is Stmt.Typedef } != null) -> true  // (@i1 -> ...)
         up.env(this.id).let {                              // { @aaa ... @aaa }
             /*
             println(this.id)
@@ -33,8 +33,9 @@ fun Expr.UNull.check () {
 }
 
 fun Expr.UCons.check () {
-    All_assert_tk(this.xtype!!.tk, this.xtype.let { it?.noalias() is Type.Union }) { "invalid type : expected union"}
-    val uni = this.xtype?.noalias() as Type.Union
+    val tp = this.xtype!!.noalias()
+    All_assert_tk(this.xtype!!.tk, tp is Type.Union) { "invalid type : expected union" }
+    val uni = tp as Type.Union
     val ok = (uni.vec.size >= this.tk_.num)
     All_assert_tk(this.tk, ok) {
         "invalid union constructor : out of bounds"
