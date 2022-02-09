@@ -15,7 +15,7 @@ class TParser {
         All_new(PushbackReader(StringReader("xxx"), 2))
         Lexer.lex()
         try {
-            Parser().type()
+            Parser().type(false)
             error("impossible case")
         } catch (e: Throwable) {
             //assert(e.message == "(ln 1, col 1): expected type : have \"xxx\"") { e.message!! }
@@ -26,21 +26,21 @@ class TParser {
     fun a02_parser_type () {
         All_new(PushbackReader(StringReader("()"), 2))
         Lexer.lex()
-        val tp = Parser().type()
+        val tp = Parser().type(false)
         assert(tp is Type.Unit)
     }
     @Test
     fun a03_parser_type () {
         All_new(PushbackReader(StringReader("_char"), 2))
         Lexer.lex()
-        val tp = Parser().type()
+        val tp = Parser().type(false)
         assert(tp is Type.Nat && tp.tk_.src=="char")
     }
     @Test
     fun a05_parser_type () {
         All_new(PushbackReader(StringReader("[(),_char]"), 2))
         Lexer.lex()
-        val tp = Parser().type()
+        val tp = Parser().type(false)
         assert(tp is Type.Tuple && tp.vec.size==2 && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Nat && (tp.vec[1].tk as Tk.Nat).src=="char")
     }
     @Test
@@ -48,7 +48,7 @@ class TParser {
         All_new(PushbackReader(StringReader("[(),(),"), 2))
         Lexer.lex()
         try {
-            Parser().type()
+            Parser().type(false)
             error("impossible case")
         } catch (e: Throwable) {
             assert(e.message == "(ln 1, col 8): expected type : have end of file")
@@ -58,7 +58,7 @@ class TParser {
     fun a06_parser_type_func () {
         All_new(PushbackReader(StringReader("func @[] -> () -> ()"), 2))
         Lexer.lex()
-        val tp = Parser().type()
+        val tp = Parser().type(false)
         assert(tp is Type.Func && tp.inp is Type.Unit && tp.out is Type.Unit)
     }
     @Test
@@ -66,7 +66,7 @@ class TParser {
         All_new(PushbackReader(StringReader("("), 2))
         Lexer.lex()
         try {
-            Parser().type()
+            Parser().type(false)
             error("impossible case")
         } catch (e: Throwable) {
             assert(e.message == "(ln 1, col 2): expected type : have end of file")
@@ -77,7 +77,7 @@ class TParser {
         All_new(PushbackReader(StringReader("[()"), 2))
         Lexer.lex()
         try {
-            Parser().type()
+            Parser().type(false)
             error("impossible case")
         } catch (e: Throwable) {
             assert(e.message == "(ln 1, col 4): expected `]´ : have end of file")
@@ -87,21 +87,21 @@ class TParser {
     fun a08_parser_type_tuple () {
         All_new(PushbackReader(StringReader("[(),()]"), 2))
         Lexer.lex()
-        val tp = Parser().type()
+        val tp = Parser().type(false)
         assert(tp is Type.Tuple && tp.vec.size==2 && tp.vec[0] is Type.Unit && tp.vec[1] is Type.Unit)
     }
     @Test
     fun a09_parser_type_ptr () {
         All_new(PushbackReader(StringReader("/()@a"), 2))
         Lexer.lex()
-        val tp = Parser().type()
+        val tp = Parser().type(false)
         assert(tp is Type.Pointer && tp.pln is Type.Unit)
     }
     @Test
     fun a09_parser_type_ptr_err () {
         All_new(PushbackReader(StringReader("/()"), 2))
         Lexer.lex()
-        val t = Parser().type()
+        val t = Parser().type(false)
         assert(t is Type.Pointer && t.xscp1.id=="LOCAL")
         //assert(e.message == "(ln 1, col 4): expected `@´ : have end of file") { e.message!! }
     }
@@ -109,14 +109,14 @@ class TParser {
     fun a09_parser_type_ptr_ok () {
         All_new(PushbackReader(StringReader("/()@x"), 2))
         Lexer.lex()
-        val tp = Parser().type()
+        val tp = Parser().type(false)
         assert(tp is Type.Pointer && tp.xscp1.id=="x")
     }
     @Test
     fun a09_parser_type_ptr_err2 () {
         All_new(PushbackReader(StringReader("/()@LOCAL"), 2))
         Lexer.lex()
-        val tp = Parser().type()
+        val tp = Parser().type(false)
         assert(tp is Type.Pointer && tp.xscp1.id=="LOCAL")
         /*
         try {
@@ -134,7 +134,7 @@ class TParser {
         Lexer.lex()
         //val tp = Parser().type()
         try {
-            Parser().type()
+            Parser().type(false)
             error("impossible case")
         } catch (e: Throwable) {
             //assert(e.message == "(ln 1, col 2): invalid type declaration : unexpected `?´") { e.message!! }
@@ -145,14 +145,14 @@ class TParser {
     fun a10_parser_type_ptr1 () {
         All_new(PushbackReader(StringReader("/List@GLOBAL"), 2))
         Lexer.lex()
-        val tp = Parser().type()
+        val tp = Parser().type(false)
         assert(tp is Type.Pointer)      // error on check
     }
     @Test
     fun a10_parser_type_ptr2 () {
         All_new(PushbackReader(StringReader("/<[/List@GLOBAL]>@LOCAL"), 2))
         Lexer.lex()
-        val tp = Parser().type()
+        val tp = Parser().type(false)
         assert(tp is Type.Pointer)
     }
     @Disabled
@@ -160,7 +160,7 @@ class TParser {
     fun a11_parser_type_issupof () {
         All_new(PushbackReader(StringReader("<(),<(),^^>>"), 2))
         Lexer.lex()
-        val tp1 = Parser().type()
+        val tp1 = Parser().type(false)
         tp1.visit({ it.wup = Any() })
         val tp2 = (tp1 as Type.Union).vec[1]
         // <(),<(),^^>> = <(),<(),<(),^^>>>
@@ -175,7 +175,7 @@ class TParser {
         //val tp = Parser().type()
         //assert(tp is Type.Union && tp.isnull)
         try {
-            Parser().type()
+            Parser().type(false)
             error("impossible case")
         } catch (e: Throwable) {
             //assert(e.message == "(ln 1, col 1): invalid type declaration : unexpected `?´") { e.message!! }
@@ -187,7 +187,7 @@ class TParser {
         All_new(PushbackReader(StringReader("<? /(), ()>"), 2))
         Lexer.lex()
         try {
-            Parser().type()
+            Parser().type(false)
             error("impossible case")
         } catch (e: Throwable) {
             //assert(e.message == "(ln 1, col 1): invalid type declaration : unexpected `?´") { e.message!! }
@@ -198,7 +198,7 @@ class TParser {
     fun a13_parser_type_pointer_scope () {
         All_new(PushbackReader(StringReader("//() @a @b"), 2))
         Lexer.lex()
-        val tp = Parser().type()
+        val tp = Parser().type(false)
         assert(tp is Type.Pointer && tp.xscp1.id=="b" && tp.pln is Type.Pointer && (tp.pln as Type.Pointer).xscp1.id=="a")
     }
 
@@ -805,7 +805,7 @@ class TParser {
     fun d01_type_task () {
         All_new(PushbackReader(StringReader("task @LOCAL->@[]->()->()->() {}"), 2))
         Lexer.lex()
-        val tp = Parser().type()
+        val tp = Parser().type(false)
         assert(tp is Type.Func && tp.tk.enu==TK.TASK)
     }
     @Test
@@ -887,7 +887,7 @@ class TParser {
         All_new(PushbackReader(StringReader("active tasks @[]->()->()->()"), 2))
         Lexer.lex()
         try {
-            Parser().type()
+            Parser().type(false)
             error("impossible case")
         } catch (e: Throwable) {
             assert(e.message == "(ln 1, col 14): expected `@´ : have `@[´") { e.message!! }
@@ -897,7 +897,7 @@ class TParser {
     fun d10_tassk () {
         All_new(PushbackReader(StringReader("active tasks @LOCAL->@[]->()->()->()"), 2))
         Lexer.lex()
-        val tp = Parser().type()
+        val tp = Parser().type(false)
         assert(tp is Type.Spawns && tp.tsk.tk.enu==TK.TASKS && tp.tsk.xscp1s.first!!.id=="LOCAL")
     }
 
