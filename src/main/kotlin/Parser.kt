@@ -1,76 +1,7 @@
-open class Parser {
-
-    fun scp1s (f: (Tk) -> Tk.Id): Array<Tk.Id> {
-        val scps = mutableListOf<Tk.Id>()
-        while (all.accept(TK.XID)) {
-            scps.add(f(all.tk0))
-            if (!all.accept(TK.CHAR, ',')) {
-                break
-            }
-        }
-        return scps.toTypedArray()
-    }
-
-    fun scopepars (): Pair<Array<Tk.Id>, Array<Pair<String, String>>> {
-        all.accept_err(TK.ATBRACK)
-        val scps = this.scp1s { it.asscopepar() }
-        val ctrs = mutableListOf<Pair<String, String>>()
-        if (all.accept(TK.CHAR, ':')) {
-            while (all.accept(TK.XID)) {
-                val id1 = all.tk0.asscopepar().id
-                all.accept_err(TK.CHAR, '>')
-                all.accept_err(TK.XID)
-                val id2 = all.tk0.asscopepar().id
-                ctrs.add(Pair(id1, id2))
-                if (!all.accept(TK.CHAR, ',')) {
-                    break
-                }
-            }
-        }
-        all.accept_err(TK.CHAR, ']')
-        return Pair(scps, ctrs.toTypedArray())
-    }
-
+open class Parser
+{
     open fun type (tasks: Boolean): Type {
         return when {
-            all.accept(TK.UNIT) -> Type.Unit(all.tk0 as Tk.Sym)
-            all.accept(TK.XNAT) -> Type.Nat(all.tk0 as Tk.Nat)
-            all.accept(TK.CHAR, '(') -> {
-                val tp = this.type(false)
-                all.accept_err(TK.CHAR, ')')
-                tp
-            }
-            all.accept(TK.CHAR, '[') || all.accept(TK.CHAR, '<') -> {
-                val tk0 = all.tk0 as Tk.Chr
-                val tp = this.type(false)
-                val tps = arrayListOf(tp)
-                while (true) {
-                    if (!all.accept(TK.CHAR, ',')) {
-                        break
-                    }
-                    val tp2 = this.type(false)
-                    tps.add(tp2)
-                }
-                if (tk0.chr == '[') {
-                    all.accept_err(TK.CHAR, ']')
-                    Type.Tuple(tk0, tps.toTypedArray())
-                } else {
-                    all.accept_err(TK.CHAR, '>')
-                    val vec = tps.toTypedArray()
-                    Type.Union(tk0, vec)
-                }
-            }
-            all.accept(TK.ACTIVE) -> {
-                val tk0 = all.tk0 as Tk.Key
-                all.check(TK.TASKS) || all.check_err(TK.TASK)
-                val task = this.type(true)
-                assert(task is Type.Func && task.tk.enu != TK.FUNC)
-                if (task.tk.enu == TK.TASKS) {
-                    Type.Spawns(tk0, task as Type.Func)
-                } else {
-                    Type.Spawn(tk0, task as Type.Func)
-                }
-            }
             all.accept(TK.XID) -> {
                 val tk0 = all.tk0.astype()
                 val scps = if (all.accept(TK.ATBRACK)) {
@@ -127,6 +58,44 @@ open class Parser {
 
                 Type.Func(tk0, Triple(clo, scps, ctrs), null, inp, pub, out)
             }
+            all.accept(TK.UNIT) -> Type.Unit(all.tk0 as Tk.Sym)
+            all.accept(TK.XNAT) -> Type.Nat(all.tk0 as Tk.Nat)
+            all.accept(TK.CHAR, '(') -> {
+                val tp = this.type(false)
+                all.accept_err(TK.CHAR, ')')
+                tp
+            }
+            all.accept(TK.CHAR, '[') || all.accept(TK.CHAR, '<') -> {
+                val tk0 = all.tk0 as Tk.Chr
+                val tp = this.type(false)
+                val tps = arrayListOf(tp)
+                while (true) {
+                    if (!all.accept(TK.CHAR, ',')) {
+                        break
+                    }
+                    val tp2 = this.type(false)
+                    tps.add(tp2)
+                }
+                if (tk0.chr == '[') {
+                    all.accept_err(TK.CHAR, ']')
+                    Type.Tuple(tk0, tps.toTypedArray())
+                } else {
+                    all.accept_err(TK.CHAR, '>')
+                    val vec = tps.toTypedArray()
+                    Type.Union(tk0, vec)
+                }
+            }
+            all.accept(TK.ACTIVE) -> {
+                val tk0 = all.tk0 as Tk.Key
+                all.check(TK.TASKS) || all.check_err(TK.TASK)
+                val task = this.type(true)
+                assert(task is Type.Func && task.tk.enu != TK.FUNC)
+                if (task.tk.enu == TK.TASKS) {
+                    Type.Spawns(tk0, task as Type.Func)
+                } else {
+                    Type.Spawn(tk0, task as Type.Func)
+                }
+            }
             else -> {
                 all.err_expected("type")
                 error("unreachable")
@@ -134,45 +103,13 @@ open class Parser {
         }
     }
 
-    fun expr (): Expr {
+    open fun expr (): Expr {
         var e = when {
-            all.accept(TK.UNIT) -> Expr.Unit(all.tk0 as Tk.Sym)
-            all.accept(TK.XID) -> Expr.Var(all.tk0 as Tk.Id)
             all.accept(TK.XNAT) -> {
                 val tk0 = all.tk0 as Tk.Nat
                 all.accept_err(TK.CHAR, ':')
                 val tp = this.type(false)
                 Expr.Nat(tk0, tp)
-            }
-            all.accept(TK.CHAR, '/') -> {
-                val tk0 = all.tk0 as Tk.Chr
-                val e = this.expr()
-                all.assert_tk(
-                    all.tk0,
-                    e is Expr.Nat || e is Expr.Var || e is Expr.TDisc || e is Expr.Dnref || e is Expr.Upref
-                ) {
-                    "unexpected operand to `/´"
-                }
-                Expr.Upref(tk0, e)
-            }
-            all.accept(TK.CHAR, '(') -> {
-                val e = this.expr()
-                all.accept_err(TK.CHAR, ')')
-                e
-            }
-            all.accept(TK.CHAR, '[') -> {
-                val tk0 = all.tk0 as Tk.Chr
-                val e = this.expr()
-                val es = arrayListOf(e)
-                while (true) {
-                    if (!all.accept(TK.CHAR, ',')) {
-                        break
-                    }
-                    val e2 = this.expr()
-                    es.add(e2)
-                }
-                all.accept_err(TK.CHAR, ']')
-                Expr.TCons(tk0, es.toTypedArray())
             }
             all.accept(TK.CHAR, '<') -> {
                 all.accept_err(TK.CHAR, '.')
@@ -203,6 +140,38 @@ open class Parser {
                     Tk.Id(TK.XID, all.tk0.lin, all.tk0.col, "LOCAL")
                 }
                 Expr.New(tk0 as Tk.Key, scp, null, e as Expr.UCons)
+            }
+            all.accept(TK.UNIT) -> Expr.Unit(all.tk0 as Tk.Sym)
+            all.accept(TK.XID) -> Expr.Var(all.tk0 as Tk.Id)
+            all.accept(TK.CHAR, '/') -> {
+                val tk0 = all.tk0 as Tk.Chr
+                val e = this.expr()
+                all.assert_tk(
+                    all.tk0,
+                    e is Expr.Nat || e is Expr.Var || e is Expr.TDisc || e is Expr.Dnref || e is Expr.Upref
+                ) {
+                    "unexpected operand to `/´"
+                }
+                Expr.Upref(tk0, e)
+            }
+            all.accept(TK.CHAR, '(') -> {
+                val e = this.expr()
+                all.accept_err(TK.CHAR, ')')
+                e
+            }
+            all.accept(TK.CHAR, '[') -> {
+                val tk0 = all.tk0 as Tk.Chr
+                val e = this.expr()
+                val es = arrayListOf(e)
+                while (true) {
+                    if (!all.accept(TK.CHAR, ',')) {
+                        break
+                    }
+                    val e2 = this.expr()
+                    es.add(e2)
+                }
+                all.accept_err(TK.CHAR, ']')
+                Expr.TCons(tk0, es.toTypedArray())
             }
             all.check(TK.TASK) || all.check(TK.FUNC) -> {
                 val tk = all.tk1 as Tk.Key
@@ -305,6 +274,168 @@ open class Parser {
         return e
     }
 
+    fun stmt (): Stmt {
+        return when {
+            all.accept(TK.VAR) -> {
+                all.accept_err(TK.XID)
+                val tk_id = all.tk0 as Tk.Id
+                all.accept_err(TK.CHAR, ':')
+                val tp = this.type(false)
+                Stmt.Var(tk_id, tp)
+            }
+            all.accept(TK.SET) -> {
+                val dst = this.attr().toExpr()
+                all.accept_err(TK.CHAR, '=')
+                val tk0 = all.tk0 as Tk.Chr
+                when {
+                    all.check(TK.INPUT) -> {
+                        all.accept(TK.INPUT)
+                        val tk = all.tk0 as Tk.Key
+                        all.accept_err(TK.XID)
+                        val lib = (all.tk0 as Tk.Id)
+                        val arg = this.expr()
+                        all.accept_err(TK.CHAR, ':')
+                        val tp = this.type(false)
+                        Stmt.Input(tk, tp, dst, lib, arg)
+                    }
+                    all.check(TK.SPAWN) -> {
+                        all.accept(TK.SPAWN)
+                        val tk = all.tk0 as Tk.Key
+                        val e = this.expr()
+                        All_assert_tk(tk, e is Expr.Call) { "expected call expression" }
+                        Stmt.SSpawn(tk, dst, e as Expr.Call)
+                    }
+                    else -> {
+                        val src = this.expr()
+                        Stmt.Set(tk0, dst, src)
+                    }
+                }
+            }
+            all.accept(TK.INPUT) -> {
+                val tk = all.tk0 as Tk.Key
+                all.accept_err(TK.XID)
+                val lib = (all.tk0 as Tk.Id)
+                val arg = this.expr()
+                all.accept_err(TK.CHAR, ':')
+                val tp = this.type(false)
+                Stmt.Input(tk, tp, null, lib, arg)
+            }
+            all.accept(TK.IF) -> {
+                val tk0 = all.tk0 as Tk.Key
+                val tst = this.expr()
+                val true_ = this.block()
+                all.accept_err(TK.ELSE)
+                val false_ = this.block()
+                Stmt.If(tk0, tst, true_, false_)
+            }
+            all.accept(TK.RETURN) -> Stmt.Return(all.tk0 as Tk.Key)
+            all.accept(TK.TYPE) -> {
+                all.accept_err(TK.XID)
+                val id = all.tk0.astype()
+                val scps = if (all.check(TK.ATBRACK)) this.scopepars() else Pair(emptyArray(), emptyArray())
+                all.accept_err(TK.CHAR, '=')
+                val tp = this.type(false)
+                Stmt.Typedef(id, scps, null, tp)
+            }
+            all.accept(TK.NATIVE) -> {
+                val istype = all.accept(TK.TYPE)
+                all.accept_err(TK.XNAT)
+                Stmt.Native(all.tk0 as Tk.Nat, istype)
+            }
+            all.accept(TK.CALL) -> {
+                val tk0 = all.tk0 as Tk.Key
+                val e = this.expr()
+                All_assert_tk(tk0, e is Expr.Call) { "expected call expression" }
+                Stmt.SCall(tk0, e as Expr.Call)
+            }
+            all.accept(TK.SPAWN) -> {
+                val tk0 = all.tk0 as Tk.Key
+                val e = this.expr()
+                All_assert_tk(tk0, e is Expr.Call) { "expected call expression" }
+                all.accept_err(TK.IN)
+                val tsks = this.expr()
+                Stmt.DSpawn(tk0, tsks, e as Expr.Call)
+            }
+            all.accept(TK.AWAIT) -> {
+                val tk0 = all.tk0 as Tk.Key
+                val e = this.expr()
+                Stmt.Await(tk0, e)
+            }
+            all.accept(TK.BCAST) -> {
+                val tk0 = all.tk0 as Tk.Key
+                val scp = if (all.accept(TK.CHAR, '@')) {
+                    all.accept_err(TK.XID)
+                    all.tk0.asscope()
+                } else {
+                    Tk.Id(TK.XID, all.tk0.lin, all.tk0.col, "GLOBAL")
+                }
+                val e = this.expr()
+                Stmt.Bcast(tk0, scp, e)
+            }
+            all.accept(TK.THROW) -> {
+                Stmt.Throw(all.tk0 as Tk.Key)
+            }
+            all.accept(TK.LOOP) -> {
+                val tk0 = all.tk0 as Tk.Key
+                if (all.check(TK.CHAR, '{')) {
+                    val block = this.block()
+                    Stmt.Loop(tk0, block)
+                } else {
+                    val i = this.expr()
+                    All_assert_tk(all.tk0, i is Expr.Var) { "expected variable expression" }
+                    all.accept_err(TK.IN)
+                    val tsks = this.expr()
+                    val block = this.block()
+                    Stmt.DLoop(tk0, i as Expr.Var, tsks, block)
+                }
+            }
+            all.accept(TK.BREAK) -> Stmt.Break(all.tk0 as Tk.Key)
+            all.accept(TK.CATCH) || all.check(TK.CHAR, '{') -> this.block()
+            all.accept(TK.OUTPUT) -> {
+                val tk = all.tk0 as Tk.Key
+                all.accept_err(TK.XID)
+                val lib = (all.tk0 as Tk.Id)
+                val arg = this.expr()
+                Stmt.Output(tk, lib, arg)
+            }
+            else -> {
+                all.err_expected("statement")
+                error("unreachable")
+            }
+        }
+    }
+
+    fun scp1s (f: (Tk) -> Tk.Id): Array<Tk.Id> {
+        val scps = mutableListOf<Tk.Id>()
+        while (all.accept(TK.XID)) {
+            scps.add(f(all.tk0))
+            if (!all.accept(TK.CHAR, ',')) {
+                break
+            }
+        }
+        return scps.toTypedArray()
+    }
+
+    fun scopepars (): Pair<Array<Tk.Id>, Array<Pair<String, String>>> {
+        all.accept_err(TK.ATBRACK)
+        val scps = this.scp1s { it.asscopepar() }
+        val ctrs = mutableListOf<Pair<String, String>>()
+        if (all.accept(TK.CHAR, ':')) {
+            while (all.accept(TK.XID)) {
+                val id1 = all.tk0.asscopepar().id
+                all.accept_err(TK.CHAR, '>')
+                all.accept_err(TK.XID)
+                val id2 = all.tk0.asscopepar().id
+                ctrs.add(Pair(id1, id2))
+                if (!all.accept(TK.CHAR, ',')) {
+                    break
+                }
+            }
+        }
+        all.accept_err(TK.CHAR, ']')
+        return Pair(scps, ctrs.toTypedArray())
+    }
+
     fun attr (): Attr {
         var e = when {
             all.accept(TK.XID) -> Attr.Var(all.tk0 as Tk.Id)
@@ -391,136 +522,6 @@ open class Parser {
         return Stmt.Block(tk0, iscatch, scp, ret)
     }
 
-    fun stmt (): Stmt {
-        return when {
-            all.accept(TK.VAR) -> {
-                all.accept_err(TK.XID)
-                val tk_id = all.tk0 as Tk.Id
-                all.accept_err(TK.CHAR, ':')
-                val tp = this.type(false)
-                Stmt.Var(tk_id, tp)
-            }
-            all.accept(TK.SET) -> {
-                val dst = this.attr().toExpr()
-                all.accept_err(TK.CHAR, '=')
-                val tk0 = all.tk0 as Tk.Chr
-                when {
-                    all.check(TK.INPUT) -> {
-                        all.accept(TK.INPUT)
-                        val tk = all.tk0 as Tk.Key
-                        all.accept_err(TK.XID)
-                        val lib = (all.tk0 as Tk.Id)
-                        val arg = this.expr()
-                        all.accept_err(TK.CHAR, ':')
-                        val tp = this.type(false)
-                        Stmt.Input(tk, tp, dst, lib, arg)
-                    }
-                    all.check(TK.SPAWN) -> {
-                        all.accept(TK.SPAWN)
-                        val tk = all.tk0 as Tk.Key
-                        val e = this.expr()
-                        All_assert_tk(tk, e is Expr.Call) { "expected call expression" }
-                        Stmt.SSpawn(tk, dst, e as Expr.Call)
-                    }
-                    else -> {
-                        val src = this.expr()
-                        Stmt.Set(tk0, dst, src)
-                    }
-                }
-            }
-            all.accept(TK.NATIVE) -> {
-                val istype = all.accept(TK.TYPE)
-                all.accept_err(TK.XNAT)
-                Stmt.Native(all.tk0 as Tk.Nat, istype)
-            }
-            all.accept(TK.CALL) -> {
-                val tk0 = all.tk0 as Tk.Key
-                val e = this.expr()
-                All_assert_tk(tk0, e is Expr.Call) { "expected call expression" }
-                Stmt.SCall(tk0, e as Expr.Call)
-            }
-            all.accept(TK.SPAWN) -> {
-                val tk0 = all.tk0 as Tk.Key
-                val e = this.expr()
-                All_assert_tk(tk0, e is Expr.Call) { "expected call expression" }
-                all.accept_err(TK.IN)
-                val tsks = this.expr()
-                Stmt.DSpawn(tk0, tsks, e as Expr.Call)
-            }
-            all.accept(TK.AWAIT) -> {
-                val tk0 = all.tk0 as Tk.Key
-                val e = this.expr()
-                Stmt.Await(tk0, e)
-            }
-            all.accept(TK.BCAST) -> {
-                val tk0 = all.tk0 as Tk.Key
-                val scp = if (all.accept(TK.CHAR, '@')) {
-                    all.accept_err(TK.XID)
-                    all.tk0.asscope()
-                } else {
-                    Tk.Id(TK.XID, all.tk0.lin, all.tk0.col, "GLOBAL")
-                }
-                val e = this.expr()
-                Stmt.Bcast(tk0, scp, e)
-            }
-            all.accept(TK.THROW) -> {
-                Stmt.Throw(all.tk0 as Tk.Key)
-            }
-            all.accept(TK.INPUT) -> {
-                val tk = all.tk0 as Tk.Key
-                all.accept_err(TK.XID)
-                val lib = (all.tk0 as Tk.Id)
-                val arg = this.expr()
-                all.accept_err(TK.CHAR, ':')
-                val tp = this.type(false)
-                Stmt.Input(tk, tp, null, lib, arg)
-            }
-            all.accept(TK.OUTPUT) -> {
-                val tk = all.tk0 as Tk.Key
-                all.accept_err(TK.XID)
-                val lib = (all.tk0 as Tk.Id)
-                val arg = this.expr()
-                Stmt.Output(tk, lib, arg)
-            }
-            all.accept(TK.IF) -> {
-                val tk0 = all.tk0 as Tk.Key
-                val tst = this.expr()
-                val true_ = this.block()
-                all.accept_err(TK.ELSE)
-                val false_ = this.block()
-                Stmt.If(tk0, tst, true_, false_)
-            }
-            all.accept(TK.RETURN) -> Stmt.Return(all.tk0 as Tk.Key)
-            all.accept(TK.LOOP) -> {
-                val tk0 = all.tk0 as Tk.Key
-                if (all.check(TK.CHAR, '{')) {
-                    val block = this.block()
-                    Stmt.Loop(tk0, block)
-                } else {
-                    val i = this.expr()
-                    All_assert_tk(all.tk0, i is Expr.Var) { "expected variable expression" }
-                    all.accept_err(TK.IN)
-                    val tsks = this.expr()
-                    val block = this.block()
-                    Stmt.DLoop(tk0, i as Expr.Var, tsks, block)
-                }
-            }
-            all.accept(TK.BREAK) -> Stmt.Break(all.tk0 as Tk.Key)
-            all.accept(TK.CATCH) || all.check(TK.CHAR, '{') -> this.block()
-            all.accept(TK.TYPE) -> {
-                all.accept_err(TK.XID)
-                val id = all.tk0.astype()
-                val scps = if (all.check(TK.ATBRACK)) this.scopepars() else Pair(emptyArray(), emptyArray())
-                all.accept_err(TK.CHAR, '=')
-                val tp = this.type(false)
-                Stmt.Typedef(id, scps, null, tp)
-            }
-            else -> {
-                all.err_expected("statement")
-                error("unreachable")
-            }
-        }
-    }
 
     fun stmts (): Stmt {
         fun enseq(s1: Stmt, s2: Stmt): Stmt {
