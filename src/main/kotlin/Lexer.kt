@@ -107,144 +107,147 @@ fun TK.toErr (chr: Char?): String {
     }
 }
 
-fun blanks (all: All) {
-    while (true) {
-        val (c1,x1) = all.read()
-        when (x1) {
-            '\n', ' ' -> { }                // ignore line/space
-            '-' -> {
-                val (c2,x2) = all.read()
-                if (x2 == '-') {            // ignore comments
-                    while (true) {
-                        val (c3,x3) = all.read()
-                        if (c3 == -1) {     // EOF stops comment
-                            break
+object Lexer {
+    fun blanks() {
+        while (true) {
+            val (c1, x1) = all.read()
+            when (x1) {
+                '\n', ' ' -> {
+                }                // ignore line/space
+                '-' -> {
+                    val (c2, x2) = all.read()
+                    if (x2 == '-') {            // ignore comments
+                        while (true) {
+                            val (c3, x3) = all.read()
+                            if (c3 == -1) {     // EOF stops comment
+                                break
+                            }
+                            if (x3 == '\n') {   // LN stops comment
+                                all.unread(c3)
+                                break
+                            }
                         }
-                        if (x3 == '\n') {   // LN stops comment
-                            all.unread(c3)
-                            break
-                        }
+                    } else {
+                        all.unread(c2)
+                        all.unread(c1)
+                        return
                     }
-                } else {
-                    all.unread(c2)
+                }
+                else -> {
                     all.unread(c1)
                     return
                 }
             }
-            else -> {
-                all.unread(c1)
-                return
-            }
         }
     }
-}
 
-fun token (all: All) {
-    val LIN = all.lin
-    val COL = all.col
+    fun token() {
+        val LIN = all.lin
+        val COL = all.col
 
-    var (c1,x1) = all.read()
+        var (c1, x1) = all.read()
 
-    when {
-        (c1 == -1) -> all.tk1 = Tk.Sym(TK.EOF, LIN, COL, "")
-        (x1 in arrayOf(')', '{', '}', '[', ']', '<' , '>' , ';' , ':' , '=' , ',' , '\\', '/' , '.', '!' , '?')) -> {
-            all.tk1 = Tk.Chr(TK.CHAR, LIN, COL, x1)
-        }
-        (x1 == '(') -> {
-            val (c2,x2) = all.read()
-            if (x2 == ')') {
-                all.tk1 = Tk.Sym(TK.UNIT, LIN, COL, "()")
-            } else {
+        when {
+            (c1 == -1) -> all.tk1 = Tk.Sym(TK.EOF, LIN, COL, "")
+            (x1 in arrayOf(')', '{', '}', '[', ']', '<', '>', ';', ':', '=', ',', '\\', '/', '.', '!', '?')) -> {
                 all.tk1 = Tk.Chr(TK.CHAR, LIN, COL, x1)
-                all.unread(c2)
             }
-        }
-        (x1 == '-') -> {
-            val (_,x2) = all.read()
-            if (x2 == '>') {
-                all.tk1 = Tk.Sym(TK.ARROW, LIN, COL, "->")
-            } else {
-                all.tk1 = Tk.Err(TK.ERR, LIN, COL, ""+x1+x2)
-            }
-        }
-        (x1 == '@') -> {
-            all.read().let { c1 = it.first; x1 = it.second }
-            if (x1 == '[') {
-                all.tk1 = Tk.Sym(TK.ATBRACK, LIN, COL, "@[")
-            } else {
-                all.unread(c1)
-                all.tk1 = Tk.Chr(TK.CHAR, LIN, COL, '@')
-            }
-        }
-        (x1 == '_') -> {
-            var (c2,x2) = all.read()
-            var pay = ""
-
-            var open:  Char? = null
-            var close: Char? = null
-            var open_close = 0
-            if (x2=='(' || x2=='{') {
-                open  = x2
-                close = if (x2=='(') ')' else '}'
-                open_close += 1
-                all.read().let { c2=it.first ; x2=it.second }
-            }
-
-            while ((close!=null || x2.isLetterOrDigit() || x2=='_')) {
-                if (c2 == -1) {
-                    all.tk1 = Tk.Err(TK.ERR, LIN, COL, "unterminated token")
-                    return
+            (x1 == '(') -> {
+                val (c2, x2) = all.read()
+                if (x2 == ')') {
+                    all.tk1 = Tk.Sym(TK.UNIT, LIN, COL, "()")
+                } else {
+                    all.tk1 = Tk.Chr(TK.CHAR, LIN, COL, x1)
+                    all.unread(c2)
                 }
-                if (x2 == open) {
+            }
+            (x1 == '-') -> {
+                val (_, x2) = all.read()
+                if (x2 == '>') {
+                    all.tk1 = Tk.Sym(TK.ARROW, LIN, COL, "->")
+                } else {
+                    all.tk1 = Tk.Err(TK.ERR, LIN, COL, "" + x1 + x2)
+                }
+            }
+            (x1 == '@') -> {
+                all.read().let { c1 = it.first; x1 = it.second }
+                if (x1 == '[') {
+                    all.tk1 = Tk.Sym(TK.ATBRACK, LIN, COL, "@[")
+                } else {
+                    all.unread(c1)
+                    all.tk1 = Tk.Chr(TK.CHAR, LIN, COL, '@')
+                }
+            }
+            (x1 == '_') -> {
+                var (c2, x2) = all.read()
+                var pay = ""
+
+                var open: Char? = null
+                var close: Char? = null
+                var open_close = 0
+                if (x2 == '(' || x2 == '{') {
+                    open = x2
+                    close = if (x2 == '(') ')' else '}'
                     open_close += 1
-                } else if (x2 == close) {
-                    open_close -= 1
-                    if (open_close == 0) {
-                        break
+                    all.read().let { c2 = it.first; x2 = it.second }
+                }
+
+                while ((close != null || x2.isLetterOrDigit() || x2 == '_')) {
+                    if (c2 == -1) {
+                        all.tk1 = Tk.Err(TK.ERR, LIN, COL, "unterminated token")
+                        return
+                    }
+                    if (x2 == open) {
+                        open_close += 1
+                    } else if (x2 == close) {
+                        open_close -= 1
+                        if (open_close == 0) {
+                            break
+                        }
+                    }
+                    pay += x2
+                    all.read().let { c2 = it.first; x2 = it.second }
+                }
+                if (close == null) {
+                    all.unread(c2)
+                }
+                all.tk1 = Tk.Nat(TK.XNAT, LIN, COL, open, pay)
+            }
+            x1.isDigit() -> {
+                var pay = ""
+                do {
+                    pay += x1
+                    all.read().let { c1 = it.first; x1 = it.second }
+                } while (x1.isDigit())
+                all.unread(c1)
+                all.tk1 = Tk.Num(TK.XNUM, LIN, COL, pay.toInt())
+            }
+            x1.isLetter() -> {
+                var pay = ""
+                do {
+                    pay += x1
+                    all.read().let { c1 = it.first; x1 = it.second }
+                } while (x1.isLetterOrDigit() || x1 == '_')
+                all.unread(c1)
+
+                all.tk1 = key2tk[pay].let {
+                    if (it != null) {
+                        Tk.Key(it, LIN, COL, pay)
+                    } else {
+                        Tk.Id(TK.XID, LIN, COL, pay)
                     }
                 }
-                pay += x2
-                all.read().let { c2=it.first ; x2=it.second }
             }
-            if (close == null) {
-                all.unread(c2)
+            else -> {
+                all.tk1 = Tk.Err(TK.ERR, LIN, COL, x1.toString())
             }
-            all.tk1 = Tk.Nat(TK.XNAT, LIN, COL, open, pay)
-        }
-        x1.isDigit() -> {
-            var pay = ""
-            do {
-                pay += x1
-                all.read().let { c1=it.first ; x1=it.second }
-            } while (x1.isDigit())
-            all.unread(c1)
-            all.tk1 = Tk.Num(TK.XNUM, LIN, COL, pay.toInt())
-        }
-        x1.isLetter() -> {
-            var pay = ""
-            do {
-                pay += x1
-                all.read().let { c1=it.first ; x1=it.second }
-            } while (x1.isLetterOrDigit() || x1=='_')
-            all.unread(c1)
-
-            all.tk1 = key2tk[pay].let {
-                if (it != null) {
-                    Tk.Key(it, LIN, COL, pay)
-                } else {
-                    Tk.Id(TK.XID, LIN, COL, pay)
-                }
-            }
-        }
-        else -> {
-            all.tk1 = Tk.Err(TK.ERR, LIN, COL, x1.toString())
         }
     }
-}
 
-fun lexer (all: All) {
-    all.tk0 = all.tk1
-    blanks(all)
-    token(all)
-    blanks(all)
+    fun lex() {
+        all.tk0 = all.tk1
+        blanks()
+        token()
+        blanks()
+    }
 }

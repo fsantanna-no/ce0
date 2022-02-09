@@ -9,10 +9,10 @@ import java.io.StringReader
 class TEnv {
 
     fun inp2env (inp: String): String {
-        val all = All_new(PushbackReader(StringReader(inp), 2))
-        lexer(all)
+        All_new(PushbackReader(StringReader(inp), 2))
+        Lexer.lex()
         try {
-            val s = parser_stmts(all)
+            val s = Parser.stmts()
             s.setUps(null)
             s.setEnvs(null)
             check_01_before_tps(s)

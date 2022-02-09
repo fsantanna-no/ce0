@@ -1,5 +1,8 @@
 import java.io.PushbackReader
+import java.io.StringReader
 import java.lang.AssertionError
+
+var all: All = All(PushbackReader(StringReader(""), 2), Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,""))
 
 data class All(
     val inp: PushbackReader,
@@ -9,8 +12,8 @@ data class All(
     var col: Int = 1,
 )
 
-fun All_new (inp: PushbackReader): All {
-    return All(inp, Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,""))
+fun All_new (inp: PushbackReader) {
+    all = All(inp, Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,""))
 }
 
 fun All.read (): Pair<Int,Char> {
@@ -42,7 +45,7 @@ fun All.unread (i: Int) {
 fun All.accept (enu: TK, chr: Char? = null): Boolean {
     val ret = this.check(enu, chr)
     if (ret) {
-        lexer(this)
+        Lexer.lex()
     }
     return ret
 }

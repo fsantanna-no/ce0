@@ -1,18 +1,7 @@
-- it is Type.Pointer || *also Type.Alias*
-- // TODO: both New/Call should have xscp1!!
-- unify parser_scp1s, parser_scopepars
-- infer Type @[...]
 - unify ce0/ce1 as most as possible
+- unify parser_scp1s, parser_scopepars
 
-- ce1 <- ce0 (type)
-  - type List = </List>
-    - must infer @[a]
-      - type List @[a] = </List @[a] @a>
-    - and not
-      - type List = </List @LOCAL>
-  
 - pico-ce
-- type List = List
 - change @[@a1,@a2] -> @[a,b: a>b]
   - check constraint in func comparison
 - accept @A vs var a

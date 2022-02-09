@@ -11,10 +11,10 @@ val VALGRIND = ""
 //val VALGRIND = "valgrind "
 
 fun ce2c (ce: String): Pair<Boolean,String> {
-    val all = All_new(PushbackReader(StringReader(ce), 2))
-    lexer(all)
+    All_new(PushbackReader(StringReader(ce), 2))
+    Lexer.lex()
     try {
-        val s = parser_stmts(all)
+        val s = Parser.stmts()
         s.setUps(null)
         s.setEnvs(null)
         check_01_before_tps(s)
