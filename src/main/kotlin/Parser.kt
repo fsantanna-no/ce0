@@ -338,14 +338,14 @@ open class Parser {
         // one.1!\.2.1?
         while (all.accept(TK.CHAR, '\\') || all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!')) {
             val chr = all.tk0 as Tk.Chr
-            if (chr.chr == '\\') {
+            e = if (chr.chr == '\\') {
                 all.assert_tk(
                     all.tk0,
                     e is Attr.Nat || e is Attr.Var || e is Attr.TDisc || e is Attr.UDisc || e is Attr.Dnref
                 ) {
                     "unexpected operand to `\\´"
                 }
-                e = Attr.Dnref(chr, e)
+                Attr.Dnref(chr, e)
             } else {
                 val ok = when {
                     (chr.chr != '.') -> false
@@ -362,7 +362,7 @@ open class Parser {
                     all.accept_err(TK.XNUM)
                 }
                 val num = if (ok) null else (all.tk0 as Tk.Num)
-                e = when {
+                when {
                     (chr.chr == '!') -> Attr.UDisc(num!!, e)
                     (chr.chr == '.') -> {
                         if (all.tk0.enu == TK.XID) {
