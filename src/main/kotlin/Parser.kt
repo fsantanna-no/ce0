@@ -103,8 +103,8 @@ open class Parser
         }
     }
 
-    open fun expr (): Expr {
-        var e = when {
+    open fun expr_one (): Expr {
+        return when {
             all.accept(TK.XNAT) -> {
                 val tk0 = all.tk0 as Tk.Nat
                 all.accept_err(TK.CHAR, ':')
@@ -197,6 +197,10 @@ open class Parser
                 error("unreachable")
             }
         }
+    }
+
+    fun expr_dots (): Expr {
+        var e = this.expr_one()
 
         // one!1\.2?1
         while (all.accept(TK.CHAR, '\\') || all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!') || all.accept(
@@ -251,9 +255,13 @@ open class Parser
                 }
             }
         }
+        return e
+    }
+
+    fun expr (): Expr {
+        var e = this.expr_dots()
 
         // call
-
         if (all.checkExpr() || all.check(TK.ATBRACK)) {
             val iscps = if (all.accept(TK.ATBRACK)) {
                 val ret = this.scp1s { it.asscope() }
@@ -270,11 +278,10 @@ open class Parser
             }
             e = Expr.Call(e.tk, e, arg, Pair(iscps, oscp), null)
         }
-
         return e
     }
 
-    fun stmt (): Stmt {
+    open fun stmt (): Stmt {
         return when {
             all.accept(TK.VAR) -> {
                 all.accept_err(TK.XID)
