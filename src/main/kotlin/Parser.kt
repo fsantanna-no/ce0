@@ -199,66 +199,7 @@ open class Parser
         }
     }
 
-    fun expr_dots (): Expr {
-        var e = this.expr_one()
-
-        // one!1\.2?1
-        while (all.accept(TK.CHAR, '\\') || all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!') || all.accept(
-                TK.CHAR,
-                '?'
-            )
-        ) {
-            val chr = all.tk0 as Tk.Chr
-            e = if (chr.chr == '\\') {
-                all.assert_tk(
-                    all.tk0,
-                    e is Expr.Nat || e is Expr.Var || e is Expr.TDisc || e is Expr.UDisc || e is Expr.Dnref || e is Expr.Upref || e is Expr.Call
-                ) {
-                    "unexpected operand to `\\´"
-                }
-                Expr.Dnref(chr, e)
-            } else {
-                val ok = when {
-                    (chr.chr != '.') -> false
-                    all.accept(TK.XID) -> {
-                        val tk = all.tk0 as Tk.Id
-                        all.assert_tk(tk, tk.id == "pub") {
-                            "unexpected \"${tk.id}\""
-                        }
-                        true
-                    }
-                    else -> false
-                }
-                if (!ok) {
-                    all.accept_err(TK.XNUM)
-                }
-                val num = if (ok) null else (all.tk0 as Tk.Num)
-                all.assert_tk(all.tk0, e !is Expr.TCons && e !is Expr.UCons && e !is Expr.UNull) {
-                    "invalid discriminator : unexpected constructor"
-                }
-                if (chr.chr == '?' || chr.chr == '!') {
-                    All_assert_tk(all.tk0, num!!.num != 0 || e is Expr.Dnref) {
-                        "invalid discriminator : union cannot be <.0>"
-                    }
-                }
-                when {
-                    (chr.chr == '?') -> Expr.UPred(num!!, e)
-                    (chr.chr == '!') -> Expr.UDisc(num!!, e)
-                    (chr.chr == '.') -> {
-                        if (all.tk0.enu == TK.XID) {
-                            Expr.Pub(all.tk0 as Tk.Id, e)
-                        } else {
-                            Expr.TDisc(num!!, e)
-                        }
-                    }
-                    else -> error("impossible case")
-                }
-            }
-        }
-        return e
-    }
-
-    fun expr (): Expr {
+    open fun expr (): Expr {
         var e = this.expr_dots()
 
         // call
@@ -441,6 +382,65 @@ open class Parser
         }
         all.accept_err(TK.CHAR, ']')
         return Pair(scps, ctrs.toTypedArray())
+    }
+
+    fun expr_dots (): Expr {
+        var e = this.expr_one()
+
+        // one!1\.2?1
+        while (all.accept(TK.CHAR, '\\') || all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!') || all.accept(
+                TK.CHAR,
+                '?'
+            )
+        ) {
+            val chr = all.tk0 as Tk.Chr
+            e = if (chr.chr == '\\') {
+                all.assert_tk(
+                    all.tk0,
+                    e is Expr.Nat || e is Expr.Var || e is Expr.TDisc || e is Expr.UDisc || e is Expr.Dnref || e is Expr.Upref || e is Expr.Call
+                ) {
+                    "unexpected operand to `\\´"
+                }
+                Expr.Dnref(chr, e)
+            } else {
+                val ok = when {
+                    (chr.chr != '.') -> false
+                    all.accept(TK.XID) -> {
+                        val tk = all.tk0 as Tk.Id
+                        all.assert_tk(tk, tk.id == "pub") {
+                            "unexpected \"${tk.id}\""
+                        }
+                        true
+                    }
+                    else -> false
+                }
+                if (!ok) {
+                    all.accept_err(TK.XNUM)
+                }
+                val num = if (ok) null else (all.tk0 as Tk.Num)
+                all.assert_tk(all.tk0, e !is Expr.TCons && e !is Expr.UCons && e !is Expr.UNull) {
+                    "invalid discriminator : unexpected constructor"
+                }
+                if (chr.chr == '?' || chr.chr == '!') {
+                    All_assert_tk(all.tk0, num!!.num != 0 || e is Expr.Dnref) {
+                        "invalid discriminator : union cannot be <.0>"
+                    }
+                }
+                when {
+                    (chr.chr == '?') -> Expr.UPred(num!!, e)
+                    (chr.chr == '!') -> Expr.UDisc(num!!, e)
+                    (chr.chr == '.') -> {
+                        if (all.tk0.enu == TK.XID) {
+                            Expr.Pub(all.tk0 as Tk.Id, e)
+                        } else {
+                            Expr.TDisc(num!!, e)
+                        }
+                    }
+                    else -> error("impossible case")
+                }
+            }
+        }
+        return e
     }
 
     fun attr (): Attr {
