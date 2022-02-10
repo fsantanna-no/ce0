@@ -11,7 +11,7 @@ open class Parser
                 } else {
                     emptyArray()
                 }
-                Type.Alias(tk0, false, scps, null)
+                Type.Alias(tk0, false, scps.map { Scope(it,null) }.toTypedArray())
             }
             all.accept(TK.CHAR, '/') -> {
                 val tk0 = all.tk0 as Tk.Chr
@@ -22,7 +22,7 @@ open class Parser
                 } else {
                     Tk.Id(TK.XID, all.tk0.lin, all.tk0.col, "LOCAL")
                 }
-                Type.Pointer(tk0, scp, null, pln)
+                Type.Pointer(tk0, Scope(scp,null), pln)
             }
             all.accept(TK.FUNC) || all.accept(TK.TASK) || (tasks && all.accept(TK.TASKS)) -> {
                 val tk0 = all.tk0 as Tk.Key
@@ -56,7 +56,13 @@ open class Parser
                 all.accept_err(TK.ARROW)
                 val out = this.type(false) // right associative
 
-                Type.Func(tk0, Triple(clo, scps, ctrs), null, inp, pub, out)
+                Type.Func(tk0,
+                    Triple (
+                        clo.let { if (it == null) null else Scope(it,null) },
+                        scps.map { Scope(it,null) }.toTypedArray(),
+                        ctrs
+                    ),
+                    inp, pub, out)
             }
             all.accept(TK.UNIT) -> Type.Unit(all.tk0 as Tk.Sym)
             all.accept(TK.XNAT) -> Type.Nat(all.tk0 as Tk.Nat)
@@ -139,7 +145,7 @@ open class Parser
                 } else {
                     Tk.Id(TK.XID, all.tk0.lin, all.tk0.col, "LOCAL")
                 }
-                Expr.New(tk0 as Tk.Key, scp, null, e as Expr.UCons)
+                Expr.New(tk0 as Tk.Key, Scope(scp,null), e as Expr.UCons)
             }
             all.accept(TK.UNIT) -> Expr.Unit(all.tk0 as Tk.Sym)
             all.accept(TK.XID) -> Expr.Var(all.tk0 as Tk.Id)
@@ -217,7 +223,10 @@ open class Parser
                 all.accept_err(TK.XID)
                 all.tk0.asscope()
             }
-            e = Expr.Call(e.tk, e, arg, Pair(iscps, oscp), null)
+            e = Expr.Call(e.tk, e, arg, Pair (
+                iscps.map { Scope(it,null) }.toTypedArray(),
+                oscp.let { if (it == null) null else Scope(it,null) }
+            ))
         }
         return e
     }
@@ -280,7 +289,13 @@ open class Parser
             all.accept(TK.TYPE) -> {
                 all.accept_err(TK.XID)
                 val id = all.tk0.astype()
-                val scps = if (all.check(TK.ATBRACK)) this.scopepars() else Pair(emptyArray(), emptyArray())
+                val scps = if (all.check(TK.ATBRACK)) {
+                    this.scopepars().let {
+                        Pair(it.first.map { Scope(it,null) }.toTypedArray(), it.second)
+                    }
+                } else {
+                    Pair(emptyArray(), emptyArray())
+                }
                 all.accept_err(TK.CHAR, '=')
                 val tp = this.type(false)
                 Stmt.Typedef(id, scps, /*null,*/ tp)
@@ -318,7 +333,7 @@ open class Parser
                     Tk.Id(TK.XID, all.tk0.lin, all.tk0.col, "GLOBAL")
                 }
                 val e = this.expr()
-                Stmt.Bcast(tk0, scp, e)
+                Stmt.Bcast(tk0, Scope(scp,null), e)
             }
             all.accept(TK.THROW) -> {
                 Stmt.Throw(all.tk0 as Tk.Key)
@@ -526,9 +541,11 @@ open class Parser
         }
         val ss = this.stmts()
         all.accept_err(TK.CHAR, '}')
-        return Stmt.Block(tk0, iscatch, scp, ss).let {
-            if (it.scp1 == null) {
-                it.scp1 = Tk.Id(TK.XID, tk0.lin, tk0.col, "B${it.n}")
+        return Stmt.Block(tk0, iscatch, null, ss).let {
+            it.scp = if (scp == null) {
+                Scope(Tk.Id(TK.XID, tk0.lin, tk0.col, "B${it.n}"), null)
+            } else {
+                Scope(scp, null)
             }
             it
         }

@@ -46,18 +46,18 @@ fun code_ft (tp: Type) {
                 typedef union {
                     int evt;
                     struct {
-                        Block* blks[${tp.xscp1s.second.size}];
+                        Block* blks[${tp.scps.second.size}];
                         ${tp.inp.pos()} arg;
                     } pars;
                 } X_${tp.toce()};
                 typedef struct {
                     Task task0;
-                    ${tp.xscp1s.first.let { if (it == null) "" else "Block* ${it.id};" }}
+                    ${tp.scps.first.let { if (it == null) "" else "Block* ${it.scp1.id};" }}
                     union {
-                        Block* blks[${tp.xscp1s.second.size}];
+                        Block* blks[${tp.scps.second.size}];
                         struct {
-                            ${tp.xscp1s.second.let { if (it.size == 0) "" else
-                                it.map { "Block* ${it.id};\n" }.joinToString("") }
+                            ${tp.scps.second.let { if (it.size == 0) "" else
+                                it.map { "Block* ${it.scp1.id};\n" }.joinToString("") }
                             }
                         };
                     };
@@ -212,23 +212,21 @@ fun String.mem (up: Any): String {
     }
 }
 
-fun Tk.Id.toce (up: Any): String {
+fun Scope.toce (up: Any): String {
     return when {
         // @GLOBAL is never an argument
-        (this.id == "GLOBAL")   -> "GLOBAL"
-        // @LOCAL depends (calls mem inside local())
-        (this.id == "LOCAL")    -> up.local()
+        (this.scp1.id == "GLOBAL")   -> "GLOBAL"
         // @i_1 is always an argument
-        this.isscopepar() -> "(task1->${this.id})"
+        this.scp1.isscopepar() -> "(task1->${this.scp1.id})"
         // closure block is always an argument
         (up.ups_first {
-            it is Expr.Func && it.type.xscp1s.first.let {
-                it?.enu==this.enu && it?.id==this.id
+            it is Expr.Func && it.type.scps.first.let {
+                it?.scp1?.enu==this.scp1.enu && it?.scp1?.id==this.scp1.id
             }
-        } != null) -> "(task1->${this.id})"
+        } != null) -> "(task1->${this.scp1.id})"
         // otherwise depends (calls mem)
         else -> {
-            val blk = up.env(this.id) as Stmt.Block
+            val blk = up.env(this.scp1.id) as Stmt.Block
             val mem = ("block_" + blk.n).mem(up)
             "(&" + mem + ")"
         }
@@ -357,7 +355,7 @@ fun code_fe (e: Expr) {
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
                 *$ID = ${it.expr};
-                block_push(${ptr.xscp1.toce(ptr)}, $ID);
+                block_push(${ptr.scp.toce(ptr)}, $ID);
 
             """.trimIndent()
             Code(it.type, it.pre, it.stmt+pre, ID)
@@ -383,7 +381,7 @@ fun code_fe (e: Expr) {
         is Expr.Call  -> {
             val arg  = CODE.removeFirst()
             val f    = CODE.removeFirst()
-            val blks = e.xscp1s.first.map { it.toce(e) }.joinToString(",")
+            val blks = e.scps.first.map { it.toce(e) }.joinToString(",")
             val tpf  = e.f.wtype.let {
                 when (it) {
                     is Type.Spawn  -> it.tsk
@@ -407,11 +405,11 @@ fun code_fe (e: Expr) {
                             "&" + (it.dst as Expr.Var).tk_.id.mem(e) + ".block"
                         } else {
                             // closure block: allows the func to escape up to it
-                            tpf.xscp1s.first.let {
+                            tpf.scps.first.let {
                                 if (it == null) {
                                     e.local()
                                 } else {
-                                    tpf.xscp1s.first!!.toce(e.wup!!)
+                                    tpf.scps.first!!.toce(e.wup!!)
                                 }
                             }
                         }
@@ -479,7 +477,7 @@ fun code_fe (e: Expr) {
                 void func_${e.n} (Stack* stack, Func_${e.n}* task2, X_${e.type.toce()} xxx) {
                     Task*             task0 = &task2->task1.task0;
                     ${e.type.toce()}* task1 = &task2->task1;
-                    ${e.type.xscp1s.second.mapIndexed { i,_ -> "task1->blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
+                    ${e.type.scps.second.mapIndexed { i, _ -> "task1->blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
                     assert(task0->state==TASK_UNBORN || task0->state==TASK_AWAITING);
                     switch (task0->pc) {
                         case 0: {                    
@@ -498,10 +496,10 @@ fun code_fe (e: Expr) {
                 
             """.trimIndent()
 
-            val isclo  = (e.type.xscp1s.first != null)
+            val isclo  = (e.type.scps.first != null)
             val istk   = (e.type.tk.enu == TK.TASK)
             val isnone = !isclo && !istk
-            val cloblk = e.type.xscp1s.first.let { if (it == null) e.local() else e.type.xscp1s.first!!.toce(e.wup!!) }
+            val cloblk = e.type.scps.first.let { if (it == null) e.local() else e.type.scps.first!!.toce(e.wup!!) }
 
             val src = if (isnone) {
                 """
@@ -519,9 +517,9 @@ fun code_fe (e: Expr) {
                     frame_${e.n}->task1.task0 = (Task) {
                         TASK_UNBORN, 0, {}, sizeof(Func_${e.n}), (Task_F)func_${e.n}, 0
                     };
-                    ${e.type.xscp1s.first.let {
+                    ${e.type.scps.first.let {
                         if (it==null) "" else
-                            "frame_${e.n}->task1.${it.id} = ${it.toce(e.wup!!)};\n"
+                            "frame_${e.n}->task1.${it.scp1.id} = ${it.toce(e.wup!!)};\n"
                     }}
                     ${e.ups.map {
                         "frame_${e.n}->${it.id} = ${it.id.mem(e.wup!!)};\n"
@@ -681,7 +679,7 @@ fun code_fs (s: Stmt) {
             val src = """
                 {
                     Stack stk = { stack, ${s.self_or_null()}, ${s.local()} };
-                    block_bcast(&stk, ${s.scp1.toce(s)}, 0, ${it.expr});
+                    block_bcast(&stk, ${s.scp.toce(s)}, 0, ${it.expr});
                     if (stk.block == NULL) {
                         return;
                     }

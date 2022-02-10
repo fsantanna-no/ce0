@@ -16,7 +16,7 @@ fun Stmt.setTypes () {
                 }
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.wtype!! }.toTypedArray())
-            is Expr.New   -> Type.Pointer(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.xscp1!!, null, /*e.xscp2!!,*/ e.arg.wtype!!)
+            is Expr.New   -> Type.Pointer(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp!!, null, /*e.xscp2!!,*/ e.arg.wtype!!)
             is Expr.Call -> e.f.wtype.let { tpd ->
                 when (tpd) {
                     is Type.Nat, is Type.Spawn, is Type.Spawns -> tpd
@@ -30,19 +30,19 @@ fun Stmt.setTypes () {
                         //  f passes two scopes, first goes to @a1, second goes to @b1 which is the return
                         //  so @scp2 maps to @b1
                         // zip [[{@scp1a,@scp1b},{@scp2a,@scp2b}],{@a1,@b1}]
-                        if (tpd.xscp1s.second.size != e.xscp1s.first.size) {
+                        if (tpd.scps.second.size != e.scps.first.size) {
                             // TODO: may fail before check2, return anything
                             Type.Nat(Tk.Nat(TK.NATIVE, e.tk.lin, e.tk.col, null, "ERR"))
                         } else {
                             val MAP: List<Pair<Tk.Id, Tk.Id>> =
-                                tpd.xscp1s.second.zip(e.xscp1s.first)
+                                tpd.scps.second.zip(e.scps.first)
                             fun Tk.Id.get(): Tk.Id {
                                 return MAP.find { it.first.let { it.id == this.id } }?.second
                                     ?: this
                             }
                             fun Type.map(): Type {
                                 return when (this) {
-                                    is Type.Pointer -> this.xscp1.get().let {
+                                    is Type.Pointer -> this.scp.get().let {
                                         Type.Pointer(this.tk_, it, null, this.pln.map())
                                     }
                                     is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.map() }.toTypedArray())
@@ -51,11 +51,11 @@ fun Stmt.setTypes () {
                                         this.vec.map { it.map() }.toTypedArray()
                                     )
                                     is Type.Func -> {
-                                        val clo = this.xscp1s.first?.get()
-                                        val x1  = this.xscp1s.second.map { it.get() }
+                                        val clo = this.scps.first?.get()
+                                        val x1  = this.scps.second.map { it.get() }
                                         Type.Func(
                                             this.tk_,
-                                            Triple(clo, x1.toTypedArray(), this.xscp1s.third), // TODO: third
+                                            Triple(clo, x1.toTypedArray(), this.scps.third), // TODO: third
                                             null,
                                             this.inp.map(),
                                             this.pub?.map(),

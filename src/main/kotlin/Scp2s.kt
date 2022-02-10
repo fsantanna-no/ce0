@@ -1,23 +1,16 @@
-data class Scp2 (val lvl: Int, val par: String?, val depth: Int?)
-
-fun Tk.Id.toScp2 (up: Any): Scp2 {
+fun Scope.toScp2 (up: Any) {
     val lvl = up.ups_tolist().filter { it is Expr.Func }.count() // level of function nesting
-    return when (this.id) { // 2xExpr.Func, otherwise no level between outer/arg/body
-        "GLOBAL" -> Scp2(0, null, 0)
-        "LOCAL"  -> {
-            // umn=-2: @LOCAL must be clo annotation, so remove further 2*Expr.Func
-            val umn = if (up is Type.Func && up.wup is Expr.Func) -2 else 0
-            Scp2(lvl, null, umn + up.ups_tolist().let { it.count{it is Stmt.Block} + 2*it.count{it is Expr.Func} })
-        }
+    this.scp2 = when (this.scp1.id) { // 2xExpr.Func, otherwise no level between outer/arg/body
+        "GLOBAL" -> Triple(0, null, 0)
         else -> {
-            val blk = up.env(this.id)
+            val blk = up.env(this.scp1.id)
             if (blk != null) {
                 // @A, @x, ...
                 val one = if (blk is Stmt.Block) 1 else 0
-                val umn = if (this.id=="arg")    1 else 0   // "arg" is in between Func-arg-Block
-                Scp2(lvl, null, one - umn + blk.ups_tolist().let { it.count{it is Stmt.Block} + 2*it.count{it is Expr.Func} })
+                val umn = if (this.scp1.id=="arg")    1 else 0   // "arg" is in between Func-arg-Block
+                Triple(lvl, null, one - umn + blk.ups_tolist().let { it.count{it is Stmt.Block} + 2*it.count{it is Expr.Func} })
             } else {
-                Scp2(lvl, this.id, null)
+                Triple(lvl, this.scp1.id, null)
             }
         }
     }
@@ -27,13 +20,14 @@ fun Stmt.setScp2s () {
     fun ft (tp: Type) {
         when (tp) {
             is Type.Alias -> {
-                tp.xscp2s = tp.xscp1s!!.map { it.toScp2(tp) }.toTypedArray()
+                tp.scps!!.forEach { it.toScp2(tp) }
             }
             is Type.Pointer -> {
-                tp.xscp2 = tp.xscp1!!.toScp2(tp)
+                tp.scp!!.toScp2(tp)
             }
             is Type.Func -> {
-                tp.xscp2s = Pair(tp.xscp1s.first?.toScp2(tp), tp.xscp1s.second!!.map { it.toScp2(tp) }.toTypedArray())
+                tp.scps.first?.toScp2(tp)
+                tp.scps.second!!.forEach { it.toScp2(tp) }
             }
         }
     }
@@ -42,12 +36,11 @@ fun Stmt.setScp2s () {
     fun fe (e: Expr) {
         when (e) {
             is Expr.New -> {
-                e.xscp2 = e.xscp1?.toScp2(e)
+                e.scp?.toScp2(e)
             }
             is Expr.Call -> {
-                if (e.xscp1s.first != null) {
-                    e.xscp2s = Pair(e.xscp1s.first!!.map { it.toScp2(e) }.toTypedArray(), e.xscp1s.second?.toScp2(e))
-                }
+                e.scps.first!!.forEach { it.toScp2(e) }
+                e.scps.second?.toScp2(e)
             }
         }
     }

@@ -1,8 +1,8 @@
 
 
-fun check_ctrs (up: Any, dcl_xscp1s: Pair<Array<Tk.Id>, Array<Pair<String, String>>>, use_xscp2s: Array<Scp2>): Boolean {
-    val pairs = dcl_xscp1s.first.map { it.id }.zip(use_xscp2s!!)
-    dcl_xscp1s.second.forEach { ctr ->   // for each constraint
+fun check_ctrs (up: Any, dcl_scps: Pair<Array<Scope>, Array<Pair<String, String>>>, use_scps: Array<Scope>): Boolean {
+    val pairs = dcl_scps.first.map { it.scp1.id }.zip(use_scps!!)
+    dcl_scps.second.forEach { ctr ->   // for each constraint
         // check if call args (x,y) respect this contraint
         val x = pairs.find { it.first==ctr.first  }!!.second
         val y = pairs.find { it.first==ctr.second }!!.second
@@ -18,12 +18,12 @@ fun check_02_after_tps (s: Stmt) {
         when (tp) {
             is Type.Alias -> {
                 val def = tp.env(tp.tk_.id) as Stmt.Typedef
-                val s1 = def.xscp1s.first!!.size
-                val s2 = tp.xscp1s!!.size
+                val s1 = def.scps.first!!.size
+                val s2 = tp.scps!!.size
                 All_assert_tk(tp.tk, s1 == s2) {    // xsc1ps may not be available in Check_01
                     "invalid type : scope mismatch : expecting $s1, have $s2 argument(s)"
                 }
-                All_assert_tk(tp.tk, check_ctrs(tp,def.xscp1s,tp.xscp2s!!)) {
+                All_assert_tk(tp.tk, check_ctrs(tp,def.scps,tp.scps!!)) {
                     "invalid type : scope mismatch : constraint mismatch"
                 }
             }
@@ -53,7 +53,7 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
             is Expr.Func -> {
-                if (e.type.xscp1s.first != null) {
+                if (e.type.scps.first != null) {
                     All_assert_tk(e.tk, e.tk.enu==TK.TASK || funcs.contains(e)) {
                         "invalid function : unexpected closure declaration"
                     }
@@ -83,26 +83,26 @@ fun check_02_after_tps (s: Stmt) {
                 val arg1 = e.arg.wtype!!
 
                 val (scp1s,inp1,out1) = when (func) {
-                    is Type.Spawn  -> Triple(Pair(func.tsk.xscp1s.second,func.tsk.xscp1s.third),func.tsk.inp,func.tsk.out)
-                    is Type.Spawns -> Triple(Pair(func.tsk.xscp1s.second,func.tsk.xscp1s.third),func.tsk.inp,func.tsk.out)
-                    is Type.Func   -> Triple(Pair(func.xscp1s.second,func.xscp1s.third),func.inp,func.out)
+                    is Type.Spawn  -> Triple(Pair(func.tsk.scps.second,func.tsk.scps.third),func.tsk.inp,func.tsk.out)
+                    is Type.Spawns -> Triple(Pair(func.tsk.scps.second,func.tsk.scps.third),func.tsk.inp,func.tsk.out)
+                    is Type.Func   -> Triple(Pair(func.scps.second,func.scps.third),func.inp,func.out)
                     is Type.Nat    -> Triple(Pair(emptyArray(),emptyArray()),func,func)
                     else -> error("impossible case")
                 }
 
                 val s1 = scp1s.first.size
-                val s2 = e.xscp1s.first.size
+                val s2 = e.scps.first.size
                 All_assert_tk(e.tk, s1 == s2) {
                     "invalid call : scope mismatch : expecting $s1, have $s2 argument(s)"
                 }
-                All_assert_tk(e.tk, check_ctrs(e,scp1s,e.xscp2s!!.first)) {
+                All_assert_tk(e.tk, check_ctrs(e,scp1s,e.scps!!.first)) {
                     "invalid call : scope mismatch : constraint mismatch"
                 }
 
                 val (inp2,out2) = if (func is Type.Func) {
                     Pair (
-                        inp1.mapScps(e.tk,e, Pair(scp1s.first, e.xscp1s.first.zip(e.xscp2s!!.first).toTypedArray()), false),
-                        out1.mapScps(e.tk,e, Pair(scp1s.first, e.xscp1s.first.zip(e.xscp2s!!.first).toTypedArray()), true)
+                        inp1.mapScps(e.tk,e, Pair(scp1s.first, e.scps.first), false),
+                        out1.mapScps(e.tk,e, Pair(scp1s.first, e.scps.first), true)
                     )
                 } else {
                     Pair(inp1,out1)

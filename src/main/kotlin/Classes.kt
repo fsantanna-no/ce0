@@ -1,24 +1,25 @@
 private var N = 1
 
+// Triple<lvl,par,depth>
+data class Scope (var scp1: Tk.Id, var scp2: Triple<Int,String?,Int?>?)
+
 sealed class Type (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Unit    (val tk_: Tk.Sym): Type(N++, tk_, null, null)
     data class Nat     (val tk_: Tk.Nat): Type(N++, tk_, null, null)
     data class Tuple   (val tk_: Tk.Chr, val vec: Array<Type>): Type(N++, tk_, null, null)
     data class Union   (val tk_: Tk.Chr, val vec: Array<Type>): Type(N++, tk_, null, null)
-    data class Pointer (val tk_: Tk.Chr, var xscp1: Tk.Id, var xscp2: Scp2?, val pln: Type): Type(N++, tk_, null, null)
+    data class Pointer (val tk_: Tk.Chr, val scp: Scope, val pln: Type): Type(N++, tk_, null, null)
     data class Spawn   (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
     data class Spawns  (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
     data class Func (
         val tk_: Tk.Key,
-        var xscp1s: Triple<Tk.Id?,Array<Tk.Id>,Array<Pair<String,String>>>,   // [closure scope, input scopes, input scopes constraints]
-        var xscp2s: Pair<Scp2?,Array<Scp2>>?,
+        val scps: Triple<Scope?,Array<Scope>,Array<Pair<String,String>>>,   // [closure scope, input scopes, input scopes constraints]
         val inp: Type, val pub: Type?, val out: Type
     ): Type(N++, tk_, null, null)
     data class Alias (
         val tk_: Tk.Id,
         var xisrec: Boolean,
-        var xscp1s: Array<Tk.Id>,
-        var xscp2s: Array<Scp2>?
+        val scps: Array<Scope>,
     ): Type(N++, tk_, null, null)
 }
 
@@ -41,10 +42,10 @@ sealed class Expr (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?, var wt
     data class TDisc (val tk_: Tk.Num, val tup: Expr): Expr(N++, tk_, null, null, null)
     data class UDisc (val tk_: Tk.Num, val uni: Expr): Expr(N++, tk_, null, null, null)
     data class UPred (val tk_: Tk.Num, val uni: Expr): Expr(N++, tk_, null, null, null)
-    data class New   (val tk_: Tk.Key, var xscp1: Tk.Id, var xscp2: Scp2?, val arg: Expr.UCons): Expr(N++, tk_, null, null, null)
+    data class New   (val tk_: Tk.Key, val scp: Scope, val arg: Expr.UCons): Expr(N++, tk_, null, null, null)
     data class Dnref (val tk_: Tk,     val ptr: Expr): Expr(N++, tk_, null, null, null)
     data class Upref (val tk_: Tk.Chr, val pln: Expr): Expr(N++, tk_, null, null, null)
-    data class Call  (val tk_: Tk, val f: Expr, val arg: Expr, var xscp1s: Pair<Array<Tk.Id>,Tk.Id?>, var xscp2s: Pair<Array<Scp2>,Scp2?>?): Expr(N++, tk_, null, null, null)
+    data class Call  (val tk_: Tk, val f: Expr, val arg: Expr, val scps: Pair<Array<Scope>,Scope?>): Expr(N++, tk_, null, null, null)
     data class Func  (val tk_: Tk.Key, val type: Type.Func, val ups: Array<Tk.Id>, val block: Stmt.Block) : Expr(N++, tk_, null, null, type)
     data class Pub   (val tk_: Tk.Id, val tsk: Expr): Expr(N++, tk_, null, null, null)
 }
@@ -58,7 +59,7 @@ sealed class Stmt (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class SSpawn (val tk_: Tk.Key, val dst: Expr, val call: Expr.Call): Stmt(N++, tk_, null, null)
     data class DSpawn (val tk_: Tk.Key, val dst: Expr, val call: Expr.Call): Stmt(N++, tk_, null, null)
     data class Await  (val tk_: Tk.Key, val e: Expr): Stmt(N++, tk_, null, null)
-    data class Bcast  (val tk_: Tk.Key, var scp1: Tk.Id, val e: Expr): Stmt(N++, tk_, null, null)
+    data class Bcast  (val tk_: Tk.Key, val scp: Scope, val e: Expr): Stmt(N++, tk_, null, null)
     data class Throw  (val tk_: Tk.Key): Stmt(N++, tk_, null, null)
     data class Input  (val tk_: Tk.Key, val xtype: Type, val dst: Expr?, val lib: Tk.Id, val arg: Expr): Stmt(N++, tk_, null, null)
     data class Output (val tk_: Tk.Key, val lib: Tk.Id, val arg: Expr): Stmt(N++, tk_, null, null)
@@ -68,11 +69,10 @@ sealed class Stmt (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Loop   (val tk_: Tk.Key, val block: Block) : Stmt(N++, tk_, null, null)
     data class DLoop  (val tk_: Tk.Key, val i: Expr.Var, val tsks: Expr, val block: Block) : Stmt(N++, tk_, null, null)
     data class Break  (val tk_: Tk.Key) : Stmt(N++, tk_, null, null)
-    data class Block  (val tk_: Tk.Chr, val iscatch: Boolean, var scp1: Tk.Id?, val body: Stmt) : Stmt(N++, tk_, null, null)
+    data class Block  (val tk_: Tk.Chr, val iscatch: Boolean, var scp: Scope?, val body: Stmt) : Stmt(N++, tk_, null, null)
     data class Typedef (
         val tk_: Tk.Id,
-        var xscp1s: Pair<Array<Tk.Id>,Array<Pair<String,String>>>,
-        //var xscp2s: Array<Scp2>?,
+        val scps: Pair<Array<Scope>,Array<Pair<String,String>>>,
         val type: Type
     ) : Stmt(N++, tk_, null, null)
 }

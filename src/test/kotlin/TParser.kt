@@ -102,7 +102,7 @@ class TParser {
         All_new(PushbackReader(StringReader("/()"), 2))
         Lexer.lex()
         val t = Parser().type(false)
-        assert(t is Type.Pointer && t.xscp1.id=="LOCAL")
+        assert(t is Type.Pointer && t.scp.id=="LOCAL")
         //assert(e.message == "(ln 1, col 4): expected `@´ : have end of file") { e.message!! }
     }
     @Test
@@ -110,14 +110,14 @@ class TParser {
         All_new(PushbackReader(StringReader("/()@x"), 2))
         Lexer.lex()
         val tp = Parser().type(false)
-        assert(tp is Type.Pointer && tp.xscp1.id=="x")
+        assert(tp is Type.Pointer && tp.scp.id=="x")
     }
     @Test
     fun a09_parser_type_ptr_err2 () {
         All_new(PushbackReader(StringReader("/()@LOCAL"), 2))
         Lexer.lex()
         val tp = Parser().type(false)
-        assert(tp is Type.Pointer && tp.xscp1.id=="LOCAL")
+        assert(tp is Type.Pointer && tp.scp.id=="LOCAL")
         /*
         try {
             val s = Parser().type()
@@ -199,7 +199,7 @@ class TParser {
         All_new(PushbackReader(StringReader("//() @a @b"), 2))
         Lexer.lex()
         val tp = Parser().type(false)
-        assert(tp is Type.Pointer && tp.xscp1.id=="b" && tp.pln is Type.Pointer && (tp.pln as Type.Pointer).xscp1.id=="a")
+        assert(tp is Type.Pointer && tp.scp.id=="b" && tp.pln is Type.Pointer && (tp.pln as Type.Pointer).scp.id=="a")
     }
 
     // EXPR
@@ -561,7 +561,7 @@ class TParser {
         All_new(PushbackReader(StringReader("{ @A }"), 2))
         Lexer.lex()
         val s = Parser().stmt()
-        assert(s is Stmt.Block && s.scp1!!.id=="A")
+        assert(s is Stmt.Block && s.scp!!.id=="A")
     }
 
     // STMT_CALL
@@ -898,7 +898,7 @@ class TParser {
         All_new(PushbackReader(StringReader("active tasks @LOCAL->@[]->()->()->()"), 2))
         Lexer.lex()
         val tp = Parser().type(false)
-        assert(tp is Type.Spawns && tp.tsk.tk.enu==TK.TASKS && tp.tsk.xscp1s.first!!.id=="LOCAL")
+        assert(tp is Type.Spawns && tp.tsk.tk.enu==TK.TASKS && tp.tsk.scps.first!!.id=="LOCAL")
     }
 
     // TYPEDEF

@@ -39,7 +39,7 @@ fun Any.env (id: String, upval: Boolean=false): Any? {
         //println(it)
         it is Stmt.Typedef && it.tk_.id.toLowerCase()==id.toLowerCase() ||
         it is Stmt.Var     && it.tk_.id.toLowerCase()==id.toLowerCase() ||
-        it is Stmt.Block   && it.scp1?.id?.toUpperCase()==id.toUpperCase() ||
+        it is Stmt.Block   && it.scp?.scp1!!.id.toUpperCase()==id.toUpperCase() ||
         //it is Expr.Func  && (id=="arg" || id=="ret" || id=="evt")
         it is Expr.Func  && (id=="arg" || id=="pub" || id=="ret" || id=="evt" || (upval && it.ups.any { it.id==id }))
     }.let {
