@@ -19,9 +19,12 @@ fun Type.Func.mapLabels (up: Any): Type.Func {
                 if (id == null) {
                     this
                 } else {
-                    //val tk = Tk.Id(TK.XID, it.lin, it.col, id)
-                    //Type.Pointer(this.tk_, tk, this.xscp2!!.copy(par=it.id), this.pln.aux())
-                    TODO()
+                    val scp = Scope(Tk.Id(TK.XID, this.tk.lin, this.tk.col, id), null)
+                    Type.Pointer(this.tk_, scp, this.pln.aux()).let {
+                        it.scp.toScp2(it)
+                        it
+                    }
+
                 }
             }
         }
@@ -77,7 +80,7 @@ fun Type.isSupOf (sub: Type, isproto: Boolean=false): Boolean {
             val sup2 = this.mapLabels(this.wup!!)
             val sub2 = sub.mapLabels(sub.wup!!)
             (
-                sup2.scps.first?.scp2!!.third == sub2.scps.first?.scp2!!.third &&
+                sup2.scps.first?.scp2?.third == sub2.scps.first?.scp2?.third &&
                 sup2.inp.isSupOf(sub2.inp,true) &&
                 sub2.inp.isSupOf(sup2.inp,true) &&
                 sup2.out.isSupOf(sub2.out,true) &&

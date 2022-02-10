@@ -5,7 +5,7 @@ fun Stmt.setTypes () {
             is Expr.Upref -> e.pln.wtype!!.let {
                 val id = e.toBaseVar()?.tk_?.id ?: "GLOBAL"   // uppercase /x -> /X
                 val scp1 = Tk.Id(TK.XID,e.tk.lin,e.tk.col, id.toUpperCase())
-                Type.Pointer(e.tk_, scp1, scp1.toScp2(e), it)
+                Type.Pointer(e.tk_, Scope(scp1,null), it)
             }
             is Expr.Dnref -> e.ptr.wtype.let {
                 if (it is Type.Nat) it else {
@@ -16,7 +16,7 @@ fun Stmt.setTypes () {
                 }
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.wtype!! }.toTypedArray())
-            is Expr.New   -> Type.Pointer(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp!!, null, /*e.xscp2!!,*/ e.arg.wtype!!)
+            is Expr.New   -> Type.Pointer(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp!!, e.arg.wtype!!)
             is Expr.Call -> e.f.wtype.let { tpd ->
                 when (tpd) {
                     is Type.Nat, is Type.Spawn, is Type.Spawns -> tpd
@@ -34,16 +34,16 @@ fun Stmt.setTypes () {
                             // TODO: may fail before check2, return anything
                             Type.Nat(Tk.Nat(TK.NATIVE, e.tk.lin, e.tk.col, null, "ERR"))
                         } else {
-                            val MAP: List<Pair<Tk.Id, Tk.Id>> =
+                            val MAP: List<Pair<Scope,Scope>> =
                                 tpd.scps.second.zip(e.scps.first)
-                            fun Tk.Id.get(): Tk.Id {
-                                return MAP.find { it.first.let { it.id == this.id } }?.second
+                            fun Scope.idx(): Scope {
+                                return MAP.find { it.first.scp1.let { it.id == this.scp1.id } }?.second
                                     ?: this
                             }
                             fun Type.map(): Type {
                                 return when (this) {
-                                    is Type.Pointer -> this.scp.get().let {
-                                        Type.Pointer(this.tk_, it, null, this.pln.map())
+                                    is Type.Pointer -> this.scp.idx().let {
+                                        Type.Pointer(this.tk_, it, this.pln.map())
                                     }
                                     is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.map() }.toTypedArray())
                                     is Type.Union -> Type.Union(
@@ -51,12 +51,11 @@ fun Stmt.setTypes () {
                                         this.vec.map { it.map() }.toTypedArray()
                                     )
                                     is Type.Func -> {
-                                        val clo = this.scps.first?.get()
-                                        val x1  = this.scps.second.map { it.get() }
-                                        Type.Func(
+                                        val clo = this.scps.first?.idx()
+                                        val x1  = this.scps.second.map { it.idx() }
+                                        Type.Func (
                                             this.tk_,
                                             Triple(clo, x1.toTypedArray(), this.scps.third), // TODO: third
-                                            null,
                                             this.inp.map(),
                                             this.pub?.map(),
                                             this.out.map()

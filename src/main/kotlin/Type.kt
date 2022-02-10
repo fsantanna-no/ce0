@@ -108,7 +108,7 @@ fun Type.noalias (): Type {
         def.toType().mapScps (
             this.tk,
             this,
-            Pair(def.scps.first!!, this.scps!!.zip(this.xscp2s ?: emptyArray()).toTypedArray()),
+            Pair(def.scps.first, this.scps),
             false
         )
     }
