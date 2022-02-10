@@ -72,7 +72,7 @@ sealed class Stmt (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Typedef (
         val tk_: Tk.Id,
         val xscp1s: Pair<Array<Tk.Id>,Array<Pair<String,String>>>,
-        var xscp2s: Array<Scp2>?,
+        //var xscp2s: Array<Scp2>?,
         val type: Type
     ) : Stmt(N++, tk_, null, null)
 }

@@ -283,7 +283,7 @@ open class Parser
                 val scps = if (all.check(TK.ATBRACK)) this.scopepars() else Pair(emptyArray(), emptyArray())
                 all.accept_err(TK.CHAR, '=')
                 val tp = this.type(false)
-                Stmt.Typedef(id, scps, null, tp)
+                Stmt.Typedef(id, scps, /*null,*/ tp)
             }
             all.accept(TK.NATIVE) -> {
                 val istype = all.accept(TK.TYPE)

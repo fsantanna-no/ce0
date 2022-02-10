@@ -67,5 +67,13 @@ fun Stmt.setScp2s () {
             }
         }
     }
-    this.visit(null, ::fe, ::ft)
+
+    fun fs (s: Stmt) {
+        when (s) {
+            is Stmt.Typedef -> {
+                //s.xscp2s = s.xscp1s.first.map { it.toScp2(s) }.toTypedArray()
+            }
+        }
+    }
+    this.visit(::fs, ::fe, ::ft)
 }
