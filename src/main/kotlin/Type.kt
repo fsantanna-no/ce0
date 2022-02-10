@@ -5,12 +5,12 @@ fun Type.tostr (): String {
     }
     return when (this) {
         is Type.Unit    -> "()"
-        is Type.Alias   -> this.tk_.id + this.scps!!.let { if (it.size==0) "" else " @["+it.map { it.scp1.id }.joinToString(",")+"]" }
+        is Type.Alias   -> this.tk_.id + this.xscps!!.let { if (it.size==0) "" else " @["+it.map { it.scp1.id }.joinToString(",")+"]" }
         is Type.Nat     -> this.tk_.toce()
-        is Type.Pointer -> this.scp!!.let { "/" + this.pln.tostr() + " @" + it.scp1.id }
+        is Type.Pointer -> this.xscp!!.let { "/" + this.pln.tostr() + " @" + it.scp1.id }
         is Type.Tuple   -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
         is Type.Union   -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
-        is Type.Func    -> this.tk_.key + this.scps.first.clo() + " @[" + this.scps.second!!.map { it.scp1.id }.joinToString(",") + "] -> " + this.inp.tostr() + " -> " + this.pub.let { if (it == null) "" else it.tostr() + " -> " } + this.out.tostr()
+        is Type.Func    -> this.tk_.key + this.xscps.first.clo() + " @[" + this.xscps.second!!.map { it.scp1.id }.joinToString(",") + "] -> " + this.inp.tostr() + " -> " + this.pub.let { if (it == null) "" else it.tostr() + " -> " } + this.out.tostr()
         is Type.Spawn   -> "active " + this.tsk.tostr()
         is Type.Spawns  -> "active " + this.tsk.tostr()
     }
@@ -45,7 +45,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
     fun Type.aux (lin: Int, col: Int): Type {
         return when (this) {
             is Type.Unit -> Type.Unit(this.tk_.copy(lin_ = lin, col_ = col))
-            is Type.Alias -> Type.Alias(this.tk_.copy(lin_ = lin, col_ = col), this.xisrec, this.scps)
+            is Type.Alias -> Type.Alias(this.tk_.copy(lin_ = lin, col_ = col), this.xisrec, this.xscps)
             is Type.Nat -> Type.Nat(this.tk_.copy(lin_ = lin, col_ = col))
             is Type.Tuple -> Type.Tuple(
                 this.tk_.copy(lin_ = lin, col_ = col),
@@ -58,9 +58,9 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
             is Type.Func -> Type.Func(
                 this.tk_.copy(lin_ = lin, col_ = col),
                 Triple (
-                    this.scps.first.let { if (it==null) null else Scope(it.scp1.copy(lin_ = lin, col_ = col), it.scp2) },
-                    this.scps.second?.map { Scope(it.scp1.copy(lin_ = lin, col_ = col), it.scp2) },
-                    this.scps.third
+                    this.xscps.first.let { if (it==null) null else Scope(it.scp1.copy(lin_ = lin, col_ = col), it.scp2) },
+                    this.xscps.second?.map { Scope(it.scp1.copy(lin_ = lin, col_ = col), it.scp2) },
+                    this.xscps.third
                 ),
                 this.inp.aux(lin, col),
                 this.pub?.aux(lin, col),
@@ -76,7 +76,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
             )
             is Type.Pointer -> Type.Pointer(
                 this.tk_.copy(lin_ = lin, col_ = col),
-                Scope(this.scp.scp1.copy(lin_=lin,col_=col), this.scp.scp2),
+                Scope(this.xscp.scp1.copy(lin_=lin,col_=col), this.xscp.scp2),
                 this.pln.aux(lin, col)
             )
         }.let {
@@ -108,7 +108,7 @@ fun Type.noalias (): Type {
         def.toType().mapScps (
             this.tk,
             this,
-            Pair(def.scp1s.first, this.scps),
+            Pair(def.scp1s.first, this.xscps),
             false
         )
     }
@@ -131,7 +131,7 @@ fun Type.toce (): String {
         is Type.Nat    -> this.tk_.src.replace('*','_')
         is Type.Tuple  -> "T_" + this.vec.map { it.toce() }.joinToString("_") + "_T"
         is Type.Union  -> "U_" + this.vec.map { it.toce() }.joinToString("_") + "_U"
-        is Type.Func   -> "F_" + (if (this.tk.enu==TK.TASK) "TK_" else "") + (if (this.scps.first!=null) "CLO_" else "") + this.inp.toce() + "_" + this.out.toce() + "_F"
+        is Type.Func   -> "F_" + (if (this.tk.enu==TK.TASK) "TK_" else "") + (if (this.xscps.first!=null) "CLO_" else "") + this.inp.toce() + "_" + this.out.toce() + "_F"
         is Type.Spawn  -> "S_" + this.tsk.toce() + "_S"
         is Type.Spawns -> "SS_" + this.tsk.toce() + "_SS"
     }
@@ -166,7 +166,7 @@ fun Type.mapScps (tk: Tk, up: Any, scps: Pair<List<Tk.Id>, List<Scope>>, dofunc:
             is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.aux(dofunc) })
             is Type.Union -> Type.Union(this.tk_, this.vec.map { it.aux(dofunc) })
             is Type.Pointer -> {
-                map[this.scp!!.scp1.id].let {
+                map[this.xscp!!.scp1.id].let {
                     if (it == null) {
                         this
                     } else {
@@ -178,9 +178,9 @@ fun Type.mapScps (tk: Tk, up: Any, scps: Pair<List<Tk.Id>, List<Scope>>, dofunc:
                 Type.Func(
                     this.tk_,
                     Triple (
-                        this.scps.first?.let { map[it.scp1.id] },
-                        this.scps.second,
-                        this.scps.third
+                        this.xscps.first?.let { map[it.scp1.id] },
+                        this.xscps.second,
+                        this.xscps.third
                     ),
                     this.inp.aux(dofunc),
                     this.pub?.aux(dofunc),

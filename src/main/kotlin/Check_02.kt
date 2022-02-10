@@ -19,11 +19,11 @@ fun check_02_after_tps (s: Stmt) {
             is Type.Alias -> {
                 val def = tp.env(tp.tk_.id) as Stmt.Typedef
                 val s1 = def.scp1s.first!!.size
-                val s2 = tp.scps!!.size
+                val s2 = tp.xscps!!.size
                 All_assert_tk(tp.tk, s1 == s2) {    // xsc1ps may not be available in Check_01
                     "invalid type : scope mismatch : expecting $s1, have $s2 argument(s)"
                 }
-                All_assert_tk(tp.tk, check_ctrs(tp,def.scp1s,tp.scps!!)) {
+                All_assert_tk(tp.tk, check_ctrs(tp,def.scp1s,tp.xscps!!)) {
                     "invalid type : scope mismatch : constraint mismatch"
                 }
             }
@@ -53,7 +53,7 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
             is Expr.Func -> {
-                if (e.type.scps.first != null) {
+                if (e.type.xscps.first != null) {
                     All_assert_tk(e.tk, e.tk.enu==TK.TASK || funcs.contains(e)) {
                         "invalid function : unexpected closure declaration"
                     }
@@ -83,26 +83,26 @@ fun check_02_after_tps (s: Stmt) {
                 val arg1 = e.arg.wtype!!
 
                 val (scp1s,inp1,out1) = when (func) {
-                    is Type.Spawn  -> Triple(Pair(func.tsk.scps.second,func.tsk.scps.third),func.tsk.inp,func.tsk.out)
-                    is Type.Spawns -> Triple(Pair(func.tsk.scps.second,func.tsk.scps.third),func.tsk.inp,func.tsk.out)
-                    is Type.Func   -> Triple(Pair(func.scps.second,func.scps.third),func.inp,func.out)
+                    is Type.Spawn  -> Triple(Pair(func.tsk.xscps.second,func.tsk.xscps.third),func.tsk.inp,func.tsk.out)
+                    is Type.Spawns -> Triple(Pair(func.tsk.xscps.second,func.tsk.xscps.third),func.tsk.inp,func.tsk.out)
+                    is Type.Func   -> Triple(Pair(func.xscps.second,func.xscps.third),func.inp,func.out)
                     is Type.Nat    -> Triple(Pair(emptyList(),emptyList()),func,func)
                     else -> error("impossible case")
                 }
 
                 val s1 = scp1s.first.size
-                val s2 = e.scps.first.size
+                val s2 = e.xscps.first.size
                 All_assert_tk(e.tk, s1 == s2) {
                     "invalid call : scope mismatch : expecting $s1, have $s2 argument(s)"
                 }
-                All_assert_tk(e.tk, check_ctrs(e,Pair(scp1s.first.map { it.scp1 },scp1s.second),e.scps!!.first)) {
+                All_assert_tk(e.tk, check_ctrs(e,Pair(scp1s.first.map { it.scp1 },scp1s.second),e.xscps!!.first)) {
                     "invalid call : scope mismatch : constraint mismatch"
                 }
 
                 val (inp2,out2) = if (func is Type.Func) {
                     Pair (
-                        inp1.mapScps(e.tk,e, Pair(scp1s.first.map { it.scp1 }, e.scps.first), false),
-                        out1.mapScps(e.tk,e, Pair(scp1s.first.map { it.scp1 }, e.scps.first), true)
+                        inp1.mapScps(e.tk,e, Pair(scp1s.first.map { it.scp1 }, e.xscps.first), false),
+                        out1.mapScps(e.tk,e, Pair(scp1s.first.map { it.scp1 }, e.xscps.first), true)
                     )
                 } else {
                     Pair(inp1,out1)

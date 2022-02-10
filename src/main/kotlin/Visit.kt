@@ -7,12 +7,12 @@ fun Type.visit (ft: ((Type) -> Unit)?, fx: ((Any,Scope) -> Unit)?) {
         is Type.Union   -> this.vec.forEach { it.visit(ft,fx) } //(if (xpd) this.expand() else this.vec).forEach { it.visit_(xpd,ft) }
         is Type.Spawn   -> this.tsk.visit(ft,fx)
         is Type.Spawns  -> this.tsk.visit(ft,fx)
-        is Type.Pointer -> { if (fx!=null) fx(this,this.scp) ; this.pln.visit(ft,fx) }
-        is Type.Alias   -> if (fx!=null) this.scps.forEach { fx(this,it) }
+        is Type.Pointer -> { if (fx!=null && this.xscp!=null) fx(this,this.xscp!!) ; this.pln.visit(ft,fx) }
+        is Type.Alias   -> if (fx!=null && this.xscps!=null) this.xscps.forEach { fx(this,it) }
         is Type.Func    -> {
-            this.scps.let {
+            this.xscps.let {
                 if (it.first != null) if (fx!=null) fx(this,it.first!!)
-                it.second.forEach { if (fx!=null) fx(this,it) }
+                it.second?.forEach { if (fx!=null) fx(this,it) }
             }
             this.inp.visit(ft,fx) ; this.pub?.visit(ft,fx) ; this.out.visit(ft,fx)
         }
@@ -33,7 +33,7 @@ fun Expr.visit (fs: ((Stmt) -> Unit)?, fe: ((Expr) -> Unit)?, ft: ((Type) -> Uni
         is Expr.TCons -> this.arg.forEach { it.visit(fs, fe, ft, fx) }
         is Expr.UCons -> { this.xtype?.visit(ft, fx) ; this.arg.visit(fs, fe, ft, fx) }
         is Expr.UNull -> this.xtype?.visit(ft, fx)
-        is Expr.New   -> { if (fx!=null) fx(this,this.scp) ; this.arg.visit(fs, fe, ft, fx) }
+        is Expr.New   -> { if (fx!=null && this.xscp!=null) fx(this,this.xscp!!) ; this.arg.visit(fs, fe, ft, fx) }
         is Expr.Dnref -> this.ptr.visit(fs, fe, ft, fx)
         is Expr.Upref -> this.pln.visit(fs, fe, ft, fx)
         is Expr.TDisc -> this.tup.visit(fs, fe, ft, fx)
@@ -42,8 +42,8 @@ fun Expr.visit (fs: ((Stmt) -> Unit)?, fe: ((Expr) -> Unit)?, ft: ((Type) -> Uni
         is Expr.UPred -> this.uni.visit(fs, fe, ft, fx)
         is Expr.Func  -> { this.type.visit(ft, fx) ; this.block.visit(fs, fe, ft, fx) }
         is Expr.Call  -> {
-            this.scps.let {
-                it.first.forEach { if (fx!=null) fx(this,it) }
+            this.xscps.let {
+                it.first?.forEach { if (fx!=null) fx(this,it) }
                 if (it.second != null) if (fx!=null) fx(this,it.second!!)
             }
             this.f.visit(fs, fe, ft, fx) ; this.arg.visit(fs, fe, ft, fx)

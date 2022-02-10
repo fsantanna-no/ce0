@@ -8,7 +8,7 @@ fun Scope.check (up: Any) {
         } -> true
         (up.ups_first {                                     // [@i1, ...] { @i1 }
             it is Stmt.Typedef && (it.scp1s.first!!.any { it.id==this.scp1.id })
-         || it is Expr.Func    && (it.type.scps.second?.any { it.scp1.id==this.scp1.id } ?: false)
+         || it is Expr.Func    && (it.type.xscps.second?.any { it.scp1.id==this.scp1.id } ?: false)
         } != null) -> true
         else -> false
     }
@@ -42,17 +42,17 @@ fun check_01_before_tps (s: Stmt) {
                     "undeclared type \"${tp.tk_.id}\""
                 }
             }
-            is Type.Pointer -> tp.scp?.check(tp)
+            is Type.Pointer -> tp.xscp?.check(tp)
             is Type.Func -> {
-                tp.scps.first?.check(tp)
+                tp.xscps.first?.check(tp)
                 val ptrs = (tp.inp.flattenLeft() + tp.out.flattenLeft()).filter { it is Type.Pointer } as List<Type.Pointer>
                 val ok = ptrs.all {
-                    val ptr = it.scp!!
+                    val ptr = it.xscp!!
                     when {
                         (ptr.scp1.id == "GLOBAL") -> true
                         (
-                            tp.scps.first.let  { it!=null && ptr.scp1.id==it.scp1.id } || // {@a} ...@a
-                            tp.scps.second?.any { ptr.scp1.id==it.scp1.id } ?: false      // (@i1 -> ...@i1...)
+                            tp.xscps.first.let  { it!=null && ptr.scp1.id==it.scp1.id } || // {@a} ...@a
+                            tp.xscps.second?.any { ptr.scp1.id==it.scp1.id } ?: false      // (@i1 -> ...@i1...)
                         ) -> true
                         (tp.ups_first {                     // { @aaa \n ...@aaa... }
                             it is Stmt.Block && it.scp1.let { it!=null && it.id==ptr.scp1.id }
@@ -98,7 +98,7 @@ fun check_01_before_tps (s: Stmt) {
             is Expr.Func -> {
                 val outers = e.ups_tolist().filter { it is Expr.Func } as List<Expr.Func>
                 for (f in outers) {
-                    val err = f.type.scps.second?.find { scp2 -> e.type.scps.second!!.any { scp1 -> scp1.scp1.id==scp2.scp1.id } }
+                    val err = f.type.xscps.second?.find { scp2 -> e.type.xscps.second!!.any { scp1 -> scp1.scp1.id==scp2.scp1.id } }
                     All_assert_tk(e.tk, err==null) {
                         "invalid scope : \"${err!!.scp1.id}\" is already declared (ln ${err!!.scp1.lin})"
                     }
@@ -110,10 +110,10 @@ fun check_01_before_tps (s: Stmt) {
                 }
             }
 
-            is Expr.New  -> e.scp?.check(e)
+            is Expr.New  -> e.xscp?.check(e)
             is Expr.Call -> {
-                e.scps.second.let { it?.check(e) }
-                e.scps.first?.forEach { it.check(e) }
+                e.xscps.second.let { it?.check(e) }
+                e.xscps.first?.forEach { it.check(e) }
             }
         }
     }

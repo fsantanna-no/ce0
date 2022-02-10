@@ -102,7 +102,7 @@ class TParser {
         All_new(PushbackReader(StringReader("/()"), 2))
         Lexer.lex()
         val t = Parser().type(false)
-        assert(t is Type.Pointer && t.scp.scp1.id=="LOCAL")
+        assert(t is Type.Pointer && t.xscp.scp1.id=="LOCAL")
         //assert(e.message == "(ln 1, col 4): expected `@´ : have end of file") { e.message!! }
     }
     @Test
@@ -110,14 +110,14 @@ class TParser {
         All_new(PushbackReader(StringReader("/()@x"), 2))
         Lexer.lex()
         val tp = Parser().type(false)
-        assert(tp is Type.Pointer && tp.scp.scp1.id=="x")
+        assert(tp is Type.Pointer && tp.xscp.scp1.id=="x")
     }
     @Test
     fun a09_parser_type_ptr_err2 () {
         All_new(PushbackReader(StringReader("/()@LOCAL"), 2))
         Lexer.lex()
         val tp = Parser().type(false)
-        assert(tp is Type.Pointer && tp.scp.scp1.id=="LOCAL")
+        assert(tp is Type.Pointer && tp.xscp.scp1.id=="LOCAL")
         /*
         try {
             val s = Parser().type()
@@ -199,7 +199,7 @@ class TParser {
         All_new(PushbackReader(StringReader("//() @a @b"), 2))
         Lexer.lex()
         val tp = Parser().type(false)
-        assert(tp is Type.Pointer && tp.scp.scp1.id=="b" && tp.pln is Type.Pointer && (tp.pln as Type.Pointer).scp.scp1.id=="a")
+        assert(tp is Type.Pointer && tp.xscp.scp1.id=="b" && tp.pln is Type.Pointer && (tp.pln as Type.Pointer).xscp.scp1.id=="a")
     }
 
     // EXPR
@@ -898,7 +898,7 @@ class TParser {
         All_new(PushbackReader(StringReader("active tasks @LOCAL->@[]->()->()->()"), 2))
         Lexer.lex()
         val tp = Parser().type(false)
-        assert(tp is Type.Spawns && tp.tsk.tk.enu==TK.TASKS && tp.tsk.scps.first!!.scp1.id=="LOCAL")
+        assert(tp is Type.Spawns && tp.tsk.tk.enu==TK.TASKS && tp.tsk.xscps.first!!.scp1.id=="LOCAL")
     }
 
     // TYPEDEF

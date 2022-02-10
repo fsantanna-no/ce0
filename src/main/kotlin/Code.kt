@@ -46,17 +46,17 @@ fun code_ft (tp: Type) {
                 typedef union {
                     int evt;
                     struct {
-                        Block* blks[${tp.scps.second.size}];
+                        Block* blks[${tp.xscps.second.size}];
                         ${tp.inp.pos()} arg;
                     } pars;
                 } X_${tp.toce()};
                 typedef struct {
                     Task task0;
-                    ${tp.scps.first.let { if (it == null) "" else "Block* ${it.scp1.id};" }}
+                    ${tp.xscps.first.let { if (it == null) "" else "Block* ${it.scp1.id};" }}
                     union {
-                        Block* blks[${tp.scps.second.size}];
+                        Block* blks[${tp.xscps.second.size}];
                         struct {
-                            ${tp.scps.second.let { if (it.size == 0) "" else
+                            ${tp.xscps.second.let { if (it.size == 0) "" else
                                 it.map { "Block* ${it.scp1.id};\n" }.joinToString("") }
                             }
                         };
@@ -220,7 +220,7 @@ fun Scope.toce (up: Any): String {
         this.scp1.isscopepar() -> "(task1->${this.scp1.id})"
         // closure block is always an argument
         (up.ups_first {
-            it is Expr.Func && it.type.scps.first.let {
+            it is Expr.Func && it.type.xscps.first.let {
                 it?.scp1?.enu==this.scp1.enu && it?.scp1?.id==this.scp1.id
             }
         } != null) -> "(task1->${this.scp1.id})"
@@ -355,7 +355,7 @@ fun code_fe (e: Expr) {
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));
                 assert($ID!=NULL && "not enough memory");
                 *$ID = ${it.expr};
-                block_push(${ptr.scp.toce(ptr)}, $ID);
+                block_push(${ptr.xscp.toce(ptr)}, $ID);
 
             """.trimIndent()
             Code(it.type, it.pre, it.stmt+pre, ID)
@@ -381,7 +381,7 @@ fun code_fe (e: Expr) {
         is Expr.Call  -> {
             val arg  = CODE.removeFirst()
             val f    = CODE.removeFirst()
-            val blks = e.scps.first.map { it.toce(e) }.joinToString(",")
+            val blks = e.xscps.first.map { it.toce(e) }.joinToString(",")
             val tpf  = e.f.wtype.let {
                 when (it) {
                     is Type.Spawn  -> it.tsk
@@ -405,11 +405,11 @@ fun code_fe (e: Expr) {
                             "&" + (it.dst as Expr.Var).tk_.id.mem(e) + ".block"
                         } else {
                             // closure block: allows the func to escape up to it
-                            tpf.scps.first.let {
+                            tpf.xscps.first.let {
                                 if (it == null) {
                                     e.local()
                                 } else {
-                                    tpf.scps.first!!.toce(e.wup!!)
+                                    tpf.xscps.first!!.toce(e.wup!!)
                                 }
                             }
                         }
@@ -477,7 +477,7 @@ fun code_fe (e: Expr) {
                 void func_${e.n} (Stack* stack, Func_${e.n}* task2, X_${e.type.toce()} xxx) {
                     Task*             task0 = &task2->task1.task0;
                     ${e.type.toce()}* task1 = &task2->task1;
-                    ${e.type.scps.second.mapIndexed { i, _ -> "task1->blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
+                    ${e.type.xscps.second.mapIndexed { i, _ -> "task1->blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
                     assert(task0->state==TASK_UNBORN || task0->state==TASK_AWAITING);
                     switch (task0->pc) {
                         case 0: {                    
@@ -496,10 +496,10 @@ fun code_fe (e: Expr) {
                 
             """.trimIndent()
 
-            val isclo  = (e.type.scps.first != null)
+            val isclo  = (e.type.xscps.first != null)
             val istk   = (e.type.tk.enu == TK.TASK)
             val isnone = !isclo && !istk
-            val cloblk = e.type.scps.first.let { if (it == null) e.local() else e.type.scps.first!!.toce(e.wup!!) }
+            val cloblk = e.type.xscps.first.let { if (it == null) e.local() else e.type.xscps.first!!.toce(e.wup!!) }
 
             val src = if (isnone) {
                 """
@@ -517,7 +517,7 @@ fun code_fe (e: Expr) {
                     frame_${e.n}->task1.task0 = (Task) {
                         TASK_UNBORN, 0, {}, sizeof(Func_${e.n}), (Task_F)func_${e.n}, 0
                     };
-                    ${e.type.scps.first.let {
+                    ${e.type.xscps.first.let {
                         if (it==null) "" else
                             "frame_${e.n}->task1.${it.scp1.id} = ${it.toce(e.wup!!)};\n"
                     }}

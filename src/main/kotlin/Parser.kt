@@ -225,7 +225,7 @@ open class Parser
             }
             e = Expr.Call(e.tk, e, arg, Pair (
                 iscps.map { Scope(it,null) },
-                oscp.let { if (it == null) null else Scope(it,null) }
+                if (oscp == null) null else Scope(oscp,null)
             ))
         }
         return e
@@ -296,7 +296,7 @@ open class Parser
                 }
                 all.accept_err(TK.CHAR, '=')
                 val tp = this.type(false)
-                Stmt.Typedef(id, scp1s, /*null,*/ tp)
+                Stmt.Typedef(id, scp1s, tp)
             }
             all.accept(TK.NATIVE) -> {
                 val istype = all.accept(TK.TYPE)
