@@ -1,8 +1,5 @@
-- Pair(scp1, scp2) -> visit, scp2->var scp1 fields
 - array -> list
-- type List @[s] = /<List @[s]>@s
-- unify ce0/ce1 as most as possible
-  - XTypes / Type.map
+- testar: type List @[s] = /<List @[s]>@s
 
 - pico-ce
 - change @[@a1,@a2] -> @[a,b: a>b]

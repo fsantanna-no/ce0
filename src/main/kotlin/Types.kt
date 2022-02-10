@@ -15,7 +15,7 @@ fun Stmt.setTypes () {
                     (it as Type.Pointer).pln
                 }
             }
-            is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.wtype!! }.toTypedArray())
+            is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.wtype!! })
             is Expr.New   -> Type.Pointer(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.scp!!, e.arg.wtype!!)
             is Expr.Call -> e.f.wtype.let { tpd ->
                 when (tpd) {
@@ -45,17 +45,17 @@ fun Stmt.setTypes () {
                                     is Type.Pointer -> this.scp.idx().let {
                                         Type.Pointer(this.tk_, it, this.pln.map())
                                     }
-                                    is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.map() }.toTypedArray())
+                                    is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.map() })
                                     is Type.Union -> Type.Union(
                                         this.tk_,
-                                        this.vec.map { it.map() }.toTypedArray()
+                                        this.vec.map { it.map() }
                                     )
                                     is Type.Func -> {
                                         val clo = this.scps.first?.idx()
                                         val x1  = this.scps.second.map { it.idx() }
                                         Type.Func (
                                             this.tk_,
-                                            Triple(clo, x1.toTypedArray(), this.scps.third), // TODO: third
+                                            Triple(clo, x1, this.scps.third), // TODO: third
                                             this.inp.map(),
                                             this.pub?.map(),
                                             this.out.map()

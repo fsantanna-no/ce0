@@ -9,9 +9,9 @@ open class Parser
                     all.accept_err(TK.CHAR, ']')
                     ret
                 } else {
-                    emptyArray()
+                    emptyList()
                 }
-                Type.Alias(tk0, false, scps.map { Scope(it,null) }.toTypedArray())
+                Type.Alias(tk0, false, scps.map { Scope(it,null) })
             }
             all.accept(TK.CHAR, '/') -> {
                 val tk0 = all.tk0 as Tk.Chr
@@ -43,7 +43,7 @@ open class Parser
                     all.accept_err(TK.ARROW)
                     Pair(x, y)
                 } else {
-                    Pair(emptyArray(), emptyArray())
+                    Pair(emptyList(), emptyList())
                 }
 
                 val inp = this.type(false)
@@ -59,7 +59,7 @@ open class Parser
                 Type.Func(tk0,
                     Triple (
                         clo.let { if (it == null) null else Scope(it,null) },
-                        scps.map { Scope(it,null) }.toTypedArray(),
+                        scps.map { Scope(it,null) },
                         ctrs
                     ),
                     inp, pub, out)
@@ -84,10 +84,10 @@ open class Parser
                 }
                 if (tk0.chr == '[') {
                     all.accept_err(TK.CHAR, ']')
-                    Type.Tuple(tk0, tps.toTypedArray())
+                    Type.Tuple(tk0, tps)
                 } else {
                     all.accept_err(TK.CHAR, '>')
-                    val vec = tps.toTypedArray()
+                    val vec = tps
                     Type.Union(tk0, vec)
                 }
             }
@@ -177,13 +177,13 @@ open class Parser
                     es.add(e2)
                 }
                 all.accept_err(TK.CHAR, ']')
-                Expr.TCons(tk0, es.toTypedArray())
+                Expr.TCons(tk0, es)
             }
             all.check(TK.TASK) || all.check(TK.FUNC) -> {
                 val tk = all.tk1 as Tk.Key
                 val tp = this.type(false) as Type.Func
 
-                val ups: Array<Tk.Id> = if (!all.accept(TK.CHAR, '[')) emptyArray() else {
+                val ups: List<Tk.Id> = if (!all.accept(TK.CHAR, '[')) emptyList() else {
                     val ret = mutableListOf<Tk.Id>()
                     while (all.accept(TK.XID)) {
                         ret.add(all.tk0 as Tk.Id)
@@ -192,7 +192,7 @@ open class Parser
                         }
                     }
                     all.accept_err(TK.CHAR, ']')
-                    ret.toTypedArray()
+                    ret
                 }
 
                 val block = this.block()
@@ -215,7 +215,7 @@ open class Parser
                 all.accept_err(TK.CHAR, ']')
                 ret
             } else {
-                emptyArray()
+                emptyList()
             }
             val arg = this.expr()
             val oscp = if (!all.accept(TK.CHAR, ':')) null else {
@@ -224,7 +224,7 @@ open class Parser
                 all.tk0.asscope()
             }
             e = Expr.Call(e.tk, e, arg, Pair (
-                iscps.map { Scope(it,null) }.toTypedArray(),
+                iscps.map { Scope(it,null) },
                 oscp.let { if (it == null) null else Scope(it,null) }
             ))
         }
@@ -292,7 +292,7 @@ open class Parser
                 val scp1s = if (all.check(TK.ATBRACK)) {
                     this.scopepars()
                 } else {
-                    Pair(emptyArray(), emptyArray())
+                    Pair(emptyList(), emptyList())
                 }
                 all.accept_err(TK.CHAR, '=')
                 val tp = this.type(false)
@@ -366,7 +366,7 @@ open class Parser
         }
     }
 
-    fun scp1s (f: (Tk) -> Tk.Id): Array<Tk.Id> {
+    fun scp1s (f: (Tk) -> Tk.Id): List<Tk.Id> {
         val scps = mutableListOf<Tk.Id>()
         while (all.accept(TK.XID)) {
             scps.add(f(all.tk0))
@@ -374,10 +374,10 @@ open class Parser
                 break
             }
         }
-        return scps.toTypedArray()
+        return scps
     }
 
-    fun scopepars (): Pair<Array<Tk.Id>, Array<Pair<String, String>>> {
+    fun scopepars (): Pair<List<Tk.Id>, List<Pair<String, String>>> {
         all.accept_err(TK.ATBRACK)
         val scps = this.scp1s { it.asscopepar() }
         val ctrs = mutableListOf<Pair<String, String>>()
@@ -394,7 +394,7 @@ open class Parser
             }
         }
         all.accept_err(TK.CHAR, ']')
-        return Pair(scps, ctrs.toTypedArray())
+        return Pair(scps, ctrs)
     }
 
     fun expr_dots (): Expr {

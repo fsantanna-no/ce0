@@ -1,6 +1,6 @@
 
 
-fun check_ctrs (up: Any, dcl_scps: Pair<Array<Tk.Id>, Array<Pair<String, String>>>, use_scps: Array<Scope>): Boolean {
+fun check_ctrs (up: Any, dcl_scps: Pair<List<Tk.Id>, List<Pair<String, String>>>, use_scps: List<Scope>): Boolean {
     val pairs = dcl_scps.first.map { it.id }.zip(use_scps!!)
     dcl_scps.second.forEach { ctr ->   // for each constraint
         // check if call args (x,y) respect this contraint
@@ -39,7 +39,7 @@ fun check_02_after_tps (s: Stmt) {
                 val dcl = env.ups_tolist().count { it is Expr.Func }
 
                 // these special variables and globals dont need closures
-                if (e.tk_.id in arrayOf("arg","evt","pub","ret")) return
+                if (e.tk_.id in listOf("arg","evt","pub","ret")) return
                 if (env.ups_tolist().count { it is Expr.Func || it is Stmt.Block } == 0) return
 
                 // take all funcs in between myself -> dcl level: check if they have closure
@@ -86,7 +86,7 @@ fun check_02_after_tps (s: Stmt) {
                     is Type.Spawn  -> Triple(Pair(func.tsk.scps.second,func.tsk.scps.third),func.tsk.inp,func.tsk.out)
                     is Type.Spawns -> Triple(Pair(func.tsk.scps.second,func.tsk.scps.third),func.tsk.inp,func.tsk.out)
                     is Type.Func   -> Triple(Pair(func.scps.second,func.scps.third),func.inp,func.out)
-                    is Type.Nat    -> Triple(Pair(emptyArray(),emptyArray()),func,func)
+                    is Type.Nat    -> Triple(Pair(emptyList(),emptyList()),func,func)
                     else -> error("impossible case")
                 }
 
@@ -95,14 +95,14 @@ fun check_02_after_tps (s: Stmt) {
                 All_assert_tk(e.tk, s1 == s2) {
                     "invalid call : scope mismatch : expecting $s1, have $s2 argument(s)"
                 }
-                All_assert_tk(e.tk, check_ctrs(e,Pair(scp1s.first.map { it.scp1 }.toTypedArray(),scp1s.second),e.scps!!.first)) {
+                All_assert_tk(e.tk, check_ctrs(e,Pair(scp1s.first.map { it.scp1 },scp1s.second),e.scps!!.first)) {
                     "invalid call : scope mismatch : constraint mismatch"
                 }
 
                 val (inp2,out2) = if (func is Type.Func) {
                     Pair (
-                        inp1.mapScps(e.tk,e, Pair(scp1s.first.map { it.scp1 }.toTypedArray(), e.scps.first), false),
-                        out1.mapScps(e.tk,e, Pair(scp1s.first.map { it.scp1 }.toTypedArray(), e.scps.first), true)
+                        inp1.mapScps(e.tk,e, Pair(scp1s.first.map { it.scp1 }, e.scps.first), false),
+                        out1.mapScps(e.tk,e, Pair(scp1s.first.map { it.scp1 }, e.scps.first), true)
                     )
                 } else {
                     Pair(inp1,out1)

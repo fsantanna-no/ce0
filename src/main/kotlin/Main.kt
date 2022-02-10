@@ -36,7 +36,7 @@ fun exe2run (): Pair<Boolean,String> {
     //return exec("valgrind ./out.exe")
 }
 
-fun main (args: Array<String>) {
+fun main (args: List<String>) {
     var xinp: String? = null
     var xccs = emptyList<String>()
     var i = 0

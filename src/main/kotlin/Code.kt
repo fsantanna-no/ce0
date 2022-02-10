@@ -207,7 +207,7 @@ fun String.mem (up: Any): String {
     return when {
         (func == null) -> "(global.$this)"
         (this == "ret") -> "(task1->$this)"
-        (this in arrayOf("arg","pub","evt")) -> "(task2->task1.$this)"
+        (this in listOf("arg","pub","evt")) -> "(task2->task1.$this)"
         else -> "(task2->$this)"
     }
 }
