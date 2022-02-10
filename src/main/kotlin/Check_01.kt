@@ -7,7 +7,7 @@ fun Scope.check (up: Any) {
             it is Stmt.Var   && this.scp1.id==it.tk_.id.toUpperCase()
         } -> true
         (up.ups_first {                                     // [@i1, ...] { @i1 }
-            it is Stmt.Typedef && (it.scp1s.first!!.any { it.id==this.scp1.id })
+            it is Stmt.Typedef && (it.xscp1s.first!!.any { it.id==this.scp1.id })
          || it is Expr.Func    && (it.type.xscps.second?.any { it.scp1.id==this.scp1.id } ?: false)
         } != null) -> true
         else -> false
