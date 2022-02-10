@@ -744,7 +744,7 @@ fun code_fs (s: Stmt) {
 fun Stmt.code (): String {
     TYPEX.clear()
     EXPR_WTYPE = false
-    this.visit(::code_fs, ::code_fe, ::code_ft)
+    this.visit(::code_fs, ::code_fe, ::code_ft, null)
     EXPR_WTYPE = true
 
     val code = CODE.removeFirst()
