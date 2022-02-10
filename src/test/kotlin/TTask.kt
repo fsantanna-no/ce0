@@ -130,7 +130,7 @@ class TTask {
             var x : active task @LOCAL->@[]->[()]->()->()
             set x = spawn f ()
         """.trimIndent())
-        assert(out == "(ln 3, col 9): invalid `spawn` : type mismatch :\n    task @LOCAL -> @[] -> [()] -> () -> ()\n    task @LOCAL -> @[] -> () -> () -> ()") { out }
+        assert(out == "(ln 3, col 9): invalid `spawn` : type mismatch :\n    task @GLOBAL -> @[] -> [()] -> () -> ()\n    task @GLOBAL -> @[] -> () -> () -> ()") { out }
     }
     @Test
     fun a05_args () {

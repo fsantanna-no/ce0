@@ -59,7 +59,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
                 this.tk_.copy(lin_ = lin, col_ = col),
                 Triple (
                     this.scps.first.let { if (it==null) null else Scope(it.scp1.copy(lin_ = lin, col_ = col), it.scp2) },
-                    this.scps.second.map { Scope(it.scp1.copy(lin_ = lin, col_ = col), it.scp2) },
+                    this.scps.second?.map { Scope(it.scp1.copy(lin_ = lin, col_ = col), it.scp2) },
                     this.scps.third
                 ),
                 this.inp.aux(lin, col),

@@ -1,35 +1,32 @@
-private var N = 1
+var N = 1
 
-// Triple<lvl,par,depth>
-data class Scope (var scp1: Tk.Id, var scp2: Triple<Int,String?,Int?>?)
-
-sealed class Type (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
-    data class Unit    (val tk_: Tk.Sym): Type(N++, tk_, null, null)
-    data class Nat     (val tk_: Tk.Nat): Type(N++, tk_, null, null)
-    data class Tuple   (val tk_: Tk.Chr, val vec: List<Type>): Type(N++, tk_, null, null)
-    data class Union   (val tk_: Tk.Chr, val vec: List<Type>): Type(N++, tk_, null, null)
-    data class Pointer (val tk_: Tk.Chr, val scp: Scope, val pln: Type): Type(N++, tk_, null, null)
-    data class Spawn   (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
-    data class Spawns  (val tk_: Tk.Key, val tsk: Type.Func): Type(N++, tk_, null, null)
+sealed class Type(val tk: Tk, var wup: Any?, var wenv: Any?) {
+    data class Unit    (val tk_: Tk.Sym): Type(tk_, null, null)
+    data class Nat     (val tk_: Tk.Nat): Type(tk_, null, null)
+    data class Tuple   (val tk_: Tk.Chr, val vec: List<Type>): Type(tk_, null, null)
+    data class Union   (val tk_: Tk.Chr, val vec: List<Type>): Type(tk_, null, null)
+    data class Pointer (val tk_: Tk.Chr, val scp: Scope, val pln: Type): Type(tk_, null, null)
+    data class Spawn   (val tk_: Tk.Key, val tsk: Type.Func): Type(tk_, null, null)
+    data class Spawns  (val tk_: Tk.Key, val tsk: Type.Func): Type(tk_, null, null)
     data class Func (
         val tk_: Tk.Key,
         val scps: Triple<Scope?,List<Scope>,List<Pair<String,String>>>,   // [closure scope, input scopes, input scopes constraints]
         val inp: Type, val pub: Type?, val out: Type
-    ): Type(N++, tk_, null, null)
+    ): Type(tk_, null, null)
     data class Alias (
         val tk_: Tk.Id,
         var xisrec: Boolean,
         val scps: List<Scope>,
-    ): Type(N++, tk_, null, null)
+    ): Type(tk_, null, null)
 }
 
-sealed class Attr (val n: Int, val tk: Tk) {
-    data class Var   (val tk_: Tk.Id): Attr(N++, tk_)
-    data class Nat   (val tk_: Tk.Nat, val type: Type): Attr(N++, tk_)
-    data class Dnref (val tk_: Tk, val ptr: Attr): Attr(N++, tk_)
-    data class TDisc (val tk_: Tk.Num, val tup: Attr): Attr(N++, tk_)
-    data class UDisc (val tk_: Tk.Num, val uni: Attr): Attr(N++, tk_)
-    data class Pub   (val tk_: Tk.Id, val tsk: Attr): Attr(N++, tk_)
+sealed class Attr(val tk: Tk) {
+    data class Var   (val tk_: Tk.Id): Attr(tk_)
+    data class Nat   (val tk_: Tk.Nat, val type: Type): Attr(tk_)
+    data class Dnref (val tk_: Tk, val ptr: Attr): Attr(tk_)
+    data class TDisc (val tk_: Tk.Num, val tup: Attr): Attr(tk_)
+    data class UDisc (val tk_: Tk.Num, val uni: Attr): Attr(tk_)
+    data class Pub   (val tk_: Tk.Id, val tsk: Attr): Attr(tk_)
 }
 
 sealed class Expr (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?, var wtype: Type?) {

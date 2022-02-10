@@ -1,4 +1,3 @@
-- array -> list
 - testar: type List @[s] = /<List @[s]>@s
 
 - pico-ce

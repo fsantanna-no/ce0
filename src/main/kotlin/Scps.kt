@@ -1,3 +1,6 @@
+// Triple<lvl,par,depth>
+data class Scope (var scp1: Tk.Id, var scp2: Triple<Int,String?,Int?>?)
+
 fun Stmt.setScp1s () {
     fun fx (up: Any, scp: Scope) {
         scp.scp1 = if (scp.scp1.id != "LOCAL") scp.scp1 else {
