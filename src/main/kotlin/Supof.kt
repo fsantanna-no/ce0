@@ -19,12 +19,9 @@ fun Type.Func.mapLabels (up: Any): Type.Func {
                 if (id == null) {
                     this
                 } else {
+                    // TODO: scp2 = null
                     val scp = Scope(Tk.Id(TK.XID, this.tk.lin, this.tk.col, id), null)
-                    Type.Pointer(this.tk_, scp, this.pln.aux()).let {
-                        it.scp.toScp2(it)
-                        it
-                    }
-
+                    Type.Pointer(this.tk_, scp, this.pln.aux())
                 }
             }
         }
