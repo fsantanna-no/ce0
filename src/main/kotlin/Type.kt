@@ -71,7 +71,10 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
                 this.tk_.copy(lin_ = lin, col_ = col),
                 this.tsk.aux(lin, col) as Type.Func
             )
-            is Type.Spawns -> TODO()
+            is Type.Spawns -> Type.Spawns (
+                this.tk_.copy(lin_ = lin, col_ = col),
+                this.tsk.aux(lin, col) as Type.Func
+            )
             is Type.Pointer -> Type.Pointer(
                 this.tk_.copy(lin_ = lin, col_ = col),
                 this.xscp1?.copy(lin_=lin,col_=col),
