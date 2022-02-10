@@ -1,16 +1,5 @@
 data class Scp2 (val lvl: Int, val par: String?, val depth: Int?)
 
-fun Type.toScp2 (): Scp2 {
-    return when {
-        this is Type.Pointer -> this.xscp2!!
-        (this is Type.Func) && (this.xscp1s.first!=null) -> this.xscp2s!!.first!! // body holds pointers in clo
-        else -> {
-            val lvl = this.ups_tolist().filter { it is Expr.Func }.count() // level of function nesting
-            Scp2(lvl, null, 0)
-        }
-    }
-}
-
 fun Tk.Id.toScp2 (up: Any): Scp2 {
     val lvl = up.ups_tolist().filter { it is Expr.Func }.count() // level of function nesting
     return when (this.id) { // 2xExpr.Func, otherwise no level between outer/arg/body
@@ -22,11 +11,6 @@ fun Tk.Id.toScp2 (up: Any): Scp2 {
         }
         else -> {
             val blk = up.env(this.id)
-            /*
-            println(this.id)
-            println(up)
-            println(up.env_all())
-             */
             if (blk != null) {
                 // @A, @x, ...
                 val one = if (blk is Stmt.Block) 1 else 0

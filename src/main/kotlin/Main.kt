@@ -18,8 +18,9 @@ fun ce2c (ce: String): Pair<Boolean,String> {
         s.setUps(null)
         s.setEnvs(null)
         check_01_before_tps(s)
-        s.setScp2s()
+        //s.setScp2s()
         s.setTypes()
+        s.setScp2s()
         check_02_after_tps(s)
         return Pair(true, s.code())
     } catch (e: Throwable) {

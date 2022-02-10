@@ -5,7 +5,7 @@ fun Stmt.setTypes () {
             is Expr.Upref -> e.pln.wtype!!.let {
                 val id = e.toBaseVar()?.tk_?.id ?: "GLOBAL"   // uppercase /x -> /X
                 val scp1 = Tk.Id(TK.XID,e.tk.lin,e.tk.col, id.toUpperCase())
-                Type.Pointer(e.tk_, scp1, scp1.toScp2(e), it).clone(e,e.tk.lin,e.tk.col)
+                Type.Pointer(e.tk_, scp1, scp1.toScp2(e), it)
             }
             is Expr.Dnref -> e.ptr.wtype.let {
                 if (it is Type.Nat) it else {
@@ -15,8 +15,8 @@ fun Stmt.setTypes () {
                     (it as Type.Pointer).pln
                 }
             }
-            is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.wtype!! }.toTypedArray()).clone(e,e.tk.lin,e.tk.col)
-            is Expr.New   -> Type.Pointer(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.xscp1!!, e.xscp2!!, e.arg.wtype!!).clone(e,e.tk.lin,e.tk.col)
+            is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.wtype!! }.toTypedArray())
+            is Expr.New   -> Type.Pointer(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.xscp1!!, null, /*e.xscp2!!,*/ e.arg.wtype!!)
             is Expr.Call -> e.f.wtype.let { tpd ->
                 when (tpd) {
                     is Type.Nat, is Type.Spawn, is Type.Spawns -> tpd
@@ -32,41 +32,35 @@ fun Stmt.setTypes () {
                         // zip [[{@scp1a,@scp1b},{@scp2a,@scp2b}],{@a1,@b1}]
                         if (tpd.xscp1s.second.size != e.xscp1s.first.size) {
                             // TODO: may fail before check2, return anything
-                            Type.Nat(Tk.Nat(TK.NATIVE, e.tk.lin, e.tk.col, null, "ERR")).clone(e, e.tk.lin, e.tk.col)
+                            Type.Nat(Tk.Nat(TK.NATIVE, e.tk.lin, e.tk.col, null, "ERR"))
                         } else {
-                            val MAP: List<Pair<Tk.Id, Pair<Tk.Id, Scp2>>> =
-                                tpd.xscp1s.second.zip(e.xscp1s.first.zip(e.xscp2s!!.first))
-
-                            fun Tk.Id.get(scp2: Scp2): Pair<Tk.Id, Scp2> {
+                            val MAP: List<Pair<Tk.Id, Tk.Id>> =
+                                tpd.xscp1s.second.zip(e.xscp1s.first)
+                            fun Tk.Id.get(): Tk.Id {
                                 return MAP.find { it.first.let { it.id == this.id } }?.second
-                                    ?: Pair(this, scp2)
+                                    ?: this
                             }
-
                             fun Type.map(): Type {
                                 return when (this) {
-                                    is Type.Pointer -> this.xscp1.get(this.xscp2!!).let {
-                                        Type.Pointer(this.tk_, it.first, it.second, this.pln.map())
-                                            .clone(e, e.tk.lin, e.tk.col)
+                                    is Type.Pointer -> this.xscp1.get().let {
+                                        Type.Pointer(this.tk_, it, null, this.pln.map())
                                     }
                                     is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.map() }.toTypedArray())
-                                        .clone(e, e.tk.lin, e.tk.col)
                                     is Type.Union -> Type.Union(
                                         this.tk_,
                                         this.vec.map { it.map() }.toTypedArray()
-                                    ).clone(e, e.tk.lin, e.tk.col)
+                                    )
                                     is Type.Func -> {
-                                        val clo = this.xscp1s.first?.get(this.xscp2s!!.first!!)
-                                        val (x1, x2) = this.xscp1s.second.zip(this.xscp2s!!.second)
-                                            .map { it.first.get(it.second) }
-                                            .unzip()
+                                        val clo = this.xscp1s.first?.get()
+                                        val x1  = this.xscp1s.second.map { it.get() }
                                         Type.Func(
                                             this.tk_,
-                                            Triple(clo?.first, x1.toTypedArray(), this.xscp1s.third), // TODO: third
-                                            Pair(clo?.second, x2.toTypedArray()),
+                                            Triple(clo, x1.toTypedArray(), this.xscp1s.third), // TODO: third
+                                            null,
                                             this.inp.map(),
                                             this.pub?.map(),
                                             this.out.map()
-                                        ).clone(e, e.tk.lin, e.tk.col)
+                                        )
                                     }
                                     else -> this
                                 }
@@ -123,17 +117,17 @@ fun Stmt.setTypes () {
 
                 when (e) {
                     is Expr.UDisc -> if (e.tk_.num == 0) {
-                        Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()")).clone(e,e.tk.lin,e.tk.col)
+                        Type.Unit(Tk.Sym(TK.UNIT, e.tk.lin, e.tk.col, "()"))
                     } else {
                         tp.vec[e.tk_.num - 1]
                     }
-                    is Expr.UPred -> Type.Nat(Tk.Nat(TK.XNAT, e.tk.lin, e.tk.col, null, "int")).clone(e,e.tk.lin,e.tk.col)
+                    is Expr.UPred -> Type.Nat(Tk.Nat(TK.XNAT, e.tk.lin, e.tk.col, null, "int"))
                     else -> error("bug found")
                 }
             }
             is Expr.Var -> e.env(e.tk_.id)!!.toType()
             else -> TODO()
-        }
+        }.clone(e,e.tk.lin,e.tk.col)
     }
     this.visit(null, ::fe, null)
 }
