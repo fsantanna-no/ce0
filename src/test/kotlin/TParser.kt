@@ -561,7 +561,7 @@ class TParser {
         All_new(PushbackReader(StringReader("{ @A }"), 2))
         Lexer.lex()
         val s = Parser().stmt()
-        assert(s is Stmt.Block && s.xscp1!!.id=="A")
+        assert(s is Stmt.Block && s.scp1!!.id=="A")
     }
 
     // STMT_CALL

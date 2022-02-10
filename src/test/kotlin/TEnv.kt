@@ -14,6 +14,7 @@ class TEnv {
         try {
             val s = Parser().stmts()
             s.setUps(null)
+            s.setScp1s()
             s.setEnvs(null)
             check_01_before_tps(s)
             //s.setScp2s()

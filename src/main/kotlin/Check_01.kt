@@ -12,7 +12,7 @@ fun Tk.Id.check (up: Any) {
             println("<<<")
             println(it)
             */
-            it is Stmt.Block && this.id==it.xscp1!!.id  ||
+            it is Stmt.Block && this.id==it.scp1!!.id  ||
             it is Stmt.Var   && this.id==it.tk_.id.toUpperCase()
         } -> true
         (up.ups_first {                                     // [@i1, ...] { @i1 }
@@ -65,7 +65,7 @@ fun check_01_before_tps (s: Stmt) {
                             tp.xscp1s.second?.any { ptr.id==it.id } ?: false      // (@i1 -> ...@i1...)
                         ) -> true
                         (tp.ups_first {                     // { @aaa \n ...@aaa... }
-                            it is Stmt.Block && it.xscp1.let { it!=null && it.id==ptr.id }
+                            it is Stmt.Block && it.scp1.let { it!=null && it.id==ptr.id }
                         } != null) -> true
                         else -> false
                     }
@@ -152,7 +152,7 @@ fun check_01_before_tps (s: Stmt) {
                 }
             }
             is Stmt.Block -> {
-                s.xscp1?.let {
+                s.scp1?.let {
                     val dcl = s.env(it.id)
                     All_assert_tk(it, dcl == null) {
                         "invalid scope : \"${it.id}\" is already declared (ln ${dcl!!.toTk().lin})"

@@ -524,9 +524,14 @@ open class Parser
             all.accept_err(TK.XID)
             all.tk0.asscopecst()
         }
-        val ret = this.stmts()
+        val ss = this.stmts()
         all.accept_err(TK.CHAR, '}')
-        return Stmt.Block(tk0, iscatch, scp, ret)
+        return Stmt.Block(tk0, iscatch, scp, ss).let {
+            if (it.scp1 == null) {
+                it.scp1 = Tk.Id(TK.XID, tk0.lin, tk0.col, "B${it.n}")
+            }
+            it
+        }
     }
 
 
