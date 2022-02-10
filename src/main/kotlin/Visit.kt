@@ -1,3 +1,5 @@
+var EXPR_WTYPE = true
+
 fun Type.visit (ft: ((Type) -> Unit)?) {
     when (this) {
         is Type.Unit, is Type.Nat, is Type.Alias -> {}
@@ -15,7 +17,9 @@ fun Type.visit (ft: ((Type) -> Unit)?) {
 }
 
 fun Expr.visit (fs: ((Stmt) -> Unit)?, fe: ((Expr) -> Unit)?, ft: ((Type) -> Unit)?) {
-    //this.wtype?.visit_(xpd,ft)
+    if (EXPR_WTYPE) {
+        this.wtype?.visit(ft)
+    }
     when (this) {
         is Expr.Unit, is Expr.Var -> {}
         is Expr.Nat   -> this.xtype?.visit(ft)

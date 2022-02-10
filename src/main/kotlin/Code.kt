@@ -745,7 +745,9 @@ fun code_fs (s: Stmt) {
 
 fun Stmt.code (): String {
     TYPEX.clear()
+    EXPR_WTYPE = false
     this.visit(::code_fs, ::code_fe, ::code_ft)
+    EXPR_WTYPE = true
 
     val code = CODE.removeFirst()
     assert(CODE.size == 0)
