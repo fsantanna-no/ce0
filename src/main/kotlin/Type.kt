@@ -108,7 +108,7 @@ fun Type.noalias (): Type {
         def.toType().mapScps (
             this.tk,
             this,
-            Pair(def.scps.first, this.scps),
+            Pair(def.scp1s.first, this.scps),
             false
         )
     }
@@ -152,10 +152,10 @@ fun mismatch (sup: Type, sub: Type): String {
 // Transform typedef -> type
 //      typedef Pair @[LOCAL] = [/_int@LOCAL,/_int@LOCAL]
 //      var xy: Pair @[LOCAL] = [/x,/y]
-fun Type.mapScps (tk: Tk, up: Any, scps: Pair<Array<Scope>, Array<Scope>>, dofunc: Boolean): Type {
+fun Type.mapScps (tk: Tk, up: Any, scps: Pair<Array<Tk.Id>, Array<Scope>>, dofunc: Boolean): Type {
     // from = scps.first
     // to   = scps.second
-    val map: Map<String, Scope> = scps.first.map { it.scp1.id }.zip(scps.second).toMap()
+    val map: Map<String, Scope> = scps.first.map { it.id }.zip(scps.second).toMap()
     fun Type.aux (dofunc: Boolean): Type {
         return when (this) {
             is Type.Unit, is Type.Nat -> this

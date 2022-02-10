@@ -1,7 +1,7 @@
 fun Scope.local2Block (up: Any) {
     this.scp1 = if (this.scp1.id == "LOCAL") {
         val id = (up.ups_first { it is Stmt.Block } as Stmt.Block?).let {
-            if (it == null) "GLOBAL" else it.scp!!.scp1.id
+            if (it == null) "GLOBAL" else it.scp1!!.id
         }
         Tk.Id(TK.XID, this.scp1.lin, this.scp1.col, id)
     } else {

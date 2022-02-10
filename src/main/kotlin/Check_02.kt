@@ -1,7 +1,7 @@
 
 
-fun check_ctrs (up: Any, dcl_scps: Pair<Array<Scope>, Array<Pair<String, String>>>, use_scps: Array<Scope>): Boolean {
-    val pairs = dcl_scps.first.map { it.scp1.id }.zip(use_scps!!)
+fun check_ctrs (up: Any, dcl_scps: Pair<Array<Tk.Id>, Array<Pair<String, String>>>, use_scps: Array<Scope>): Boolean {
+    val pairs = dcl_scps.first.map { it.id }.zip(use_scps!!)
     dcl_scps.second.forEach { ctr ->   // for each constraint
         // check if call args (x,y) respect this contraint
         val x = pairs.find { it.first==ctr.first  }!!.second
@@ -18,12 +18,12 @@ fun check_02_after_tps (s: Stmt) {
         when (tp) {
             is Type.Alias -> {
                 val def = tp.env(tp.tk_.id) as Stmt.Typedef
-                val s1 = def.scps.first!!.size
+                val s1 = def.scp1s.first!!.size
                 val s2 = tp.scps!!.size
                 All_assert_tk(tp.tk, s1 == s2) {    // xsc1ps may not be available in Check_01
                     "invalid type : scope mismatch : expecting $s1, have $s2 argument(s)"
                 }
-                All_assert_tk(tp.tk, check_ctrs(tp,def.scps,tp.scps!!)) {
+                All_assert_tk(tp.tk, check_ctrs(tp,def.scp1s,tp.scps!!)) {
                     "invalid type : scope mismatch : constraint mismatch"
                 }
             }
@@ -95,14 +95,14 @@ fun check_02_after_tps (s: Stmt) {
                 All_assert_tk(e.tk, s1 == s2) {
                     "invalid call : scope mismatch : expecting $s1, have $s2 argument(s)"
                 }
-                All_assert_tk(e.tk, check_ctrs(e,scp1s,e.scps!!.first)) {
+                All_assert_tk(e.tk, check_ctrs(e,Pair(scp1s.first.map { it.scp1 }.toTypedArray(),scp1s.second),e.scps!!.first)) {
                     "invalid call : scope mismatch : constraint mismatch"
                 }
 
                 val (inp2,out2) = if (func is Type.Func) {
                     Pair (
-                        inp1.mapScps(e.tk,e, Pair(scp1s.first, e.scps.first), false),
-                        out1.mapScps(e.tk,e, Pair(scp1s.first, e.scps.first), true)
+                        inp1.mapScps(e.tk,e, Pair(scp1s.first.map { it.scp1 }.toTypedArray(), e.scps.first), false),
+                        out1.mapScps(e.tk,e, Pair(scp1s.first.map { it.scp1 }.toTypedArray(), e.scps.first), true)
                     )
                 } else {
                     Pair(inp1,out1)

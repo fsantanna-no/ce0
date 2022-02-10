@@ -69,10 +69,10 @@ sealed class Stmt (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Loop   (val tk_: Tk.Key, val block: Block) : Stmt(N++, tk_, null, null)
     data class DLoop  (val tk_: Tk.Key, val i: Expr.Var, val tsks: Expr, val block: Block) : Stmt(N++, tk_, null, null)
     data class Break  (val tk_: Tk.Key) : Stmt(N++, tk_, null, null)
-    data class Block  (val tk_: Tk.Chr, val iscatch: Boolean, var scp: Scope?, val body: Stmt) : Stmt(N++, tk_, null, null)
+    data class Block  (val tk_: Tk.Chr, val iscatch: Boolean, var scp1: Tk.Id?, val body: Stmt) : Stmt(N++, tk_, null, null)
     data class Typedef (
         val tk_: Tk.Id,
-        val scps: Pair<Array<Scope>,Array<Pair<String,String>>>,
+        val scp1s: Pair<Array<Tk.Id>,Array<Pair<String,String>>>,
         val type: Type
     ) : Stmt(N++, tk_, null, null)
 }

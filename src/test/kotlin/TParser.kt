@@ -161,7 +161,7 @@ class TParser {
         All_new(PushbackReader(StringReader("<(),<(),^^>>"), 2))
         Lexer.lex()
         val tp1 = Parser().type(false)
-        tp1.visit({ it.wup = Any() })
+        tp1.visit({ it.wup = Any() }, null)
         val tp2 = (tp1 as Type.Union).vec[1]
         // <(),<(),^^>> = <(),<(),<(),^^>>>
         val ok1 = tp1.isSupOf(tp2)
@@ -561,7 +561,7 @@ class TParser {
         All_new(PushbackReader(StringReader("{ @A }"), 2))
         Lexer.lex()
         val s = Parser().stmt()
-        assert(s is Stmt.Block && s.scp!!.scp1.id=="A")
+        assert(s is Stmt.Block && s.scp1!!.id=="A")
     }
 
     // STMT_CALL

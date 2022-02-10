@@ -289,16 +289,14 @@ open class Parser
             all.accept(TK.TYPE) -> {
                 all.accept_err(TK.XID)
                 val id = all.tk0.astype()
-                val scps = if (all.check(TK.ATBRACK)) {
-                    this.scopepars().let {
-                        Pair(it.first.map { Scope(it,null) }.toTypedArray(), it.second)
-                    }
+                val scp1s = if (all.check(TK.ATBRACK)) {
+                    this.scopepars()
                 } else {
                     Pair(emptyArray(), emptyArray())
                 }
                 all.accept_err(TK.CHAR, '=')
                 val tp = this.type(false)
-                Stmt.Typedef(id, scps, /*null,*/ tp)
+                Stmt.Typedef(id, scp1s, /*null,*/ tp)
             }
             all.accept(TK.NATIVE) -> {
                 val istype = all.accept(TK.TYPE)
@@ -535,18 +533,14 @@ open class Parser
         val iscatch = (all.tk0.enu == TK.CATCH)
         all.accept_err(TK.CHAR, '{')
         val tk0 = all.tk0 as Tk.Chr
-        val scp = if (!all.accept(TK.CHAR, '@')) null else {
+        val scp1 = if (!all.accept(TK.CHAR, '@')) null else {
             all.accept_err(TK.XID)
             all.tk0.asscopecst()
         }
         val ss = this.stmts()
         all.accept_err(TK.CHAR, '}')
-        return Stmt.Block(tk0, iscatch, null, ss).let {
-            it.scp = if (scp == null) {
-                Scope(Tk.Id(TK.XID, tk0.lin, tk0.col, "B${it.n}"), null)
-            } else {
-                Scope(scp, null)
-            }
+        return Stmt.Block(tk0, iscatch, scp1, ss).let {
+            it.scp1 = it.scp1 ?: Tk.Id(TK.XID, tk0.lin, tk0.col, "B${it.n}")
             it
         }
     }

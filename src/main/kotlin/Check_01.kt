@@ -3,11 +3,11 @@ fun Scope.check (up: Any) {
         (this.scp1.id == "GLOBAL") -> true
         (up.ups_first { it is Type.Func || it is Stmt.Typedef } != null) -> true  // (@i1 -> ...)
         up.env(this.scp1.id).let {                              // { @aaa ... @aaa }
-            it is Stmt.Block && this.scp1.id==it.scp!!.scp1.id  ||
+            it is Stmt.Block && this.scp1.id==it.scp1!!.id  ||
             it is Stmt.Var   && this.scp1.id==it.tk_.id.toUpperCase()
         } -> true
         (up.ups_first {                                     // [@i1, ...] { @i1 }
-            it is Stmt.Typedef && (it.scps.first!!.any { it.scp1.id==this.scp1.id })
+            it is Stmt.Typedef && (it.scp1s.first!!.any { it.id==this.scp1.id })
          || it is Expr.Func    && (it.type.scps.second?.any { it.scp1.id==this.scp1.id } ?: false)
         } != null) -> true
         else -> false
@@ -55,7 +55,7 @@ fun check_01_before_tps (s: Stmt) {
                             tp.scps.second?.any { ptr.scp1.id==it.scp1.id } ?: false      // (@i1 -> ...@i1...)
                         ) -> true
                         (tp.ups_first {                     // { @aaa \n ...@aaa... }
-                            it is Stmt.Block && it.scp.let { it!=null && it.scp1.id==ptr.scp1.id }
+                            it is Stmt.Block && it.scp1.let { it!=null && it.id==ptr.scp1.id }
                         } != null) -> true
                         else -> false
                     }
@@ -142,10 +142,10 @@ fun check_01_before_tps (s: Stmt) {
                 }
             }
             is Stmt.Block -> {
-                s.scp?.let {
-                    val dcl = s.env(it.scp1.id)
-                    All_assert_tk(it.scp1, dcl == null) {
-                        "invalid scope : \"${it.scp1.id}\" is already declared (ln ${dcl!!.toTk().lin})"
+                s.scp1?.let {
+                    val dcl = s.env(it.id)
+                    All_assert_tk(it, dcl == null) {
+                        "invalid scope : \"${it.id}\" is already declared (ln ${dcl!!.toTk().lin})"
                     }
                 }
                 if (s.iscatch) {
