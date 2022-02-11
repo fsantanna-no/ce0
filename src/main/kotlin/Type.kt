@@ -12,7 +12,11 @@ fun Type.tostr (): String {
         is Type.Spawn   -> "active " + this.tsk.tostr()
         is Type.Spawns  -> "active " + this.tsk.tostr()
         is Type.Alias   -> this.tk_.id + this.xscps!!.let { if (it.size==0) "" else " @["+it.map { it.scp1.anon2local() }.joinToString(",")+"]" }
-        is Type.Func    -> this.tk_.key + this.xscps.first.clo() + " @[" + this.xscps.second!!.map { it.scp1.anon2local() }.joinToString(",") + "] -> " + this.inp.tostr() + " -> " + this.pub.let { if (it == null) "" else it.tostr() + " -> " } + this.out.tostr()
+        is Type.Func    -> {
+            val ctrs = this.xscps.third.let { if (it==null||it.isEmpty()) "" else ": "+it.map { it.first+">"+it.second }.joinToString(",") }
+            val scps = " @[" + this.xscps.second!!.map { it.scp1.anon2local() }.joinToString(",") + ctrs + "]"
+            this.tk_.key + this.xscps.first.clo() + scps + " -> " + this.inp.tostr() + " -> " + this.pub.let { if (it == null) "" else it.tostr() + " -> " } + this.out.tostr()
+        }
     }
 }
 
