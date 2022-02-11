@@ -25,7 +25,9 @@ fun Stmt.setTypes () {
                             // TODO: may fail before check2, return anything
                             Type.Nat(Tk.Nat(TK.NATIVE, e.tk.lin, e.tk.col, null, "ERR"))
                         } else {
-                            tpd.out.map_arg_to_inp_to_out(e.xscps.first, tpd.xscps.second)
+                            tpd.out.mapScps(true,
+                                tpd.xscps.second.map { it.scp1.id }.zip(e.xscps.first).toMap()
+                            )
                         }
                     }
                     else -> {
