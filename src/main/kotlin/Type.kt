@@ -192,3 +192,42 @@ fun Type.mapScps (tk: Tk, up: Any, scps: Pair<List<Tk.Id>, List<Scope>>, dofunc:
     }
     return this.aux(dofunc).clone(up,tk.lin,tk.col)
 }
+
+// Map return scope of "e" call based on "e.arg" applied to "e.f" scopes
+// calculates return of "e" call based on "e.f" function type
+// "e" passes "e.arg" with "e.scp1s.first" scopes which may affect "e.f" return scopes
+// we want to map these input scopes into "e.f" return scopes
+//  var f: func /@a1 -> /@b1
+//              /     /---/
+//  call f {@scp1,@scp2}  -->  /@scp2
+//  f passes two scopes, first goes to @a1, second goes to @b1 which is the return
+//  so @scp2 maps to @b1
+// zip [[{@scp1a,@scp1b},{@scp2a,@scp2b}],{@a1,@b1}]
+fun Type.map_arg_to_inp_to_out (arg: List<Scope>, par: List<Scope>): Type {
+    val MAP: List<Pair<Scope,Scope>> = par.zip(arg)
+    fun Scope.idx(): Scope {
+        return MAP.find { it.first.scp1.let { it.id == this.scp1.id } }?.second
+            ?: this
+    }
+    fun Type.aux (): Type {
+        return when (this) {
+            is Type.Pointer -> Type.Pointer(this.tk_, this.xscp!!.idx(), this.pln.aux())
+            is Type.Tuple   -> Type.Tuple(this.tk_, this.vec.map { it.aux() })
+            is Type.Union   -> Type.Union(this.tk_, this.vec.map { it.aux() })
+            is Type.Alias   -> Type.Alias(this.tk_, this.xisrec, this.xscps!!.map { it.idx() })
+            is Type.Func -> {
+                val clo = this.xscps.first?.idx()
+                val x1 = this.xscps.second!!.map { it.idx() }
+                Type.Func(
+                    this.tk_,
+                    Triple(clo, x1, this.xscps.third), // TODO: third
+                    this.inp.aux(),
+                    this.pub?.aux(),
+                    this.out.aux()
+                )
+            }
+            else -> this
+        }
+    }
+    return this.aux()
+}

@@ -21,50 +21,11 @@ fun Stmt.setTypes () {
                 when (tpd) {
                     is Type.Nat, is Type.Spawn, is Type.Spawns -> tpd
                     is Type.Func -> {
-                        // calculates return of "e" call based on "e.f" function type
-                        // "e" passes "e.arg" with "e.scp1s.first" scopes which may affect "e.f" return scopes
-                        // we want to map these input scopes into "e.f" return scopes
-                        //  var f: func /@a1 -> /@b1
-                        //              /     /---/
-                        //  call f {@scp1,@scp2}  -->  /@scp2
-                        //  f passes two scopes, first goes to @a1, second goes to @b1 which is the return
-                        //  so @scp2 maps to @b1
-                        // zip [[{@scp1a,@scp1b},{@scp2a,@scp2b}],{@a1,@b1}]
                         if (tpd.xscps.second.size != e.xscps.first.size) {
                             // TODO: may fail before check2, return anything
                             Type.Nat(Tk.Nat(TK.NATIVE, e.tk.lin, e.tk.col, null, "ERR"))
                         } else {
-                            val MAP: List<Pair<Scope,Scope>> =
-                                tpd.xscps.second.zip(e.xscps.first)
-                            fun Scope.idx(): Scope {
-                                return MAP.find { it.first.scp1.let { it.id == this.scp1.id } }?.second
-                                    ?: this
-                            }
-                            fun Type.map(): Type {
-                                return when (this) {
-                                    is Type.Pointer -> this.xscp.idx().let {
-                                        Type.Pointer(this.tk_, it, this.pln.map())
-                                    }
-                                    is Type.Tuple -> Type.Tuple(this.tk_, this.vec.map { it.map() })
-                                    is Type.Union -> Type.Union(
-                                        this.tk_,
-                                        this.vec.map { it.map() }
-                                    )
-                                    is Type.Func -> {
-                                        val clo = this.xscps.first?.idx()
-                                        val x1  = this.xscps.second.map { it.idx() }
-                                        Type.Func (
-                                            this.tk_,
-                                            Triple(clo, x1, this.xscps.third), // TODO: third
-                                            this.inp.map(),
-                                            this.pub?.map(),
-                                            this.out.map()
-                                        )
-                                    }
-                                    else -> this
-                                }
-                            }
-                            tpd.out.map()
+                            tpd.out.map_arg_to_inp_to_out(e.xscps.first, tpd.xscps.second)
                         }
                     }
                     else -> {
