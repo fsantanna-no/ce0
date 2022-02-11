@@ -2,7 +2,7 @@
 data class Scope (var scp1: Tk.Id, var scp2: Triple<Int,String?,Int?>?)
 
 fun Tk.Id?.isanon (): Boolean {
-    return this.let { (it==null || it.id[0]=='B'&&it.id[1].isDigit()) }
+    return this.let { (it==null || (it.id.length>=2 && it.id[0]=='B' && it.id[1].isDigit())) }
 }
 
 fun Tk.Id.anon2local (): String {

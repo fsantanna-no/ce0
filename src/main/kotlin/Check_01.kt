@@ -1,6 +1,7 @@
 fun Scope.check (up: Any) {
     val ok = when {
         (this.scp1.id == "GLOBAL") -> true
+        (this.scp1.id == "LOCAL") -> true
         (up.ups_first { it is Type.Func || it is Stmt.Typedef } != null) -> true  // (@i1 -> ...)
         up.env(this.scp1.id).let {                              // { @aaa ... @aaa }
             it is Stmt.Block && this.scp1.id==it.scp1!!.id  ||
@@ -96,12 +97,14 @@ fun check_01_before_tps (s: Stmt) {
                 if (e.xtype != null) e.check()
             }
             is Expr.Func -> {
-                val outers = e.ups_tolist().filter { it is Expr.Func } as List<Expr.Func>
-                for (f in outers) {
-                    val err = f.type.xscps.second?.find { scp2 -> e.type.xscps.second!!.any { scp1 -> scp1.scp1.id==scp2.scp1.id } }
-                    All_assert_tk(e.tk, err==null) {
-                        "invalid scope : \"${err!!.scp1.id}\" is already declared (ln ${err!!.scp1.lin})"
-                    }
+                val outers: List<Scope> = e.ups_tolist().let {
+                    val es = it.filter { it is Expr.Func }.let { it as List<Expr.Func> }.map { it.type }
+                    val ts = it.filter { it is Type.Func }.let { it as List<Type.Func> }
+                    (es + ts).map { it.xscps.second ?: emptyList() }.flatten()
+                }
+                val err = outers.find { out -> e.type.xscps.second!!.any { it.scp1.id==out.scp1.id } }
+                All_assert_tk(e.tk, err==null) {
+                    "invalid scope : \"${err!!.scp1.id}\" is already declared (ln ${err!!.scp1.lin})"
                 }
                 e.ups.forEach {
                     All_assert_tk(e.tk, e.env(it.id) != null) {
