@@ -52,7 +52,7 @@ fun code_ft (tp: Type) {
                 } X_${tp.toce()};
                 typedef struct {
                     Task task0;
-                    ${tp.xscps.first.let { if (it == null) "" else "Block* ${it.scp1.id};" }}
+                    ${tp.xscps.first.let { if (it == null) "" else "Block* CLO;" }}
                     union {
                         Block* blks[${tp.xscps.second.size}];
                         struct {
@@ -215,7 +215,7 @@ fun String.mem (up: Any): String {
 fun Scope.toce (up: Any): String {
     return when {
         // @GLOBAL is never an argument
-        (this.scp1.id == "GLOBAL")   -> "GLOBAL"
+        (this.scp1.id == "GLOBAL") -> "GLOBAL"
         // @i_1 is always an argument
         this.scp1.isscopepar() -> "(task1->${this.scp1.id})"
         // closure block is always an argument
@@ -223,7 +223,7 @@ fun Scope.toce (up: Any): String {
             it is Expr.Func && it.type.xscps.first.let {
                 it?.scp1?.enu==this.scp1.enu && it?.scp1?.id==this.scp1.id
             }
-        } != null) -> "(task1->${this.scp1.id})"
+        } != null) -> "(task1->CLO)"
         // otherwise depends (calls mem)
         else -> {
             val blk = up.env(this.scp1.id) as Stmt.Block
@@ -499,7 +499,6 @@ fun code_fe (e: Expr) {
             val isclo  = (e.type.xscps.first != null)
             val istk   = (e.type.tk.enu == TK.TASK)
             val isnone = !isclo && !istk
-            val cloblk = e.type.xscps.first.let { if (it == null) e.local() else e.type.xscps.first!!.toce(e.wup!!) }
 
             val src = if (isnone) {
                 """
@@ -519,12 +518,12 @@ fun code_fe (e: Expr) {
                     };
                     ${e.type.xscps.first.let {
                         if (it==null) "" else
-                            "frame_${e.n}->task1.${it.scp1.id} = ${it.toce(e.wup!!)};\n"
+                            "frame_${e.n}->task1.CLO = ${it.toce(e.wup!!)};\n"
                     }}
                     ${e.ups.map {
                         "frame_${e.n}->${it.id} = ${it.id.mem(e.wup!!)};\n"
                     }.joinToString("")}
-                    block_push($cloblk, frame_${e.n});
+                    block_push(frame_${e.n}->task1.CLO, frame_${e.n});
 
                 """.trimIndent()
             }

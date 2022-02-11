@@ -128,7 +128,7 @@ fun Type.toce (): String {
         is Type.Nat    -> this.tk_.src.replace('*','_')
         is Type.Tuple  -> "T_" + this.vec.map { it.toce() }.joinToString("_") + "_T"
         is Type.Union  -> "U_" + this.vec.map { it.toce() }.joinToString("_") + "_U"
-        is Type.Func   -> "F_" + (if (this.tk.enu==TK.TASK) "TK_" else "") + (this.xscps.first.let { if (it==null) "" else "CLO_${it.scp1.id}_"}) + this.inp.toce() + "_" + this.out.toce() + "_F"
+        is Type.Func   -> "F_" + (if (this.tk.enu==TK.TASK) "TK_" else "") + (this.xscps.first.let { if (it==null) "" else "CLO_"}) + this.inp.toce() + "_" + this.out.toce() + "_F"
         is Type.Spawn  -> "S_" + this.tsk.toce() + "_S"
         is Type.Spawns -> "SS_" + this.tsk.toce() + "_SS"
     }
