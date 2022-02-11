@@ -2911,6 +2911,15 @@ class TEnv {
         )
         assert(out == "OK") { out }
     }
+    @Test
+    fun p35_clo () {
+        val out = inp2env(
+            """
+            var f: func @[GLOBAL] -> func @[] -> () -> () -> func @GLOBAL -> @[] -> () -> ()
+        """.trimIndent()
+        )
+        assert(out == "(ln 1, col 15): invalid scope parameter identifier") { out }
+    }
 
     // TYPEDEF / ALIAS
 
