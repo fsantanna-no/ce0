@@ -1,13 +1,16 @@
 // Triple<lvl,par,depth>
 data class Scope (var scp1: Tk.Id, var scp2: Triple<Int,String?,Int?>?)
 
+fun Any.localBlock (): String {
+    return (this.ups_first { it is Stmt.Block } as Stmt.Block?).let {
+        if (it == null) "GLOBAL" else it.scp1!!.id
+    }
+}
+
 fun Stmt.setScp1s () {
     fun fx (up: Any, scp: Scope) {
         scp.scp1 = if (scp.scp1.id != "LOCAL") scp.scp1 else {
-            val id = (up.ups_first { it is Stmt.Block } as Stmt.Block?).let {
-                if (it == null) "GLOBAL" else it.scp1!!.id
-            }
-            Tk.Id(TK.XID, scp.scp1.lin, scp.scp1.col, id)
+            Tk.Id(TK.XID, scp.scp1.lin, scp.scp1.col, up.localBlock())
         }
     }
     this.visit(null, null, null, ::fx)

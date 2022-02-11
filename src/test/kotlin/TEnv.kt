@@ -17,7 +17,6 @@ class TEnv {
             s.setScp1s()
             s.setEnvs(null)
             check_01_before_tps(s)
-            //s.setScp2s()
             s.setTypes()
             s.setScp2s()
             check_02_after_tps(s)

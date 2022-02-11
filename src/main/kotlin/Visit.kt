@@ -8,7 +8,7 @@ fun Type.visit (ft: ((Type) -> Unit)?, fx: ((Any,Scope) -> Unit)?) {
         is Type.Spawn   -> this.tsk.visit(ft,fx)
         is Type.Spawns  -> this.tsk.visit(ft,fx)
         is Type.Pointer -> { if (fx!=null && this.xscp!=null) fx(this,this.xscp!!) ; this.pln.visit(ft,fx) }
-        is Type.Alias   -> if (fx!=null && this.xscps!=null) this.xscps.forEach { fx(this,it) }
+        is Type.Alias   -> if (fx!=null && this.xscps!=null) this.xscps!!.forEach { fx(this,it) }
         is Type.Func    -> {
             this.xscps.let {
                 if (it.first != null) if (fx!=null) fx(this,it.first!!)

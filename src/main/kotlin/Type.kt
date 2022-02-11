@@ -76,7 +76,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
             )
             is Type.Pointer -> Type.Pointer(
                 this.tk_.copy(lin_ = lin, col_ = col),
-                Scope(this.xscp.scp1.copy(lin_=lin,col_=col), this.xscp.scp2),
+                Scope(this.xscp!!.scp1.copy(lin_=lin,col_=col), this.xscp!!.scp2),
                 this.pln.aux(lin, col)
             )
         }.let {
