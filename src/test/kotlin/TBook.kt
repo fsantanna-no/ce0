@@ -433,8 +433,8 @@ class TBook {
             $nums
             $clone
             $add
-            -- 33
-            var plusc: func @[a1]-> $NumA1 -> (func @a1->@[r1,b1]->$NumB1->$NumR1)
+            -- 34
+            var plusc : func @[a1]-> $NumA1 -> (func @a1->@[r1,b1]->$NumB1->$NumR1)
             set plusc = func @[a1]-> $NumA1 -> (func @a1->@[r1,b1]->$NumB1->$NumR1) {
                 var x: $NumA1
                 set x = arg

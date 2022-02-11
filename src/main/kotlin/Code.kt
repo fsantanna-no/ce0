@@ -216,14 +216,14 @@ fun Scope.toce (up: Any): String {
     return when {
         // @GLOBAL is never an argument
         (this.scp1.id == "GLOBAL") -> "GLOBAL"
-        // @i_1 is always an argument
-        this.scp1.isscopepar() -> "(task1->${this.scp1.id})"
         // closure block is always an argument
         (up.ups_first {
             it is Expr.Func && it.type.xscps.first.let {
                 it?.scp1?.enu==this.scp1.enu && it?.scp1?.id==this.scp1.id
             }
         } != null) -> "(task1->CLO)"
+        // @i_1 is always an argument (must be after closure test)
+        this.scp1.isscopepar() -> "(task1->${this.scp1.id})"
         // otherwise depends (calls mem)
         else -> {
             val blk = up.env(this.scp1.id) as Stmt.Block
