@@ -227,7 +227,7 @@ fun Scope.toce (up: Any): String {
         // otherwise depends (calls mem)
         else -> {
             val blk = up.env(this.scp1.id) as Stmt.Block
-            val mem = ("block_" + blk.n).mem(up)
+            val mem = "B${blk.n}".mem(up)
             "(&" + mem + ")"
         }
     }
@@ -236,7 +236,7 @@ fun Scope.toce (up: Any): String {
 fun Any.local (): String {
     return this.ups_first { it is Stmt.Block }.let {
         if (it == null) "GLOBAL" else {
-            val mem = ("block_" + (it as Stmt.Block).n).mem(this)
+            val mem = ("B" + (it as Stmt.Block).n).mem(this)
             "(&" + mem + ")"
         }
     }
@@ -280,7 +280,7 @@ fun Stmt.mem_vars (): String {
 
         is Stmt.Block -> """
             struct {
-                Block block_${this.n};
+                Block B${this.n};
                 ${this.body.mem_vars()}
             };
             
@@ -535,7 +535,7 @@ fun code_fe (e: Expr) {
 
 // link/unlink block with enclosing block/task
 fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
-    val blk = "block_${this.n}".mem(this)
+    val blk = "B${this.n}".mem(this)
     val (link,unlink) = this.ups_first { it is Expr.Func || it is Stmt.Block }.let {
         when {
             // found block above me: link/unlink me as nested block
@@ -726,7 +726,7 @@ fun code_fs (s: Stmt) {
             val (link,unlink,kill) = s.link_unlink_kill()
             val src = """
             {
-                ${"block_${s.n}".mem(s)} = (Block) { NULL, ${if (s.iscatch) s.n else 0}, {NULL,NULL,NULL} };
+                ${"B${s.n}".mem(s)} = (Block) { NULL, ${if (s.iscatch) s.n else 0}, {NULL,NULL,NULL} };
                 $link
                 ${it.stmt}
                 ${if (!s.iscatch) "" else "case ${s.n}: // catch"}
@@ -1013,12 +1013,12 @@ fun Stmt.code (): String {
         ${code.pre}
 
         void main (void) {
-            Block block_0 = { NULL, 0, {NULL,NULL,NULL} };
-            GLOBAL = &block_0;
-            Stack _stack_ = { NULL, NULL, &block_0 };
+            Block B0 = { NULL, 0, {NULL,NULL,NULL} };
+            GLOBAL = &B0;
+            Stack _stack_ = { NULL, NULL, &B0 };
             Stack* stack = &_stack_;
             ${code.stmt}
-            block_bcast(stack, &block_0, 1, EVENT_KILL);
+            block_bcast(stack, &B0, 1, EVENT_KILL);
         }
 
     """).trimIndent()

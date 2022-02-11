@@ -270,6 +270,35 @@ class TTask {
         assert(out == "11\n12\n0\n") { out }
     }
     @Test
+    fun a08_bcast_block2 () {
+        val out = all("""
+            {
+                var f : task @LOCAL->@[]->()->()->()
+                set f = task @LOCAL->@[]->()->()->() {
+                    await _1:_int
+                    output std _(${D}evt+0):_int    -- only on kill
+                }
+                var x : active task @LOCAL->@[]->()->()->()
+                set x = spawn f ()
+                
+                {
+                    var g : task @LOCAL->@[]->()->()->()
+                    set g = task @LOCAL->@[]->()->()->() {
+                        await _(${D}evt != 0):_int
+                        output std _(${D}evt+10):_int
+                        await _(${D}evt != 0):_int
+                        output std _(${D}evt+10):_int
+                    }
+                    var y : active task @LOCAL->@[]->()->()->()
+                    set y = spawn g ()
+                    bcast @LOCAL _1:_int
+                    bcast @LOCAL _2:_int
+                }
+            }
+        """.trimIndent())
+        assert(out == "11\n12\n0\n") { out }
+    }
+    @Test
     fun a09_nest () {
         val out = all("""
             var f : task @LOCAL->@[]->()->()->()
