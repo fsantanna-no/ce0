@@ -1984,4 +1984,30 @@ class TExec {
         )
         assert(out == "15\n") { out }
     }
+    @Test
+    fun z17_curry () {
+        val out = all("""
+            type Num @[s] = </Num @[s] @s>
+            var add: func @[a,b,r] -> [/Num @[a] @a,/Num @[b] @b] -> /Num @[r] @r
+            var curry: func @[] -> func @[a,b,r] -> [/Num @[a] @a,/Num @[b] @b] -> /Num @[r] @r -> func @GLOBAL -> @[a] -> /Num @[a] @a -> func @a -> @[b,r] -> /Num @[b] @b -> /Num @[r] @r
+            var addc: func @GLOBAL -> @[a] -> /Num @[a] @a -> func @a -> @[b,r] -> /Num @[b] @b -> /Num @[r] @r
+            --set addc = (curry @[] add: @GLOBAL)
+            output std ()
+        """.trimIndent())
+        assert(out == "()\n") { out }
+    }
+    @Test
+    fun z18_type_rec_ptr () {
+        val out = all("""
+            type Num1 @[s] = </Num1 @[s] @s>
+            type Num2 @[s] = /<Num2 @[s]> @s
+            var n1: /Num1 @[LOCAL]
+            set n1 = new <.1 <.0>:/Num1 @[LOCAL] @LOCAL>:Num1 @[LOCAL]
+            var n2: Num2 @[LOCAL]
+            set n2 = new <.1 <.0>:Num2 @[LOCAL]>:<Num2 @[LOCAL]>
+            output std n1
+            output std n2
+        """.trimIndent())
+        assert(out == "<.1 <.0>>\n<.1 <.0>>\n") { out }
+    }
 }

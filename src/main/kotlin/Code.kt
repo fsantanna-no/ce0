@@ -19,14 +19,19 @@ fun Type.pos (): String {
     }
 }
 
+//it is Type.Pointer && it.pln.noalias() is Type.Union ||
+//it is Type.Alias   && it.noalias().let { it is Type.Pointer && it.pln is Type.Union }
+
 fun Type.output_std (c: String, arg: String): String {
-    val tupuni = this is Type.Pointer && this.pln.noalias().let { it is Type.Tuple || it is Type.Union }
+    val alias1 = this is Type.Pointer && /*this.pln is Type.Alias &&*/ this.pln.noalias().let { it is Type.Tuple || it is Type.Union }
+    val alias2 = this is Type.Alias && this.noalias().let { it is Type.Pointer && (it.pln is Type.Tuple || it.pln is Type.Union) }
     return when {
-        tupuni -> "output_std_${(this as Type.Pointer).pln.toce()}$c($arg);\n"
+        alias1 -> "output_std_${(this as Type.Pointer).pln.noalias().toce()}$c($arg);\n"
+        alias2 -> "output_std_${(this.noalias() as Type.Pointer).pln.toce()}$c($arg);\n"
         this is Type.Pointer || this is Type.Func -> {
             if (c == "_") "putchar('_');\n" else "puts(\"_\");\n"
         }
-        else -> "output_std_${this.toce()}$c($arg);\n"
+        else -> "output_std_${this.noalias().toce()}$c($arg);\n"
     }
 }
 
@@ -76,28 +81,19 @@ fun code_ft (tp: Type) {
         is Type.Tuple -> {
             val ce = tp.toce()
 
-            val struct = Pair("""
-                struct $ce;                    
-
-            """.trimIndent(), """
+            val type = """
                 struct $ce {
                     ${tp.vec  // do not filter to keep correct i
                         .mapIndexed { i,sub -> (sub.pos() + " _" + (i+1).toString() + ";\n") }
                         .joinToString("")
                     }
                 };
-
-            """.trimIndent())
-
-            val type = """
-                ${if (tp.containsRec()) struct.first else struct.second }
                 void output_std_${ce}_ (${tp.pos()}* v);
                 void output_std_${ce}  (${tp.pos()}* v);
                 
             """.trimIndent()
 
             val pre = """
-                ${if (tp.containsRec()) struct.second else "" }
                 void output_std_${ce}_ (${tp.pos()}* v) {
                     printf("[");
                     ${tp.vec
@@ -127,11 +123,7 @@ fun code_ft (tp: Type) {
         is Type.Union -> {
             val ce = tp.toce()
 
-            val struct = Pair ("""
-                struct $ce;
-
-            """.trimIndent(),
-            """
+            val type = """
                 struct $ce {
                     int tag;
                     union {
@@ -141,18 +133,12 @@ fun code_ft (tp: Type) {
                         }
                     };
                 };
-
-            """.trimIndent())
-
-            val type = """
-                ${if (tp.containsRec()) struct.first else struct.second }
                 void output_std_${ce}_ (${tp.pos()}* v);
                 void output_std_${ce} (${tp.pos()}* v);
 
             """.trimIndent()
 
             val pre = """
-                ${if (tp.containsRec()) struct.second else "" }
                 void output_std_${ce}_ (${tp.pos()}* v) {
                     // TODO: only if tp.isrec
                     if (v == NULL) {
@@ -564,8 +550,8 @@ fun code_fs (s: Stmt) {
         is Stmt.Nop -> Code("", "","","")
         is Stmt.Typedef -> CODE.removeFirst().let {
             val src = """
-                #define output_std_${s.tk_.id}_ output_std_${s.type.toce()}_
-                #define output_std_${s.tk_.id}  output_std_${s.type.toce()}
+                //#define output_std_${s.tk_.id}_ output_std_${s.type.toce()}_
+                //#define output_std_${s.tk_.id}  output_std_${s.type.toce()}
                 typedef ${s.type.pos()} ${s.tk_.id};
                 
             """.trimIndent()

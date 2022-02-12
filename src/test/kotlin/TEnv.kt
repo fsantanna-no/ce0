@@ -3157,4 +3157,15 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK") { out }
     }
+    @Test
+    fun q18_curry () {
+        val out = inp2env("""
+            type Num @[s] = /<Num @[s]> @s
+            var add: func @[a,b,r] -> [Num @[a],Num @[b]] -> Num @[r]
+            var curry: func @[] -> func @[a,b,r] -> [Num @[a],Num @[b]] -> Num @[r] -> func @GLOBAL -> @[a] -> Num @[a] -> func @a -> @[b,r] -> Num @[b] -> Num @[r]
+            var addc: func @GLOBAL -> @[a] -> Num @[a] -> func @a -> @[b,r] -> Num @[b] -> Num @[r]
+            set addc = (curry @[] add: @GLOBAL)
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
 }

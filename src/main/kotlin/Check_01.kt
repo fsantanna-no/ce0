@@ -21,7 +21,13 @@ fun Scope.check (up: Any) {
 // need to check UNull/UCons on check_01 (Ce0) and check_02 (Ce1, b/c no type at check_01)
 
 fun Expr.UNull.check () {
-    All_assert_tk(this.xtype!!.tk, this.xtype.let { it is Type.Pointer && it.pln.noalias() is Type.Union }) { "invalid type : expected pointer to union"}
+    val ok = this.xtype.let {
+        it is Type.Pointer && it.pln.noalias() is Type.Union ||
+                // <.0>:/List @[LOCAL]  ---  type List  @[s] = </List  @[s] @s>
+        it is Type.Alias   && it.noalias().let { it is Type.Pointer && it.pln is Type.Union }
+                // <.0>:PList @[LOCAL]  ---  type PList @[s] = /<PList @[s]> @s
+    }
+    All_assert_tk(this.xtype!!.tk, ok) { "invalid type : expected pointer to union"}
 }
 
 fun Expr.UCons.check () {

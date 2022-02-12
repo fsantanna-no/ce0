@@ -115,15 +115,6 @@ fun Type.noalias (): Type {
     }
 }
 
-fun Type.containsRec (): Boolean {
-    return when (this) {
-        is Type.Alias -> TODO()
-        is Type.Unit, is Type.Nat, is Type.Pointer, is Type.Func, is Type.Spawn, is Type.Spawns -> false
-        is Type.Tuple -> this.vec.any { it.containsRec() }
-        is Type.Union -> this.vec.any { it.containsRec() }
-    }
-}
-
 fun Type.toce (): String {
     return when (this) {
         is Type.Unit   -> "Unit"
