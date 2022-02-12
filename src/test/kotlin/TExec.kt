@@ -409,6 +409,27 @@ class TExec {
         """.trimIndent())
         assert(out == "10\n") { out }
     }
+    @Test
+    fun e06_inp () {
+        val out = all("""
+            type Int = _int
+            var x: Int
+            set x = input std (): Int
+            output std x
+        """.trimIndent())
+        assert(out.contains("implicit declaration of function ‘input_std_Int’")) { out }
+    }
+    //@Disabled   // needs user input
+    @Test
+    fun e07_inp () {
+        val out = all("""
+            type Int = <_int,()>
+            var x: Int
+            set x = input std <.1 _10:_int>: Int: Int
+            output std x
+        """.trimIndent())
+        assert(out.contains("XXX")) { out }
+    }
 
     // USER
 
@@ -1740,6 +1761,41 @@ class TExec {
             var l: List @[LOCAL]
             set l = new <.1 <.0>:List @[LOCAL]>:<List @[LOCAL]>
             output std l\!1\!0
+        """.trimIndent())
+        assert(out == "()\n") { out }
+    }
+    @Test
+    fun o07_type_pln () {
+        val out = all("""
+            type Int  @[] = _int
+            type Pair @[] = [Int,Int]
+            var x: Int
+            set x = _10:_int
+            var xs: Pair
+            set xs = [x,x]
+            output std /xs
+        """.trimIndent())
+        assert(out == "[10,10]\n") { out }
+    }
+    @Test
+    fun o08_type_pln () {
+        val out = all("""
+            type Int  @[] = _int
+            type Pair @[] = <Int,Int>
+            var x: Int
+            set x = _10:_int
+            var xs: Pair
+            set xs = <.1 x>: Pair
+            output std /xs
+        """.trimIndent())
+        assert(out == "<.1 10>\n") { out }
+    }
+    @Test
+    fun o09_type_pln () {
+        val out = all("""
+            type T1 @[] = [()]
+            type T2 @[] = [T1]
+            output std ()
         """.trimIndent())
         assert(out == "()\n") { out }
     }

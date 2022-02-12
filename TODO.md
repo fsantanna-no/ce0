@@ -1,3 +1,4 @@
+- valgrind geral
 - pico-ce
 - change @[@a1,@a2] -> @[a,b: a>b]
   - check constraint in func comparison
@@ -37,6 +38,13 @@
 
 ```
 type Bool = <(),()>
+```
+
+```
+type Bool = <   // Q. use `=´ or `:´ as below? R. `=´ is symmetric to `type`
+  False = (),
+  True  = ()
+>
 ```
 
 ```

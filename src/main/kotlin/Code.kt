@@ -98,7 +98,7 @@ fun code_ft (tp: Type) {
                     printf("[");
                     ${tp.vec
                         .mapIndexed { i,sub ->
-                            val s = when (sub) {
+                            val s = when (sub.noalias()) {
                                 is Type.Union, is Type.Tuple -> "&v->_${i + 1}"
                                 else -> "v->_${i + 1}"
                             }
@@ -149,7 +149,7 @@ fun code_ft (tp: Type) {
                     switch (v->tag) {
                         ${tp.vec
                             .mapIndexed { i,sub ->
-                                val s = when (sub) {
+                                val s = when (sub.noalias()) {
                                     is Type.Unit -> ""
                                     is Type.Union, is Type.Tuple -> "putchar(' ');\n" + sub.output_std("_", "&v->_${i+1}")
                                     else -> "putchar(' ');\n" + sub.output_std("_", "v->_${i+1}")
