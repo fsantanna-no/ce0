@@ -93,7 +93,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
 }
 
 fun Type.isrec (): Boolean {
-    return (this is Type.Alias && this.xisrec)
+    return this.flattenLeft().any { it is Type.Alias && it.xisrec }
 }
 
 fun Type.noalias (): Type {

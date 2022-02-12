@@ -1709,6 +1709,40 @@ class TExec {
         """.trimIndent())
         assert(out == "<.1 <.0>>\n") { out }
     }
+    @Test
+    fun o04_type_ptr () {
+        val out = all("""
+            type Num1 @[s] = </Num1 @[s] @s>
+            type Num2 @[s] = /<Num2 @[s]> @s
+            var n1: /Num1 @[LOCAL]
+            set n1 = new <.1 <.0>:/Num1 @[LOCAL] @LOCAL>:Num1 @[LOCAL]
+            var n2: Num2 @[LOCAL]
+            set n2 = new <.1 <.0>:Num2 @[LOCAL]>:<Num2 @[LOCAL]>
+            output std n1
+            output std n2
+        """.trimIndent())
+        assert(out == "<.1 <.0>>\n<.1 <.0>>\n") { out }
+    }
+    @Test
+    fun o05_type_ptr () {
+        val out = all("""
+            type List @[s] = /<List @[s]> @s
+            var l: List @[LOCAL]
+            set l = new <.1 <.0>:List @[LOCAL]>:<List @[LOCAL]>
+            output std l
+        """.trimIndent())
+        assert(out == "<.1 <.0>>\n") { out }
+    }
+    @Test
+    fun o06_type_ptr () {
+        val out = all("""
+            type List @[s] = /<List @[s]> @s
+            var l: List @[LOCAL]
+            set l = new <.1 <.0>:List @[LOCAL]>:<List @[LOCAL]>
+            output std l\!1\!0
+        """.trimIndent())
+        assert(out == "()\n") { out }
+    }
 
     // ALL
 
@@ -1995,19 +2029,5 @@ class TExec {
             output std ()
         """.trimIndent())
         assert(out == "()\n") { out }
-    }
-    @Test
-    fun z18_type_rec_ptr () {
-        val out = all("""
-            type Num1 @[s] = </Num1 @[s] @s>
-            type Num2 @[s] = /<Num2 @[s]> @s
-            var n1: /Num1 @[LOCAL]
-            set n1 = new <.1 <.0>:/Num1 @[LOCAL] @LOCAL>:Num1 @[LOCAL]
-            var n2: Num2 @[LOCAL]
-            set n2 = new <.1 <.0>:Num2 @[LOCAL]>:<Num2 @[LOCAL]>
-            output std n1
-            output std n2
-        """.trimIndent())
-        assert(out == "<.1 <.0>>\n<.1 <.0>>\n") { out }
     }
 }

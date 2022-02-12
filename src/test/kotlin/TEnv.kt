@@ -172,7 +172,7 @@ class TEnv {
             set l = new <.1 <.0>:/</_int@LOCAL>@LOCAL>:</_int@LOCAL>: @LOCAL
             output std l\!0
         """.trimIndent())
-        assert(out == "invalid discriminator : expected recursive union") { out }
+        assert(out == "(ln 3, col 15): invalid discriminator : expected recursive union") { out }
     }
     @Test
     fun b14_pool_err () {

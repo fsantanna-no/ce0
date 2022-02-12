@@ -9,10 +9,10 @@ fun Stmt.setTypes () {
             }
             is Expr.Dnref -> e.ptr.wtype.let {
                 if (it is Type.Nat) it else {
-                    All_assert_tk(e.tk, it is Type.Pointer) {
+                    All_assert_tk(e.tk, it?.noalias() is Type.Pointer) {
                         "invalid operand to `\\´ : not a pointer"
                     }
-                    (it as Type.Pointer).pln
+                    (it!!.noalias() as Type.Pointer).pln
                 }
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.wtype!! })
@@ -68,7 +68,7 @@ fun Stmt.setTypes () {
                 All_assert_tk(e.tk, tp is Type.Union) {
                     "invalid $str : not an union"
                 }
-                assert(tk_.num!=0 || isrec) {
+                All_assert_tk(e.tk, tk_.num!=0 || isrec) {
                     "invalid $str : expected recursive union"
                 }
 
