@@ -1,5 +1,3 @@
-- testar: type List @[s] = /<List @[s]>@s
-
 - pico-ce
 - change @[@a1,@a2] -> @[a,b: a>b]
   - check constraint in func comparison
