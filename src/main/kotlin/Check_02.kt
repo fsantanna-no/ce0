@@ -168,6 +168,11 @@ fun check_02_after_tps (s: Stmt) {
                     "invalid `spawn` : ${mismatch(dst,call)}"
                 }
             }
+            is Stmt.Emit -> {
+                All_assert_tk(s.tk, s.e.wtype.let { it is Type.Alias && it.tk_.id=="Event" }) {
+                    "invalid `emit` : type mismatch : expected Event : have ${s.e.wtype!!.tostr()}"
+                }
+            }
             is Stmt.If -> {
                 All_assert_tk(s.tk, s.tst.wtype is Type.Nat) {
                     "invalid condition : type mismatch : expected _int : have ${s.tst.wtype!!.tostr()}"

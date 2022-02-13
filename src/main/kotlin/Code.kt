@@ -1,5 +1,6 @@
 data class Code (val type: String, val pre: String, val stmt: String, val expr: String)
 val CODE = ArrayDeque<Code>()
+var Event = "_Event"
 
 fun Any.self_or_null (): String {
     return if (this.ups_first { it is Expr.Func } == null) "NULL" else "(&task1->task0)"
@@ -49,7 +50,7 @@ fun code_ft (tp: Type) {
             val inp = CODE.removeFirst()
             val src = """
                 typedef union {
-                    int evt;
+                    _Event* evt;
                     struct {
                         Block* blks[${tp.xscps.second.size}];
                         ${tp.inp.pos()} arg;
@@ -68,7 +69,7 @@ fun code_ft (tp: Type) {
                     };
                     union {
                         ${tp.inp.pos()} arg;
-                        int evt;
+                        $Event evt;
                     };
                     ${tp.pub.let { if (it == null) "" else it.pos() + " pub;" }}
                     ${tp.out.pos()} ret;
@@ -546,13 +547,16 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
             else -> Pair("","")
         }
     }
-    return Triple(link, unlink, "block_bcast(stack, &$blk, 1, EVENT_KILL);\n")
+    return Triple(link, unlink, "{\n_Event evt = { EVENT_KILL };\nblock_bcast(stack, &$blk, 1, &evt);\n}\n")
 }
 
 fun code_fs (s: Stmt) {
     CODE.addFirst(when (s) {
         is Stmt.Nop -> Code("", "","","")
         is Stmt.Typedef -> CODE.removeFirst().let {
+            if (s.tk_.id == "Event") {
+                Event = "Event"
+            }
             val src = """
                 //#define output_std_${s.tk_.id}_ output_std_${s.type.toce()}_
                 //#define output_std_${s.tk_.id}  output_std_${s.type.toce()}
@@ -654,7 +658,7 @@ fun code_fs (s: Stmt) {
                     return;                 // await (1 = awake ok)
                 case ${s.n}:                // awake here
                     assert(task0->state == TASK_AWAITING);
-                    task1->evt = xxx.evt;
+                    task1->evt = * (Event*) xxx.evt;
                     if (!(${it.expr})) {
                         return;             // (0 = awake no)
                     }
@@ -668,7 +672,7 @@ fun code_fs (s: Stmt) {
             val src = """
                 {
                     Stack stk = { stack, ${s.self_or_null()}, ${s.local()} };
-                    block_bcast(&stk, ${s.scp.toce(s)}, 0, ${it.expr});
+                    block_bcast(&stk, ${s.scp.toce(s)}, 0, (_Event*) &${it.expr});
                     if (stk.block == NULL) {
                         return;
                     }
@@ -681,7 +685,8 @@ fun code_fs (s: Stmt) {
             val src = """
                 {
                     Stack stk = { stack, ${s.self_or_null()}, ${s.local()} };
-                    block_throw(&stk, &stk);
+                    _Event evt = { EVENT_THROW };
+                    block_throw(&stk, &stk, &evt);
                     if (stk.block == NULL) {
                         return;
                     }
@@ -731,6 +736,7 @@ fun code_fs (s: Stmt) {
 }
 
 fun Stmt.code (): String {
+    Event = "_Event"
     TYPEX.clear()
     EXPR_WTYPE = false
     this.visit(::code_fs, ::code_fe, ::code_ft, null)
@@ -781,11 +787,15 @@ fun Stmt.code (): String {
         } TASK_STATE;
         
         typedef enum {
-            EVENT_KILL=0, EVENT_THROW=1, EVENT_NORMAL=2 // (or more)
+            EVENT_KILL=1, EVENT_THROW, EVENT_NORMAL // (or more)
         } EVENT;
         
+        typedef struct _Event {
+            int tag;
+        } _Event;
+        
         // stack, task, evt
-        typedef void (*Task_F) (Stack*, struct Task*, int);
+        typedef void (*Task_F) (Stack*, struct Task*, _Event*);
         
         typedef struct Task {
             TASK_STATE state;
@@ -795,7 +805,7 @@ fun Stmt.code (): String {
                 struct Block* blk_down;     // nested block inside me
             } links;
             int size;
-            Task_F f; // (Stack* stack, Task* task, int evt);
+            Task_F f; // (Stack* stack, Task* task, _Event* evt);
             int pc;
         } Task;
         
@@ -902,16 +912,16 @@ fun Stmt.code (): String {
         
         ///
 
-        void block_throw (Stack* top, Stack* cur) {
+        void block_throw (Stack* top, Stack* cur, _Event* evt) {
             if (cur == NULL) {
                 assert(0 && "throw without catch");
             } if (cur->block->catch == 0) {
-                block_throw(top, cur->stk_up);
+                block_throw(top, cur->stk_up, evt);
             } else {
                 assert(cur->task!=NULL && "catch outside task");
                 Stack stk = { top, cur->task, cur->block };
                 cur->task->pc = cur->block->catch;
-                cur->task->f(&stk, cur->task, EVENT_THROW);
+                cur->task->f(&stk, cur->task, evt);
             }            
         }
         
@@ -923,9 +933,9 @@ fun Stmt.code (): String {
         // 1.3. awake next task
         // 2. awake my nested block (it started after the inner tasks)            
 
-        void block_bcast (Stack* stack, Block* block, int up, EVENT evt) {
+        void block_bcast (Stack* stack, Block* block, int up, _Event* evt) {
             // X. clear stack from myself
-            if (evt == EVENT_KILL) {
+            if (evt->tag == EVENT_KILL) {
                 Stack* stk = stack;
                 while (stk != NULL) {
                     if (stk->block == block) {
@@ -946,7 +956,7 @@ fun Stmt.code (): String {
                     }
                     if (task->state == TASK_AWAITING) {
                         task->f(stack, task, evt);                          // 1.2
-                        if (evt == EVENT_KILL) {
+                        if (evt->tag == EVENT_KILL) {
                             task->state = TASK_DEAD;
                         }
                     }
@@ -984,7 +994,7 @@ fun Stmt.code (): String {
             }
             
             // X. free myself
-            if (evt == EVENT_KILL) {
+            if (evt->tag == EVENT_KILL) {
                 block_free(block);
             }
         }
@@ -994,7 +1004,7 @@ fun Stmt.code (): String {
         Block* GLOBAL;
 
         ${code.type}
-                
+        
         struct {
             ${this.mem_vars()}
         } global;
@@ -1007,7 +1017,8 @@ fun Stmt.code (): String {
             Stack _stack_ = { NULL, NULL, &B0 };
             Stack* stack = &_stack_;
             ${code.stmt}
-            block_bcast(stack, &B0, 1, EVENT_KILL);
+            _Event evt = { EVENT_KILL };
+            block_bcast(stack, &B0, 1, &evt);
         }
 
     """).trimIndent()
