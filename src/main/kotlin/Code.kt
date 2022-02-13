@@ -246,7 +246,11 @@ fun String.native (up: Any, tk: Tk): String {
                 assert(this[i]=='}') { "bug found" }
                 i++
             }
-            ce.mem(up)
+            val env = up.env(ce, true)
+            All_assert_tk(tk, env!=null) {
+                "invalid variable \"$ce\""
+            }
+            ce.mem(env!!)
         } else {
             this[i++]
         }

@@ -291,6 +291,31 @@ class TExec {
         assert(out == "(ln 1, col 12): invalid `\$´") { out }
     }
     @Test
+    fun d04_arg_glb () {
+        val out = all("""
+        var x: _int
+        set x = _10:_int
+        var f : (func@[]-> () -> _int)
+        set f = func@[]-> ()->_int {
+           set arg = _(${D}x+1): _int
+           set ret = arg
+           return
+        }
+        output std f ()
+        """.trimIndent())
+        assert(out == "11\n") { out }
+    }
+    @Test
+    fun d04_tup () {
+        val out = all("""
+            var win: _int
+            var rct: [_int]
+            set rct = [(_($D{win.1}): _int)]
+
+        """.trimIndent())
+        assert(out == "(ln 3, col 13): invalid variable \"win.1\"") { out }
+    }
+    @Test
     fun d05_func_var () {
         val out = all("""
         var f: (func@[]-> _int->_int)
@@ -419,7 +444,7 @@ class TExec {
         """.trimIndent())
         assert(out.contains("implicit declaration of function ‘input_std_Int’")) { out }
     }
-    //@Disabled   // needs user input
+    @Disabled   // needs user input
     @Test
     fun e07_inp () {
         val out = all("""

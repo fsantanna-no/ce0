@@ -1,3 +1,6 @@
+- type List = /</List>
+  - x:List :: /</List>
+- typedef para task (birds example)
 - valgrind geral
 - pico-ce
 - change @[@a1,@a2] -> @[a,b: a>b]
@@ -27,6 +30,11 @@
   - throw inside DLoop
     - loop tk in @block { stack tk }
     - break if NULL?
+  4. keep freelist cleared on finish
+    {
+      defer{free()}
+      loop { ... }
+    }
 - output std ? --> toString ?
   - output std toString /x
 
