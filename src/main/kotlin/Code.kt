@@ -685,8 +685,7 @@ fun code_fs (s: Stmt) {
             val src = """
                 {
                     Stack stk = { stack, ${s.self_or_null()}, ${s.local()} };
-                    _Event evt = { EVENT_THROW };
-                    block_throw(&stk, &stk, &evt);
+                    block_throw(&stk, &stk);
                     if (stk.block == NULL) {
                         return;
                     }
@@ -787,7 +786,7 @@ fun Stmt.code (): String {
         } TASK_STATE;
         
         typedef enum {
-            EVENT_KILL=1, EVENT_THROW, EVENT_NORMAL // (or more)
+            EVENT_KILL=1, EVENT_NORMAL // (or more)
         } EVENT;
         
         typedef struct _Event {
@@ -912,16 +911,16 @@ fun Stmt.code (): String {
         
         ///
 
-        void block_throw (Stack* top, Stack* cur, _Event* evt) {
+        void block_throw (Stack* top, Stack* cur) {
             if (cur == NULL) {
                 assert(0 && "throw without catch");
             } if (cur->block->catch == 0) {
-                block_throw(top, cur->stk_up, evt);
+                block_throw(top, cur->stk_up);
             } else {
                 assert(cur->task!=NULL && "catch outside task");
                 Stack stk = { top, cur->task, cur->block };
                 cur->task->pc = cur->block->catch;
-                cur->task->f(&stk, cur->task, evt);
+                cur->task->f(&stk, cur->task, NULL);
             }            
         }
         
