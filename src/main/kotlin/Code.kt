@@ -638,11 +638,15 @@ fun code_fs (s: Stmt) {
         is Stmt.SCall -> CODE.removeFirst().let { Code(it.type, it.pre, it.stmt+it.expr+";\n", "") }
         is Stmt.SSpawn -> {
             val call = CODE.removeFirst()
-            val dst  = CODE.removeFirst()
-            val src = """
-                ${dst.expr} = ${call.expr};
-                
-            """.trimIndent()
+            val (dst,src) = if (s.dst == null) {
+                val dst = Code("","","","")
+                val src = "${call.expr};\n"
+                Pair(dst, src)
+            } else {
+                val dst = CODE.removeFirst()
+                val src = "${dst.expr} = ${call.expr};\n"
+                Pair(dst, src)
+            }
             Code(call.type+dst.type, call.pre+dst.pre, call.stmt+dst.stmt+src, "")
         }
         is Stmt.DSpawn -> { // Expr.Call links call/tsks

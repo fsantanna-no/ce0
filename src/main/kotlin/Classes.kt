@@ -53,7 +53,7 @@ sealed class Stmt (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Set    (val tk_: Tk.Chr, val dst: Expr, val src: Expr) : Stmt(N++, tk_, null, null)
     data class Native (val tk_: Tk.Nat, val istype: Boolean) : Stmt(N++, tk_, null, null)
     data class SCall  (val tk_: Tk.Key, val e: Expr.Call): Stmt(N++, tk_, null, null)
-    data class SSpawn (val tk_: Tk.Key, val dst: Expr, val call: Expr.Call): Stmt(N++, tk_, null, null)
+    data class SSpawn (val tk_: Tk.Key, val dst: Expr?, val call: Expr.Call): Stmt(N++, tk_, null, null)
     data class DSpawn (val tk_: Tk.Key, val dst: Expr, val call: Expr.Call): Stmt(N++, tk_, null, null)
     data class Await  (val tk_: Tk.Key, val e: Expr): Stmt(N++, tk_, null, null)
     data class Emit  (val tk_: Tk.Key, val scp: Scope, val e: Expr): Stmt(N++, tk_, null, null)

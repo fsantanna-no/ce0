@@ -313,9 +313,12 @@ open class Parser
                 val tk0 = all.tk0 as Tk.Key
                 val e = this.expr()
                 All_assert_tk(tk0, e is Expr.Call) { "expected call expression" }
-                all.accept_err(TK.IN)
-                val tsks = this.expr()
-                Stmt.DSpawn(tk0, tsks, e as Expr.Call)
+                if (all.accept(TK.IN)) {
+                    val tsks = this.expr()
+                    Stmt.DSpawn(tk0, tsks, e as Expr.Call)
+                } else {
+                    Stmt.SSpawn(tk0, null, e as Expr.Call)
+                }
             }
             all.accept(TK.AWAIT) -> {
                 val tk0 = all.tk0 as Tk.Key

@@ -36,6 +36,18 @@ class TTask {
         assert(out == "1\n2\n") { out }
     }
     @Test
+    fun a01_output_anon () {
+        val out = all("""
+            var f: task @LOCAL->@[]->()->()->()
+            set f = task @LOCAL->@[]->()->()->() {
+                output std _1:_int
+            }
+            spawn f ()
+            output std _2:_int
+        """.trimIndent())
+        assert(out == "1\n2\n") { out }
+    }
+    @Test
     fun a02_await_err2 () {
         val out = all("""
             await ()
@@ -718,12 +730,14 @@ class TTask {
     // SPAWN / DYNAMIC
 
     @Test
-    fun e01_spawn_err1 () {
+    fun e01_spawn () {
         val out = all("""
             spawn task @LOCAL->@[]->()->()->() {
+                output std ()
             } ()
         """.trimIndent())
-        assert(out == "(ln 2, col 5): expected `in` : have end of file") { out }
+        //assert(out == "(ln 2, col 5): expected `in` : have end of file") { out }
+        assert(out == "()\n") { out }
     }
     @Test
     fun e01_spawn_err2 () {

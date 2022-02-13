@@ -2,7 +2,6 @@
   - x:List :: /</List>
 - typedef para task (birds example)
 - valgrind geral
-- pico-ce
 - change @[@a1,@a2] -> @[a,b: a>b]
   - check constraint in func comparison
 - accept @A vs var a

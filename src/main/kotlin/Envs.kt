@@ -83,7 +83,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
         is Stmt.Var    -> { this.xtype?.visit(::ft,null) ; this }
         is Stmt.Set    -> { this.dst.visit(null,::fe,::ft,null) ; this.src.visit(null,::fe,::ft,null) ; env }
         is Stmt.SCall  -> { this.e.visit(null,::fe,::ft,null) ; env }
-        is Stmt.SSpawn -> { this.dst.visit(null,::fe,::ft,null) ; this.call.visit(null,::fe,::ft,null) ; env }
+        is Stmt.SSpawn -> { this.dst?.visit(null,::fe,::ft,null) ; this.call.visit(null,::fe,::ft,null) ; env }
         is Stmt.DSpawn -> { this.dst.visit(null,::fe,::ft,null) ; this.call.visit(null,::fe,::ft,null) ; env }
         is Stmt.Await  -> { this.e.visit(null,::fe,::ft,null) ; env }
         is Stmt.Emit  -> { this.e.visit(null,::fe,::ft,null) ; env }
