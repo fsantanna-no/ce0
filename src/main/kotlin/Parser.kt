@@ -322,7 +322,7 @@ open class Parser
                 val e = this.expr()
                 Stmt.Await(tk0, e)
             }
-            all.accept(TK.BCAST) -> {
+            all.accept(TK.EMIT) -> {
                 val tk0 = all.tk0 as Tk.Key
                 val scp = if (all.accept(TK.CHAR, '@')) {
                     all.accept_err(TK.XID)
@@ -331,7 +331,7 @@ open class Parser
                     Tk.Id(TK.XID, all.tk0.lin, all.tk0.col, "GLOBAL")
                 }
                 val e = this.expr()
-                Stmt.Bcast(tk0, Scope(scp,null), e)
+                Stmt.Emit(tk0, Scope(scp,null), e)
             }
             all.accept(TK.THROW) -> {
                 Stmt.Throw(all.tk0 as Tk.Key)

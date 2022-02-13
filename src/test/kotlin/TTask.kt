@@ -55,7 +55,7 @@ class TTask {
             set x = spawn f ()
             output std _2:_int
             --awake x _1:_int
-            bcast _1:_int
+            emit _1:_int
         """.trimIndent())
         assert(out == "1\n2\n3\n") { out }
     }
@@ -73,8 +73,8 @@ class TTask {
             output std _2:_int
             --awake x _1:_int
             --awake x _1:_int
-            bcast @GLOBAL _1:_int
-            bcast @GLOBAL _1:_int
+            emit @GLOBAL _1:_int
+            emit @GLOBAL _1:_int
         """.trimIndent())
         //assert(out.endsWith("Assertion `(global.x)->task0.state == TASK_AWAITING' failed.\n")) { out }
         assert(out.endsWith("1\n2\n3\n")) { out }
@@ -92,7 +92,7 @@ class TTask {
             var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             --awake x _1:_int
-            bcast @GLOBAL _1:_int
+            emit @GLOBAL _1:_int
         """.trimIndent())
         assert(out == "10\n") { out }
     }
@@ -118,8 +118,8 @@ class TTask {
             set x = spawn f ()
             --awake x _1:_int
             --awake x _1:_int
-            bcast @GLOBAL _1:_int
-            bcast @GLOBAL _1:_int
+            emit @GLOBAL _1:_int
+            emit @GLOBAL _1:_int
         """.trimIndent())
         assert(out == "10\n20\n") { out }
     }
@@ -147,8 +147,8 @@ class TTask {
             set x = spawn f _("hello"):_(char*)
             --awake x _10:_int
             --awake x _20:_int
-            bcast @GLOBAL _10:_int
-            bcast @GLOBAL _20:_int
+            emit @GLOBAL _10:_int
+            emit @GLOBAL _20:_int
         """.trimIndent())
         assert(out == "\"hello\"\n10\n20\n") { out }
     }
@@ -183,7 +183,7 @@ class TTask {
             set g = spawn build ()
             --awake f _1:_int
             --awake g _1:_int
-            bcast @GLOBAL _1:_int
+            emit @GLOBAL _1:_int
             output std _12:_int
         """.trimIndent())
         assert(out == "10\n1\n11\n1\n2\n2\n12\n") { out }
@@ -211,7 +211,7 @@ class TTask {
             set y = spawn g ()
             --awake x _1:_int
             --awake y _1:_int
-            bcast @GLOBAL _1:_int
+            emit @GLOBAL _1:_int
             output std _12:_int
         """.trimIndent())
         assert(out == "10\n1\n11\n1\n2\n2\n12\n") { out }
@@ -237,8 +237,8 @@ class TTask {
             var y : active task @LOCAL->@[]->()->()->()
             set y = spawn g ()
             
-            bcast @GLOBAL _1:_int
-            bcast @GLOBAL _2:_int
+            emit @GLOBAL _1:_int
+            emit @GLOBAL _2:_int
         """.trimIndent())
         assert(out == "1\n11\n12\n") { out }
     }
@@ -263,8 +263,8 @@ class TTask {
                 }
                 var y : active task @LOCAL->@[]->()->()->()
                 set y = spawn g ()
-                bcast @LOCAL _1:_int
-                bcast @LOCAL _2:_int
+                emit @LOCAL _1:_int
+                emit @LOCAL _2:_int
             }            
         """.trimIndent())
         assert(out == "11\n12\n0\n") { out }
@@ -291,8 +291,8 @@ class TTask {
                     }
                     var y : active task @LOCAL->@[]->()->()->()
                     set y = spawn g ()
-                    bcast @LOCAL _1:_int
-                    bcast @LOCAL _2:_int
+                    emit @LOCAL _1:_int
+                    emit @LOCAL _2:_int
                 }
             }
         """.trimIndent())
@@ -319,9 +319,9 @@ class TTask {
             var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             output std _10:_int
-            bcast @GLOBAL _1:_int
+            emit @GLOBAL _1:_int
             output std _11:_int
-            bcast @GLOBAL _1:_int
+            emit @GLOBAL _1:_int
             output std _12:_int
         """.trimIndent())
         assert(out == "1\n10\n2\n11\n3\n4\n12\n") { out }
@@ -363,8 +363,8 @@ class TTask {
             }
             var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
-            bcast @GLOBAL _1:_int
-            bcast @GLOBAL _1:_int
+            emit @GLOBAL _1:_int
+            emit @GLOBAL _1:_int
         """.trimIndent())
         assert(out == "10\n20\n21\n0\n11\n30\n31\n12\n") { out }
     }
@@ -378,7 +378,7 @@ class TTask {
                     output std _1:_int
                     await _(${D}evt != 0):_int
                     output std _4:_int
-                    bcast @GLOBAL _1:_int
+                    emit @GLOBAL _1:_int
                     output std _999:_int
                 }
                 var x : active task @LOCAL->@[]->()->()->()
@@ -391,7 +391,7 @@ class TTask {
             var y : active task @LOCAL->@[]->()->()->()
             set y = spawn g ()
             output std _3:_int
-            bcast @GLOBAL _1:_int
+            emit @GLOBAL _1:_int
             output std _6:_int
        """.trimIndent())
         assert(out == "0\n1\n2\n3\n4\n5\n6\n") { out }
@@ -408,7 +408,7 @@ class TTask {
                     output std _4:_int
                     var kkk : func @[]->()->()
                     set kkk = func @[]->()->() {
-                        bcast @GLOBAL _1:_int
+                        emit @GLOBAL _1:_int
                     }
                     call kkk ()
                     output std _999:_int
@@ -423,7 +423,7 @@ class TTask {
             var y : active task @LOCAL->@[]->()->()->()
             set y = spawn g ()
             output std _3:_int
-            bcast @GLOBAL _1:_int
+            emit @GLOBAL _1:_int
             output std _6:_int
        """.trimIndent())
         assert(out == "0\n1\n2\n3\n4\n5\n6\n") { out }
@@ -450,7 +450,7 @@ class TTask {
             var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             --awake x _1:_int
-            bcast @GLOBAL _1:_int
+            emit @GLOBAL _1:_int
         """.trimIndent())
         assert(out == "0\n1\n2\n") { out }
     }
@@ -475,7 +475,7 @@ class TTask {
             var x : active task @LOCAL->@[]->()->()->()
             set x = spawn f ()
             --awake x _1:_int
-            bcast @GLOBAL _1:_int
+            emit @GLOBAL _1:_int
         """.trimIndent())
         assert(out == "0\n2\n1\n") { out }
     }
@@ -589,7 +589,7 @@ class TTask {
                 catch {
                     set xfg = spawn fg ()
                     set xh = spawn h ()
-                    bcast @GLOBAL _5:_int
+                    emit @GLOBAL _5:_int
                     output std _999:_int
                 }
             }
@@ -721,7 +721,7 @@ class TTask {
             var fs : active tasks @LOCAL->@[]->()->()->()
             spawn f () in fs
             output std _2:_int
-            bcast @GLOBAL _1:_int
+            emit @GLOBAL _1:_int
             output std _4:_int
         """.trimIndent())
         assert(out == "1\n2\n3\n4\n") { out }
@@ -846,7 +846,7 @@ class TTask {
                 output std x.pub
             }
             
-            bcast @GLOBAL _10:_int
+            emit @GLOBAL _10:_int
             
             loop x in xs {
                 output std x.pub
@@ -871,7 +871,7 @@ class TTask {
             spawn f () in fs
             var x: active task @LOCAL->@[]->()->_int->()
             loop x in fs {
-                bcast @GLOBAL _5:_int
+                emit @GLOBAL _5:_int
                 output std x.pub
             }
         """.trimIndent())

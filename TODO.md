@@ -23,7 +23,7 @@
 - reserve `arg`,`pub`,`evt`,`ret`
 - evt type should be <.fin=(), .throw=_int, ...>
 - DLoop:
-  1. reject await/bcast/etc inside DLoop
+  1. reject await/emit/etc inside DLoop
   2. runtime error when self kill
   3. escape loop on error (but, multi-level escape)
   - if DLoop has await, it needs to recreate the i stack
@@ -115,7 +115,7 @@ task f {
             ...
         }
         ...
-        spawn g()       <--- 1. g awakes from bcast and throws cond
+        spawn g()       <--- 1. g awakes from emit and throws cond
         await ...
     }
                         <--- 2. catch/defer awakes

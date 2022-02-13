@@ -261,7 +261,7 @@ fun String.native (up: Any, tk: Tk): String {
 fun Stmt.mem_vars (): String {
     return when (this) {
         is Stmt.Nop, is Stmt.Set, is Stmt.Native, is Stmt.SCall, is Stmt.SSpawn,
-        is Stmt.DSpawn, is Stmt.Await, is Stmt.Bcast, is Stmt.Throw,
+        is Stmt.DSpawn, is Stmt.Await, is Stmt.Emit, is Stmt.Throw,
         is Stmt.Input, is Stmt.Output, is Stmt.Return, is Stmt.Break, is Stmt.Typedef -> ""
 
         is Stmt.Var -> "${this.xtype!!.pos()} ${this.tk_.id};\n"
@@ -664,7 +664,7 @@ fun code_fs (s: Stmt) {
             """.trimIndent()
             Code(it.type, it.pre, it.stmt+src, "")
         }
-        is Stmt.Bcast -> CODE.removeFirst().let {
+        is Stmt.Emit -> CODE.removeFirst().let {
             val src = """
                 {
                     Stack stk = { stack, ${s.self_or_null()}, ${s.local()} };
@@ -768,7 +768,7 @@ fun Stmt.code (): String {
         
         // When a block K terminates, it traverses the stack and sets to NULL
         // all matching blocks K in the stack.
-        // All call/spawn/awake/bcast operations need to test if its enclosing
+        // All call/spawn/awake/emit operations need to test if its enclosing
         // block is still alive before continuing.
         typedef struct Stack {
             struct Stack* stk_up;
