@@ -48,7 +48,7 @@ fun Any.env (id: String, upval: Boolean=false): Any? {
                 "arg" -> it.type.inp
                 "pub" -> it.type.pub!!
                 "ret" -> it.type.out
-                "evt" -> Type.Nat(Tk.Nat(TK.XNAT, it.tk.lin, it.tk.col, null, "int")).clone(it,it.tk.lin,it.tk.col)
+                "evt" -> Type.Alias(Tk.Id(TK.XID, it.tk.lin, it.tk.col,"Event"), false, emptyList()).clone(it,it.tk.lin,it.tk.col)
                 //else  -> error("bug found")
                 else  -> (it.env(id) as Stmt.Var).xtype!!.clone(it,it.tk.lin,it.tk.col)
             }
