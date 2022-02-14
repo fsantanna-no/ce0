@@ -1,25 +1,3 @@
-fun Type.tostr (): String {
-    fun Scope?.clo (): String {
-        return if (this == null) "" else
-            " @" + this.scp1.anon2local() + " ->"
-    }
-    return when (this) {
-        is Type.Unit    -> "()"
-        is Type.Nat     -> this.tk_.toce()
-        is Type.Pointer -> this.xscp!!.let { "/" + this.pln.tostr() + " @" + it.scp1.anon2local() }
-        is Type.Tuple   -> "[" + this.vec.map { it.tostr() }.joinToString(",") + "]"
-        is Type.Union   -> "<" + this.vec.map { it.tostr() }.joinToString(",") + ">"
-        is Type.Spawn   -> "active " + this.tsk.tostr()
-        is Type.Spawns  -> "active " + this.tsk.tostr()
-        is Type.Alias   -> this.tk_.id + this.xscps!!.let { if (it.size==0) "" else " @["+it.map { it.scp1.anon2local() }.joinToString(",")+"]" }
-        is Type.Func    -> {
-            val ctrs = this.xscps.third.let { if (it==null||it.isEmpty()) "" else ": "+it.map { it.first+">"+it.second }.joinToString(",") }
-            val scps = " @[" + this.xscps.second!!.map { it.scp1.anon2local() }.joinToString(",") + ctrs + "]"
-            this.tk_.key + this.xscps.first.clo() + scps + " -> " + this.inp.tostr() + " -> " + this.pub.let { if (it == null) "" else it.tostr() + " -> " } + this.out.tostr()
-        }
-    }
-}
-
 /*
 fun Type.flattenRight (): List<Type> {
     // TODO: func/union do not make sense?
