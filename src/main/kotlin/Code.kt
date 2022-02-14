@@ -215,6 +215,7 @@ fun Scope.toce (up: Any): String {
         else -> {
             val blk = up.env(this.scp1.id) as Stmt.Block
             val mem = "B${blk.n}".mem(up)
+            //val mem = this.scp1.id.mem(up)
             "(&" + mem + ")"
         }
     }
@@ -421,6 +422,7 @@ fun code_fe (e: Expr) {
                             memcpy(frame, ${f.expr}, ${f.expr}->task0.size);
                             ${if (e.wup is Stmt.DSpawn) "frame->task0.isauto = 1;" else ""}
                             block_push($block, frame);
+                            //frame->task0.links.tsk_up = stack->task;
                             ${if (istk) "task_link($block, &frame->task0);" else ""}
                             ${if (tpf.tk.enu != TK.FUNC) "" else "frame->task0.state = TASK_UNBORN;"}
                             ((F_${tpf.toce()})(frame->task0.f)) (
@@ -804,7 +806,8 @@ fun Stmt.code (): String {
             TASK_STATE state;
             int isauto;
             struct {
-                struct Task*  tsk_next;     // next Task in the same block
+                //struct Task*  tsk_up;       // first outer task alive (for upvalues)
+                struct Task*  tsk_next;     // next Task in the same block (for broadcast)
                 struct Block* blk_down;     // nested block inside me
             } links;
             int size;
@@ -826,7 +829,8 @@ fun Stmt.code (): String {
             TASK_STATE state;
             int isauto;
             struct {
-                Task*  tsk_next;
+                //Task*  tsk_up;              // for upvalues
+                Task*  tsk_next;            // for broadcast
                 Block* blk_down;
             } links;
             Block block;

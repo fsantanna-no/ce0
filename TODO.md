@@ -1,3 +1,6 @@
+- reject full closures
+  - remove ups, still accept @scope, acess to ups via task->up
+  - func cannot escape
 - type List = /</List>
   - x:List :: /</List>
 - typedef para task (birds example)

@@ -622,20 +622,6 @@ class TEnv {
         assert(out == "(ln 1, col 17): undeclared scope \"A\"") { out }
     }
     @Test
-    fun e07_ptr_ok () {
-        val out = inp2env("""
-            { @A
-                var pa: /_int@LOCAL
-                var f: (func @A->@[]->()->())
-                set f = func @A->@[]->()->() [pa] {
-                    var pf: /_int @A
-                    set pf = pa
-                }
-            }
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
-    @Test
     fun e07_ptr_err () {
         val out = inp2env("""
             { @A
@@ -665,42 +651,11 @@ class TEnv {
         assert(out == "(ln 6, col 20): invalid access to \"pa\" : invalid closure declaration (ln 5)") { out }
     }
     @Test
-    fun e07_ptr_err3 () {
-        val out = inp2env("""
-            var f: func@[]->()->()
-            { @A
-                var pa: ()
-                set pa = ()
-                set f = func @A->@[]->()->() [pa] {  -- set [] vs [@A]
-                    output std pa
-                }
-            }
-            call f()
-        """.trimIndent())
-        assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch")) { out }
-        //assert(out == "OK") { out }
-    }
-    @Test
     fun e07_ptr_err4 () {
         val out = inp2env("""
             var f: func @a->@[]->()->()
         """.trimIndent())
         assert(out == "(ln 1, col 14): undeclared scope \"a\"") { out }
-    }
-    @Test
-    fun e07_ptr_err5 () {
-        val out = inp2env("""
-            var f: func@[]->()->()
-            { @A
-                var pa: ()
-                set pa = ()
-                set f = func @A->@[]->()->() [xxx] {  -- set [] vs [@A]
-                    output std pa
-                }
-            }
-            call f()
-        """.trimIndent())
-        assert(out == "(ln 5, col 13): undeclared variable \"xxx\"") { out }
     }
     @Test
     fun e08_ptr_ok () {
@@ -716,24 +671,6 @@ class TEnv {
             }
         """.trimIndent())
         assert(out == "OK") { out }
-    }
-    @Test
-    fun e09_ptr_err () {
-        val out = inp2env("""
-            { @A
-                var pa: /_int @LOCAL
-                var f: func @A->@[a1]->[/()@a1]->()
-                set f = func @A->@[a1]->[/()@a1]->() [pa] {
-                    var pf: /_int @a1
-                    set pa = arg
-                }
-                {
-                    var x: ()
-                    call f @[LOCAL] [/x]
-                }
-            }
-        """.trimIndent())
-        assert(out.startsWith("(ln 6, col 16): invalid assignment : type mismatch")) { out }
     }
     @Test
     fun e10_func_err () {
@@ -1236,41 +1173,6 @@ class TEnv {
             }
         """.trimIndent())
         assert(out.startsWith("(ln 4, col 13): invalid assignment : type mismatch")) { out }
-    }
-    @Test
-    fun g11_ptr_func_err () {
-        val out = inp2env("""
-            var p: /() @GLOBAL
-            { @A
-                var v: ()
-                var f : func @A -> @[i1] -> () -> /()@i1
-                set f = func @A -> @[i1] -> () -> /()@i1 [v] {
-                    set ret = /v      -- err: /v may not be at expected @
-                }
-                {
-                    --set p = f ()    -- p=@ is smaller than /v
-                }
-            }
-        """.trimIndent())
-        assert(out.startsWith("(ln 6, col 17): invalid return : type mismatch")) { out }
-    }
-    @Test // passou a falhar qd mudei env p/ upvals
-    fun g11_ptr_func_ok () {
-        val out = inp2env("""
-            { @A
-                var v: _int
-                set v = _10: _int
-                var f : func @A -> @[a] -> () -> /_int@a
-                set f = func @A -> @[a] -> () -> /_int@a [v] {
-                    set ret = /v
-                }
-                var p: /_int @LOCAL
-                {
-                    set p = f @[A] (): @A
-                }
-            }
-        """.trimIndent())
-        assert(out == "OK") { out }
     }
     @Test
     fun g13_ptr_func () {
@@ -2672,21 +2574,6 @@ class TEnv {
         assert(out == "OK") { out }
     }
     @Test
-    fun p18_pool_closure_err() {
-        val out = inp2env(
-            """
-            var f: func @LOCAL->@[]->() -> ()
-            {
-                var x: /</_int@LOCAL>@LOCAL
-                set f = func @LOCAL->@[]->() -> () [x] {
-                    output std x
-                }
-            }
-        """.trimIndent()
-        )
-        assert(out.startsWith("(ln 4, col 11): invalid assignment : type mismatch")) { out }
-    }
-    @Test
     fun p19_pool_closure_err() {
         val out = inp2env(
             """
@@ -2844,17 +2731,6 @@ class TEnv {
                 var f: func @LOCAL -> @[] -> () -> ()
                 var g: func @LOCAL -> @[] -> () -> ()
                 set f = g
-            }
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
-    @Test
-    fun p30_closure_ok1 () {
-        val out = inp2env("""
-            {
-                var x: ()
-                var f : func @LOCAL -> @[] -> () -> ()
-                set f = func @LOCAL -> @[] -> () -> () [x] { set ret = x }
             }
         """.trimIndent())
         assert(out == "OK") { out }
@@ -3168,4 +3044,166 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK") { out }
     }
+
+    // CLOSURE
+
+    @Test
+    fun r01 () {
+        val out = inp2env("""
+            { @A
+                var pa: /_int@LOCAL
+                var f: (func @A->@[]->()->())
+                set f = func @A->@[]->()->() [pa] {
+                    var pf: /_int @A
+                    set pf = pa
+                }
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun r02 () {
+        val out = inp2env("""
+            var f: func@[]->()->()
+            { @A
+                var pa: ()
+                set pa = ()
+                set f = func @A->@[]->()->() [pa] {  -- set [] vs [@A]
+                    output std pa
+                }
+            }
+            call f()
+        """.trimIndent())
+        assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch")) { out }
+        //assert(out == "OK") { out }
+    }
+    @Test
+    fun r03 () {
+        val out = inp2env("""
+            var f: func@[]->()->()
+            { @A
+                var pa: ()
+                set pa = ()
+                set f = func @A->@[]->()->() [xxx] {  -- set [] vs [@A]
+                    output std pa
+                }
+            }
+            call f()
+        """.trimIndent())
+        assert(out == "(ln 5, col 13): undeclared variable \"xxx\"") { out }
+    }
+    @Test
+    fun r04 () {
+        val out = inp2env("""
+            { @A
+                var pa: /_int @LOCAL
+                var f: func @A->@[a1]->[/()@a1]->()
+                set f = func @A->@[a1]->[/()@a1]->() [pa] {
+                    var pf: /_int @a1
+                    set pa = arg
+                }
+                {
+                    var x: ()
+                    call f @[LOCAL] [/x]
+                }
+            }
+        """.trimIndent())
+        assert(out.startsWith("(ln 6, col 16): invalid assignment : type mismatch")) { out }
+    }
+    @Test
+    fun r05 () {
+        val out = inp2env("""
+            var p: /() @GLOBAL
+            { @A
+                var v: ()
+                var f : func @A -> @[i1] -> () -> /()@i1
+                set f = func @A -> @[i1] -> () -> /()@i1 [v] {
+                    set ret = /v      -- err: /v may not be at expected @
+                }
+                {
+                    --set p = f ()    -- p=@ is smaller than /v
+                }
+            }
+        """.trimIndent())
+        assert(out.startsWith("(ln 6, col 17): invalid return : type mismatch")) { out }
+    }
+    @Test
+    fun r06 () {
+        val out = inp2env("""
+            { @A
+                var v: _int
+                set v = _10: _int
+                var f : func @A -> @[a] -> () -> /_int@a
+                set f = func @A -> @[a] -> () -> /_int@a [v] {
+                    set ret = /v
+                }
+                var p: /_int @LOCAL
+                {
+                    set p = f @[A] (): @A
+                }
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun r07() {
+        val out = inp2env(
+            """
+            var f: func @LOCAL->@[]->() -> ()
+            {
+                var x: /</_int@LOCAL>@LOCAL
+                set f = func @LOCAL->@[]->() -> () [x] {
+                    output std x
+                }
+            }
+        """.trimIndent()
+        )
+        assert(out.startsWith("(ln 4, col 11): invalid assignment : type mismatch")) { out }
+    }
+    @Test
+    fun r08 () {
+        val out = inp2env("""
+            {
+                var x: ()
+                var f : func @LOCAL -> @[] -> () -> ()
+                set f = func @LOCAL -> @[] -> () -> () [x] { set ret = x }
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun r09 () {
+        val out = inp2env("""
+            var f: func () -> _int          -- 1. `f` is a reference to a function
+            {
+                var x: _int
+                set x = _10: _int
+                set f = func () -> _int {   -- 2. `f` is created
+                    set ret = x             -- 3. `f` needs access to `x`
+                    return
+                }
+            }                               -- 4. `x` goes out of scope
+            call f ()                       -- 5. `f` still wants to access `x`
+        """.trimIndent()
+        )
+        assert(out == "(ln 6, col 19): invalid access to \"x\" : invalid closure declaration (ln 5)") { out }
+    }
+    @Test
+    fun r10 () {
+        val out = inp2env("""
+            var f: func () -> _int              -- 1. `f` is a reference to a function
+            {
+                var x: _int
+                set x = _10: _int
+                set f = func () -> _int [x] {   -- 2. `f` is created
+                    set ret = x                 -- 3. `f` needs access to `x`
+                    return
+                }
+            }                                   -- 4. `x` goes out of scope
+            call f ()                           -- 5. `f` still wants to access `x`
+        """.trimIndent()
+        )
+        assert(out == "(ln 6, col 19): invalid access to \"x\" : invalid closure declaration (ln 5)") { out }
+    }
+
 }
