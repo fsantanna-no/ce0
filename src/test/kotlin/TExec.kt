@@ -1599,7 +1599,7 @@ class TExec {
                 var x: /(List @[a1])@a1
                 set x = new <.1 <.0>:/(List @[a1])@a1>: (List @[a1]): @a1
                 var f: func @a1->@[]-> () -> ()
-                set f = func @a1 ->() -> () [x] {
+                set f = func @a1 ->() -> () [x] {   -- ERR: x is between f and a1, so it will leak
                     output std x
                 }
                set ret = f
@@ -1659,7 +1659,7 @@ class TExec {
             set cnst = func@[i1]-> /_int@i1 -> (func @i1-> () -> /_int@i1) {
                 var x: /_int@i1
                 set x = arg
-                set ret = func@i1->@[]-> () -> /_int@i1 [x] {
+                set ret = func@i1->@[]-> () -> /_int@i1 [x] {   -- ERR: x is between f and i1, so it will leak
                     set ret = x
                 }
             }
@@ -1707,7 +1707,7 @@ class TExec {
             set f = func@[]-> func@[]->()->() -> (func @GLOBAL->()->()) {
                 var ff: func@[]->()->()
                 set ff = arg
-                set ret = func @GLOBAL->@[]->()->()[ff] {
+                set ret = func @GLOBAL->@[]->()->()[ff] {   -- ERR: ff is between f and a1, so it will leak
                     call ff ()
                 }
             }

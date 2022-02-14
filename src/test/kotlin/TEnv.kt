@@ -3053,7 +3053,7 @@ class TEnv {
             { @A
                 var pa: /_int@LOCAL
                 var f: (func @A->@[]->()->())
-                set f = func @A->@[]->()->() [pa] {
+                set f = func @A->@[]->()->() [pa] {     -- OK: pa lives while @A lives
                     var pf: /_int @A
                     set pf = pa
                 }
@@ -3084,7 +3084,7 @@ class TEnv {
             { @A
                 var pa: ()
                 set pa = ()
-                set f = func @A->@[]->()->() [xxx] {  -- set [] vs [@A]
+                set f = func @A->@[]->()->() [xxx] {
                     output std pa
                 }
             }
@@ -3204,6 +3204,22 @@ class TEnv {
         """.trimIndent()
         )
         assert(out == "(ln 6, col 19): invalid access to \"x\" : invalid closure declaration (ln 5)") { out }
+    }
+    @Test
+    fun r11 () {
+        val out = inp2env(
+            """
+            var g: func @[a1]->() -> func @a1->@[]-> ()->()
+            set g = func@[a1]->() -> func @a1->@[]-> ()->() {
+                var x: ()
+                var f: func @a1->@[]-> () -> ()
+                set f = func @a1 ->() -> () [x] {   -- ERR: x is between f and a1, so it will leak
+                    output std x
+                }
+            }
+        """.trimIndent()
+        )
+        assert(out == "ERR") { out }
     }
 
 }
