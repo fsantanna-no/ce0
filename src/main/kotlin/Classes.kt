@@ -43,7 +43,7 @@ sealed class Expr (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?, var wt
     data class Dnref (val tk_: Tk,     val ptr: Expr): Expr(N++, tk_, null, null, null)
     data class Upref (val tk_: Tk.Chr, val pln: Expr): Expr(N++, tk_, null, null, null)
     data class Call  (val tk_: Tk, val f: Expr, val arg: Expr, val xscps: Pair<List<Scope>,Scope?>): Expr(N++, tk_, null, null, null)
-    data class Func  (val tk_: Tk.Key, val type: Type.Func, val ups: List<Tk.Id>, val block: Stmt.Block) : Expr(N++, tk_, null, null, type)
+    data class Func  (val tk_: Tk.Key, val type: Type.Func, val block: Stmt.Block) : Expr(N++, tk_, null, null, type)
     data class Pub   (val tk_: Tk.Id, val tsk: Expr): Expr(N++, tk_, null, null, null)
 }
 

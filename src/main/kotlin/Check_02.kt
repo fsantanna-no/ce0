@@ -33,34 +33,6 @@ fun check_02_after_tps (s: Stmt) {
     val funcs = mutableSetOf<Expr.Func>()   // funcs with checked [@] closure
     fun fe (e: Expr) {
         when (e) {
-            // >>> check closures
-            is Expr.Var -> {
-                val env = e.env(e.tk_.id)!!
-                val dcl = env.ups_tolist().count { it is Expr.Func }
-
-                // these special variables and globals dont need closures
-                if (e.tk_.id in listOf("arg","evt","pub","ret")) return
-                if (env.ups_tolist().count { it is Expr.Func || it is Stmt.Block } == 0) return
-
-                // take all funcs in between myself -> dcl level: check if they have closure
-                val fs  = e.ups_tolist().filter { it is Expr.Func }.dropLast(dcl) as List<Expr.Func>
-                fs.forEach {
-                    funcs.add(it)
-                    All_assert_tk(e.tk, it.ups.any { it.id==e.tk_.id }) {
-                        "invalid access to \"${e.tk_.id}\" : invalid closure declaration (ln ${it.tk.lin})"
-                    }
-
-                }
-            }
-            is Expr.Func -> {
-                if (e.type.xscps.first != null) {
-                    All_assert_tk(e.tk, e.tk.enu==TK.TASK || funcs.contains(e)) {
-                        "invalid function : unexpected closure declaration"
-                    }
-                }
-            }
-            // <<< check closures
-
             is Expr.UNull -> e.check()
             is Expr.UCons -> {
                 e.check()
@@ -204,12 +176,6 @@ fun check_02_after_tps (s: Stmt) {
                 All_assert_tk(s.tk, dst.isSupOf(src)) {
                     val str = if (s.dst is Expr.Var && s.dst.tk_.id == "ret") "return" else "assignment"
                     "invalid $str : ${mismatch(dst,src)}"
-                }
-                if (s.dst is Expr.Var) {
-                    val up = s.dst.ups_first { it is Expr.Func && it.ups.any { it.id == s.dst.tk_.id } }
-                    All_assert_tk(s.tk, up==null) {
-                        "invalid assignment : cannot modify an upalue"
-                    }
                 }
             }
         }

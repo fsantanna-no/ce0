@@ -112,11 +112,6 @@ fun check_01_before_tps (s: Stmt) {
                 All_assert_tk(e.tk, err==null) {
                     "invalid scope : \"${err!!.scp1.id}\" is already declared (ln ${err!!.scp1.lin})"
                 }
-                e.ups.forEach {
-                    All_assert_tk(e.tk, e.env(it.id) != null) {
-                        "undeclared variable \"${it.id}\""
-                    }
-                }
             }
 
             is Expr.New  -> e.xscp?.check(e)

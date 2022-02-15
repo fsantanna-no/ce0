@@ -721,12 +721,11 @@ class TParser {
     }
     @Test
     fun c15_parser_func () {
-        All_new(PushbackReader(StringReader("set f = func @[] -> () -> () [a,b] { return }"), 2))
+        All_new(PushbackReader(StringReader("set f = func @[] -> () -> () { return }"), 2))
         Lexer.lex()
         val s = Parser().stmt()
         assert (
-            (s is Stmt.Set) && ((s.dst as Expr.Var).tk_.id=="f") &&
-                    s.src.let { (it is Expr.Func) && (it.ups.size==2) }
+            (s is Stmt.Set) && ((s.dst as Expr.Var).tk_.id=="f") //&& s.src.let { (it is Expr.Func) && (it.ups.size==2) }
         )
     }
 

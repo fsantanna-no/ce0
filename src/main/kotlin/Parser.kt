@@ -182,9 +182,8 @@ open class Parser
             all.check(TK.TASK) || all.check(TK.FUNC) -> {
                 val tk = all.tk1 as Tk.Key
                 val tp = this.type(false) as Type.Func
-                val ups = if (all.check(TK.CHAR, '[')) this.ups() else emptyList()
                 val block = this.block()
-                Expr.Func(tk, tp, ups, block)
+                Expr.Func(tk, tp, block)
             }
             else -> {
                 all.err_expected("expression")
@@ -557,19 +556,6 @@ open class Parser
                 break
             }
         }
-        return ret
-    }
-
-    fun ups (): List<Tk.Id> {
-        all.accept_err(TK.CHAR, '[')
-        val ret = mutableListOf<Tk.Id>()
-        while (all.accept(TK.XID)) {
-            ret.add(all.tk0 as Tk.Id)
-            if (!all.accept(TK.CHAR, ',')) {
-                break
-            }
-        }
-        all.accept_err(TK.CHAR, ']')
         return ret
     }
 }

@@ -665,7 +665,8 @@ class TEnv {
             }
             call f()
         """.trimIndent())
-        assert(out == "(ln 6, col 20): invalid access to \"pa\" : invalid closure declaration (ln 5)") { out }
+        assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch :"))
+        //assert(out == "(ln 6, col 20): invalid access to \"pa\" : invalid closure declaration (ln 5)") { out }
     }
     @Test
     fun e07_ptr_err4 () {
@@ -2635,7 +2636,8 @@ class TEnv {
             }
         """.trimIndent()
         )
-        assert(out == "(ln 2, col 9): invalid function : unexpected closure declaration") { out }
+        //assert(out == "(ln 2, col 9): invalid function : unexpected closure declaration") { out }
+        assert(out == "OK") { out }
     }
     @Test // passou a falhar qd mudei env p/ upvals
     fun p22_pool_closure_err() {
@@ -2732,17 +2734,18 @@ class TEnv {
         val out = inp2env("""
             { @A
                 var pa: /</_int @LOCAL> @LOCAL
-                var f: /func@A->@[]-> ()->()@LOCAL
-                set f = func@A-> @[]-> ()->()[pa]{
+                var f: func@A->@[]-> ()->()
+                set f = func@A-> @[]-> ()->() {
                     var pf: /</_int @A> @A
                     set pf = new <.1 <.0>: /</_int @A> @A>:</_int @A>: @A
                     set pa = pf
                 }
-                call f\ ()
+                call f ()
                 output std pa
             }
         """.trimIndent())
-        assert(out == "(ln 7, col 16): invalid assignment : cannot modify an upalue") { out }
+        //assert(out == "(ln 7, col 16): invalid assignment : cannot modify an upalue") { out }
+        assert(out == "OK") { out }
     }
     @Test
     fun p30_closure_ok0 () {
@@ -3073,7 +3076,7 @@ class TEnv {
             { @A
                 var pa: /_int@LOCAL
                 var f: (func @A->@[]->()->())
-                set f = func @A->@[]->()->() [pa] {     -- OK: pa lives while @A lives
+                set f = func @A->@[]->()->() {     -- OK: pa lives while @A lives
                     var pf: /_int @A
                     set pf = pa
                 }
@@ -3088,7 +3091,7 @@ class TEnv {
             { @A
                 var pa: ()
                 set pa = ()
-                set f = func @A->@[]->()->() [pa] {  -- set [] vs [@A]
+                set f = func @A->@[]->()->() {  -- set [] vs [@A]
                     output std pa
                 }
             }
@@ -3104,13 +3107,14 @@ class TEnv {
             { @A
                 var pa: ()
                 set pa = ()
-                set f = func @A->@[]->()->() [xxx] {
+                set f = func @A->@[]->()->() {
                     output std pa
                 }
             }
             call f()
         """.trimIndent())
-        assert(out == "(ln 5, col 13): undeclared variable \"xxx\"") { out }
+        //assert(out == "(ln 5, col 13): undeclared variable \"xxx\"") { out }
+        assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch :")) { out }
     }
     @Test
     fun r04 () {
@@ -3118,7 +3122,7 @@ class TEnv {
             { @A
                 var pa: /_int @LOCAL
                 var f: func @A->@[a1]->[/()@a1]->()
-                set f = func @A->@[a1]->[/()@a1]->() [pa] {
+                set f = func @A->@[a1]->[/()@a1]->() {
                     var pf: /_int @a1
                     set pa = arg
                 }
@@ -3137,7 +3141,7 @@ class TEnv {
             { @A
                 var v: ()
                 var f : func @A -> @[i1] -> () -> /()@i1
-                set f = func @A -> @[i1] -> () -> /()@i1 [v] {
+                set f = func @A -> @[i1] -> () -> /()@i1 {
                     set ret = /v      -- err: /v may not be at expected @
                 }
                 {
@@ -3154,7 +3158,7 @@ class TEnv {
                 var v: _int
                 set v = _10: _int
                 var f : func @A -> @[a] -> () -> /_int@a
-                set f = func @A -> @[a] -> () -> /_int@a [v] {
+                set f = func @A -> @[a] -> () -> /_int@a {
                     set ret = /v
                 }
                 var p: /_int @LOCAL
@@ -3172,7 +3176,7 @@ class TEnv {
             var f: func @LOCAL->@[]->() -> ()
             {
                 var x: /</_int@LOCAL>@LOCAL
-                set f = func @LOCAL->@[]->() -> () [x] {
+                set f = func @LOCAL->@[]->() -> () {
                     output std x
                 }
             }
@@ -3186,7 +3190,7 @@ class TEnv {
             {
                 var x: ()
                 var f : func @LOCAL -> @[] -> () -> ()
-                set f = func @LOCAL -> @[] -> () -> () [x] { set ret = x }
+                set f = func @LOCAL -> @[] -> () -> () { set ret = x }
             }
         """.trimIndent())
         assert(out == "OK") { out }
@@ -3217,7 +3221,7 @@ class TEnv {
             set g = func@[a1]->() -> func @a1->@[]-> ()->() {
                 var x: ()
                 var f: func @a1->@[]-> () -> ()
-                set f = func @a1 ->() -> () [x] {   -- ERR: x is between f and a1, so it will leak
+                set f = func @a1 ->() -> () {   -- ERR: x is between f and a1, so it will leak
                     output std x
                 }
             }

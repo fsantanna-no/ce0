@@ -460,10 +460,11 @@ fun code_fe (e: Expr) {
         is Expr.Func -> {
             val block = CODE.removeFirst()
             val tp    = CODE.removeFirst()
+            //${e.ups.map { "${e.env(it.id)!!.toType().pos()} ${it.id};\n" }.joinToString("")}
             val pre = """
                 typedef struct Func_${e.n} {
                     ${e.type.toce()} task1;
-                    ${e.ups.map { "${e.env(it.id)!!.toType().pos()} ${it.id};\n" }.joinToString("")}
+                    // UPS
                     ${e.block.mem_vars()}
                 } Func_${e.n};
                     
@@ -503,6 +504,9 @@ fun code_fe (e: Expr) {
     
                 """.trimIndent()
             } else {
+                //${e.ups.map {
+                //    "frame_${e.n}->${it.id} = ${it.id.mem(e.wup!!)};\n"
+                //}.joinToString("")}
                 """
                     Func_${e.n}* frame_${e.n} = (Func_${e.n}*) malloc(sizeof(Func_${e.n}));
                     assert(frame_${e.n}!=NULL && "not enough memory");
@@ -513,9 +517,7 @@ fun code_fe (e: Expr) {
                         if (it==null) "" else
                             "frame_${e.n}->task1.CLO = ${it.toce(e.wup!!)};\n"
                     }}
-                    ${e.ups.map {
-                        "frame_${e.n}->${it.id} = ${it.id.mem(e.wup!!)};\n"
-                    }.joinToString("")}
+                    // UPS
                     block_push(frame_${e.n}->task1.CLO, frame_${e.n});
 
                 """.trimIndent()
