@@ -1,10 +1,9 @@
-- reject full closures
-  - remove ups, still accept @scope, acess to ups via task->up
-  - func cannot escape
-- type List = /</List>
-  - x:List :: /</List>
+- XLexer para ce1
 - typedef para task (birds example)
-- valgrind geral
+- <.1 ...>:T  ->  T.Sub ...
+- #line em Code baseado em Tk.lin
+- pico-ce
+  - image scale (birds)
 - change @[@a1,@a2] -> @[a,b: a>b]
   - check constraint in func comparison
 - accept @A vs var a

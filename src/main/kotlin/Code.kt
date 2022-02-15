@@ -207,12 +207,25 @@ fun code_ft (tp: Type) {
 }
 
 fun String.mem (up: Any): String {
-    val func = if (up is Expr.Func) up else up.ups_first { it is Expr.Func }
+    val isglb = up.ups_first(true){ it is Expr.Func } == null
     return when {
-        (func == null) -> "(global.$this)"
+        isglb -> "(global.$this)"
         (this == "ret") -> "(task1->$this)"
         (this in listOf("arg","pub","evt")) -> "(task2->task1.$this)"
         else -> "(task2->$this)"
+    }
+}
+
+fun String.env_mem (up: Any): String {
+    val env = up.env(this)!!
+    val str = if (env is Stmt.Block) "B${env.n}" else this
+    val ret = str.mem(env)
+    return if (ret != "(task2->$str)") ret else {
+        val out  = env.ups_first { it is Expr.Func } as Expr.Func
+        val jmps = up.ups_tolist().filter { it is Expr.Func }.takeWhile { it != out }.size
+        if (jmps == 0) ret else {
+            "((Func_${out.n}*)(task0" + ("->links.tsk_up".repeat(jmps)) + "))->$str"
+        }
     }
 }
 
@@ -220,21 +233,10 @@ fun Scope.toce (up: Any): String {
     return when {
         // @GLOBAL is never an argument
         (this.scp1.id == "GLOBAL") -> "GLOBAL"
-        // closure block is always an argument
-        (up.ups_first {
-            it is Expr.Func && it.type.xscps.first.let {
-                it?.scp1?.enu==this.scp1.enu && it?.scp1?.id==this.scp1.id
-            }
-        } != null) -> "(task1->CLO)"
         // @i_1 is always an argument (must be after closure test)
         this.scp1.isscopepar() -> "(task1->${this.scp1.id})"
         // otherwise depends (calls mem)
-        else -> {
-            val blk = up.env(this.scp1.id) as Stmt.Block
-            val mem = "B${blk.n}".mem(up)
-            //val mem = this.scp1.id.mem(up)
-            "(&" + mem + ")"
-        }
+        else -> "(&" + this.scp1.id.env_mem(up) + ")"
     }
 }
 
@@ -441,7 +443,7 @@ fun code_fe (e: Expr) {
                             memcpy(frame, ${f.expr}, ${f.expr}->task0.size);
                             ${if (e.wup is Stmt.DSpawn) "frame->task0.isauto = 1;" else ""}
                             block_push($block, frame);
-                            //frame->task0.links.tsk_up = stack->task;
+                            frame->task0.links.tsk_up = ${if (e.ups_first { it is Expr.Func }==null) "NULL" else "task0"};
                             ${if (istk) "task_link($block, &frame->task0);" else ""}
                             ${if (tpf.tk.enu != TK.FUNC) "" else "frame->task0.state = TASK_UNBORN;"}
                             ((F_${tpf.toce()})(frame->task0.f)) (
@@ -525,31 +527,15 @@ fun code_fe (e: Expr) {
             val istk   = (e.type.tk.enu == TK.TASK)
             val isnone = !isclo && !istk
 
-            val src = if (isnone) {
-                """
-                    static Func_${e.n} _frame_${e.n};
-                    _frame_${e.n}.task1.task0 = (Task) {
-                        TASK_UNBORN, 0, {}, sizeof(Func_${e.n}), (Task_F)func_${e.n}, 0
-                    };
-                    static Func_${e.n}* frame_${e.n} = &_frame_${e.n};
+            val src = """
+                static Func_${e.n} _frame_${e.n};
+                _frame_${e.n}.task1.task0 = (Task) {
+                    TASK_UNBORN, 0, {}, sizeof(Func_${e.n}), (Task_F)func_${e.n}, 0
+                };
+                static Func_${e.n}* frame_${e.n} = &_frame_${e.n};
     
-                """.trimIndent()
-            } else {
-                """
-                    Func_${e.n}* frame_${e.n} = (Func_${e.n}*) malloc(sizeof(Func_${e.n}));
-                    assert(frame_${e.n}!=NULL && "not enough memory");
-                    frame_${e.n}->task1.task0 = (Task) {
-                        TASK_UNBORN, 0, {}, sizeof(Func_${e.n}), (Task_F)func_${e.n}, 0
-                    };
-                    ${e.type.xscps.first.let {
-                        if (it==null) "" else
-                            "frame_${e.n}->task1.CLO = ${it.toce(e.wup!!)};\n"
-                    }}
-                    // UPS
-                    block_push(frame_${e.n}->task1.CLO, frame_${e.n});
+            """.trimIndent()
 
-                """.trimIndent()
-            }
             Code(tp.type+type+block.type, tp.struct+block.struct+struct, tp.func+block.func+func, src, "((${e.type.pos()}) frame_${e.n})")
         }
     })
