@@ -3237,7 +3237,7 @@ class TEnv {
             set f = func @[] -> _int -> () { @A
                 var x: _int
                 set x = arg
-                var g : func @[] -> () -> _int      // ERR: needs @A->
+                var g : func @[] -> () -> _int      -- ERR: needs @A->
                 set g = func @[] -> () -> _int {
                     var h : func @A -> @[] -> () -> _int
                     set h = func @A -> @[] -> () -> _int {

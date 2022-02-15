@@ -7,8 +7,8 @@ fun Any.getUp (): Any? {
     }
 }
 
-fun Any.ups_tolist(): List<Any> {
-    val up = this.getUp()
+fun Any.ups_tolist (me: Boolean=false): List<Any> {
+    val up = if (me) this else this.getUp()
     return when {
         (up == null) -> emptyList()
         else -> up.let { listOf(it) + it.ups_tolist() }

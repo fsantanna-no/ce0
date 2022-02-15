@@ -1,4 +1,4 @@
-data class Code (val type: String, val pre: String, val stmt: String, val expr: String)
+data class Code (val type: String, val struct: String, val func: String, val stmt: String, val expr: String)
 val CODE = ArrayDeque<Code>()
 var Event = "_Event"
 
@@ -8,13 +8,13 @@ fun Any.self_or_null (): String {
 
 fun Type.pos (): String {
     return when (this) {
-        is Type.Alias -> this.tk_.id
-        is Type.Unit  -> "int"
-        is Type.Pointer   -> this.pln.pos() + "*"
-        is Type.Nat   -> this.tk_.src
-        is Type.Tuple -> "struct " + this.toce()
-        is Type.Union -> "struct " + this.toce()
-        is Type.Func  -> this.toce() + "*"
+        is Type.Alias   -> this.tk_.id
+        is Type.Unit    -> "int"
+        is Type.Pointer -> this.pln.pos() + "*"
+        is Type.Nat     -> this.tk_.src
+        is Type.Tuple   -> "struct " + this.toce()
+        is Type.Union   -> "struct " + this.toce()
+        is Type.Func    -> "struct " + this.toce() + "*"
         is Type.Spawn   -> this.tsk.pos()
         is Type.Spawns  -> "Tasks"
     }
@@ -40,25 +40,26 @@ val TYPEX = mutableSetOf<String>()
 
 fun code_ft (tp: Type) {
     CODE.addFirst(when (tp) {
-        is Type.Nat, is Type.Unit, is Type.Alias -> Code("","","","")
+        is Type.Nat, is Type.Unit, is Type.Alias -> Code("","","","","")
         is Type.Pointer -> CODE.removeFirst()
         is Type.Spawn   -> CODE.removeFirst()
         is Type.Spawns  -> CODE.removeFirst()
         is Type.Func -> {
             val out = CODE.removeFirst()
-            val pub = if (tp.pub == null) Code("","","","") else CODE.removeFirst()
+            val pub = if (tp.pub == null) Code("","","","","") else CODE.removeFirst()
             val inp = CODE.removeFirst()
-            val src = """
-                typedef union {
-                    _Event* evt;
-                    struct {
-                        Block* blks[${tp.xscps.second.size}];
-                        ${tp.inp.pos()} arg;
-                    } pars;
-                } X_${tp.toce()};
-                typedef struct {
+
+            val type = """
+                // Type.Func.type
+                struct ${tp.toce()};
+
+            """.trimIndent()
+
+            val struct = """
+                // Type.Func.struct
+                
+                typedef struct ${tp.toce()} {
                     Task task0;
-                    ${tp.xscps.first.let { if (it == null) "" else "Block* CLO;" }}
                     union {
                         Block* blks[${tp.xscps.second.size}];
                         struct {
@@ -74,27 +75,40 @@ fun code_ft (tp: Type) {
                     ${tp.pub.let { if (it == null) "" else it.pos() + " pub;" }}
                     ${tp.out.pos()} ret;
                 } ${tp.toce()};
+                
+                typedef union {
+                    _Event* evt;
+                    struct {
+                        Block* blks[${tp.xscps.second.size}];
+                        ${tp.inp.pos()} arg;
+                    } pars;
+                } X_${tp.toce()};
+
                 typedef void (*F_${tp.toce()}) (Stack*, ${tp.toce()}*, X_${tp.toce()});
                 
             """.trimIndent()
-            Code(inp.type+pub.type+out.type+src, inp.pre+pub.pre+out.pre, "","")
+
+            Code(type+inp.type+pub.type+out.type, inp.struct+pub.struct+out.struct+struct, inp.func+pub.func+out.func, "","")
         }
         is Type.Tuple -> {
             val ce = tp.toce()
 
             val type = """
+                // Type.Tuple.type
+                struct $ce;
+                void output_std_${ce}_ (${tp.pos()}* v);
+                void output_std_${ce}  (${tp.pos()}* v);
+                
+            """.trimIndent()
+
+            val struct = """
+                // Type.Tuple.struct
                 struct $ce {
                     ${tp.vec  // do not filter to keep correct i
                         .mapIndexed { i,sub -> (sub.pos() + " _" + (i+1).toString() + ";\n") }
                         .joinToString("")
                     }
                 };
-                void output_std_${ce}_ (${tp.pos()}* v);
-                void output_std_${ce}  (${tp.pos()}* v);
-                
-            """.trimIndent()
-
-            val pre = """
                 void output_std_${ce}_ (${tp.pos()}* v) {
                     printf("[");
                     ${tp.vec
@@ -118,13 +132,22 @@ fun code_ft (tp: Type) {
 
             val codes = tp.vec.map { CODE.removeFirst() }.reversed()
             val types = codes.map { it.type }.joinToString("")
-            val pres  = codes.map { it.pre  }.joinToString("")
-            Code(types+type,pres+pre, "", "")
+            val structs  = codes.map { it.struct  }.joinToString("")
+            Code(types+type,structs+struct, "", "", "")
         }
         is Type.Union -> {
             val ce = tp.toce()
 
             val type = """
+                // Type.Union.type
+                struct $ce;
+                void output_std_${ce}_ (${tp.pos()}* v);
+                void output_std_${ce} (${tp.pos()}* v);
+
+            """.trimIndent()
+
+            val struct = """
+                // Type.Union.struct
                 struct $ce {
                     int tag;
                     union {
@@ -134,12 +157,6 @@ fun code_ft (tp: Type) {
                         }
                     };
                 };
-                void output_std_${ce}_ (${tp.pos()}* v);
-                void output_std_${ce} (${tp.pos()}* v);
-
-            """.trimIndent()
-
-            val pre = """
                 void output_std_${ce}_ (${tp.pos()}* v) {
                     // TODO: only if tp.isrec
                     if (v == NULL) {
@@ -175,13 +192,13 @@ fun code_ft (tp: Type) {
 
             val codes = tp.vec.map { CODE.removeFirst() }.reversed()
             val types = codes.map { it.type }.joinToString("")
-            val pres  = codes.map { it.pre  }.joinToString("")
-            Code(types+type,pres+pre, "", "")
+            val structs  = codes.map { it.struct  }.joinToString("")
+            Code(types+type,structs+struct, "", "", "")
         }
     }.let {
         val ce = tp.toce()
         if (TYPEX.contains(ce)) {
-            Code("","","","")
+            Code("","", "", "","")
         } else {
             TYPEX.add(ce)
             it
@@ -307,13 +324,13 @@ fun Stmt.mem_vars (): String {
 fun code_fe (e: Expr) {
     val xp = e.wtype!!
     CODE.addFirst(when (e) {
-        is Expr.Unit  -> Code("", "", "", "0")
-        is Expr.Nat   -> CODE.removeFirst().let { Code(it.type, it.pre, "", e.tk_.src.native(e, e.tk)) }
-        is Expr.Var   -> Code("", "", "", e.tk_.id.mem(e.env(e.tk_.id)!!))
-        is Expr.Upref -> CODE.removeFirst().let { Code(it.type, it.pre, it.stmt, "(&" + it.expr + ")") }
-        is Expr.Dnref -> CODE.removeFirst().let { Code(it.type, it.pre, it.stmt, "(*" + it.expr + ")") }
-        is Expr.TDisc -> CODE.removeFirst().let { Code(it.type, it.pre, it.stmt, it.expr + "._" + e.tk_.num) }
-        is Expr.Pub   -> CODE.removeFirst().let { Code(it.type, it.pre, it.stmt, it.expr + "->pub") }
+        is Expr.Unit  -> Code("", "", "", "", "0")
+        is Expr.Nat   -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, e.tk_.src.native(e, e.tk)) }
+        is Expr.Var   -> Code("", "", "", "", e.tk_.id.env_mem(e))
+        is Expr.Upref -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, "(&" + it.expr + ")") }
+        is Expr.Dnref -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, "(*" + it.expr + ")") }
+        is Expr.TDisc -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, it.expr + "._" + e.tk_.num) }
+        is Expr.Pub   -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, it.expr + "->pub") }
         is Expr.UDisc -> CODE.removeFirst().let {
             val ee = it.expr
             val pre = if (e.tk_.num == 0) {
@@ -328,7 +345,7 @@ fun code_fe (e: Expr) {
 
                 """.trimIndent()
             }
-            Code(it.type, it.pre, it.stmt + pre, ee+"._"+e.tk_.num)
+            Code(it.type, it.struct, it.func, it.stmt+pre, ee+"._"+e.tk_.num)
         }
         is Expr.UPred -> CODE.removeFirst().let {
             val ee = it.expr
@@ -337,7 +354,7 @@ fun code_fe (e: Expr) {
             } else { // TODO: only if e.uni.wtype!!.isrec()
                 "(&${it.expr} != NULL) && ($ee.tag == ${e.tk_.num})"
             }
-            Code(it.type, it.pre, it.stmt, pos)
+            Code(it.type, it.struct, it.func, it.stmt, pos)
         }
         is Expr.New  -> CODE.removeFirst().let {
             val ID  = "__tmp_" + e.n
@@ -350,15 +367,16 @@ fun code_fe (e: Expr) {
                 block_push(${ptr.xscp.toce(ptr)}, $ID);
 
             """.trimIndent()
-            Code(it.type, it.pre, it.stmt+pre, ID)
+            Code(it.type, it.struct, it.func, it.stmt+pre, ID)
         }
         is Expr.TCons -> {
             val args = (1..e.arg.size).map { CODE.removeFirst() }.reversed()
             Code (
-                args.map { it.type }.joinToString(""),
-                args.map { it.pre  }.joinToString(""),
-                args.map { it.stmt }.joinToString(""),
-                args.map { it.expr }.filter { it!="" }.joinToString(", ").let { "((${xp.pos()}) { $it })" }
+                args.map { it.type   }.joinToString(""),
+                args.map { it.struct }.joinToString(""),
+                args.map { it.func   }.joinToString(""),
+                args.map { it.stmt   }.joinToString(""),
+                args.map { it.expr   }.filter { it!="" }.joinToString(", ").let { "((${xp.pos()}) { $it })" }
             )
         }
         is Expr.UCons -> {
@@ -367,9 +385,9 @@ fun code_fe (e: Expr) {
             val ID  = "_tmp_" + e.n
             val pos = xp.pos()
             val pre = "$pos $ID = (($pos) { ${e.tk_.num} , ._${e.tk_.num} = ${arg.expr} });\n"
-            Code(tp.type+arg.type, tp.pre+arg.pre, arg.stmt + pre, ID)
+            Code(tp.type+arg.type, tp.struct+arg.struct, tp.func+arg.func, arg.stmt + pre, ID)
         }
-        is Expr.UNull -> CODE.removeFirst().let { Code(it.type, it.pre,"","NULL") }
+        is Expr.UNull -> CODE.removeFirst().let { Code(it.type, it.struct, it.func,"","NULL") }
         is Expr.Call  -> {
             val arg  = CODE.removeFirst()
             val f    = CODE.removeFirst()
@@ -385,7 +403,8 @@ fun code_fe (e: Expr) {
                 (e.f is Expr.Var && e.f.tk_.id=="output_std") -> {
                     Code (
                         f.type + arg.type,
-                        f.pre + arg.pre,
+                        f.struct + arg.struct,
+                        f.func + arg.func,
                         f.stmt + arg.stmt + e.arg.wtype!!.output_std("", arg.expr),
                         ""
                     )
@@ -442,7 +461,8 @@ fun code_fe (e: Expr) {
                         """.trimIndent()
                     Code (
                         f.type + arg.type,
-                        f.pre + arg.pre,
+                        f.struct + arg.struct,
+                        f.func + arg.func,
                         f.stmt + arg.stmt + pre,
                         "ret_${e.n}"
                     )
@@ -450,7 +470,8 @@ fun code_fe (e: Expr) {
                 else -> {
                     Code (
                         f.type + arg.type,
-                        f.pre + arg.pre,
+                        f.struct + arg.struct,
+                        f.func + arg.func,
                         f.stmt + arg.stmt,
                         f.expr + "(" + blks + (if (e.arg is Expr.Unit) "" else arg.expr) + ")"
                     )
@@ -460,15 +481,25 @@ fun code_fe (e: Expr) {
         is Expr.Func -> {
             val block = CODE.removeFirst()
             val tp    = CODE.removeFirst()
-            //${e.ups.map { "${e.env(it.id)!!.toType().pos()} ${it.id};\n" }.joinToString("")}
-            val pre = """
+
+            val type = """
+                // Expr.Func.type
+                struct Func_${e.n};
+                //void func_${e.n} (Stack* stack, struct Func_${e.n}* task2, X_${e.type.toce()} xxx);
+                
+            """.trimIndent()
+
+            val struct = """
+                // Expr.Func.struct
                 typedef struct Func_${e.n} {
                     ${e.type.toce()} task1;
-                    // UPS
                     ${e.block.mem_vars()}
                 } Func_${e.n};
-                    
-                void func_${e.n} (Stack* stack, Func_${e.n}* task2, X_${e.type.toce()} xxx) {
+                
+            """.trimIndent()
+
+            val func = """
+                void func_${e.n} (Stack* stack, struct Func_${e.n}* task2, X_${e.type.toce()} xxx) {
                     Task*             task0 = &task2->task1.task0;
                     ${e.type.toce()}* task1 = &task2->task1;
                     ${e.type.xscps.second.mapIndexed { i, _ -> "task1->blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
@@ -504,9 +535,6 @@ fun code_fe (e: Expr) {
     
                 """.trimIndent()
             } else {
-                //${e.ups.map {
-                //    "frame_${e.n}->${it.id} = ${it.id.mem(e.wup!!)};\n"
-                //}.joinToString("")}
                 """
                     Func_${e.n}* frame_${e.n} = (Func_${e.n}*) malloc(sizeof(Func_${e.n}));
                     assert(frame_${e.n}!=NULL && "not enough memory");
@@ -522,7 +550,7 @@ fun code_fe (e: Expr) {
 
                 """.trimIndent()
             }
-            Code(tp.type+block.type, tp.pre+block.pre+pre, src, "((${e.type.pos()}) frame_${e.n})")
+            Code(tp.type+type+block.type, tp.struct+block.struct+struct, tp.func+block.func+func, src, "((${e.type.pos()}) frame_${e.n})")
         }
     })
 }
@@ -556,7 +584,7 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
 
 fun code_fs (s: Stmt) {
     CODE.addFirst(when (s) {
-        is Stmt.Nop -> Code("", "","","")
+        is Stmt.Nop -> Code("", "","","", "")
         is Stmt.Typedef -> CODE.removeFirst().let {
             if (s.tk_.id == "Event") {
                 Event = "Event"
@@ -567,14 +595,18 @@ fun code_fs (s: Stmt) {
                 typedef ${s.type.pos()} ${s.tk_.id};
                 
             """.trimIndent()
-            Code(src+it.type, it.pre, "", "")
+            Code(src+it.type, it.struct, it.func, "", "")
         }
         is Stmt.Native -> if (s.istype) {
-            Code(s.tk_.src.native(s, s.tk) + "\n", "", "", "")
+            Code(s.tk_.src.native(s, s.tk) + "\n", "", "", "", "")
         } else {
-            Code("", "", s.tk_.src.native(s, s.tk) + "\n", "")
+            Code("", "", "", s.tk_.src.native(s, s.tk) + "\n", "")
         }
-        is Stmt.Seq -> { val s2=CODE.removeFirst() ; val s1=CODE.removeFirst() ; Code(s1.type+s2.type, s1.pre+s2.pre, s1.stmt+s2.stmt, "") }
+        is Stmt.Seq -> {
+            val s2 = CODE.removeFirst()
+            val s1 = CODE.removeFirst()
+            Code(s1.type+s2.type, s1.struct+s2.struct, s1.func+s2.func, s1.stmt+s2.stmt, "")
+        }
         is Stmt.Var -> CODE.removeFirst().let {
             val src = if (s.xtype is Type.Spawns) {
                 s.tk_.id.mem(s).let {
@@ -586,12 +618,12 @@ fun code_fs (s: Stmt) {
                     """.trimIndent()
                 }
             } else ""
-            Code(it.type, it.pre, src,"")
+            Code(it.type, it.struct, it.func, src,"")
         }
         is Stmt.Set -> {
             val src = CODE.removeFirst()
             val dst = CODE.removeFirst()
-            Code(dst.type+src.type, dst.pre+src.pre, dst.stmt+src.stmt + dst.expr+" = "+src.expr + ";\n", "")
+            Code(dst.type+src.type, dst.struct+src.struct, dst.func+src.func, dst.stmt+src.stmt + dst.expr+" = "+src.expr + ";\n", "")
         }
         is Stmt.If -> {
             val false_ = CODE.removeFirst()
@@ -605,10 +637,10 @@ fun code_fs (s: Stmt) {
                 }
 
             """.trimIndent()
-            Code(tst.type+true_.type+false_.type, tst.pre+true_.pre+false_.pre, src, "")
+            Code(tst.type+true_.type+false_.type, tst.struct+true_.struct+false_.struct, tst.func+true_.func+false_.func, src, "")
         }
         is Stmt.Loop -> CODE.removeFirst().let {
-            Code(it.type, it.pre, "while (1) { ${it.stmt} }", "")
+            Code(it.type, it.struct, it.func, "while (1) { ${it.stmt} }", "")
         }
         is Stmt.DLoop -> {
             val block = CODE.removeFirst()
@@ -624,11 +656,11 @@ fun code_fs (s: Stmt) {
                 }
                 
             """.trimIndent()
-            Code(tsks.type+i.type+block.type, tsks.pre+i.pre+block.pre, tsks.stmt+i.stmt+src, "")
+            Code(tsks.type+i.type+block.type, tsks.struct+i.struct+block.struct, tsks.func+i.func+block.func, tsks.stmt+i.stmt+src, "")
         }
         is Stmt.Break -> {
             val (_,unlink,kill) = (s.ups_first { it is Stmt.Loop } as Stmt.Loop).block.link_unlink_kill()
-            Code("", "", unlink+kill+"break;\n", "")
+            Code("", "", "", unlink+kill+"break;\n", "")
         }
         is Stmt.Return   -> {
             val src = """
@@ -637,13 +669,15 @@ fun code_fs (s: Stmt) {
                 
             """.trimIndent()
             val (_,unlink,kill) = (s.ups_first { it is Expr.Func } as Expr.Func).block.link_unlink_kill()
-            Code("", "", unlink+kill+src, "")
+            Code("", "", "", unlink+kill+src, "")
         }
-        is Stmt.SCall -> CODE.removeFirst().let { Code(it.type, it.pre, it.stmt+it.expr+";\n", "") }
+        is Stmt.SCall -> CODE.removeFirst().let {
+            Code(it.type, it.struct, it.func, it.stmt+it.expr+";\n", "")
+        }
         is Stmt.SSpawn -> {
             val call = CODE.removeFirst()
             val (dst,src) = if (s.dst == null) {
-                val dst = Code("","","","")
+                val dst = Code("","","", "","")
                 val src = "${call.expr};\n"
                 Pair(dst, src)
             } else {
@@ -651,12 +685,12 @@ fun code_fs (s: Stmt) {
                 val src = "${dst.expr} = ${call.expr};\n"
                 Pair(dst, src)
             }
-            Code(call.type+dst.type, call.pre+dst.pre, call.stmt+dst.stmt+src, "")
+            Code(call.type+dst.type, call.struct+dst.struct, call.func+dst.func, call.stmt+dst.stmt+src, "")
         }
         is Stmt.DSpawn -> { // Expr.Call links call/tsks
             val call = CODE.removeFirst()
             val tsks = CODE.removeFirst()
-            Code(tsks.type+call.type, tsks.pre+call.pre, tsks.stmt+call.stmt, "")
+            Code(tsks.type+call.type, tsks.struct+call.struct, tsks.func+call.func, tsks.stmt+call.stmt, "")
         }
         is Stmt.Await -> CODE.removeFirst().let {
             val src = """
@@ -674,7 +708,7 @@ fun code_fs (s: Stmt) {
                 }
                 
             """.trimIndent()
-            Code(it.type, it.pre, it.stmt+src, "")
+            Code(it.type, it.struct, it.func, it.stmt+src, "")
         }
         is Stmt.Emit -> CODE.removeFirst().let {
             val src = """
@@ -687,7 +721,7 @@ fun code_fs (s: Stmt) {
                 }
                 
             """.trimIndent()
-            Code(it.type, it.pre, it.stmt+src, "")
+            Code(it.type, it.struct, it.func, it.stmt+src, "")
         }
         is Stmt.Throw -> {
             val src = """
@@ -700,19 +734,19 @@ fun code_fs (s: Stmt) {
                 }
                 
             """.trimIndent()
-            Code("", "", src, "")
+            Code("", "", "", src, "")
         }
         is Stmt.Input -> {
             val arg = CODE.removeFirst()
             if (s.dst == null) {
                 val tp  = CODE.removeFirst()
                 val src = "input_${s.lib.id}_${s.xtype!!.toce()}(${arg.expr});\n"
-                Code(tp.type+arg.type, tp.pre+arg.pre, arg.stmt + src, "")
+                Code(tp.type+arg.type, tp.struct+arg.struct, tp.func+arg.func, arg.stmt + src, "")
             } else {
                 val dst = CODE.removeFirst()
                 val tp  = CODE.removeFirst()
                 val src = "${dst.expr} = input_${s.lib.id}_${s.xtype!!.toce()}(${arg.expr});\n"
-                Code(tp.type+arg.type+dst.type, tp.pre+arg.pre+dst.pre, arg.stmt+dst.stmt+src, "")
+                Code(tp.type+arg.type+dst.type, tp.struct+arg.struct+dst.struct, tp.func+arg.func+dst.func, arg.stmt+dst.stmt+src, "")
             }
         }
         is Stmt.Output -> CODE.removeFirst().let {
@@ -721,7 +755,7 @@ fun code_fs (s: Stmt) {
             } else {
                 "output_${s.lib.id}(${it.expr});\n"
             }
-            Code(it.type, it.pre, it.stmt+call, "")
+            Code(it.type, it.struct, it.func, it.stmt+call, "")
         }
         is Stmt.Block -> CODE.removeFirst().let {
             val (link,unlink,kill) = s.link_unlink_kill()
@@ -737,7 +771,7 @@ fun code_fs (s: Stmt) {
             
             """.trimIndent()
 
-            Code(it.type, it.pre, src, "")
+            Code(it.type, it.struct, it.func, src, "")
         }
     })
 }
@@ -808,7 +842,7 @@ fun Stmt.code (): String {
             TASK_STATE state;
             int isauto;
             struct {
-                //struct Task*  tsk_up;       // first outer task alive (for upvalues)
+                struct Task*  tsk_up;       // first outer task alive (for upvalues)
                 struct Task*  tsk_next;     // next Task in the same block (for broadcast)
                 struct Block* blk_down;     // nested block inside me
             } links;
@@ -831,7 +865,7 @@ fun Stmt.code (): String {
             TASK_STATE state;
             int isauto;
             struct {
-                //Task*  tsk_up;              // for upvalues
+                Task*  tsk_up;              // for upvalues
                 Task*  tsk_next;            // for broadcast
                 Block* blk_down;
             } links;
@@ -1012,13 +1046,12 @@ fun Stmt.code (): String {
         
         Block* GLOBAL;
 
-        ${code.type}
-        
+        ${code.type}        
+        ${code.struct}
         struct {
             ${this.mem_vars()}
         } global;
-
-        ${code.pre}
+        ${code.func}
 
         void main (void) {
             Block B0 = { NULL, 0, {NULL,NULL,NULL} };
