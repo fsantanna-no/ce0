@@ -76,9 +76,7 @@ fun Type.isrec (): Boolean {
 
 fun Type.noalias (): Type {
     return if (this !is Type.Alias) this else {
-        //println(this.tk_.id)
-        //println(this.env(this.tk_.id))
-        val def = this.env(this.tk_.id)!! as Stmt.Typedef
+        val def = this.env(this.tk_.id,true)!! as Stmt.Typedef
 
         // Original constructor:
         //      typedef Pair @[a] = [/_int@a,/_int@a]

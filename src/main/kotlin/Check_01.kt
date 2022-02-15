@@ -44,7 +44,7 @@ fun check_01_before_tps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
             is Type.Alias -> {
-                val def = tp.env(tp.tk_.id)
+                val def = tp.env(tp.tk_.id,true)
                 All_assert_tk(tp.tk, def is Stmt.Typedef) {
                     "undeclared type \"${tp.tk_.id}\""
                 }

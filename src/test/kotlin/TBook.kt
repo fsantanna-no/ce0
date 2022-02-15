@@ -379,6 +379,7 @@ class TBook {
 
     // CHAPTER 1.4
 
+    @Disabled   // no more full closures
     @Test
     fun ch_01_04_currying_pg11() {
         val out = all(
@@ -426,6 +427,7 @@ class TBook {
         )
         assert(out == "<.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.0>>>>>>>>>>>>>>>>>\n") { out }
     }
+    @Disabled   // no more full closures
     @Test
     fun ch_01_04_addc_pg12() {
         val out = all(
@@ -451,6 +453,7 @@ class TBook {
         )
         assert(out == "<.1 <.1 <.1 <.0>>>>\n<.1 <.1 <.0>>>\n<.1 <.0>>\n") { out }
     }
+    @Disabled   // no more full closures
     @Test
     fun ch_01_04_quad_pg12() {
         val out = all(
@@ -478,6 +481,7 @@ class TBook {
         )
         assert(out == "<.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.1 <.0>>>>>>>>>>>>>>>>>\n") { out }
     }
+    @Disabled   // no more full closures
     @Test
     fun ch_01_04_curry_pg13() {
         val fadd = "func @[r1,a1,b1] -> [$NumA1,$NumB1] -> $NumR1"
@@ -511,6 +515,7 @@ class TBook {
         )
         assert(out == "<.1 <.1 <.1 <.0>>>>\n") { out }
     }
+    @Disabled   // no more full closures
     @Test
     fun ch_01_04_uncurry_pg13() {
         val fadd  = "func @[r1,a1,b1] -> [$NumA1,$NumB1] -> $NumR1"
@@ -560,6 +565,7 @@ class TBook {
         )
         assert(out == "<.1 <.1 <.1 <.0>>>>\n") { out }
     }
+    @Disabled   // no more full closures
     @Test
     fun ch_01_04_composition_pg15() {
         val T = "func @[r1,a1] -> $NumA1 -> $NumR1"

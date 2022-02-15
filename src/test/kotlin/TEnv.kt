@@ -633,7 +633,24 @@ class TEnv {
                 }
             }
         """.trimIndent())
-        assert(out == "(ln 6, col 13): invalid access to \"pa\" : invalid closure declaration (ln 4)") { out }
+        //assert(out == "(ln 5, col 24): undeclared scope \"A\"") { out }
+        //assert(out == "(ln 6, col 13): invalid access to \"pa\" : invalid closure declaration (ln 4)") { out }
+        assert(out == "(ln 6, col 13): undeclared variable \"pa\"") { out }
+    }
+    @Test
+    fun e07_ptr_ok () {
+        val out = inp2env("""
+            { @A
+                var pa: /_int @LOCAL
+                var f: (func@GLOBAL->@[]->()->())
+                set f = func@GLOBAL->@[]->()->() {
+                    var pf: /_int @A
+                    set pa = pf
+                }
+            }
+        """.trimIndent())
+        //assert(out == "(ln 5, col 24): undeclared scope \"A\"") { out }
+        assert(out == "(ln 6, col 13): undeclared variable \"pa\"") { out }
     }
     @Test
     fun e07_ptr_err2 () {
@@ -2587,7 +2604,8 @@ class TEnv {
         """.trimIndent()
         )
         //assert(out == "OK") { out }
-        assert(out == "(ln 5, col 20): invalid access to \"x\" : invalid closure declaration (ln 4)") { out }
+        //assert(out == "(ln 5, col 20): invalid access to \"x\" : invalid closure declaration (ln 4)") { out }
+        assert(out == "(ln 5, col 20): undeclared variable \"x\"") { out }
     }
     @Test
     fun p20_pool_closure_err() {
@@ -2603,7 +2621,8 @@ class TEnv {
             }
         """.trimIndent()
         )
-        assert(out == "(ln 6, col 20): invalid access to \"x\" : invalid closure declaration (ln 5)") { out }
+        //assert(out == "(ln 6, col 20): invalid access to \"x\" : invalid closure declaration (ln 5)") { out }
+        assert(out == "(ln 6, col 20): undeclared variable \"x\"") { out }
     }
     @Test
     fun p21_pool_closure_err() {
@@ -2637,7 +2656,8 @@ class TEnv {
             call f @[LOCAL] ()
         """.trimIndent()
         )
-        assert(out == "(ln 7, col 20): invalid access to \"x\" : invalid closure declaration (ln 6)") { out }
+        //assert(out == "(ln 7, col 20): invalid access to \"x\" : invalid closure declaration (ln 6)") { out }
+        assert(out == "(ln 7, col 20): undeclared variable \"x\"") { out }
     }
     @Test
     fun p23_pool_closure_err2() {
@@ -3186,24 +3206,8 @@ class TEnv {
             call f ()                       -- 5. `f` still wants to access `x`
         """.trimIndent()
         )
-        assert(out == "(ln 6, col 19): invalid access to \"x\" : invalid closure declaration (ln 5)") { out }
-    }
-    @Test
-    fun r10 () {
-        val out = inp2env("""
-            var f: func () -> _int              -- 1. `f` is a reference to a function
-            {
-                var x: _int
-                set x = _10: _int
-                set f = func () -> _int [x] {   -- 2. `f` is created
-                    set ret = x                 -- 3. `f` needs access to `x`
-                    return
-                }
-            }                                   -- 4. `x` goes out of scope
-            call f ()                           -- 5. `f` still wants to access `x`
-        """.trimIndent()
-        )
-        assert(out == "(ln 6, col 19): invalid access to \"x\" : invalid closure declaration (ln 5)") { out }
+        //assert(out == "(ln 6, col 19): invalid access to \"x\" : invalid closure declaration (ln 5)") { out }
+        assert(out == "(ln 6, col 19): undeclared variable \"x\"") { out }
     }
     @Test
     fun r11 () {
@@ -3219,7 +3223,7 @@ class TEnv {
             }
         """.trimIndent()
         )
-        assert(out == "ERR") { out }
+        assert(out == "(ln 6, col 20): undeclared variable \"x\"") { out }
     }
 
 }

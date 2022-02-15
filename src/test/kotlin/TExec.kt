@@ -1609,7 +1609,8 @@ class TExec {
             call f @[]()
         """.trimIndent()
         )
-        assert(out == "<.1 <.0>>\n") { out }
+        //assert(out == "<.1 <.0>>\n") { out }
+        assert(out == "(ln 8, col 20): undeclared variable \"x\"") { out }
     }
     @Test
     fun n08_clo_int () {
@@ -1627,7 +1628,7 @@ class TExec {
                 output std xxx
             }
         """.trimIndent())
-        assert(out == "20\n10\n") { out }
+        assert(out == "20\n20\n") { out }
     }
     @Test
     fun n09_pool_closure_err() {
@@ -1649,7 +1650,8 @@ class TExec {
             call f\ @[LOCAL] ()
         """.trimIndent()
         )
-        assert(out == "(ln 8, col 20): invalid access to \"x\" : invalid closure declaration (ln 7)") { out }
+        //assert(out == "(ln 8, col 20): invalid access to \"x\" : invalid closure declaration (ln 7)") { out }
+        assert(out == "(ln 8, col 20): undeclared variable \"x\"") { out }
     }
     @Test
     fun n10_pool_closure () {
@@ -1674,7 +1676,8 @@ class TExec {
             }
         """.trimIndent()
         )
-        assert(out == "5\n") { out }
+        //assert(out == "5\n") { out }
+        assert(out == "(ln 6, col 19): undeclared variable \"x\"") { out }
     }
     @Test
     fun n11_pool_closure () {
@@ -1697,7 +1700,8 @@ class TExec {
             output std v\ --@LOCAL
         """.trimIndent()
         )
-        assert(out == "5\n") { out }
+        //assert(out == "5\n") { out }
+        assert(out == "(ln 6, col 19): undeclared variable \"x\"") { out }
     }
     @Test
     fun n12_pool_closure () {
@@ -1720,7 +1724,8 @@ class TExec {
             call ff ()
         """.trimIndent()
         )
-        assert(out == "()\n") { out }
+        //assert(out == "()\n") { out }
+        assert(out == "(ln 6, col 14): undeclared variable \"ff\"") { out }
     }
 
     // TYPEDEF / ALIAS

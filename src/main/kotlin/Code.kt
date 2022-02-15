@@ -248,7 +248,7 @@ fun String.native (up: Any, tk: Tk): String {
                 assert(this[i]=='}') { "bug found" }
                 i++
             }
-            val env = up.env(ce, true)
+            val env = up.env(ce)
             All_assert_tk(tk, env!=null) {
                 "invalid variable \"$ce\""
             }
@@ -309,7 +309,7 @@ fun code_fe (e: Expr) {
     CODE.addFirst(when (e) {
         is Expr.Unit  -> Code("", "", "", "0")
         is Expr.Nat   -> CODE.removeFirst().let { Code(it.type, it.pre, "", e.tk_.src.native(e, e.tk)) }
-        is Expr.Var   -> Code("", "", "", e.tk_.id.mem(e.env(e.tk_.id, true)!!))
+        is Expr.Var   -> Code("", "", "", e.tk_.id.mem(e.env(e.tk_.id)!!))
         is Expr.Upref -> CODE.removeFirst().let { Code(it.type, it.pre, it.stmt, "(&" + it.expr + ")") }
         is Expr.Dnref -> CODE.removeFirst().let { Code(it.type, it.pre, it.stmt, "(*" + it.expr + ")") }
         is Expr.TDisc -> CODE.removeFirst().let { Code(it.type, it.pre, it.stmt, it.expr + "._" + e.tk_.num) }
