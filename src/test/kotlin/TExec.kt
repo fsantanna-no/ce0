@@ -1727,6 +1727,50 @@ class TExec {
         //assert(out == "()\n") { out }
         assert(out == "(ln 6, col 14): undeclared variable \"ff\"") { out }
     }
+    @Test
+    fun n13_pool_ups1 () {
+        val out = all(
+            """
+            var f : func @[] -> _int -> ()
+            set f = func @[] -> _int -> () { @A
+                var x: _int
+                set x = arg
+                var g : func @A -> @[] -> () -> _int
+                set g = func @A -> @[] -> () -> _int {
+                    set ret = x
+                    return
+                }
+                output std g ()
+            }
+            call f _10:_int
+        """.trimIndent()
+        )
+        assert(out == "10\n") { out }
+    }
+    @Test
+    fun n14_pool_ups2 () {
+        val out = all(
+            """
+            var f : func @[] -> _int -> ()
+            set f = func @[] -> _int -> () { @A
+                var x: _int
+                set x = arg
+                var g : func @A -> @[] -> () -> _int
+                set g = func @A -> @[] -> () -> _int {
+                    var h : func @A -> @[] -> () -> _int
+                    set h = func @A -> @[] -> () -> _int {
+                        set ret = x
+                        return
+                    }
+                    output std h ()
+                }
+                call g ()
+            }
+            call f _10:_int
+        """.trimIndent()
+        )
+        assert(out == "10\n") { out }
+    }
 
     // TYPEDEF / ALIAS
 

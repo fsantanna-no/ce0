@@ -3229,5 +3229,28 @@ class TEnv {
         )
         assert(out == "(ln 6, col 20): undeclared variable \"x\"") { out }
     }
-
+    @Test
+    fun r12_err () {
+        val out = inp2env(
+            """
+            var f : func @[] -> _int -> ()
+            set f = func @[] -> _int -> () { @A
+                var x: _int
+                set x = arg
+                var g : func @[] -> () -> _int      // ERR: needs @A->
+                set g = func @[] -> () -> _int {
+                    var h : func @A -> @[] -> () -> _int
+                    set h = func @A -> @[] -> () -> _int {
+                        set ret = x
+                        return
+                    }
+                    output std h ()
+                }
+                call g ()
+            }
+            call f _10:_int
+        """.trimIndent()
+        )
+        assert(out == "ERR") { out }
+    }
 }
