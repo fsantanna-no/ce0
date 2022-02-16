@@ -515,6 +515,8 @@ fun code_fe (e: Expr) {
                             task2->task1.arg = xxx.pars.arg;
                             ${block.stmt}
                             task0->state = TASK_DEAD;
+                            _Event evt = { EVENT_TASK, {.Task=task0} };
+                            block_bcast(stack, ${e.type.xscps.first?.toce(e) ?: e.localBlock()}, 0, (_Event*) &evt);
                             break;
                         }
                         default:
@@ -823,11 +825,8 @@ fun Stmt.code (): String {
         typedef struct _Event {
             int tag;
             union {
-                //void kill;
-                struct {
-                    struct Task* frame;
-                    int iskill;
-                } task;
+                //void Kill;
+                struct Task* Task;
             } payload;
         } _Event;
         

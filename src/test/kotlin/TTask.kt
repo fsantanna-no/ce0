@@ -942,18 +942,28 @@ class TTask {
     @Test
     fun g01_state () {
         val out = all("""
-            type Event = <(),_int>
+            type Event = <(),/_(Task)@LOCAL,()>
             var f: task @LOCAL->@[]->()->()->()
             set f = task @LOCAL->@[]->()->()->() {
                 await _1:_int
             }
             var x : active task @LOCAL->@[]->()->()->()
-            --output std x.state
             set x = spawn f ()
-            output std x.state
-            emit <.2 _1:_int>:Event
-            output std x.state
+            spawn (task @LOCAL->@[]->()->()->() {
+                loop {
+                    await evt?2
+                    var t: _(Task*)
+                    set t = evt!2
+                    if _(${D}t == &${D}x->task0):_int {
+                        break
+                    } else {}
+                }
+                output std _2:_int
+            }) ()
+            output std _1:_int
+            emit <.3 _1:_int>:Event
+            output std _3:_int
        """.trimIndent())
-        assert(out == "2\n4\n") { out }
+        assert(out == "1\n2\n3\n") { out }
     }
 }
