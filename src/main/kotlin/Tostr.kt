@@ -50,7 +50,7 @@ open class Tostr
             is Expr.UCons -> "<." + e.tk_.num + " " + this.tostr(e.arg) + ">: " + this.tostr(e.wtype!!)
             is Expr.UNull -> "<.0>: " + this.tostr(e.wtype!!)
             is Expr.TDisc -> "(" + this.tostr(e.tup) + "." + e.tk_.num + ")"
-            is Expr.Pub -> "(" + this.tostr(e.tsk) + ".pub)"
+            is Expr.Pub -> "(" + this.tostr(e.tsk) + ".${e.tk_.id})"
             is Expr.UDisc -> "(" + this.tostr(e.uni) + "!" + e.tk_.num + ")"
             is Expr.UPred -> "(" + this.tostr(e.uni) + "?" + e.tk_.num + ")"
             is Expr.New -> "(new " + this.tostr(e.arg) + ": @" + e.xscp!!.scp1.anon2local() + ")"

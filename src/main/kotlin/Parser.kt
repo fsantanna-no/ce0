@@ -410,7 +410,7 @@ open class Parser
                     (chr.chr != '.') -> false
                     all.accept(TK.XID) -> {
                         val tk = all.tk0 as Tk.Id
-                        all.assert_tk(tk, tk.id == "pub") {
+                        all.assert_tk(tk, tk.id=="pub" || tk.id=="state") {
                             "unexpected \"${tk.id}\""
                         }
                         true

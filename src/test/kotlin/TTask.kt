@@ -936,4 +936,24 @@ class TTask {
         """.trimIndent())
         assert(out == "1\n") { out }
     }
+
+    // AWAIT TASK
+
+    @Test
+    fun g01_state () {
+        val out = all("""
+            type Event = <(),_int>
+            var f: task @LOCAL->@[]->()->()->()
+            set f = task @LOCAL->@[]->()->()->() {
+                await _1:_int
+            }
+            var x : active task @LOCAL->@[]->()->()->()
+            --output std x.state
+            set x = spawn f ()
+            output std x.state
+            emit <.2 _1:_int>:Event
+            output std x.state
+       """.trimIndent())
+        assert(out == "2\n4\n") { out }
+    }
 }

@@ -211,7 +211,7 @@ fun String.mem (up: Any): String {
     return when {
         isglb -> "(global.$this)"
         (this == "ret") -> "(task1->$this)"
-        (this in listOf("arg","pub","evt")) -> "(task2->task1.$this)"
+        (this in listOf("arg","pub","evt","state")) -> "(task2->task1.$this)"
         else -> "(task2->$this)"
     }
 }
@@ -332,7 +332,10 @@ fun code_fe (e: Expr) {
         is Expr.Upref -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, "(&" + it.expr + ")") }
         is Expr.Dnref -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, "(*" + it.expr + ")") }
         is Expr.TDisc -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, it.expr + "._" + e.tk_.num) }
-        is Expr.Pub   -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, it.expr + "->pub") }
+        is Expr.Pub   -> CODE.removeFirst().let {
+            val src = if (e.tk_.id == "state") it.expr + "->task0.${e.tk_.id}" else it.expr + "->${e.tk_.id}"
+            Code(it.type, it.struct, it.func, it.stmt, src)
+        }
         is Expr.UDisc -> CODE.removeFirst().let {
             val ee = it.expr
             val pre = if (e.tk_.num == 0) {
@@ -814,11 +817,18 @@ fun Stmt.code (): String {
         } TASK_STATE;
         
         typedef enum {
-            EVENT_KILL=1, EVENT_NORMAL // (or more)
+            EVENT_KILL=1, EVENT_TASK //, ...
         } EVENT;
         
         typedef struct _Event {
             int tag;
+            union {
+                //void kill;
+                struct {
+                    struct Task* frame;
+                    int iskill;
+                } task;
+            } payload;
         } _Event;
         
         // stack, task, evt

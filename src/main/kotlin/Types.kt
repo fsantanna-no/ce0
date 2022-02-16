@@ -52,7 +52,12 @@ fun Stmt.setTypes () {
                 All_assert_tk(e.tk, it is Type.Spawn) {
                     "invalid \"pub\" : type mismatch : expected active task : have ${e.tsk.wtype!!.tostr()}"
                 }
-                (it as Type.Spawn).tsk.pub!!
+                when (e.tk_.id) {
+                    "pub"   -> (it as Type.Spawn).tsk.pub!!
+                    "state" -> Type.Nat(Tk.Nat(TK.XNAT, e.tk.lin, e.tk.col, null, "int"))
+                    else -> error("bug found")
+                }
+
             }
             is Expr.UDisc, is Expr.UPred -> {
                 val (tk_,uni) = when (e) {
