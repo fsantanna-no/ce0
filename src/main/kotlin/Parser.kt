@@ -243,11 +243,10 @@ open class Parser
                         Stmt.Input(tk, tp, dst, lib, arg)
                     }
                     all.check(TK.SPAWN) -> {
-                        all.accept(TK.SPAWN)
-                        val tk = all.tk0 as Tk.Key
-                        val e = this.expr()
-                        All_assert_tk(tk, e is Expr.Call) { "expected call expression" }
-                        Stmt.SSpawn(tk, dst, e as Expr.Call)
+                        val s = this.stmt()
+                        All_assert_tk(s.tk, s is Stmt.SSpawn) { "unexpected dynamic `spawn`" }
+                        val ss = s as Stmt.SSpawn
+                        Stmt.SSpawn(ss.tk_, dst, ss.call)
                     }
                     else -> {
                         val src = this.expr()

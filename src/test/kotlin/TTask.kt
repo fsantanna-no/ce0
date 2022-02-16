@@ -956,7 +956,7 @@ class TTask {
                     await evt?2
                     var t: _uint64_t
                     set t = evt!2
-                    if _(${D}t == (uint64_t)&${D}x->task0):_int {
+                    if _(${D}t == (uint64_t)${D}x):_int {
                         break
                     } else {}
                 }
