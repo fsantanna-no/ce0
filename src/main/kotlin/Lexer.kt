@@ -1,39 +1,5 @@
 val D = "\$"
 
-enum class TK {
-    ERR, EOF, CHAR,
-    XID, XNAT, XNUM,
-    UNIT, ARROW, ATBRACK,
-    ACTIVE, AWAIT, BREAK, CALL, CATCH, ELSE, EMIT, FUNC, IF, IN, INPUT,
-    LOOP, NATIVE, NEW, OUTPUT, RETURN, SET, SPAWN, TASK, TASKS, THROW, TYPE, VAR,
-}
-
-val key2tk: HashMap<String, TK> = hashMapOf (
-    "active" to TK.ACTIVE,
-    "await"  to TK.AWAIT,
-    "break"  to TK.BREAK,
-    "call"   to TK.CALL,
-    "catch"  to TK.CATCH,
-    "else"   to TK.ELSE,
-    "emit"   to TK.EMIT,
-    "func"   to TK.FUNC,
-    "if"     to TK.IF,
-    "in"     to TK.IN,
-    "input"  to TK.INPUT,
-    "loop"   to TK.LOOP,
-    "native" to TK.NATIVE,
-    "new"    to TK.NEW,
-    "output" to TK.OUTPUT,
-    "return" to TK.RETURN,
-    "set"    to TK.SET,
-    "spawn"  to TK.SPAWN,
-    "task"   to TK.TASK,
-    "tasks"  to TK.TASKS,
-    "throw"  to TK.THROW,
-    "type"   to TK.TYPE,
-    "var"    to TK.VAR,
-)
-
 sealed class Tk (
     val enu: TK,
     val lin: Int,
@@ -46,7 +12,6 @@ sealed class Tk (
     data class Id  (val enu_: TK, val lin_: Int, val col_: Int, val id: String):  Tk(enu_,lin_,col_)
     data class Nat (val enu_: TK, val lin_: Int, val col_: Int, val chr: Char?, val src: String): Tk(enu_,lin_,col_)
     data class Num (val enu_: TK, val lin_: Int, val col_: Int, val num: Int):    Tk(enu_,lin_,col_)
-    data class Up  (val enu_: TK, val lin_: Int, val col_: Int, val up:  Int):    Tk(enu_,lin_,col_)
 }
 
 fun Tk.astype (): Tk.Id {

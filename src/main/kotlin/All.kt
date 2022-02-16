@@ -16,6 +16,15 @@ fun All_new (inp: PushbackReader) {
     all = All(inp, Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,""))
 }
 
+fun All_nest (src: String): All {
+    val old = all
+    All_new(PushbackReader(StringReader(src), 2))
+    all.lin = old.lin
+    all.col = old.col
+    Lexer.lex()
+    return old
+}
+
 fun All.read (): Pair<Int,Char> {
     val i = this.inp.read().let { if (it == 65535) -1 else it }  // TODO: 65535??
     val c = i.toChar()

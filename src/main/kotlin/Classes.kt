@@ -1,5 +1,39 @@
 var N = 1
 
+enum class TK {
+    ERR, EOF, CHAR,
+    XID, XNAT, XNUM,
+    UNIT, ARROW, ATBRACK,
+    ACTIVE, AWAIT, BREAK, CALL, CATCH, ELSE, EMIT, FUNC, IF, IN, INPUT,
+    LOOP, NATIVE, NEW, OUTPUT, RETURN, SET, SPAWN, TASK, TASKS, THROW, TYPE, VAR,
+}
+
+val key2tk: HashMap<String, TK> = hashMapOf (
+    "active" to TK.ACTIVE,
+    "await"  to TK.AWAIT,
+    "break"  to TK.BREAK,
+    "call"   to TK.CALL,
+    "catch"  to TK.CATCH,
+    "else"   to TK.ELSE,
+    "emit"   to TK.EMIT,
+    "func"   to TK.FUNC,
+    "if"     to TK.IF,
+    "in"     to TK.IN,
+    "input"  to TK.INPUT,
+    "loop"   to TK.LOOP,
+    "native" to TK.NATIVE,
+    "new"    to TK.NEW,
+    "output" to TK.OUTPUT,
+    "return" to TK.RETURN,
+    "set"    to TK.SET,
+    "spawn"  to TK.SPAWN,
+    "task"   to TK.TASK,
+    "tasks"  to TK.TASKS,
+    "throw"  to TK.THROW,
+    "type"   to TK.TYPE,
+    "var"    to TK.VAR,
+)
+
 sealed class Type(val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Unit    (val tk_: Tk.Sym): Type(tk_, null, null)
     data class Nat     (val tk_: Tk.Nat): Type(tk_, null, null)
