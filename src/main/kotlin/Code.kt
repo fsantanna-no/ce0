@@ -24,13 +24,25 @@ fun Type.pos (): String {
 //it is Type.Alias   && it.noalias().let { it is Type.Pointer && it.pln is Type.Union }
 
 fun Type.output_std (c: String, arg: String): String {
-    val alias1 = this is Type.Pointer && /*this.pln is Type.Alias &&*/ this.pln.noalias().let { it is Type.Tuple || it is Type.Union }
-    val alias2 = this is Type.Alias && this.noalias().let { it is Type.Pointer && (it.pln is Type.Tuple || it.pln is Type.Union) }
+    val alias1 = this is Type.Pointer && this.pln.noalias().let { it is Type.Tuple || it is Type.Union }
+    val alias2 = this is Type.Alias   && this.    noalias().let { it is Type.Pointer && (it.pln is Type.Tuple || it.pln is Type.Union) }
     return when {
         alias1 -> "output_std_${(this as Type.Pointer).pln.noalias().toce()}$c($arg);\n"
         alias2 -> "output_std_${(this.noalias() as Type.Pointer).pln.toce()}$c($arg);\n"
         this is Type.Pointer || this is Type.Func -> {
             if (c == "_") "putchar('_');\n" else "puts(\"_\");\n"
+        }
+        this is Type.Nat -> {
+            val out = "output_std_${this.noalias().toce()}$c"
+            """
+                
+                #ifdef $out
+                    $out($arg);
+                #else
+                    assert(0 && "$out");
+                #endif
+                
+            """.trimIndent()
         }
         else -> "output_std_${this.noalias().toce()}$c($arg);\n"
     }
@@ -515,8 +527,9 @@ fun code_fe (e: Expr) {
                             task2->task1.arg = xxx.pars.arg;
                             ${block.stmt}
                             task0->state = TASK_DEAD;
-                            _Event evt = { EVENT_TASK, {.Task=task0} };
-                            block_bcast(stack, ${e.type.xscps.first?.toce(e) ?: e.localBlock()}, 0, (_Event*) &evt);
+                            _Event evt = { EVENT_TASK, {.Task=(uint64_t)task0} };
+                            //block_bcast(stack, ${e.type.xscps.first?.toce(e) ?: e.localBlock()}, 0, (_Event*) &evt);
+                            block_bcast(stack, GLOBAL, 0, (_Event*) &evt);
                             break;
                         }
                         default:
@@ -779,6 +792,7 @@ fun Stmt.code (): String {
     assert(code.expr == "")
 
     return ("""
+        #include <stdint.h>
         #include <assert.h>
         #include <stdio.h>
         #include <stdlib.h>
@@ -826,7 +840,7 @@ fun Stmt.code (): String {
             int tag;
             union {
                 //void Kill;
-                struct Task* Task;
+                uint64_t Task;  // cast from Task*
             } payload;
         } _Event;
         
