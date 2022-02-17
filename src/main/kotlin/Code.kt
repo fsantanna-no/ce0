@@ -602,7 +602,7 @@ fun code_fs (s: Stmt) {
             Code(src+it.type, it.struct, it.func, "", "")
         }
         is Stmt.Native -> if (s.istype) {
-            Code(s.tk_.src.native(s, s.tk) + "\n", "", "", "", "")
+            Code("", s.tk_.src.native(s, s.tk) + "\n", "", "", "")
         } else {
             Code("", "", "", s.tk_.src.native(s, s.tk) + "\n", "")
         }
