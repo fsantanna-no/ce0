@@ -52,7 +52,7 @@ fun Scope.isNestIn (sub: Scope, up: Any): Boolean {
         bothcst -> (this.scp2!!.third!! >= sub.scp2!!.third!!)
         bothpar -> this.scp2!!.second!! == sub.scp2!!.second!! || (up.ups_first { it is Expr.Func } as Expr.Func).let {
             // look for (this.id > sub.id) in constraints
-            it.type.xscps.third.any { it.first==this.scp2!!.second!! && it.second==sub.scp2!!.second!! }
+            it.xtype.xscps.third.any { it.first==this.scp2!!.second!! && it.second==sub.scp2!!.second!! }
         }
         else -> (sub.scp2!!.second!=null && this.scp2!!.first==sub.scp2!!.first)
         // diff abs/rel -> this must be par and bot must be at the same lvl
