@@ -61,7 +61,7 @@ fun Expr.setUps (up: Any) {
             this.arg.setUps(this)
         }
         is Expr.Func  -> {
-            this.xtype.setUps(this)
+            this.xtype!!.setUps(this)
             this.block.setUps(this)
         }
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
