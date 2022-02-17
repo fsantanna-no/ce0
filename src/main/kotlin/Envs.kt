@@ -68,9 +68,9 @@ fun Any.env (id: String, skip:Boolean=false): Any? {
             (it is Expr.Func) -> {
                 //println(">1> $id")
                 when {
-                    (id == "arg") -> it.xtype!!.inp
-                    (id == "pub") -> it.xtype!!.pub!!
-                    (id == "ret") -> it.xtype!!.out
+                    (id == "arg") -> it.type.inp
+                    (id == "pub") -> it.type.pub!!
+                    (id == "ret") -> it.type.out
                     (id == "evt") -> Type.Alias(Tk.Id(TK.XID, it.tk.lin, it.tk.col, "Event"), false, emptyList())
                                 .clone(it, it.tk.lin, it.tk.col)
                     skip  -> null   // try next
@@ -79,7 +79,7 @@ fun Any.env (id: String, skip:Boolean=false): Any? {
                     // Unit means stop search + fail result
                     else -> {
                         //println(">2> $id")
-                        val base = it.xtype!!.xscps.first
+                        val base = it.type.xscps.first
                         //println(base?.scp1?.id)
                         when {
                             // base is myself, so this function can live anywhere and var would leak
