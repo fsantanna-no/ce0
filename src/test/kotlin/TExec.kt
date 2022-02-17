@@ -1871,6 +1871,15 @@ class TExec {
             type T2 @[] = [T1]
             output std ()
         """.trimIndent())
+        assert(out == "(ln 1, col 6): invalid type identifier") { out }
+    }
+    @Test
+    fun o10_type_pln () {
+        val out = all("""
+            type Tx1 @[] = [()]
+            type Tx2 @[] = [Tx1]
+            output std ()
+        """.trimIndent())
         assert(out == "()\n") { out }
     }
 

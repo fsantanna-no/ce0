@@ -16,8 +16,15 @@ sealed class Tk (
 
 fun Tk.astype (): Tk.Id {
     val id = this as Tk.Id
-    All_assert_tk(this, id.id[0].isUpperCase()) { "invalid type identifier" }
+    All_assert_tk(this, this.istype()) { "invalid type identifier" }
     return id
+}
+fun Tk.istype (): Boolean {
+    val id = this as Tk.Id
+    return id.id.istype()
+}
+fun String.istype (): Boolean {
+    return this.length>1 && this[0].isUpperCase() && this.any { it.isLowerCase() }
 }
 fun Tk.asvar (): Tk.Id {
     val id = this as Tk.Id

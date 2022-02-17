@@ -60,11 +60,13 @@ fun Any.env (id: String, skip:Boolean=false): Any? {
             return glb
         }
     }
+    // keep types apart from var/block
+    val xid = if (id.istype()) id else id.toUpperCase()
     return this.env_first_map {
         when {
-            (it is Stmt.Typedef && it.tk_.id.toLowerCase()==id.toLowerCase())    -> it
-            (it is Stmt.Var     && it.tk_.id.toLowerCase()==id.toLowerCase())    -> it
-            (it is Stmt.Block   && it.scp1?.id?.toUpperCase()==id.toUpperCase()) -> it
+            (it is Stmt.Typedef && it.tk_.id==xid)                  -> it
+            (it is Stmt.Var     && it.tk_.id.toUpperCase()==xid)    -> it
+            (it is Stmt.Block   && it.scp1?.id?.toUpperCase()==xid) -> it
             (it is Expr.Func) -> {
                 //println(">1> $id")
                 when {

@@ -103,7 +103,7 @@ class TEnv {
         assert(out == "(ln 1, col 15): undeclared scope \"a\"") { out }
     }
     @Test
-    fun b09_user_err () {
+    fun todo_b09_user_err () {
         val out = inp2env("""
             type List = List
         """.trimIndent())
@@ -3035,10 +3035,10 @@ class TEnv {
     @Test
     fun q16 () {
         val out = inp2env("""
-            type T @[a] = [/_int@a]
+            type Tx @[a] = [/_int@a]
             { @A
                 var x: _int
-                var t1: T @[LOCAL]
+                var t1: Tx @[LOCAL]
                 set t1 = [/x]
             }
         """.trimIndent())
@@ -3047,11 +3047,11 @@ class TEnv {
     @Test
     fun q17 () {
         val out = inp2env("""
-            type T @[a] = </_int@a>
+            type Tx @[a] = </_int@a>
             { @A
                 var x: _int
-                var t1: T @[LOCAL]
-                set t1 = <.1 /x>: T @[LOCAL]
+                var t1: Tx @[LOCAL]
+                set t1 = <.1 /x>: Tx @[LOCAL]
             }
         """.trimIndent())
         assert(out == "OK") { out }
@@ -3230,7 +3230,7 @@ class TEnv {
         assert(out == "(ln 6, col 20): undeclared variable \"x\"") { out }
     }
     @Test
-    fun r12_err () {
+    fun todo_r12_err () {
         val out = inp2env(
             """
             var f : func @[] -> _int -> ()
