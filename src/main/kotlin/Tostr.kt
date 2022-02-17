@@ -75,7 +75,7 @@ open class Tostr
             is Stmt.SCall -> "call " + this.tostr(s.e) + "\n"
             is Stmt.Input -> (if (s.dst == null) "" else "set " + this.tostr(s.dst) + " = ") + "input " + s.lib.id + " " + this.tostr(s.arg) + ": " + this.tostr(s.xtype!!) + "\n"
             is Stmt.Output -> "output " + s.lib.id + " " + this.tostr(s.arg) + "\n"
-            is Stmt.If -> "if " + this.tostr(s.tst) + "{\n" + this.tostr(s.true_) + "} else {\n" + this.tostr(s.false_) + "}\n"
+            is Stmt.If -> "if " + this.tostr(s.tst) + "\n" + this.tostr(s.true_) + "else\n" + this.tostr(s.false_)
             is Stmt.Loop -> "loop " + this.tostr(s.block)
             is Stmt.Block -> (if (s.iscatch) "catch " else "") + "{" + (if (s.scp1.isanon()) "" else " @" + s.scp1!!.id) + "\n" + this.tostr(s.body) + "}\n"
             is Stmt.SSpawn -> (if (s.dst == null) "" else "set " + this.tostr(s.dst) + " = ") + "spawn " + this.tostr(s.call) + "\n"

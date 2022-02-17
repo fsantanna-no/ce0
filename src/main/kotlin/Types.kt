@@ -38,7 +38,7 @@ fun Stmt.setTypes () {
                     }
                 }
             }
-            is Expr.TDisc -> e.tup.wtype.let {
+            is Expr.TDisc -> e.tup.wtype?.noalias().let {
                 All_assert_tk(e.tk, it is Type.Tuple) {
                     "invalid discriminator : type mismatch : expected tuple : have ${it!!.tostr()}"
                 }
