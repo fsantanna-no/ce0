@@ -459,6 +459,17 @@ open class Parser
         return e
     }
 
+    fun attr_as (e: Attr): Attr {
+        return if (!all.accept(TK.XAS)) e else {
+            val tk0 = all.tk0 as Tk.Sym
+            val type = this.type(false)
+            All_assert_tk(all.tk0, type is Type.Alias) {
+                "expected alias type"
+            }
+            Attr.As(tk0, e, type as Type.Alias)
+        }
+    }
+
     fun attr (): Attr {
         var e = when {
             all.accept(TK.XID) -> Attr.Var(all.tk0 as Tk.Id)
@@ -488,6 +499,8 @@ open class Parser
                 error("unreachable")
             }
         }
+
+        e = this.attr_as(e)
 
         // one.1!\.2.1?
         while (all.accept(TK.CHAR, '\\') || all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!')) {
@@ -528,6 +541,7 @@ open class Parser
                     else -> error("impossible case")
                 }
             }
+            e = this.attr_as(e)
         }
         return e
     }

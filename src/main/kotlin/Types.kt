@@ -16,10 +16,10 @@ fun Stmt.setTypes () {
             }
             is Expr.Dnref -> e.ptr.wtype.let {
                 if (it is Type.Nat) it else {
-                    All_assert_tk(e.tk, it?.noalias() is Type.Pointer) {
+                    All_assert_tk(e.tk, it is Type.Pointer) {
                         "invalid operand to `\\´ : not a pointer"
                     }
-                    (it!!.noalias() as Type.Pointer).pln
+                    (it!! as Type.Pointer).pln
                 }
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.wtype!! })
@@ -45,7 +45,7 @@ fun Stmt.setTypes () {
                     }
                 }
             }
-            is Expr.TDisc -> e.tup.wtype?.noalias().let {
+            is Expr.TDisc -> e.tup.wtype.let {
                 All_assert_tk(e.tk, it is Type.Tuple) {
                     "invalid discriminator : type mismatch : expected tuple : have ${it!!.tostr()}"
                 }
@@ -81,7 +81,7 @@ fun Stmt.setTypes () {
                     "invalid $str : not an union"
                 }
                 All_assert_tk(e.tk, tk_.num!=0 || isrec) {
-                    "invalid $str : expected recursive union"
+                    "invalid $str : expected recursive alias"
                 }
 
                 val (MIN, MAX) = Pair(if (isrec) 0 else 1, (tp as Type.Union).vec.size)

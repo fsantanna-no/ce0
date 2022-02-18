@@ -380,7 +380,7 @@ fun code_fe (e: Expr) {
         }
         is Expr.New  -> CODE.removeFirst().let {
             val ID  = "__tmp_" + e.n
-            val ptr = e.wtype!!.noalias() as Type.Pointer
+            val ptr = e.wtype!! as Type.Pointer
 
             val pre = """
                 ${ptr.pos()} $ID = malloc(sizeof(*$ID));

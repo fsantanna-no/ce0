@@ -19,6 +19,7 @@ fun Attr.toExpr (): Expr {
     return when (this) {
         is Attr.Var   -> Expr.Var(this.tk_)
         is Attr.Nat   -> Expr.Nat(this.tk_, this.type)
+        is Attr.As    -> Expr.As(this.tk_, this.e.toExpr(), this.type)
         is Attr.Dnref -> Expr.Dnref(this.tk_,this.ptr.toExpr())
         is Attr.TDisc -> Expr.TDisc(this.tk_,this.tup.toExpr())
         is Attr.Pub   -> Expr.Pub(this.tk_,this.tsk.toExpr())
