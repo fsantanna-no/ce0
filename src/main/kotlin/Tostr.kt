@@ -48,14 +48,7 @@ open class Tostr
             is Expr.Upref -> "(/" + this.tostr(e.pln) + ")"
             is Expr.Dnref -> "(" + this.tostr(e.ptr) + "\\)"
             is Expr.TCons -> "[" + e.arg.map { this.tostr(it) }.joinToString(",") + "]"
-            is Expr.UCons -> {
-                val tp = e.wtype
-                if (tp is Type.Alias) {
-                    "<." + e.tk_.num + " " + this.tostr(e.arg) + ">: " + tp.noalias().tostr() + ":+ " + tp.tostr()
-                } else {
-                    "<." + e.tk_.num + " " + this.tostr(e.arg) + ">: " + this.tostr(e.wtype!!)
-                }
-            }
+            is Expr.UCons -> ("<." + e.tk_.num + " " + this.tostr(e.arg) + ">: " + this.tostr(e.wtype!!.noalias()))
             is Expr.UNull -> "<.0>: " + this.tostr(e.wtype!!)
             is Expr.TDisc -> "(" + this.tostr(e.tup) + "." + e.tk_.num + ")"
             is Expr.Pub -> "(" + this.tostr(e.tsk) + ".${e.tk_.id})"
@@ -68,6 +61,12 @@ open class Tostr
                 "(" + this.tostr(e.f) + inps + " " + this.tostr(e.arg) + out + ")"
             }
             is Expr.Func -> this.tostr(e.type) + " " + this.tostr(e.block)
+        }.let {
+            when {
+                (e.wtype !is Type.Alias) -> it
+                (e is Expr.Unit || e is Expr.UCons || e is Expr.TCons) -> it + ":+ " + this.tostr(e.wtype!!)
+                else -> it
+            }
         }
     }
 
