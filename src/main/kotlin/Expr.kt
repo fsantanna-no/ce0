@@ -8,7 +8,7 @@ fun Expr.flattenRight (): List<Expr> {
         is Expr.Pub   -> this.tsk.flattenRight() + this
         is Expr.UDisc -> this.uni.flattenRight() + this
         is Expr.UPred -> this.uni.flattenRight() + this
-        is Expr.New   -> this.xarg.flattenRight() + this
+        is Expr.New   -> this.arg.flattenRight() + this
         is Expr.Dnref -> this.ptr.flattenRight() + this
         is Expr.Upref -> this.pln.flattenRight() + this
         is Expr.UCons, is Expr.UNull -> TODO(this.toString())

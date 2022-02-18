@@ -50,7 +50,7 @@ fun Expr.setUps (up: Any) {
         is Expr.TCons -> this.arg.forEach { it.setUps(this) }
         is Expr.UCons -> { this.xtype?.setUps(this) ; this.arg.setUps(this) }
         is Expr.UNull -> this.xtype?.setUps(this)
-        is Expr.New   -> this.xarg.setUps(this)
+        is Expr.New   -> this.arg.setUps(this)
         is Expr.Dnref -> this.ptr.setUps(this)
         is Expr.Upref -> this.pln.setUps(this)
         is Expr.TDisc -> this.tup.setUps(this)

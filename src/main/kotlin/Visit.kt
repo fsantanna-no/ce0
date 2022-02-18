@@ -34,7 +34,7 @@ fun Expr.visit (fs: ((Stmt) -> Unit)?, fe: ((Expr) -> Unit)?, ft: ((Type) -> Uni
         is Expr.TCons -> this.arg.forEach { it.visit(fs, fe, ft, fx) }
         is Expr.UCons -> { this.xtype?.visit(ft, fx) ; this.arg.visit(fs, fe, ft, fx) }
         is Expr.UNull -> this.xtype?.visit(ft, fx)
-        is Expr.New   -> { if (fx!=null && this.xscp!=null) fx(this,this.xscp!!) ; this.xarg.visit(fs, fe, ft, fx) }
+        is Expr.New   -> { if (fx!=null && this.xscp!=null) fx(this,this.xscp!!) ; this.arg.visit(fs, fe, ft, fx) }
         is Expr.Dnref -> this.ptr.visit(fs, fe, ft, fx)
         is Expr.Upref -> this.pln.visit(fs, fe, ft, fx)
         is Expr.TDisc -> this.tup.visit(fs, fe, ft, fx)

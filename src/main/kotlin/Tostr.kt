@@ -54,7 +54,7 @@ open class Tostr
             is Expr.Pub -> "(" + this.tostr(e.tsk) + ".${e.tk_.id})"
             is Expr.UDisc -> "(" + this.tostr(e.uni) + "!" + e.tk_.num + ")"
             is Expr.UPred -> "(" + this.tostr(e.uni) + "?" + e.tk_.num + ")"
-            is Expr.New -> "(new " + this.tostr(e.xarg) + ": @" + e.xscp!!.scp1.anon2local() + ")"
+            is Expr.New -> "(new " + this.tostr(e.arg) + ": @" + e.xscp!!.scp1.anon2local() + ")"
             is Expr.Call -> {
                 val inps = " @[" + e.xscps.first!!.map { it.scp1.anon2local() }.joinToString(",") + "]"
                 val out = e.xscps.second.let { if (it == null) "" else ": @" + it.scp1.anon2local() }

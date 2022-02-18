@@ -57,6 +57,11 @@ fun check_02_after_tps (s: Stmt) {
                     "invalid union constructor : ${mismatch(sup,sub)}"
                 }
             }
+            is Expr.New -> {
+                All_assert_tk(e.tk, e.arg.type.xisrec) {
+                    "invalid `new` : expected recursive type : have "
+                }
+            }
 
             is Expr.Call -> {
                 val func = e.f.wtype
