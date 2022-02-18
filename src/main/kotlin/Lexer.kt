@@ -120,8 +120,18 @@ object Lexer {
 
         when {
             (c1 == -1) -> all.tk1 = Tk.Sym(TK.EOF, LIN, COL, "")
-            (x1 in listOf(')', '{', '}', '[', ']', '<', '>', ';', ':', '=', ',', '\\', '/', '.', '!', '?')) -> {
+            (x1 in listOf(')', '{', '}', '[', ']', '<', '>', ';', '=', ',', '\\', '/', '.', '!', '?')) -> {
                 all.tk1 = Tk.Chr(TK.CHAR, LIN, COL, x1)
+            }
+            (x1 == ':') -> {
+                val (c2, x2) = all.read()
+                if (x2=='-' || x2=='+') {
+                    all.tk1 = Tk.Sym(TK.XAS, LIN, COL, ""+x1+x2)
+
+                } else {
+                    all.tk1 = Tk.Chr(TK.CHAR, LIN, COL, ':')
+                    all.unread(c2)
+                }
             }
             (x1 == '(') -> {
                 val (c2, x2) = all.read()

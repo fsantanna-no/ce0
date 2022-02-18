@@ -64,7 +64,7 @@ fun All.accept_err (enu: TK, chr: Char? = null): Boolean {
     if (!ret) {
         this.err_expected(enu.toErr(chr))
     }
-    return ret
+    return true
 }
 
 fun All.check (enu: TK, chr: Char? = null): Boolean {

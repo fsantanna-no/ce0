@@ -332,7 +332,9 @@ open class Parser
                     Stmt.Loop(tk0, block)
                 } else {
                     val i = this.expr()
-                    All_assert_tk(all.tk0, i is Expr.Var) { "expected variable expression" }
+                    All_assert_tk(all.tk0, i is Expr.Var) {
+                        "expected variable expression"
+                    }
                     all.accept_err(TK.IN)
                     val tsks = this.expr()
                     val block = this.block()
@@ -386,8 +388,19 @@ open class Parser
         return Pair(scps, ctrs)
     }
 
+    fun expr_as (e: Expr): Expr {
+        return if (!all.accept(TK.XAS)) e else {
+            val tk0 = all.tk0 as Tk.Sym
+            val type = this.type(false)
+            All_assert_tk(all.tk0, type is Type.Alias) {
+                "expected alias type"
+            }
+            Expr.As(tk0, e, type as Type.Alias)
+        }
+    }
+
     fun expr_dots (): Expr {
-        var e = this.expr_one()
+        var e = this.expr_as(this.expr_one())
 
         // one!1\.2?1
         while (all.accept(TK.CHAR, '\\') || all.accept(TK.CHAR, '.') || all.accept(TK.CHAR, '!') || all.accept(
@@ -441,6 +454,7 @@ open class Parser
                     else -> error("impossible case")
                 }
             }
+            e = this.expr_as(e)
         }
         return e
     }

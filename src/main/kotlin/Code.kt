@@ -339,6 +339,7 @@ fun code_fe (e: Expr) {
     val xp = e.wtype!!
     CODE.addFirst(when (e) {
         is Expr.Unit  -> Code("", "", "", "", "0")
+        is Expr.As    -> CODE.removeFirst()
         is Expr.Nat   -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, e.tk_.src.native(e, e.tk)) }
         is Expr.Var   -> Code("", "", "", "", e.tk_.id.env_mem(e))
         is Expr.Upref -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, "(&" + it.expr + ")") }

@@ -13,6 +13,23 @@ fun check_ctrs (up: Any, dcl_scps: Pair<List<Tk.Id>, List<Pair<String, String>>>
     return true
 }
 
+fun Type.noalias (): Type {
+    return if (this !is Type.Alias) this else {
+        val def = this.env(this.tk_.id,true)!! as Stmt.Typedef
+
+        // Original constructor:
+        //      typedef Pair @[a] = [/_int@a,/_int@a]
+        //      var xy: Pair @[LOCAL] = [/x,/y]
+        // Transform typedef -> type
+        //      typedef Pair @[LOCAL] = [/_int@LOCAL,/_int@LOCAL]
+        //      var xy: Pair @[LOCAL] = [/x,/y]
+
+        def.toType().mapScps(false,
+            def.xscp1s.first!!.map { it.id }.zip(this.xscps!!).toMap()
+        ).clone(this,this.tk.lin,this.tk.col)
+    }
+}
+
 fun check_02_after_tps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
@@ -30,9 +47,23 @@ fun check_02_after_tps (s: Stmt) {
         }
     }
 
-    val funcs = mutableSetOf<Expr.Func>()   // funcs with checked [@] closure
     fun fe (e: Expr) {
         when (e) {
+            is Expr.As -> {
+                //val def = e.env(e.type.tk_.id) as Stmt.Typedef
+                val okalias = e.type
+                val noalias = e.type.noalias()
+                val (sup,sub) = when (e.tk_.sym) {
+                    ":+" -> Pair(noalias, e.e.wtype!!)    // () :+ Unit
+                    ":-" -> Pair(e.e.wtype!!, okalias)    // Unit :- ()
+                    else -> error("bug found")
+                }
+                All_assert_tk(e.tk, sup.isSupOf(sub)) {
+                    //println(sup.tostr())
+                    //println(sub.tostr())
+                    "invalid type cast : ${mismatch(e.e.wtype!!,e.type)}"
+                }
+            }
             is Expr.UNull -> e.check()
             is Expr.UCons -> {
                 e.check()

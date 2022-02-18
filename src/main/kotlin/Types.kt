@@ -2,6 +2,13 @@ fun Stmt.setTypes () {
     fun fe (e: Expr) {
         e.wtype = when (e) {
             is Expr.Unit, is Expr.Nat, is Expr.UCons, is Expr.UNull, is Expr.Func -> e.wtype!!
+            is Expr.As -> {
+                when (e.tk_.sym) {
+                    ":+" -> e.type
+                    ":-" -> e.type.noalias()
+                    else -> error("bug found")
+                }
+            }
             is Expr.Upref -> e.pln.wtype!!.let {
                 val id = e.toBaseVar()?.tk_?.id ?: "GLOBAL"   // uppercase /x -> /X
                 val scp1 = Tk.Id(TK.XID,e.tk.lin,e.tk.col, id.toUpperCase())

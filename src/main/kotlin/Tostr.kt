@@ -44,6 +44,7 @@ open class Tostr
             is Expr.Unit -> "()"
             is Expr.Var -> e.tk_.id
             is Expr.Nat -> "(" + e.tk_.toce() + ": " + this.tostr(e.wtype!!) + ")"
+            is Expr.As  -> "(" + this.tostr(e.e) + " " + e.tk_.sym + " " + this.tostr(e.type) + ")"
             is Expr.Upref -> "(/" + this.tostr(e.pln) + ")"
             is Expr.Dnref -> "(" + this.tostr(e.ptr) + "\\)"
             is Expr.TCons -> "[" + e.arg.map { this.tostr(it) }.joinToString(",") + "]"

@@ -2837,7 +2837,7 @@ class TEnv {
             """
             type Unit @[] = ()
             var x: Unit
-            set x = ()
+            set x = ():+ Unit
             output std x
         """.trimIndent()
         )
@@ -2862,7 +2862,7 @@ class TEnv {
             type Unit @[] = ()
             var x: Unit
             var y: ()
-            set y = x
+            set y = x:- Unit
         """.trimIndent()
         )
         assert(out == "OK") { out }
@@ -3007,8 +3007,8 @@ class TEnv {
                 var p2: /List @[A]     @A
                 set p1 = <.0>: /List @[LOCAL] @LOCAL
                 set p2 = <.0>: /List @[A]     @A
-                set p1 = new <.1 <.0>: /List @[LOCAL] @LOCAL>:List @[LOCAL]: @LOCAL
-                set p2 = new <.1 <.0>: /List @[A]     @A>:    List @[A]:     @A
+                set p1 = new <.1 <.0>: /List @[LOCAL] @LOCAL>: </List @[a] @a>:+ List @[LOCAL]: @LOCAL
+                set p2 = new <.1 <.0>: /List @[A]     @A>    : </List @[a] @a>:+ List @[A]:     @A
                 set p1 = p2
                 set p2 = p1
             }
@@ -3039,7 +3039,7 @@ class TEnv {
             { @A
                 var x: _int
                 var t1: Tx @[LOCAL]
-                set t1 = [/x]
+                set t1 = [/x]:+ Tx @[LOCAL]
             }
         """.trimIndent())
         assert(out == "OK") { out }
@@ -3051,7 +3051,7 @@ class TEnv {
             { @A
                 var x: _int
                 var t1: Tx @[LOCAL]
-                set t1 = <.1 /x>: Tx @[LOCAL]
+                set t1 = <.1 /x>: </_int>:+ Tx @[LOCAL]
             }
         """.trimIndent())
         assert(out == "OK") { out }
@@ -3253,4 +3253,43 @@ class TEnv {
         )
         assert(out == "ERR") { out }
     }
+
+    // AS
+
+    @Test
+    fun s01_err () {
+        val out = inp2env("""
+            output std ():+()
+        """.trimIndent())
+        assert(out == "(ln 1, col 16): expected alias type") { out }
+    }
+
+    @Test
+    fun s02_err () {
+        val out = inp2env("""
+            type Tx = [()]
+            output std ():+Tx
+        """.trimIndent())
+        assert(out.contains("(ln 2, col 14): invalid type cast : type mismatch :")) { out }
+    }
+    @Test
+    fun s03_err () {
+        val out = inp2env("""
+            type Tx = [()]
+            output std ():-Tx
+        """.trimIndent())
+        assert(out.contains("(ln 2, col 14): invalid type cast : type mismatch :")) { out }
+    }
+    @Test
+    fun s04_union () {
+        val out = inp2env("""
+            type Tx = <()>
+            var t: Tx
+            set t = <.1 ()>:<()> :+ Tx
+            var u: <()>
+            set u = t:- Tx
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+
 }
