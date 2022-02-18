@@ -936,7 +936,7 @@ class TExec {
         val out = all("""
             type List = </List @LOCAL>
             var l: /List @LOCAL
-            set l = new <.1 <.0>: /List@LOCAL>:List: @LOCAL
+            set l = new <.1 <.0>: /List@LOCAL>:</List @LOCAL>:+List: @LOCAL
             output std l
         """.trimIndent())
         //assert(out == "(ln 1, col 21): invalid assignment : type mismatch") { out }
@@ -978,7 +978,7 @@ class TExec {
         val out = all("""
             type List = </List @LOCAL>
             var l: List
-            set l = <.1 <.0>:/List@LOCAL>: List
+            set l = <.1 <.0>:/List@LOCAL>:</List @LOCAL>:+ List
             output std /l
         """.trimIndent())
         //assert(out == "(ln 1, col 25): invalid union constructor : expected `new`") { out }
@@ -992,9 +992,9 @@ class TExec {
             var z: /List @LOCAL
             set z = <.0>: /List @LOCAL
             var one: /List @LOCAL
-            set one = new <.1 z>:List: @LOCAL
-            set l = new <.1 one>:List: @LOCAL
-            output std l\!1
+            set one = new <.1 z>:</List @LOCAL>:+List: @LOCAL
+            set l = new <.1 one>:</List @LOCAL>:+List: @LOCAL
+            output std l\ :- List !1
         """.trimIndent())
         assert(out == "<.1 <.0>>\n") { out }
     }

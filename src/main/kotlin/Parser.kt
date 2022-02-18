@@ -134,8 +134,8 @@ open class Parser
             all.accept(TK.NEW) -> {
                 val tk0 = all.tk0
                 val e = this.expr()
-                all.assert_tk(tk0, e is Expr.UCons && e.tk_.num != 0) {
-                    "invalid `new` : expected constructor"
+                all.assert_tk(tk0,e is Expr.As && e.e is Expr.UCons && e.e.tk_.num!=0) {
+                    "invalid `new` : expected alias constructor"
                 }
 
                 val scp = if (all.accept(TK.CHAR, ':')) {
@@ -145,7 +145,7 @@ open class Parser
                 } else {
                     Tk.Id(TK.XID, all.tk0.lin, all.tk0.col, "LOCAL")
                 }
-                Expr.New(tk0 as Tk.Key, Scope(scp,null), e as Expr.UCons)
+                Expr.New(tk0 as Tk.Key, Scope(scp,null), e as Expr.As)
             }
             all.accept(TK.UNIT) -> Expr.Unit(all.tk0 as Tk.Sym)
             all.accept(TK.XID) -> Expr.Var(all.tk0 as Tk.Id)

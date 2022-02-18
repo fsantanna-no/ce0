@@ -102,6 +102,11 @@ fun check_01_before_tps (s: Stmt) {
             is Expr.UCons -> {
                 if (e.xtype != null) e.check()
             }
+            is Expr.New -> {
+                All_assert_tk(e.tk, e.arg.type.xisrec) {
+                    "invalid `new` : expected recursive type : have "
+                }
+            }
             is Expr.Func -> {
                 val outers: List<Scope> = e.ups_tolist().let {
                     val es = it.filter { it is Expr.Func }.let { it as List<Expr.Func> }.map { it.type }

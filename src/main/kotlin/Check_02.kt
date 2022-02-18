@@ -75,11 +75,6 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
 
-            is Expr.New -> {
-                All_assert_tk(e.tk, e.arg.wtype!!.noalias() is Type.Union && e.arg.tk_.num>0) {
-                    "invalid `new` : expected constructor" // TODO: remove?
-                }
-            }
             is Expr.Call -> {
                 val func = e.f.wtype
                 val ret1 = e.wtype!!

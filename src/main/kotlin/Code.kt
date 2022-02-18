@@ -339,12 +339,16 @@ fun code_fe (e: Expr) {
     val xp = e.wtype!!
     CODE.addFirst(when (e) {
         is Expr.Unit  -> Code("", "", "", "", "0")
-        is Expr.As    -> CODE.removeFirst()
         is Expr.Nat   -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, e.tk_.src.native(e, e.tk)) }
         is Expr.Var   -> Code("", "", "", "", e.tk_.id.env_mem(e))
         is Expr.Upref -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, "(&" + it.expr + ")") }
         is Expr.Dnref -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, "(*" + it.expr + ")") }
         is Expr.TDisc -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, it.expr + "._" + e.tk_.num) }
+        is Expr.As    -> {
+            val tp = CODE.removeFirst()
+            val e = CODE.removeFirst()
+            Code(tp.type+e.type, tp.struct+e.struct, tp.func+e.func, tp.stmt+e.stmt, tp.expr+e.expr)
+        }
         is Expr.Pub   -> CODE.removeFirst().let {
             val src = if (e.tk_.id == "state") it.expr + "->task0.${e.tk_.id}" else it.expr + "->${e.tk_.id}"
             Code(it.type, it.struct, it.func, it.stmt, src)
