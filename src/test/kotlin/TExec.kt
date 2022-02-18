@@ -1398,7 +1398,7 @@ class TExec {
                 var f: func @A-> ()->()
                 set f = func@A-> @[]-> ()->() {
                     var pf: /List @[A] @A
-                    set pf = new <.1 <.0>: /List @[A] @A>:</List @[A]>:+List @[A]: @A
+                    set pf = new <.1 <.0>: /List @[A] @A>:</List @[A] @A>:+List @[A]: @A
                     set pa\ :- List@[A] !1 = pf
                     --output std pa
                 }
@@ -1808,12 +1808,12 @@ class TExec {
     @Test
     fun o04_type_ptr () {
         val out = all("""
-            type Num1 @[s] = </Num1 @[s] @s>
-            type Num2 @[s] = /<Num2 @[s]> @s
-            var n1: /Num1 @[LOCAL]
-            set n1 = new <.1 <.0>:/Num1 @[LOCAL] @LOCAL>:Num1 @[LOCAL]
-            var n2: Num2 @[LOCAL]
-            set n2 = new <.1 <.0>:Num2 @[LOCAL]>:<Num2 @[LOCAL]>
+            type Num @[s] = </Num @[s] @s>
+            type Ptr @[s] = /Num @[s] @s
+            var n1: /Num @[LOCAL]
+            set n1 = new <.1 <.0>:/Num @[LOCAL] @LOCAL>:</Num @[LOCAL] @LOCAL>:+Num @[LOCAL]
+            var n2: Ptr @[LOCAL]
+            set n2 = (new <.1 <.0>:/Num @[LOCAL]>:</Num @[LOCAL] @LOCAL>:+Num @[LOCAL]):+ Ptr @[LOCAL]
             output std n1
             output std n2
         """.trimIndent())

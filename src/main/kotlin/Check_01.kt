@@ -103,7 +103,7 @@ fun check_01_before_tps (s: Stmt) {
                 if (e.xtype != null) e.check()
             }
             is Expr.New -> {
-                All_assert_tk(e.tk, e.arg.type.xisrec) {
+                All_assert_tk(e.tk, e.xarg.type.xisrec) {
                     "invalid `new` : expected recursive type : have "
                 }
             }

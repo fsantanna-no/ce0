@@ -74,6 +74,23 @@ fun Type.isrec (): Boolean {
     return this.flattenLeft().any { it is Type.Alias && it.xisrec }
 }
 
+fun Type.noalias (): Type {
+    return if (this !is Type.Alias) this else {
+        val def = this.env(this.tk_.id,true)!! as Stmt.Typedef
+
+        // Original constructor:
+        //      typedef Pair @[a] = [/_int@a,/_int@a]
+        //      var xy: Pair @[LOCAL] = [/x,/y]
+        // Transform typedef -> type
+        //      typedef Pair @[LOCAL] = [/_int@LOCAL,/_int@LOCAL]
+        //      var xy: Pair @[LOCAL] = [/x,/y]
+
+        def.toType().mapScps(false,
+            def.xscp1s.first!!.map { it.id }.zip(this.xscps!!).toMap()
+        ).clone(this,this.tk.lin,this.tk.col)
+    }
+}
+
 fun Type.toce (): String {
     return when (this) {
         is Type.Unit    -> "Unit"

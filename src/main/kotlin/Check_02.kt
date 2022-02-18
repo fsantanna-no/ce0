@@ -13,23 +13,6 @@ fun check_ctrs (up: Any, dcl_scps: Pair<List<Tk.Id>, List<Pair<String, String>>>
     return true
 }
 
-fun Type.noalias (): Type {
-    return if (this !is Type.Alias) this else {
-        val def = this.env(this.tk_.id,true)!! as Stmt.Typedef
-
-        // Original constructor:
-        //      typedef Pair @[a] = [/_int@a,/_int@a]
-        //      var xy: Pair @[LOCAL] = [/x,/y]
-        // Transform typedef -> type
-        //      typedef Pair @[LOCAL] = [/_int@LOCAL,/_int@LOCAL]
-        //      var xy: Pair @[LOCAL] = [/x,/y]
-
-        def.toType().mapScps(false,
-            def.xscp1s.first!!.map { it.id }.zip(this.xscps!!).toMap()
-        ).clone(this,this.tk.lin,this.tk.col)
-    }
-}
-
 fun check_02_after_tps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
