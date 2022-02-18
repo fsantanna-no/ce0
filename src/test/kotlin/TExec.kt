@@ -1883,6 +1883,18 @@ class TExec {
         """.trimIndent())
         assert(out == "()\n") { out }
     }
+    @Test
+    fun o11_type_ptr () {
+        val out = all("""
+            type Num @[i] = /<Num @[i]> @i
+            var zero: Num @[GLOBAL]
+            set zero = <.0>: Num @[GLOBAL]
+            var one: Num @[GLOBAL]
+            set one = (new <.1 zero>: <Num @[GLOBAL]>:+ ???: @GLOBAL)
+            output std one
+        """.trimIndent())
+        assert(out == "()\n") { out }
+    }
 
     // ALL
 
