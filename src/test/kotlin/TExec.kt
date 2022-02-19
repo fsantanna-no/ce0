@@ -1920,7 +1920,6 @@ class TExec {
         assert(out == "5\n") { out }
     }
 
-
     // ALL
 
     @Test

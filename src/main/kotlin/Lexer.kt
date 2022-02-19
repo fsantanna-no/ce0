@@ -26,11 +26,20 @@ fun Tk.istype (): Boolean {
 fun String.istype (): Boolean {
     return this.length>1 && this[0].isUpperCase() && this.any { it.isLowerCase() }
 }
+
 fun Tk.asvar (): Tk.Id {
     val id = this as Tk.Id
-    All_assert_tk(this, id.id[0].isLowerCase()) { "invalid variable identifier" }
+    All_assert_tk(this, this.isvar()) { "invalid variable identifier" }
     return id
 }
+fun Tk.isvar (): Boolean {
+    val id = this as Tk.Id
+    return id.id.isvar()
+}
+fun String.isvar (): Boolean {
+    return this.length>0 && this[0].isLowerCase()
+}
+
 fun Tk.asscope (): Tk.Id {
     val id = this as Tk.Id
     All_assert_tk(this, id.isscopecst() || id.isscopepar()) { "invalid scope identifier" }

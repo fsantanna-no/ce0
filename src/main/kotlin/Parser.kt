@@ -148,7 +148,7 @@ open class Parser
                 Expr.New(tk0 as Tk.Key, Scope(scp,null), e as Expr.As)
             }
             all.accept(TK.UNIT) -> Expr.Unit(all.tk0 as Tk.Sym)
-            all.accept(TK.XID) -> Expr.Var(all.tk0 as Tk.Id)
+            all.tk1.isvar() && all.accept(TK.XID) -> Expr.Var(all.tk0 as Tk.Id)
             all.accept(TK.CHAR, '/') -> {
                 val tk0 = all.tk0 as Tk.Chr
                 val e = this.expr()

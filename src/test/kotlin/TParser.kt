@@ -232,6 +232,17 @@ class TParser {
         val e = Parser().expr()
         assert(e is Expr.Nat && e.tk_.src=="x" && e.wtype is Type.Nat)
     }
+    @Test
+    fun b10_parser_var () {
+        All_new(PushbackReader(StringReader("Point"), 2))
+        Lexer.lex()
+        try {
+            Parser().expr()
+            error("impossible case")
+        } catch (e: Throwable) {
+            assert(e.message == "(ln 1, col 1): expected expression : have \"Point\"")
+        }
+    }
 
     // PARENS, TUPLE
 
