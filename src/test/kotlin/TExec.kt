@@ -1895,6 +1895,31 @@ class TExec {
         """.trimIndent())
         assert(out == "()\n") { out }
     }
+    @Test
+    fun o12_rect () {
+        val out = all("""
+            type Point @[] = [_int,_int]
+            type Dims @[] = [_int,_int]
+            type Rect @[] = [Point,Dims]
+            var rect: Rect
+            set rect = [[(_10: _int),(_10: _int)]:+ Point,[(_5: _int),(_5: _int)]:+ Dims]:+ Rect
+            output std /rect
+        """.trimIndent())
+        assert(out == "[[10,10],[5,5]]\n") { out }
+    }
+    @Test
+    fun o13_rect_dot () {
+        val out = all("""
+            type Point @[] = [_int,_int]
+            type Dims @[] = [_int,_int]
+            type Rect @[] = [Point,Dims]
+            var rect: Rect
+            set rect = [[(_10: _int),(_10: _int)]:+ Point,[(_5: _int),(_5: _int)]:+ Dims]:+ Rect
+            output std rect :- Rect .2 :- Dims .1
+        """.trimIndent())
+        assert(out == "5\n") { out }
+    }
+
 
     // ALL
 

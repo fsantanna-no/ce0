@@ -39,21 +39,28 @@ open class Tostr
         }
     }
 
+    fun upcast (e: Expr, v: String): String {
+        return v + ":+ " + this.tostr(e.wtype!!)
+    }
+    fun dncast (e: Expr, v: String): String {
+        return v + ":- " + this.tostr(e.wtype!!)
+    }
+
     open fun tostr (e: Expr): String {
         return when (e) {
-            is Expr.Unit -> "()"
+            is Expr.Unit -> this.upcast(e, "()")
             is Expr.Var -> e.tk_.id
             is Expr.Nat -> "(" + e.tk_.toce() + ": " + this.tostr(e.wtype!!) + ")"
             is Expr.As  -> "(" + this.tostr(e.e) + " " + e.tk_.sym + " " + this.tostr(e.type) + ")"
             is Expr.Upref -> "(/" + this.tostr(e.pln) + ")"
             is Expr.Dnref -> "(" + this.tostr(e.ptr) + "\\)"
-            is Expr.TCons -> "[" + e.arg.map { this.tostr(it) }.joinToString(",") + "]"
-            is Expr.UCons -> ("<." + e.tk_.num + " " + this.tostr(e.arg) + ">: " + this.tostr(e.wtype!!.noalias()))
+            is Expr.TCons -> this.upcast(e, "[" + e.arg.map { this.tostr(it) }.joinToString(",") + "]")
+            is Expr.UCons -> this.upcast(e, "<." + e.tk_.num + " " + this.tostr(e.arg) + ">: " + this.tostr(e.wtype!!.noalias()))
             is Expr.UNull -> "<.0>: " + this.tostr(e.wtype!!)
-            is Expr.TDisc -> "(" + this.tostr(e.tup) + "." + e.tk_.num + ")"
+            is Expr.TDisc -> "(" + this.dncast(e, this.tostr(e.tup)) + "." + e.tk_.num + ")"
             is Expr.Pub -> "(" + this.tostr(e.tsk) + ".${e.tk_.id})"
-            is Expr.UDisc -> "(" + this.tostr(e.uni) + "!" + e.tk_.num + ")"
-            is Expr.UPred -> "(" + this.tostr(e.uni) + "?" + e.tk_.num + ")"
+            is Expr.UDisc -> "(" + this.dncast(e, this.tostr(e.uni)) + "!" + e.tk_.num + ")"
+            is Expr.UPred -> "(" + this.dncast(e, this.tostr(e.uni)) + "?" + e.tk_.num + ")"
             is Expr.New -> "(new " + this.tostr(e.arg) + ": @" + e.xscp!!.scp1.anon2local() + ")"
             is Expr.Call -> {
                 val inps = " @[" + e.xscps.first!!.map { it.scp1.anon2local() }.joinToString(",") + "]"
@@ -61,12 +68,6 @@ open class Tostr
                 "(" + this.tostr(e.f) + inps + " " + this.tostr(e.arg) + out + ")"
             }
             is Expr.Func -> this.tostr(e.type) + " " + this.tostr(e.block)
-        }.let {
-            when {
-                (e.wtype !is Type.Alias) -> it
-                (e is Expr.Unit || e is Expr.UCons || e is Expr.TCons) -> it + ":+ " + this.tostr(e.wtype!!)
-                else -> it
-            }
         }
     }
 
