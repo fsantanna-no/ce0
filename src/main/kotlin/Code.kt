@@ -461,7 +461,7 @@ fun code_fe (e: Expr) {
                             ${tpf.toce()}* frame = (${tpf.toce()}*) malloc(${f.expr}->task0.size);
                             assert(frame!=NULL && "not enough memory");
                             memcpy(frame, ${f.expr}, ${f.expr}->task0.size);
-                            ${if (e.wup is Stmt.DSpawn) "frame->task0.isauto = 1;" else ""}
+                            //${if (e.wup is Stmt.DSpawn) "frame->task0.isauto = 1;" else ""}
                             block_push($block, frame);
                             frame->task0.links.tsk_up = ${if (e.ups_first { it is Expr.Func }==null) "NULL" else "task0"};
                             ${if (istk) "task_link($block, &frame->task0);" else ""}
@@ -473,9 +473,6 @@ fun code_fe (e: Expr) {
                             );
                             if (stk_${e.n}.block == NULL) {
                                 return;
-                            }
-                            if (frame->task0.isauto && frame->task0.state==TASK_DEAD) {
-                                task_unlink_free($block, &frame->task0);
                             }
                             $ret2
                         }
@@ -553,7 +550,7 @@ fun code_fe (e: Expr) {
             val src = """
                 static Func_${e.n} _frame_${e.n};
                 _frame_${e.n}.task1.task0 = (Task) {
-                    TASK_UNBORN, 0, {}, sizeof(Func_${e.n}), (Task_F)func_${e.n}, 0
+                    TASK_UNBORN, {}, sizeof(Func_${e.n}), (Task_F)func_${e.n}, 0
                 };
                 static Func_${e.n}* frame_${e.n} = &_frame_${e.n};
     
@@ -620,7 +617,7 @@ fun code_fs (s: Stmt) {
             val src = if (s.xtype is Type.Spawns) {
                 s.tk_.id.mem(s).let {
                     """
-                        $it = (Tasks) { TASK_DEAD, 0, { NULL, NULL }, { NULL, 0, { NULL, NULL, NULL } } };
+                        $it = (Tasks) { TASK_DEAD, { NULL, NULL }, { NULL, 0, { NULL, NULL, NULL } } };
                         task_link(${s.local()}, (Task*) &$it);
                         $it.links.blk_down = &$it.block;
                         
@@ -834,7 +831,7 @@ fun Stmt.code (): String {
         } Stack;
         
         typedef enum {
-            TASK_UNBORN, TASK_RUNNING, TASK_AWAITING, TASK_PAUSED, TASK_DEAD
+            TASK_POOL, TASK_UNBORN, TASK_RUNNING, TASK_AWAITING, TASK_PAUSED, TASK_DEAD
         } TASK_STATE;
         
         typedef enum {
@@ -854,7 +851,6 @@ fun Stmt.code (): String {
         
         typedef struct Task {
             TASK_STATE state;
-            int isauto;
             struct {
                 struct Task*  tsk_up;       // first outer task alive (for upvalues)
                 struct Task*  tsk_next;     // next Task in the same block (for broadcast)
@@ -877,7 +873,6 @@ fun Stmt.code (): String {
         
         typedef struct Tasks {              // task + block
             TASK_STATE state;
-            int isauto;
             struct {
                 Task*  tsk_up;              // for upvalues
                 Task*  tsk_next;            // for broadcast
@@ -1033,9 +1028,11 @@ fun Stmt.code (): String {
                     aux(task->links.tsk_next);                              // 1.3
                 }
                 
+                #if 0
                 if (task->isauto && task->state==TASK_DEAD) {
                     task_unlink_free(block, task);
                 }
+                #endif
             }
             
             if (up) {

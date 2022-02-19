@@ -20,8 +20,7 @@ fun Tk.astype (): Tk.Id {
     return id
 }
 fun Tk.istype (): Boolean {
-    val id = this as Tk.Id
-    return id.id.istype()
+    return (this is Tk.Id) && this.id.istype()
 }
 fun String.istype (): Boolean {
     return this.length>1 && this[0].isUpperCase() && this.any { it.isLowerCase() }
@@ -33,8 +32,7 @@ fun Tk.asvar (): Tk.Id {
     return id
 }
 fun Tk.isvar (): Boolean {
-    val id = this as Tk.Id
-    return id.id.isvar()
+    return (this is Tk.Id) && this.id.isvar()
 }
 fun String.isvar (): Boolean {
     return this.length>0 && this[0].isLowerCase()

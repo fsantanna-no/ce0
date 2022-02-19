@@ -868,7 +868,6 @@ class TTask {
             set f = task @LOCAL->@[]->()->_int->() {
                 set pub = _3:_int
                 output std _1:_int
-                --await _1:_int
             }
             var fs: active tasks @LOCAL->@[]->()->_int->()
             spawn f () in fs
@@ -878,6 +877,21 @@ class TTask {
             }
         """.trimIndent())
         assert(out == "1\n") { out }
+    }
+
+    @Test
+    fun f08_valgrind () {
+        val out = all("""
+            type Event = <(),_uint64_t,_int>
+            var f : task @LOCAL->@[]->()->()->()
+            set f = task @LOCAL->@[]->()->()->() {
+                await evt?3
+            }
+            var xs: active tasks @LOCAL->@[]->_int->_int->()
+            spawn f () in xs
+            emit @GLOBAL <.3 _10:_int>:<(),_uint64_t,_int>:+ Event
+        """.trimIndent())
+        assert(out == "TODO") { out }
     }
 
     @Test

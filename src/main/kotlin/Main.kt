@@ -3,7 +3,7 @@ import java.io.PushbackReader
 import java.io.StringReader
 
 // search in tests output for
-//  definitely|Invalid|uninitialized
+//  definitely|Invalid read|uninitialized
 //  - definitely lost
 //  - Invalid read of size
 //  - uninitialised value
