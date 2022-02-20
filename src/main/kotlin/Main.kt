@@ -2,13 +2,15 @@ import java.io.File
 import java.io.PushbackReader
 import java.io.StringReader
 
+val THROW = false
+
 // search in tests output for
 //  definitely|Invalid read|uninitialized
 //  - definitely lost
 //  - Invalid read of size
 //  - uninitialised value
-val VALGRIND = ""
-//val VALGRIND = "valgrind "
+//val VALGRIND = ""
+val VALGRIND = "valgrind "
 
 fun ce2c (ce: String): Pair<Boolean,String> {
     All_new(PushbackReader(StringReader(ce), 2))
@@ -26,7 +28,9 @@ fun ce2c (ce: String): Pair<Boolean,String> {
         return Pair(true, s.code())
     } catch (e: Throwable) {
         CODE.clear()
-        //throw e
+        if (THROW) {
+            throw e
+        }
         return Pair(false, e.message!!)
     }
 }

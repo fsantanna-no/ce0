@@ -252,13 +252,9 @@ fun Scope.toce (up: Any): String {
     }
 }
 
-fun Any.local (): String {
-    return this.ups_first { it is Stmt.Block }.let {
-        if (it == null) "GLOBAL" else {
-            val mem = ("B" + (it as Stmt.Block).n).mem(this)
-            "(&" + mem + ")"
-        }
-    }
+fun Any.localBlockMem (): String {
+    val id = this.localBlockScp1Id(true)
+    return if (id == "GLOBAL") "GLOBAL" else ("(&" + id.mem(this) + ")")
 }
 
 fun String.native (up: Any, tk: Tk): String {
@@ -440,7 +436,7 @@ fun code_fe (e: Expr) {
                             // closure block: allows the func to escape up to it
                             tpf.xscps.first.let {
                                 if (it == null) {
-                                    e.local()
+                                    e.localBlockMem()
                                 } else {
                                     tpf.xscps.first!!.toce(e.wup!!)
                                 }
@@ -457,7 +453,7 @@ fun code_fe (e: Expr) {
                     val pre = """
                         $ret1
                         {
-                            Stack stk_${e.n} = { stack, ${e.self_or_null()}, ${e.local()} };
+                            Stack stk_${e.n} = { stack, ${e.self_or_null()}, ${e.localBlockMem()} };
                             ${tpf.toce()}* frame = (${tpf.toce()}*) malloc(${f.expr}->task0.size);
                             assert(frame!=NULL && "not enough memory");
                             memcpy(frame, ${f.expr}, ${f.expr}->task0.size);
@@ -529,8 +525,13 @@ fun code_fe (e: Expr) {
                             task2->task1.arg = xxx.pars.arg;
                             ${block.stmt}
                             _Event evt = { EVENT_TASK, {.Task=(uint64_t)task0} };
-                            //block_bcast(stack, ${e.type.xscps.first?.toce(e) ?: e.localBlock()}, 0, (_Event*) &evt);
+                            //Stack stk = { stack, task0, task2->${e.localBlockMem()} };
+                            //block_bcast(&stk, ${e.type.xscps.first?.toce(e) ?: e.localBlockScp1Id(true)}, 0, (_Event*) &evt);
+                            //block_bcast(&stk, GLOBAL, 0, (_Event*) &evt);
                             block_bcast(stack, GLOBAL, 0, (_Event*) &evt);
+                            if (stack->block == NULL) {
+                                return;
+                            }
                             task0->state = TASK_DEAD;
                             break;
                         }
@@ -542,10 +543,6 @@ fun code_fe (e: Expr) {
                 }
                 
             """.trimIndent()
-
-            val isclo  = (e.type.xscps.first != null)
-            val istk   = (e.type.tk.enu == TK.TASK)
-            val isnone = !isclo && !istk
 
             val src = """
                 static Func_${e.n} _frame_${e.n};
@@ -568,8 +565,8 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
         when {
             // found block above me: link/unlink me as nested block
             (it is Stmt.Block) -> Pair (
-                "${this.local()}->links.blk_down = &$blk;\n",
-                "${this.local()}->links.blk_down = NULL;\n"
+                "${this.localBlockMem()}->links.blk_down = &$blk;\n",
+                "${this.localBlockMem()}->links.blk_down = NULL;\n"
             )
             // found task above myself: link/unlink me as first block
             (it is Expr.Func && it.tk.enu==TK.TASK) -> Pair (
@@ -618,7 +615,7 @@ fun code_fs (s: Stmt) {
                 s.tk_.id.mem(s).let {
                     """
                         $it = (Tasks) { TASK_POOL, { NULL, NULL }, { NULL, 0, { NULL, NULL, NULL } } };
-                        task_link(${s.local()}, (Task*) &$it);
+                        task_link(${s.localBlockMem()}, (Task*) &$it);
                         $it.links.blk_down = &$it.block;
                         
                     """.trimIndent()
@@ -719,7 +716,7 @@ fun code_fs (s: Stmt) {
         is Stmt.Emit -> CODE.removeFirst().let {
             val src = """
                 {
-                    Stack stk = { stack, ${s.self_or_null()}, ${s.local()} };
+                    Stack stk = { stack, ${s.self_or_null()}, ${s.localBlockMem()} };
                     block_bcast(&stk, ${s.scp.toce(s)}, 0, (_Event*) &${it.expr});
                     if (stk.block == NULL) {
                         return;
@@ -732,7 +729,7 @@ fun code_fs (s: Stmt) {
         is Stmt.Throw -> {
             val src = """
                 {
-                    Stack stk = { stack, ${s.self_or_null()}, ${s.local()} };
+                    Stack stk = { stack, ${s.self_or_null()}, ${s.localBlockMem()} };
                     block_throw(&stk, &stk);
                     if (stk.block == NULL) {
                         return;
