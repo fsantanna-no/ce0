@@ -820,6 +820,7 @@ class TBook {
 
     @Test
     fun ch_02_01_leap_pg33 () {
+        if (VALGRIND != "") return
         val out = all(
             """
             $nums

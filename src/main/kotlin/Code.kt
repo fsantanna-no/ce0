@@ -465,8 +465,8 @@ fun code_fe (e: Expr) {
                             //${if (e.wup is Stmt.DSpawn) "frame->task0.isauto = 1;" else ""}
                             block_push($block, frame);
                             frame->task0.links.tsk_up = ${if (e.ups_first { it is Expr.Func }==null) "NULL" else "task0"};
-                            ${if (istk) "task_link($block, &frame->task0);" else ""}
-                            ${if (tpf.tk.enu != TK.FUNC) "" else "frame->task0.state = TASK_UNBORN;"}
+                            task_link($block, &frame->task0);
+                            frame->task0.state = TASK_UNBORN;
                             ((F_${tpf.toce()})(frame->task0.f)) (
                                 &stk_${e.n},
                                 frame,
@@ -577,14 +577,9 @@ fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
                 "${this.localBlockMem()}->links.blk_down = NULL;\n"
             )
             // found task above myself: link/unlink me as first block
-            (it is Expr.Func && it.tk.enu==TK.TASK) -> Pair (
+            (it is Expr.Func) -> Pair (
                 "task0->links.blk_down = &$blk;\n",
                 "task0->links.blk_down = NULL;\n"
-            )
-            // found func above me: link/unlink me in the stack
-            (it is Expr.Func && it.tk.enu==TK.FUNC) -> Pair (
-                "stack->block->links.blk_down = &$blk;\n",
-                "if (stack->block != NULL) stack->block->links.blk_down = NULL;\n"
             )
             // GLOBAL: nothing to link
             else -> Pair("","")
