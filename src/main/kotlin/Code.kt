@@ -528,10 +528,10 @@ fun code_fe (e: Expr) {
                             assert(task0->state == TASK_UNBORN);
                             task2->task1.arg = xxx.pars.arg;
                             ${block.stmt}
-                            task0->state = TASK_DEAD;
                             _Event evt = { EVENT_TASK, {.Task=(uint64_t)task0} };
                             //block_bcast(stack, ${e.type.xscps.first?.toce(e) ?: e.localBlock()}, 0, (_Event*) &evt);
                             block_bcast(stack, GLOBAL, 0, (_Event*) &evt);
+                            task0->state = TASK_DEAD;
                             break;
                         }
                         default:
@@ -617,7 +617,7 @@ fun code_fs (s: Stmt) {
             val src = if (s.xtype is Type.Spawns) {
                 s.tk_.id.mem(s).let {
                     """
-                        $it = (Tasks) { TASK_DEAD, { NULL, NULL }, { NULL, 0, { NULL, NULL, NULL } } };
+                        $it = (Tasks) { TASK_POOL, { NULL, NULL }, { NULL, 0, { NULL, NULL, NULL } } };
                         task_link(${s.local()}, (Task*) &$it);
                         $it.links.blk_down = &$it.block;
                         
@@ -655,7 +655,7 @@ fun code_fs (s: Stmt) {
             val src   = """
                 {
                     ${i.expr} = (${s.i.wtype!!.pos()}) ${tsks.expr}.block.links.tsk_first;
-                    while (${i.expr} != NULL) {
+                    while (${i.expr}!=NULL && ${i.expr}->task0.state!=TASK_DEAD) {
                         ${block.stmt}
                         ${i.expr} = (${s.i.wtype!!.pos()}) ${i.expr}->task0.links.tsk_next;
                     }
@@ -916,29 +916,7 @@ fun Stmt.code (): String {
             task->links.blk_down = NULL;
         }
         
-        void __task_unlink (Block* block, Task* task) {
-            Task* prv = NULL; {
-                Task* cur = block->links.tsk_first;
-                while (cur != task) {
-                    prv = cur;
-                    cur = cur->links.tsk_next;
-                }
-            }
-            Task* nxt = task->links.tsk_next; {
-                while (nxt!=NULL && nxt->state==TASK_DEAD) {
-                    nxt = nxt->links.tsk_next;
-                }
-            }
-            if (block->links.tsk_first == task) {
-                block->links.tsk_first = nxt;
-            }
-            if (block->links.tsk_last == task) {
-                block->links.tsk_last = prv;
-            }
-            if (prv != NULL) {
-                prv->links.tsk_next = nxt;
-            }
-        }
+        /// ONLY FOR DYNAMIC POOLS
 
         void __task_free (Block* block, Task* task) {
             Pool** tonxt = &block->pool;
@@ -957,9 +935,28 @@ fun Stmt.code (): String {
             assert(0 && "bug found");
         }
         
-        void task_unlink_free (Block* block, Task* task) {
-            __task_unlink(block, task);
-            __task_free(block, task);
+        void pool_maybe_free (Task* pool) {
+            assert(pool->state == TASK_POOL);
+            Task* prv = NULL;
+            Task* nxt = pool->links.blk_down->links.tsk_first;
+            pool->links.blk_down->links.tsk_first = NULL;
+            while (nxt != NULL) {
+                Task* cur = nxt;
+                nxt = cur->links.tsk_next;
+                if (cur->state == TASK_DEAD) {
+                    __task_free(pool->links.blk_down, cur);
+                } else {
+                    if (pool->links.blk_down->links.tsk_first == NULL) {
+                        pool->links.blk_down->links.tsk_first = cur;    // first to survive
+                    }
+                    if (prv != NULL) {
+                        prv->links.tsk_next = cur;                      // next to survive
+                    }
+                    cur->links.tsk_next = NULL;
+                    prv = cur;
+                }
+            }
+            pool->links.blk_down->links.tsk_last = prv;                 // last to survive
         }
         
         ///
@@ -1020,19 +1017,16 @@ fun Stmt.code (): String {
                         if (stk.block == NULL) return;
                         if (stack->block == NULL) return;
                     }
-                    if (task->state == TASK_AWAITING) {
+                    if (task->state == TASK_POOL) {
+                        pool_maybe_free(task);
+                    } else if (task->state == TASK_AWAITING) {
                         Task* next = task->links.tsk_next;
                         task->f(stack, task, evt);                          // 1.2
                         if (stack->block == NULL) return;
                     }
                     aux(task->links.tsk_next);                              // 1.3
                 }
-                
-                #if 0
-                if (task->isauto && task->state==TASK_DEAD) {
-                    task_unlink_free(block, task);
-                }
-                #endif
+
             }
             
             if (up) {
