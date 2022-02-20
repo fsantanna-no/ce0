@@ -1007,7 +1007,7 @@ class TExec {
             set l = <.0>: /List @LOCAL
             output std l\ :- List !1
         """.trimIndent())
-        assert(out.endsWith("main: Assertion `&(*(global.l)) != NULL' failed.\n")) { out }
+        assert(out.endsWith("(global.l)) != NULL' failed.\n")) { out }
     }
     @Test
     fun j06_list_1 () {

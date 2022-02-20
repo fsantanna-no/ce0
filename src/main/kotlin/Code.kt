@@ -215,6 +215,11 @@ fun code_ft (tp: Type) {
             TYPEX.add(ce)
             it
         }
+    }.let {
+        val line = if (!LINES) "" else "\n#line ${tp.tk.lin} \"CEU\"\n"
+        assert(it.expr == "")
+        assert(it.stmt == "")
+        Code(line+it.type, line+it.struct, line+it.func, "", "")
     })
 }
 
@@ -555,6 +560,9 @@ fun code_fe (e: Expr) {
 
             Code(tp.type+type+block.type, tp.struct+block.struct+struct, tp.func+block.func+func, src, "((${e.type.pos()}) frame_${e.n})")
         }
+    }.let {
+        val line = if (!LINES) "" else "\n#line ${e.tk.lin} \"CEU\"\n"
+        Code(line+it.type, line+it.struct, line+it.func, line+it.stmt, line+it.expr)
     })
 }
 
@@ -776,6 +784,10 @@ fun code_fs (s: Stmt) {
 
             Code(it.type, it.struct, it.func, src, "")
         }
+    }.let {
+        val line = if (!LINES) "" else "\n#line ${s.tk.lin} \"CEU\"\n"
+        assert(it.expr == "")
+        Code(line+it.type, line+it.struct, line+it.func, line+it.stmt, "")
     })
 }
 

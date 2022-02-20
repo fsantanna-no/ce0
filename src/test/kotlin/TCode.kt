@@ -1,3 +1,4 @@
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric
 import org.junit.jupiter.api.Test
@@ -7,8 +8,15 @@ import org.junit.jupiter.api.TestMethodOrder
 class TCode {
 
     val tp_unit = Type.Unit(Tk.Sym(TK.UNIT,1,1,"()"))
-
     // TYPE
+
+    companion object {
+        @BeforeAll
+        @JvmStatic
+        internal fun setup () {
+            LINES = false
+        }
+    }
 
     @Test
     fun a01_type_unit () {
