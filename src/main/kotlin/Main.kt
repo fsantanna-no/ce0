@@ -2,17 +2,6 @@ import java.io.File
 import java.io.PushbackReader
 import java.io.StringReader
 
-val THROW = false
-var LINES = false
-
-// search in tests output for
-//  definitely|Invalid read|uninitialized
-//  - definitely lost
-//  - Invalid read of size
-//  - uninitialised value
-val VALGRIND = ""
-//val VALGRIND = "valgrind "
-
 fun ce2c (ce: String): Pair<Boolean,String> {
     All_new(PushbackReader(StringReader(ce), 2))
     Lexer.lex()
@@ -21,8 +10,8 @@ fun ce2c (ce: String): Pair<Boolean,String> {
         s.setUps(null)
         s.setScp1s()
         s.setEnvs(null)
+        check_00_after_envs(s)
         check_01_before_tps(s)
-        //s.setScp2s()
         s.setTypes()
         s.setScp2s()
         check_02_after_tps(s)

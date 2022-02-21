@@ -16,6 +16,7 @@ class TEnv {
             s.setUps(null)
             s.setScp1s()
             s.setEnvs(null)
+            check_00_after_envs(s)
             check_01_before_tps(s)
             s.setTypes()
             s.setScp2s()
@@ -186,9 +187,9 @@ class TEnv {
     @Test
     fun b16_pool_err2 () {
         val out = inp2env("""
-            call _f:$F @[aaa] ()
+            call _f:func@[a]->()->() @[aaa] ()
         """.trimIndent())
-        assert(out == "(ln 1, col 27): undeclared scope \"aaa\"") { out }
+        assert(out == "(ln 1, col 28): undeclared scope \"aaa\"") { out }
     }
     @Test
     fun b17_pool_err () {

@@ -2,6 +2,17 @@ import java.io.PushbackReader
 import java.io.StringReader
 import java.lang.AssertionError
 
+val THROW = false
+var LINES = false
+
+// search in tests output for
+//  definitely|Invalid read|uninitialized
+//  - definitely lost
+//  - Invalid read of size
+//  - uninitialised value
+val VALGRIND = ""
+//val VALGRIND = "valgrind "
+
 var all: All = All(PushbackReader(StringReader(""), 2), Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,""))
 
 data class All(
