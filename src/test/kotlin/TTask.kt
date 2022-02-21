@@ -881,7 +881,7 @@ class TTask {
     }
 
     @Test
-    fun todo_valgrind () {
+    fun f07_valgrind () {
         val out = all("""
             type Event = <(),_uint64_t,_int>
             var f : task @LOCAL->@[]->()->()->()
@@ -891,8 +891,9 @@ class TTask {
             var xs: active tasks @LOCAL->@[]->_int->_int->()
             spawn f () in xs
             emit @GLOBAL <.3 _10:_int>:<(),_uint64_t,_int>:+ Event
+            output std ()
         """.trimIndent())
-        assert(out == "TODO") { out }
+        assert(out == "()\n") { out }
     }
 
     @Test
@@ -937,17 +938,18 @@ class TTask {
     @Test
     fun f09_dloop_kill () {
         val out = all("""
+            type Event = <(),_uint64_t,_int>
             var f : task @LOCAL->@[]->()->_int->()
             set f = task @LOCAL->@[]->()->_int->() {
                 set pub = _3:_int
                 output std _1:_int
-                await _1:_int
+                await evt?3
             }
             var fs: active tasks @LOCAL->@[]->()->_int->()
             spawn f () in fs
             var x: active task @LOCAL->@[]->()->_int->()
             loop x in fs {
-                emit @GLOBAL _5:_int
+                emit <.3 _10:_int>:<(),_uint64_t,_int>:+ Event
                 output std x.pub
             }
         """.trimIndent())
