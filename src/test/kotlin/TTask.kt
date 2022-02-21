@@ -206,12 +206,13 @@ class TTask {
             output std _11:_int
             var g : active task @LOCAL->@[]->()->()->()
             set g = spawn build ()
+            output std _12:_int
             --awake f _1:_int
             --awake g _1:_int
             emit @GLOBAL <.3 _1:_int>:<(),_uint64_t,_int>:+ Event
             output std _12:_int
         """.trimIndent())
-        assert(out == "10\n1\n11\n1\n2\n2\n12\n") { out }
+        assert(out == "10\n1\n11\n1\n12\n2\n2\n12\n") { out }
     }
     @Test
     fun a06_par2 () {
@@ -989,9 +990,12 @@ class TTask {
             type Event = <(),_uint64_t,_int>
             spawn (task @LOCAL->@[]->()->()->() {
                 loop {
+--native _{puts("loop");}
                     var f: task @LOCAL->@[]->()->()->()
                     set f = task @LOCAL->@[]->()->()->() {
-                        await _1:_int
+--native _{printf(">>> task %p\n", task0);}
+                        await evt?3
+                        output std _2:_int
                     }
                     var x : active task @LOCAL->@[]->()->()->()
                     set x = spawn f ()
@@ -1003,13 +1007,13 @@ class TTask {
                             break
                         } else {}
                     }
-                    output std _2:_int
+                    output std _3:_int
                 }
             }) ()
             output std _1:_int
             emit <.3 _1:_int>:<(),_uint64_t,_int>:+Event
-            output std _3:_int
+            output std _4:_int
        """.trimIndent())
-        assert(out == "1\n2\n3\n") { out }
+        assert(out == "1\n2\n3\n4\n") { out }
     }
 }

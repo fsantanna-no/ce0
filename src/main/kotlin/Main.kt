@@ -10,8 +10,8 @@ var LINES = false
 //  - definitely lost
 //  - Invalid read of size
 //  - uninitialised value
-val VALGRIND = ""
-//val VALGRIND = "valgrind "
+//val VALGRIND = ""
+val VALGRIND = "valgrind "
 
 fun ce2c (ce: String): Pair<Boolean,String> {
     All_new(PushbackReader(StringReader(ce), 2))

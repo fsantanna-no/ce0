@@ -818,6 +818,7 @@ class TBook {
         assert(out == "<.1 <.0>>\n") { out }
     }
 
+    @Disabled
     @Test
     fun ch_02_01_leap_pg33 () {
         if (VALGRIND != "") return

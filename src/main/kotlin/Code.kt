@@ -529,15 +529,6 @@ fun code_fe (e: Expr) {
                             assert(task0->state == TASK_UNBORN);
                             task2->task1.arg = xxx.pars.arg;
                             ${block.stmt}
-                            _Event evt = { EVENT_TASK, {.Task=(uint64_t)task0} };
-                            //Stack stk = { stack, task0, task2->${e.localBlockMem()} };
-                            //block_bcast(&stk, ${e.type.xscps.first?.toce(e) ?: e.localBlockScp1Id(true)}, 0, (_Event*) &evt);
-                            //block_bcast(&stk, GLOBAL, 0, (_Event*) &evt);
-                            block_bcast(stack, GLOBAL, 0, (_Event*) &evt);
-                            if (stack->block == NULL) {
-                                return;
-                            }
-                            task0->state = TASK_DEAD;
                             break;
                         }
                         default:
@@ -768,6 +759,7 @@ fun code_fs (s: Stmt) {
                     Stack stk = { stack, task0, &$blk };
                     block_bcast(&stk, GLOBAL, 0, (_Event*) &evt);
                     if (stk.block == NULL) {
+//printf("do not continue %p\n", task0);
                         return;
                     }
                 }
@@ -849,7 +841,7 @@ fun Stmt.code (): String {
         } Stack;
         
         typedef enum {
-            TASK_POOL, TASK_UNBORN, TASK_RUNNING, TASK_AWAITING, TASK_PAUSED, TASK_DEAD
+            TASK_POOL=1, TASK_UNBORN, TASK_RUNNING, TASK_AWAITING, TASK_PAUSED, TASK_DEAD
         } TASK_STATE;
         
         typedef enum {
@@ -1024,24 +1016,31 @@ fun Stmt.code (): String {
                     if (task->state == TASK_AWAITING) {
                         task->f(stack, task, evt);                          // 1.2
                         if (evt->tag == EVENT_KILL) {
+//puts("dead");
                             task->state = TASK_DEAD;
                         }
+                    } else {
+                        //assert(0 && "OK");
+                        //printf(">>> %d\n", task->state);
+                        //assert(task->state == TASK_DEAD);
                     }
                 } else {
+                    Stack stk = { stack, task, task->links.blk_down };
                     //assert(task->links.blk_down != NULL);
                     if (task->links.blk_down != NULL) { // maybe unlinked by natural termination
-                        Stack stk = { stack, task, task->links.blk_down };
                         block_bcast(&stk, task->links.blk_down, up, evt);   // 1.1
-                        if (stk.block == NULL) return;
-                        if (stack->block == NULL) return;
                     }
                     if (task->state == TASK_POOL) {
                         pool_maybe_free(task);
                     } else if (task->state == TASK_AWAITING) {
-                        Task* next = task->links.tsk_next;
-                        task->f(stack, task, evt);                          // 1.2
-                        if (stack->block == NULL) return;
+                        task->f(&stk, task, evt);                          // 1.2
                     }
+                    if (evt->tag==EVENT_TASK && (uint64_t)task==evt->payload.Task) {
+//puts("dead");
+                        task->state = TASK_DEAD;
+                    }
+                    if (stk.block == NULL) return;
+                    if (stack->block == NULL) return;
                     aux(task->links.tsk_next);                              // 1.3
                 }
 
