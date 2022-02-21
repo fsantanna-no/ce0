@@ -566,28 +566,6 @@ fun code_fe (e: Expr) {
     })
 }
 
-// link/unlink block with enclosing block/task
-fun Stmt.Block.link_unlink_kill (): Triple<String,String,String> {
-    val blk = "B${this.n}".mem(this)
-    val (link,unlink) = this.ups_first { it is Expr.Func || it is Stmt.Block }.let {
-        when {
-            // found block above me: link/unlink me as nested block
-            (it is Stmt.Block) -> Pair (
-                "${this.localBlockMem()}->links.blk_down = &$blk;\n",
-                "${this.localBlockMem()}->links.blk_down = NULL;\n"
-            )
-            // found task above myself: link/unlink me as first block
-            (it is Expr.Func) -> Pair (
-                "task0->links.blk_down = &$blk;\n",
-                "task0->links.blk_down = NULL;\n"
-            )
-            // GLOBAL: nothing to link
-            else -> Pair("","")
-        }
-    }
-    return Triple(link, unlink, "{\n_Event evt = { EVENT_KILL };\nblock_bcast(stack, &$blk, 1, &evt);\n}\n")
-}
-
 fun code_fs (s: Stmt) {
     CODE.addFirst(when (s) {
         is Stmt.Nop -> Code("", "","","", "")
@@ -759,16 +737,55 @@ fun code_fs (s: Stmt) {
             Code(it.type, it.struct, it.func, it.stmt+call, "")
         }
         is Stmt.Block -> CODE.removeFirst().let {
-            val (link,unlink,kill) = s.link_unlink_kill()
+            val up = s.ups_first { it is Expr.Func || it is Stmt.Block }
+            val blk = "B${s.n}".mem(s)
+
+            val task = if (up !is Expr.Func) "" else """
+                {
+                    _Event evt = { EVENT_TASK, {.Task=(uint64_t)task0} };
+                    Stack stk = { stack, task0, &$blk };
+                    block_bcast(&stk, GLOBAL, 0, (_Event*) &evt);
+                    if (stk.block == NULL) {
+                        return;
+                    }
+                }
+                    
+            """.trimIndent()
+
             val src = """
             {
                 ${"B${s.n}".mem(s)} = (Block) { NULL, ${if (s.iscatch) s.n else 0}, {NULL,NULL,NULL} };
-                $link
+                
+                // link
+                ${if (up is Stmt.Block) {
+                    "${s.localBlockMem()}->links.blk_down = &$blk;"
+                } else if (up is Expr.Func) {
+                    "task0->links.blk_down = &$blk;"
+                } else {
+                    ""
+                }}
+                
                 ${it.stmt}
+                
+                // CLEANUP
+                
                 ${if (!s.iscatch) "" else "case ${s.n}: // catch"}
-                _BLOCK_${s.n}_:
-                $kill
-                $unlink
+                
+            _BLOCK_${s.n}_:
+                $task
+                {
+                    _Event evt = { EVENT_KILL };
+                    block_bcast(stack, &$blk, 1, &evt);
+                }
+                
+                // unlink
+                ${if (up is Stmt.Block) {
+                    "${s.localBlockMem()}->links.blk_down = NULL;"
+                } else if (up is Expr.Func) {
+                    "task0->links.blk_down = NULL;"
+                } else {
+                    ""
+                }}
             }
             
             """.trimIndent()

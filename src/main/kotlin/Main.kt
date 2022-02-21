@@ -3,7 +3,7 @@ import java.io.PushbackReader
 import java.io.StringReader
 
 val THROW = false
-var LINES = true
+var LINES = false
 
 // search in tests output for
 //  definitely|Invalid read|uninitialized
