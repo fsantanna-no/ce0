@@ -996,6 +996,7 @@ class TTask {
 --native _{printf(">>> task %p\n", task0);}
                         await evt?3
                         output std _2:_int
+--native _{printf("<<< task %p\n", task0);}
                     }
                     var x : active task @LOCAL->@[]->()->()->()
                     set x = spawn f ()

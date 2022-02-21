@@ -755,10 +755,12 @@ fun code_fs (s: Stmt) {
                 // task event
                 ${if (up !is Expr.Func) "" else """
                 {
+                    //task0->state = TASK_DYING;
                     _Event evt = { EVENT_TASK, {.Task=(uint64_t)task0} };
                     Stack stk = { stack, task0, &$blk };
                     block_bcast_event(&stk, GLOBAL, (_Event*) &evt);
                     if (stk.block == NULL) {
+                        //task0->state = TASK_DEAD;
 //printf("do not continue %p\n", task0);
                         return;
                     }
@@ -770,9 +772,12 @@ fun code_fs (s: Stmt) {
                 
                 // unlink
                 ${if (up is Stmt.Block) {
-                    "${s.localBlockMem()}->links.blk_down = NULL;"
+                    "$blk.links.blk_down = NULL;"
                 } else if (up is Expr.Func) {
-                    "task0->links.blk_down = NULL;"
+                    """
+                    task0->links.blk_down = NULL;
+                    task0->state = TASK_DEAD;                        
+                    """.trimIndent()
                 } else {
                     ""
                 }}
@@ -838,7 +843,7 @@ fun Stmt.code (): String {
         } Stack;
         
         typedef enum {
-            TASK_POOL=1, TASK_UNBORN, TASK_RUNNING, TASK_AWAITING, TASK_PAUSED, TASK_DEAD
+            TASK_POOL=1, TASK_UNBORN, TASK_RUNNING, TASK_AWAITING, TASK_PAUSED, /*TASK_DYING,*/ TASK_DEAD
         } TASK_STATE;
         
         typedef enum {
@@ -1003,52 +1008,46 @@ fun Stmt.code (): String {
             
             void aux (Task* task) {
                 if (task == NULL) return;
-                aux(task->links.tsk_next);                              // 1.3
+                aux(task->links.tsk_next);                          // 1.3
                 //assert(task->links.blk_down != NULL);
-                if (task->links.blk_down != NULL) { // maybe unlinked by natural termination
-                    block_bcast_kill(stack, task->links.blk_down);  // 1.1
+                if (task->links.blk_down != NULL) {
+                    block_bcast_kill(stack, task->links.blk_down);      // 1.1
                 }
                 if (task->state == TASK_AWAITING) {
                     _Event evt = { EVENT_KILL };            
-                    task->f(stack, task, &evt);                          // 1.2
-                    task->state = TASK_DEAD;
+                    task->f(stack, task, &evt);                     // 1.2
                 }
             }
             
-            if (block->links.blk_down != NULL) {   // 2. awake my nested block
+            if (block->links.blk_down != NULL) {                    // 2. awake my nested block
                 block_bcast_kill(stack, block->links.blk_down);
             }                
-            aux(block->links.tsk_first);           // 1. awake my inner tasks
-            
-            // X. free myself
-            block_free(block);
+            aux(block->links.tsk_first);                            // 1. awake my inner tasks            
+            block_free(block);                                      // X. free myself
         }
+        
         void block_bcast_event (Stack* stack, Block* block, _Event* evt) {
+            
+            Stack stk = { stack, NULL, block };
             
             void aux (Task* task) {
                 if (task == NULL) return;
-                Stack stk = { stack, task, task->links.blk_down };
                 //assert(task->links.blk_down != NULL);
-                if (task->links.blk_down != NULL) { // maybe unlinked by natural termination
-                    block_bcast_event(&stk, task->links.blk_down, evt);   // 1.1
+                if (task->links.blk_down != NULL) {
+                    block_bcast_event(&stk, task->links.blk_down, evt); // 1.1
                 }
                 if (task->state == TASK_POOL) {
                     pool_maybe_free(task);
                 } else if (task->state == TASK_AWAITING) {
-                    task->f(&stk, task, evt);                          // 1.2
+                    task->f(&stk, task, evt);                       // 1.2
                 }
-                if (evt->tag==EVENT_TASK && (uint64_t)task==evt->payload.Task) {
-//puts("dead");
-                    //task->links.blk_down = NULL;
-                    task->state = TASK_DEAD;
-                }
-                if (stk.block == NULL) return;
-                if (stack->block == NULL) return;
-                aux(task->links.tsk_next);                              // 1.3
+                if (stk.block == NULL) return;  // outer block died, cannot continue to next task
+                aux(task->links.tsk_next);                          // 1.3
             }
             
-            aux(block->links.tsk_first);            // 1. awake my inner tasks
-            if (block->links.blk_down != NULL) {   // 2. awake my nested block
+            aux(block->links.tsk_first);                            // 1. awake my inner tasks
+            if (stk.block == NULL) return;  // I died in aux, cannot continue to nested block
+            if (block->links.blk_down != NULL) {                    // 2. awake my nested block
                 block_bcast_event(stack, block->links.blk_down, evt);
             }
         }
