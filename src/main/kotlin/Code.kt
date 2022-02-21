@@ -740,18 +740,6 @@ fun code_fs (s: Stmt) {
             val up = s.ups_first { it is Expr.Func || it is Stmt.Block }
             val blk = "B${s.n}".mem(s)
 
-            val task = if (up !is Expr.Func) "" else """
-                {
-                    _Event evt = { EVENT_TASK, {.Task=(uint64_t)task0} };
-                    Stack stk = { stack, task0, &$blk };
-                    block_bcast(&stk, GLOBAL, 0, (_Event*) &evt);
-                    if (stk.block == NULL) {
-                        return;
-                    }
-                }
-                    
-            """.trimIndent()
-
             val src = """
             {
                 ${"B${s.n}".mem(s)} = (Block) { NULL, ${if (s.iscatch) s.n else 0}, {NULL,NULL,NULL} };
@@ -772,7 +760,20 @@ fun code_fs (s: Stmt) {
                 ${if (!s.iscatch) "" else "case ${s.n}: // catch"}
                 
             _BLOCK_${s.n}_:
-                $task
+            
+                // task event
+                ${if (up !is Expr.Func) "" else """
+                {
+                    _Event evt = { EVENT_TASK, {.Task=(uint64_t)task0} };
+                    Stack stk = { stack, task0, &$blk };
+                    block_bcast(&stk, GLOBAL, 0, (_Event*) &evt);
+                    if (stk.block == NULL) {
+                        return;
+                    }
+                }
+                """.trimIndent()}
+                
+                // block kill
                 {
                     _Event evt = { EVENT_KILL };
                     block_bcast(stack, &$blk, 1, &evt);

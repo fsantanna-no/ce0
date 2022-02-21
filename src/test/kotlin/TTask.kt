@@ -880,7 +880,7 @@ class TTask {
     }
 
     @Test
-    fun f08_valgrind () {
+    fun todo_valgrind () {
         val out = all("""
             type Event = <(),_uint64_t,_int>
             var f : task @LOCAL->@[]->()->()->()
@@ -975,6 +975,36 @@ class TTask {
                     } else {}
                 }
                 output std _2:_int
+            }) ()
+            output std _1:_int
+            emit <.3 _1:_int>:<(),_uint64_t,_int>:+Event
+            output std _3:_int
+       """.trimIndent())
+        assert(out == "1\n2\n3\n") { out }
+    }
+
+    @Test
+    fun g02_kill () {
+        val out = all("""
+            type Event = <(),_uint64_t,_int>
+            spawn (task @LOCAL->@[]->()->()->() {
+                loop {
+                    var f: task @LOCAL->@[]->()->()->()
+                    set f = task @LOCAL->@[]->()->()->() {
+                        await _1:_int
+                    }
+                    var x : active task @LOCAL->@[]->()->()->()
+                    set x = spawn f ()
+                    loop {
+                        await evt?2
+                        var t: _uint64_t
+                        set t = evt!2
+                        if _(${D}t == ((uint64_t)${D}x)):_int {
+                            break
+                        } else {}
+                    }
+                    output std _2:_int
+                }
             }) ()
             output std _1:_int
             emit <.3 _1:_int>:<(),_uint64_t,_int>:+Event
