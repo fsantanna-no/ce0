@@ -329,7 +329,9 @@ open class Parser
                 val tk0 = all.tk0 as Tk.Key
                 if (all.check(TK.CHAR, '{')) {
                     val block = this.block()
-                    Stmt.Loop(tk0, block)
+                    // add additional block to break out w/ goto and cleanup
+                    Stmt.Block(block.tk_, false, null,
+                        Stmt.Loop(tk0, block))
                 } else {
                     val i = this.expr()
                     All_assert_tk(all.tk0, i is Expr.Var) {
@@ -338,7 +340,9 @@ open class Parser
                     all.accept_err(TK.IN)
                     val tsks = this.expr()
                     val block = this.block()
-                    Stmt.DLoop(tk0, i as Expr.Var, tsks, block)
+                    // add additional block to break out w/ goto and cleanup
+                    Stmt.Block(block.tk_, false, null,
+                        Stmt.DLoop(tk0, i as Expr.Var, tsks, block))
                 }
             }
             all.accept(TK.BREAK) -> Stmt.Break(all.tk0 as Tk.Key)

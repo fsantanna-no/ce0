@@ -782,7 +782,7 @@ class TParser {
         All_new(PushbackReader(StringReader("loop { break }"), 2))
         Lexer.lex()
         val s = Parser().stmt()
-        assert(s is Stmt.Loop && s.block.body is Stmt.Break)
+        assert(s is Stmt.Block && s.body is Stmt.Loop && (s.body as Stmt.Loop).block.body is Stmt.Break)
     }
 
     // STMT_SET / STMT_VAR
@@ -833,7 +833,7 @@ class TParser {
         All_new(PushbackReader(StringReader("loop tk in () {}"), 2))
         Lexer.lex()
         val s = Parser().stmt()
-        assert(s is Stmt.DLoop && s.i.tk_.id=="tk" && s.tsks is Expr.Unit)
+        assert(s is Stmt.Block && s.body.let { it is Stmt.DLoop && it.i.tk_.id=="tk" && it.tsks is Expr.Unit })
     }
     @Test
     fun d04_loop () {

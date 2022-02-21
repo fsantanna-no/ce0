@@ -665,17 +665,12 @@ fun code_fs (s: Stmt) {
             Code(tsks.type+i.type+block.type, tsks.struct+i.struct+block.struct, tsks.func+i.func+block.func, tsks.stmt+i.stmt+src, "")
         }
         is Stmt.Break -> {
-            val (_,unlink,kill) = (s.ups_first { it is Stmt.Loop } as Stmt.Loop).block.link_unlink_kill()
-            Code("", "", "", unlink+kill+"break;\n", "")
+            val n = ((s.ups_first { it is Stmt.Loop } as Stmt.Loop).wup as Stmt.Block).n
+            Code("", "", "", "goto _BLOCK_${n}_;\n", "")
         }
-        is Stmt.Return   -> {
-            val src = """
-                task0->state = TASK_DEAD;
-                return;
-                
-            """.trimIndent()
-            val (_,unlink,kill) = (s.ups_first { it is Expr.Func } as Expr.Func).block.link_unlink_kill()
-            Code("", "", "", unlink+kill+src, "")
+        is Stmt.Return -> {
+            val n = (s.ups_first { it is Expr.Func } as Expr.Func).block.n
+            Code("", "", "", "goto _BLOCK_${n}_;\n", "")
         }
         is Stmt.SCall -> CODE.removeFirst().let {
             Code(it.type, it.struct, it.func, it.stmt+it.expr+";\n", "")
@@ -771,6 +766,7 @@ fun code_fs (s: Stmt) {
                 $link
                 ${it.stmt}
                 ${if (!s.iscatch) "" else "case ${s.n}: // catch"}
+                _BLOCK_${s.n}_:
                 $kill
                 $unlink
             }

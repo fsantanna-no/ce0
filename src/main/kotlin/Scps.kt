@@ -9,12 +9,12 @@ fun Tk.Id.anon2local (): String {
     return if (this.isanon()) "LOCAL" else this.id
 }
 
-fun Any.localBlockScp1Id (anon: Boolean): String {
+fun Any.localBlockScp1Id (forceAnon: Boolean): String {
     return (this.ups_first { it is Stmt.Block } as Stmt.Block?).let {
         when {
             (it == null) -> "GLOBAL"
             //else -> "B" + it.n
-            anon -> "B" + it.n
+            forceAnon -> "B" + it.n
             else -> it.scp1!!.id
         }
     }
