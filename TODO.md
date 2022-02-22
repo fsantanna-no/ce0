@@ -1,8 +1,28 @@
+- emit EVENT_TASK to correct scope (not GLOBAL)
+  - can infer from func signature
+- bugs
+  - BookPtr
+    - make inference repeat scope?
+      - but only for type, not func
+  - $x (x in other task)
+  - check 00/01 detect var in between funcs
+  - Type.Alias.supOf (check scopes)
+- ce1:
+  - if/until condition
+    - _int -> Bool:<(),()>
+  - await task
+  - defer
+  - var [x,y] = arg   (arg is tuple)
+  - option, subtyping, generics, typeclass
+- isSupOf for Nat, make it false against others
+- return -> escape?
+  - cross task
+  - SetBlock
+    - var x: () = { ... escape () }
 - XLexer para ce1
-- await task
+  - ce0: :-/:+
+- Never type
 - typedef para task (birds example)
-- <.1 ...>:T  ->  T.Sub ...
-- #line em Code baseado em Tk.lin
 - pico-ce
   - image scale (birds)
 - change @[@a1,@a2] -> @[a,b: a>b]
@@ -11,20 +31,22 @@
 - var z = spawn h ()
   - optional in ce0?
   - optional in ce1?
-- parser in evidence (input, attr), than types, etc
-- use C stack for normal func
-- static alloc for clo/task that do not escape
-  - should them even have a @clo annotation?
-- catch N, throw N (N = argument)
 - \#line, stack debug
-- bug expand: /</^@x>@y (x/y do not alternate as expected)
-- bug expand: cloneX
-- ce1: type, generics, typeclass, subtyping, option
+- optimizations
+  - use C stack for normal func
+  - static alloc for clo/task that do not escape
+    - should them even have a @clo annotation?
+- catch N, throw N (N = argument)
 - explicit `free`
 - test block pass w/o data (e.g., internal `new` call)
 - reserve `arg`,`pub`,`evt`,`ret`
-- evt type should be <.fin=(), .throw=_int, ...>
+- remove CLO from task
+  - always local, can never escape
+    - ~task must support parametric closure and check if spawn is local~
+      - ~task @a ...~
 - DLoop:
+  - is it possible to create new state=TASK_POOL_LOOP
+    and not free while in it?
   1. reject await/emit/etc inside DLoop
   2. runtime error when self kill
   3. escape loop on error (but, multi-level escape)
@@ -37,8 +59,11 @@
       defer{free()}
       loop { ... }
     }
-- output std ? --> toString ?
-  - output std toString /x
+- output
+  - std ? --> toString ?
+    - output std toString /x
+  - should print alias?
+    - List <...>
 
 # Subtyping
     - structural:   [(),()] <: [()]

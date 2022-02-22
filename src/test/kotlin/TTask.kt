@@ -1074,4 +1074,50 @@ class TTask {
        """.trimIndent())
         assert(out == "111\n222\n") { out }
     }
+
+    @Test
+    fun todo_g05_type_task () {
+        val out = all("""
+            type Event = <(),_uint64_t,()>
+            type Bird = task @GLOBAL -> @[] -> () -> () -> ()
+            
+            var t1: Bird {
+                 output std _111:_int
+            }
+            var x1: active Bird
+            set x1 = spawn t1 ()
+       """.trimIndent())
+        assert(out == "111\n222\n") { out }
+    }
+    @Test
+    fun g06_spawn_abort () {
+        val out = all("""
+            type Event = <(),_uint64_t,(),()>
+            var t: task @LOCAL -> @[] -> () -> () -> ()
+            set t = task @LOCAL -> @[] -> () -> () -> () {
+                var v: _int
+                set v = _1:_int
+                loop {
+                    output std v
+                    await evt?3
+                    set v = _(${D}v+1):_int
+                }
+            }
+            
+            var l: active task @GLOBAL -> @[] -> () -> () -> ()
+            set l = spawn (task @GLOBAL -> @[] -> () -> () -> () {
+                loop {
+                    var x: active task @GLOBAL -> @[] -> () -> () -> ()
+                    set x = spawn t _1:_int
+                    await evt?4
+                }
+            }) ()
+            
+            emit <.3 ()>: <(),_uint64_t,(),()>:+Event
+            emit <.4 ()>: <(),_uint64_t,(),()>:+Event
+            emit <.3 ()>: <(),_uint64_t,(),()>:+Event
+            
+       """.trimIndent())
+        assert(out == "111\n") { out }
+    }
 }

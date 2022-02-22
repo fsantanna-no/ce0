@@ -81,6 +81,7 @@ fun TK.toErr (chr: Char?): String {
         TK.ELSE    -> "`else`"
         TK.IN      -> "`in`"
         TK.INPUT   -> "`input`"
+        TK.TASK    -> "`task`"
         else -> TODO(this.toString())
     }
 }
