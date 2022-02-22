@@ -753,7 +753,7 @@ fun code_fs (s: Stmt) {
             _BLOCK_${s.n}_:
             
                 // task event
-                ${if (up !is Expr.Func) "" else """
+                ${if (up !is Expr.Func || up.tk.enu==TK.FUNC) "" else """
                 {
                     //task0->state = TASK_DYING;
                     _Event evt = { EVENT_TASK, {.Task=(uint64_t)task0} };
@@ -771,10 +771,17 @@ fun code_fs (s: Stmt) {
                 block_bcast_kill(stack, &$blk);
                 
                 // unlink
+                // uplink still points to me, but I will not propagate down
                 ${if (up is Stmt.Block) {
-                    "$blk.links.blk_down = NULL;"
+                    """
+                    $blk.links.tsk_first = NULL;
+                    //$blk.links.tsk_last  = NULL;
+                    $blk.links.blk_down  = NULL;
+                    """.trimIndent()
                 } else if (up is Expr.Func) {
                     """
+                    //task0->links.tsk_up   = NULL;
+                    task0->links.tsk_next = NULL;
                     task0->links.blk_down = NULL;
                     task0->state = TASK_DEAD;                        
                     """.trimIndent()
@@ -1035,13 +1042,14 @@ fun Stmt.code (): String {
                 //assert(task->links.blk_down != NULL);
                 if (task->links.blk_down != NULL) {
                     block_bcast_event(&stk, task->links.blk_down, evt); // 1.1
+                    if (stk.block == NULL) return;  // outer block died, cannot continue to next task
                 }
                 if (task->state == TASK_POOL) {
                     pool_maybe_free(task);
                 } else if (task->state == TASK_AWAITING) {
                     task->f(&stk, task, evt);                       // 1.2
+                    if (stk.block == NULL) return;  // outer block died, cannot continue to next task
                 }
-                if (stk.block == NULL) return;  // outer block died, cannot continue to next task
                 aux(task->links.tsk_next);                          // 1.3
             }
             

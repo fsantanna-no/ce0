@@ -1019,4 +1019,59 @@ class TTask {
        """.trimIndent())
         assert(out == "1\n2\n3\n4\n") { out }
     }
+
+    @Test
+    fun g03_f_kill () {
+        val out = all("""
+            var fff: func () -> () {}
+            set fff = func () -> () {}
+            spawn (task @LOCAL->@[]->()->()->() {
+                output std _111:_int
+                {
+                    call fff ()
+                }
+                output std _222:_int
+            }) ()
+       """.trimIndent())
+        assert(out == "111\n222\n") { out }
+    }
+
+    @Test
+    fun g04_err () {
+        val out = all("""
+            type Event = <(),_uint64_t,()>
+            
+            spawn (task @GLOBAL -> @[] -> () -> () -> () {
+                output std (_111: _int)                                         
+            
+                var t1: active task @LOCAL -> @[] -> () -> () -> ()             
+                set t1 = spawn (task @LOCAL -> @[] -> () -> () -> () {              
+                    native _{printf(">2> %p\n", task0);}                          
+                    output std (_("Dragging..."): _(char*))                        
+            
+                    var t2: active task @LOCAL -> @[] -> () -> () -> ()        
+                    set t2 = spawn (task @LOCAL -> @[] -> () -> () -> () {
+                        native _{printf(">1> %p\n", task0);}
+                        await (_1: _int)                               
+                        output std (_222: _int)                             
+                    } @[] ())                          
+            
+                    await ((evt:- Event)?2)     
+                    native _{printf(">1> %p\n", (void*)xxx.evt->payload.Task);}    
+                    output std (_333: _int)                  
+                    output std (_("Dropped!"): _(char*))
+                } @[] ())                   
+            
+                await ((evt:- Event)?2)            
+                output std (_444: _int)                                  
+                native _{printf(">2> %p\n", (void*)xxx.evt->payload.Task);}
+                output std (_555: _int)
+            } @[] ())
+            
+            output std _999:_int
+            emit @GLOBAL (<.3 ()>: <(),_uint64_t,()>:+ Event)
+            output std (_666: _int)
+       """.trimIndent())
+        assert(out == "111\n222\n") { out }
+    }
 }

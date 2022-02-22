@@ -1705,30 +1705,6 @@ class TExec {
         assert(out == "(ln 6, col 19): undeclared variable \"x\"") { out }
     }
     @Test
-    fun n12_pool_closure () {
-        val out = all(
-            """
-            var f: func@[]-> (func@[]->()->()) -> func @GLOBAL->()->()
-            set f = func@[]-> func@[]->()->() -> (func @GLOBAL->()->()) {
-                var ff: func@[]->()->()
-                set ff = arg
-                set ret = func @GLOBAL->@[]->()->() {   -- ERR: ff is between f and a1, so it will leak
-                    call ff ()
-                }
-            }
-            var u: func()->()
-            set u = func()->() {
-                output std ()
-            }
-            var ff: (func @GLOBAL->@[]->()->())
-            set ff = f u
-            call ff ()
-        """.trimIndent()
-        )
-        //assert(out == "()\n") { out }
-        assert(out == "(ln 6, col 14): undeclared variable \"ff\"") { out }
-    }
-    @Test
     fun n13_pool_ups1 () {
         val out = all(
             """
