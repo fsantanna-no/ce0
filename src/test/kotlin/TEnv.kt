@@ -621,10 +621,12 @@ class TEnv {
         """.trimIndent())
         //assert(out == "(ln 5, col 24): undeclared scope \"A\"") { out }
         //assert(out == "(ln 6, col 13): invalid access to \"pa\" : invalid closure declaration (ln 4)") { out }
-        assert(out == "(ln 6, col 13): undeclared variable \"pa\"") { out }
+        //assert(out == "(ln 6, col 13): undeclared variable \"pa\"") { out }
+        assert(out == "OK") { out }
     }
+    @Disabled // no more closures
     @Test
-    fun e07_ptr_ok () {
+    fun xe07_ptr_ok () {
         val out = inp2env("""
             { @A
                 var pa: /_int @LOCAL
@@ -639,7 +641,24 @@ class TEnv {
         assert(out == "(ln 6, col 13): undeclared variable \"pa\"") { out }
     }
     @Test
-    fun e07_ptr_err2 () {
+    fun e07_ptr_ok () {
+        val out = inp2env("""
+            { @A
+                var pa: /_int @LOCAL
+                var f: (func@[]->()->())
+                set f = func@[]->()->() {
+                    var pf: /_int @A
+                    set pa = pf
+                }
+            }
+        """.trimIndent())
+        //assert(out == "(ln 5, col 24): undeclared scope \"A\"") { out }
+        //assert(out == "(ln 6, col 13): undeclared variable \"pa\"") { out }
+        assert(out == "OK") { out }
+    }
+    @Disabled // no more closures
+    @Test
+    fun xe07_ptr_err2 () {
         val out = inp2env("""
             var f: func@[]->()->()
             { @A
@@ -655,7 +674,25 @@ class TEnv {
         //assert(out == "(ln 6, col 20): invalid access to \"pa\" : invalid closure declaration (ln 5)") { out }
     }
     @Test
-    fun e07_ptr_err4 () {
+    fun e07_ptr_err2 () {
+        val out = inp2env("""
+            var f: func@[]->()->()          -- err
+            { @A
+                var pa: ()
+                set pa = ()
+                set f = func @[]->()->() {  -- err
+                    output std pa
+                }
+            }
+            call f()
+        """.trimIndent())
+        //assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch :")) { out }
+        //assert(out == "(ln 6, col 20): invalid access to \"pa\" : invalid closure declaration (ln 5)") { out }
+        assert(out.startsWith("ERR: cannot assign f in diff scopes")) { out }
+    }
+    @Disabled // no more closures
+    @Test
+    fun xe07_ptr_err4 () {
         val out = inp2env("""
             var f: func @a->@[]->()->()
         """.trimIndent())
@@ -2451,23 +2488,6 @@ class TEnv {
         assert(out == "OK") { out }
     }
     @Test
-    fun p19_pool_closure_err() {
-        val out = inp2env(
-            """
-            var f: func@[]->() -> ()
-            {
-                var x: /</_int@LOCAL>@LOCAL
-                set f = func@[]->() -> () { -- OK?: x escapes but no enclosing func
-                    output std x
-                }
-            }
-        """.trimIndent()
-        )
-        //assert(out == "OK") { out }
-        //assert(out == "(ln 5, col 20): invalid access to \"x\" : invalid closure declaration (ln 4)") { out }
-        assert(out == "(ln 5, col 20): undeclared variable \"x\"") { out }
-    }
-    @Test
     fun p20_pool_closure_err() {
         val out = inp2env(
             """
@@ -2482,14 +2502,30 @@ class TEnv {
         """.trimIndent()
         )
         //assert(out == "(ln 6, col 20): invalid access to \"x\" : invalid closure declaration (ln 5)") { out }
-        assert(out == "(ln 6, col 20): undeclared variable \"x\"") { out }
+        //assert(out == "(ln 6, col 20): undeclared variable \"x\"") { out }
+        assert(out == "OK") { out }
     }
+    @Disabled // no more closures
     @Test
     fun p21_pool_closure_err() {
         val out = inp2env(
             """
             var f : func @LOCAL->@[]->() -> ()
             set f = func @LOCAL->@[]->() -> () {
+                var x: ()
+                output std x
+            }
+        """.trimIndent()
+        )
+        //assert(out == "(ln 2, col 9): invalid function : unexpected closure declaration") { out }
+        assert(out == "OK") { out }
+    }
+    @Test
+    fun p21_pool_closure_err2() {
+        val out = inp2env(
+            """
+            var f : func @[]->() -> ()
+            set f = func @[]->() -> () {
                 var x: ()
                 output std x
             }
@@ -2510,7 +2546,7 @@ class TEnv {
                 set f = func @[b1]->()  -> () {
                     output std x
                 }
-                set ret = f
+                set ret = f     -- err: cannot escape
             }
             var f : func @[a1]->() -> ()
             set f = g @[LOCAL] ()
@@ -2518,7 +2554,8 @@ class TEnv {
         """.trimIndent()
         )
         //assert(out == "(ln 7, col 20): invalid access to \"x\" : invalid closure declaration (ln 6)") { out }
-        assert(out == "(ln 7, col 20): undeclared variable \"x\"") { out }
+        //assert(out == "(ln 7, col 20): undeclared variable \"x\"") { out }
+        assert(out == "ERR: f cannot escape") { out }
     }
     @Test
     fun p23_pool_closure_err2() {
@@ -2588,6 +2625,7 @@ class TEnv {
         )
         assert(out == "OK") { out }
     }
+    @Disabled // no more closures
     @Test
     fun p29_upwrite_err () {
         val out = inp2env("""
@@ -2607,7 +2645,26 @@ class TEnv {
         assert(out == "OK") { out }
     }
     @Test
-    fun p30_closure_ok0 () {
+    fun p29_upwrite_err2 () {
+        val out = inp2env("""
+            { @A
+                var pa: /</_int @LOCAL> @LOCAL
+                var f: func@[]-> ()->()
+                set f = func @[]-> ()->() {
+                    var pf: /</_int @A> @A
+                    --set pf = new <.1 <.0>: /</_int @A> @A>:</_int @A>: @A
+                    set pa = pf
+                }
+                call f ()
+                output std pa
+            }
+        """.trimIndent())
+        //assert(out == "(ln 7, col 16): invalid assignment : cannot modify an upalue") { out }
+        assert(out == "OK") { out }
+    }
+    @Disabled // no more closures
+    @Test
+    fun xp30_closure_ok0 () {
         val out = inp2env("""
             {
                 var f: func @LOCAL -> @[] -> () -> ()
@@ -2618,16 +2675,42 @@ class TEnv {
         assert(out == "OK") { out }
     }
     @Test
-    fun p30_closure_ok () {
+    fun p30_closure_ok0 () {
+        val out = inp2env("""
+            {
+                var f: func @[] -> () -> ()
+                var g: func @[] -> () -> ()
+                set f = g
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Disabled // no more closures
+    @Test
+    fun xp30_closure_ok () {
         val out = inp2env("""
             var g: func @[a1]->() -> (func @a1->@[b1]->()->/</_int@b1>@b1)
         """.trimIndent())
         assert(out == "OK") { out }
     }
+    fun p30_closure_ok () {
+        val out = inp2env("""
+            var g: func @[a1]->() -> (func @[b1]->()->/</_int@b1>@b1)
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Disabled // no more closures
+    @Test
+    fun xp31_closure_err () {
+        val out = inp2env("""
+            var g: func @[a1] -> () -> (func @a1->@[]->()->/</_int@b1>@b1)
+        """.trimIndent())
+        assert(out == "(ln 1, col 29): invalid function type : missing scope argument") { out }
+    }
     @Test
     fun p31_closure_err () {
         val out = inp2env("""
-            var g: func @[a1] -> () -> (func @a1->@[]->()->/</_int@b1>@b1)
+            var g: func @[a1] -> () -> (func @[]->()->/</_int@b1>@b1)
         """.trimIndent())
         assert(out == "(ln 1, col 29): invalid function type : missing scope argument") { out }
     }
@@ -2915,6 +2998,7 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK") { out }
     }
+    @Disabled // no more closures
     @Test
     fun q18_curry () {
         val out = inp2env("""
@@ -2929,8 +3013,9 @@ class TEnv {
 
     // CLOSURE
 
+    @Disabled // no more closures
     @Test
-    fun r01 () {
+    fun xr01 () {
         val out = inp2env("""
             { @A
                 var pa: /_int@LOCAL
@@ -2944,7 +3029,22 @@ class TEnv {
         assert(out == "OK") { out }
     }
     @Test
-    fun r02 () {
+    fun r01 () {
+        val out = inp2env("""
+            { @A
+                var pa: /_int@LOCAL
+                var f: (func @[]->()->())
+                set f = func @[]->()->() {     -- OK: pa lives while @A lives
+                    var pf: /_int @A
+                    set pf = pa
+                }
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Disabled // no more closures
+    @Test
+    fun xr02 () {
         val out = inp2env("""
             var f: func@[]->()->()
             { @A
@@ -2959,8 +3059,9 @@ class TEnv {
         assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch")) { out }
         //assert(out == "OK") { out }
     }
+    @Disabled // no more closures
     @Test
-    fun r03 () {
+    fun xr03 () {
         val out = inp2env("""
             var f: func@[]->()->()
             { @A
@@ -2975,8 +3076,9 @@ class TEnv {
         //assert(out == "(ln 5, col 13): undeclared variable \"xxx\"") { out }
         assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch :")) { out }
     }
+    @Disabled // no more closures
     @Test
-    fun r04 () {
+    fun xr04 () {
         val out = inp2env("""
             { @A
                 var pa: /_int @LOCAL
@@ -2994,7 +3096,26 @@ class TEnv {
         assert(out.startsWith("(ln 6, col 16): invalid assignment : type mismatch")) { out }
     }
     @Test
-    fun r05 () {
+    fun r04 () {
+        val out = inp2env("""
+            { @A
+                var pa: /_int @LOCAL
+                var f: func @[a1]->[/()@a1]->()
+                set f = func @[a1]->[/()@a1]->() {
+                    var pf: /_int @a1
+                    set pa = arg
+                }
+                {
+                    var x: ()
+                    call f @[LOCAL] [/x]
+                }
+            }
+        """.trimIndent())
+        assert(out.startsWith("(ln 6, col 16): invalid assignment : type mismatch")) { out }
+    }
+    @Disabled // no more closures
+    @Test
+    fun xr05 () {
         val out = inp2env("""
             var p: /() @GLOBAL
             { @A
@@ -3011,7 +3132,25 @@ class TEnv {
         assert(out.startsWith("(ln 6, col 17): invalid return : type mismatch")) { out }
     }
     @Test
-    fun r06 () {
+    fun r05 () {
+        val out = inp2env("""
+            var p: /() @GLOBAL
+            {
+                var v: ()
+                var f : func @[i1] -> () -> /()@i1
+                set f = func @[i1] -> () -> /()@i1 {
+                    set ret = /v      -- err: /v may not be at expected @
+                }
+                {
+                    --set p = f ()    -- p=@ is smaller than /v
+                }
+            }
+        """.trimIndent())
+        assert(out.startsWith("(ln 6, col 17): invalid return : type mismatch")) { out }
+    }
+    @Disabled // no more closures
+    @Test
+    fun xr06 () {
         val out = inp2env("""
             { @A
                 var v: _int
@@ -3029,7 +3168,26 @@ class TEnv {
         assert(out == "OK") { out }
     }
     @Test
-    fun r07() {
+    fun r06 () {
+        val out = inp2env("""
+            { @A
+                var v: _int
+                set v = _10: _int
+                var f : func @[a] -> () -> /_int@a
+                set f = func @[a] -> () -> /_int@a {
+                    set ret = /v
+                }
+                var p: /_int @LOCAL
+                {
+                    set p = f @[A] (): @A
+                }
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
+    }
+    @Disabled // no more closures
+    @Test
+    fun xr07() {
         val out = inp2env(
             """
             var f: func @LOCAL->@[]->() -> ()
@@ -3043,8 +3201,9 @@ class TEnv {
         )
         assert(out.startsWith("(ln 4, col 11): invalid assignment : type mismatch")) { out }
     }
+    @Disabled // no more closures
     @Test
-    fun r08 () {
+    fun xr08 () {
         val out = inp2env("""
             {
                 var x: ()
@@ -3055,25 +3214,19 @@ class TEnv {
         assert(out == "OK") { out }
     }
     @Test
-    fun r09 () {
+    fun r08 () {
         val out = inp2env("""
-            var f: func () -> _int          -- 1. `f` is a reference to a function
             {
-                var x: _int
-                set x = _10: _int
-                set f = func () -> _int {   -- 2. `f` is created
-                    set ret = x             -- 3. `f` needs access to `x`
-                    return
-                }
-            }                               -- 4. `x` goes out of scope
-            call f ()                       -- 5. `f` still wants to access `x`
-        """.trimIndent()
-        )
-        //assert(out == "(ln 6, col 19): invalid access to \"x\" : invalid closure declaration (ln 5)") { out }
-        assert(out == "(ln 6, col 19): undeclared variable \"x\"") { out }
+                var x: ()
+                var f : func @[] -> () -> ()
+                set f = func @[] -> () -> () { set ret = x }
+            }
+        """.trimIndent())
+        assert(out == "OK") { out }
     }
+    @Disabled // no more closures
     @Test
-    fun r11 () {
+    fun xr11 () {
         val out = inp2env(
             """
             var g: func @[a1]->() -> func @a1->@[]-> ()->()
@@ -3089,7 +3242,25 @@ class TEnv {
         assert(out == "(ln 6, col 20): undeclared variable \"x\"") { out }
     }
     @Test
-    fun todo_r12_err () {
+    fun r11 () {
+        val out = inp2env(
+            """
+            var g: func @[]->() -> func @[]-> ()->()
+            set g = func@[]->() -> func @[]-> ()->() {
+                var x: ()
+                var f: func @[]-> () -> ()
+                set f = func () -> () {   -- ERR: x is between f and a1, so it will leak
+                    output std x
+                }
+            }
+        """.trimIndent()
+        )
+        //assert(out == "(ln 6, col 20): undeclared variable \"x\"") { out }
+        assert(out == "OK") { out }
+    }
+    @Disabled // no more closures
+    @Test
+    fun xtodo_r12_err () {
         val out = inp2env(
             """
             var f : func @[] -> _int -> ()
@@ -3111,6 +3282,30 @@ class TEnv {
         """.trimIndent()
         )
         assert(out == "ERR") { out }
+    }
+    @Test
+    fun r12_ok () {
+        val out = inp2env(
+            """
+            var f : func @[] -> _int -> ()
+            set f = func @[] -> _int -> () {
+                var x: _int
+                set x = arg
+                var g : func @[] -> () -> _int      -- ERR: needs @A->
+                set g = func @[] -> () -> _int {
+                    var h : func @[] -> () -> _int
+                    set h = func @[] -> () -> _int {
+                        set ret = x
+                        return
+                    }
+                    output std h ()
+                }
+                call g ()
+            }
+            call f _10:_int
+        """.trimIndent()
+        )
+        assert(out == "OK") { out }
     }
 
     // AS
@@ -3160,8 +3355,9 @@ class TEnv {
         assert(out == "111\n222\n") { out }
     }
 
+    @Disabled // no more closures
     @Test
-    fun s06_pool_closure () {
+    fun xs06_pool_closure () {
         val out = inp2env(
             """
             var f: func@[]-> (func@[]->()->()) -> func @GLOBAL->()->()
@@ -3183,5 +3379,30 @@ class TEnv {
         )
         //assert(out == "()\n") { out }
         assert(out == "(ln 6, col 14): undeclared variable \"ff\"") { out }
+    }
+    @Test
+    fun s06_pool_closure () {
+        val out = inp2env(
+            """
+            var f: func@[]-> (func@[]->()->()) -> func ()->()
+            set f = func@[]-> func@[]->()->() -> (func ()->()) {
+                var ff: func@[]->()->()
+                set ff = arg
+                set ret = func @[]->()->() {   -- ERR: ff is between f and a1, so it will leak
+                    call ff ()
+                }
+            }
+            var u: func()->()
+            set u = func()->() {
+                output std ()
+            }
+            var ff: (func @[]->()->())
+            set ff = f u
+            call ff ()
+        """.trimIndent()
+        )
+        //assert(out == "()\n") { out }
+        //assert(out == "(ln 6, col 14): undeclared variable \"ff\"") { out }
+        assert(out == "ERR: cannot return func") { out }
     }
 }

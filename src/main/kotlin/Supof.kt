@@ -3,9 +3,7 @@
 //      becomes
 // var g: func @[] -> {@a,@b,@c} -> [/</^@a>@a,/</^@b>@b] -> /</^@c>@c
 fun Type.Func.mapLabels (up: Any): Type.Func {
-    val fst = this.xscps.first.let { if (it==null) emptyList() else listOf(it) }
-    val snd = this.xscps.second.map { it }
-    val scps: List<String> = (fst + snd).map { it.scp1.id }
+    val scps: List<String> = this.xscps.first.map { it.scp1.id }
     val MAP: Map<String, String> = scps.zip((1..scps.size).map { 'a'+it-1+"" }).toMap()
     fun Type.aux (): Type {
         return when (this) {
@@ -52,7 +50,7 @@ fun Scope.isNestIn (sub: Scope, up: Any): Boolean {
         bothcst -> (this.scp2!!.third!! >= sub.scp2!!.third!!)
         bothpar -> this.scp2!!.second!! == sub.scp2!!.second!! || (up.ups_first { it is Expr.Func } as Expr.Func).let {
             // look for (this.id > sub.id) in constraints
-            it.type.xscps.third.any { it.first==this.scp2!!.second!! && it.second==sub.scp2!!.second!! }
+            it.type.xscps.second.any { it.first==this.scp2!!.second!! && it.second==sub.scp2!!.second!! }
         }
         else -> (sub.scp2!!.second!=null && this.scp2!!.first==sub.scp2!!.first)
         // diff abs/rel -> this must be par and bot must be at the same lvl
@@ -70,7 +68,6 @@ fun Type.isSupOf (sub: Type, isproto: Boolean=false): Boolean {
             val sup2 = this.mapLabels(this.wup!!)
             val sub2 = sub.mapLabels(sub.wup!!)
             (
-                sup2.xscps.first?.scp2?.third == sub2.xscps.first?.scp2?.third &&
                 sup2.inp.isSupOf(sub2.inp,true) &&
                 sub2.inp.isSupOf(sup2.inp,true) &&
                 sup2.out.isSupOf(sub2.out,true) &&

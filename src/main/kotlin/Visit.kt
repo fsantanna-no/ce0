@@ -10,10 +10,7 @@ fun Type.visit (ft: ((Type) -> Unit)?, fx: ((Any,Scope) -> Unit)?) {
         is Type.Pointer -> { if (fx!=null && this.xscp!=null) fx(this,this.xscp!!) ; this.pln.visit(ft,fx) }
         is Type.Alias   -> if (fx!=null && this.xscps!=null) this.xscps!!.forEach { fx(this,it) }
         is Type.Func    -> {
-            this.xscps.let {
-                if (it.first != null) if (fx!=null) fx(this,it.first!!)
-                it.second?.forEach { if (fx!=null) fx(this,it) }
-            }
+            this.xscps.first?.forEach { if (fx!=null) fx(this,it) }
             this.inp.visit(ft,fx) ; this.pub?.visit(ft,fx) ; this.out.visit(ft,fx)
         }
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases

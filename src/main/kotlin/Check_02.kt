@@ -17,7 +17,7 @@ fun check_02_after_tps (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
             is Type.Alias -> {
-                val def = tp.env(tp.tk_.id,true) as Stmt.Typedef
+                val def = tp.env(tp.tk_.id) as Stmt.Typedef
                 val s1 = def.xscp1s.first!!.size
                 val s2 = tp.xscps!!.size
                 All_assert_tk(tp.tk, s1 == s2) {    // xsc1ps may not be available in Check_01
@@ -69,9 +69,9 @@ fun check_02_after_tps (s: Stmt) {
                 val arg1 = e.arg.wtype!!
 
                 val (scp1s,inp1,out1) = when (func) {
-                    is Type.Spawn  -> Triple(Pair(func.tsk.xscps.second,func.tsk.xscps.third),func.tsk.inp,func.tsk.out)
-                    is Type.Spawns -> Triple(Pair(func.tsk.xscps.second,func.tsk.xscps.third),func.tsk.inp,func.tsk.out)
-                    is Type.Func   -> Triple(Pair(func.xscps.second,func.xscps.third),func.inp,func.out)
+                    is Type.Spawn  -> Triple(Pair(func.tsk.xscps.first,func.tsk.xscps.second),func.tsk.inp,func.tsk.out)
+                    is Type.Spawns -> Triple(Pair(func.tsk.xscps.first,func.tsk.xscps.second),func.tsk.inp,func.tsk.out)
+                    is Type.Func   -> Triple(Pair(func.xscps.first,func.xscps.second),func.inp,func.out)
                     is Type.Nat    -> Triple(Pair(emptyList(),emptyList()),func,func)
                     else -> error("impossible case")
                 }

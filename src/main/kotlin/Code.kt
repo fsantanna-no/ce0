@@ -73,9 +73,9 @@ fun code_ft (tp: Type) {
                 typedef struct ${tp.toce()} {
                     Task task0;
                     union {
-                        Block* blks[${tp.xscps.second.size}];
+                        Block* blks[${tp.xscps.first.size}];
                         struct {
-                            ${tp.xscps.second.let { if (it.size == 0) "" else
+                            ${tp.xscps.first.let { if (it.size == 0) "" else
                                 it.map { "Block* ${it.scp1.id};\n" }.joinToString("") }
                             }
                         };
@@ -91,7 +91,7 @@ fun code_ft (tp: Type) {
                 typedef union {
                     _Event* evt;
                     struct {
-                        Block* blks[${tp.xscps.second.size}];
+                        Block* blks[${tp.xscps.first.size}];
                         ${tp.inp.pos()} arg;
                     } pars;
                 } X_${tp.toce()};
@@ -433,19 +433,11 @@ fun code_fe (e: Expr) {
                     )
                 }
                 (tpf is Type.Func) -> {
-                    val istk   = (tpf.tk.enu == TK.TASK)
-                    val block  = e.wup.let {
+                    val block = e.wup.let {
                         if (it is Stmt.DSpawn) {
                             "&" + (it.dst as Expr.Var).tk_.id.mem(e) + ".block"
                         } else {
-                            // closure block: allows the func to escape up to it
-                            tpf.xscps.first.let {
-                                if (it == null) {
-                                    e.localBlockMem()
-                                } else {
-                                    tpf.xscps.first!!.toce(e.wup!!)
-                                }
-                            }
+                            e.localBlockMem()
                         }
                     }
 

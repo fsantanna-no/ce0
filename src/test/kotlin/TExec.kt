@@ -1395,8 +1395,8 @@ class TExec {
             { @A
                 var pa: /List @[LOCAL] @LOCAL
                 set pa = new <.1 <.0>: /List @[A] @A>:</List @[A]>:+List @[A]: @A
-                var f: func @A-> ()->()
-                set f = func@A-> @[]-> ()->() {
+                var f: func ()->()
+                set f = func @[]-> ()->() {
                     var pf: /List @[A] @A
                     set pf = new <.1 <.0>: /List @[A] @A>:</List @[A] @A>:+List @[A]: @A
                     set pa\ :- List@[A] !1 = pf
@@ -1590,6 +1590,7 @@ class TExec {
         assert(out == "()\n") { out }
     }
 
+    @Disabled // cannot return function
     @Test
     fun n08_pool_closure() {
         val out = all(
@@ -1619,8 +1620,8 @@ class TExec {
             { @A
                 var xxx: _int
                 set xxx = _10:_int
-                var f: (func @A->()->_int)
-                set f = func @A->()->_int {
+                var f: (func ()->_int)
+                set f = func ()->_int {
                     set ret = xxx
                 }
                 set xxx = _20:_int
@@ -1631,6 +1632,7 @@ class TExec {
         """.trimIndent())
         assert(out == "20\n20\n") { out }
     }
+    @Disabled // cannot return function
     @Test
     fun n09_pool_closure_err() {
         val out = all(
@@ -1654,6 +1656,7 @@ class TExec {
         //assert(out == "(ln 8, col 20): invalid access to \"x\" : invalid closure declaration (ln 7)") { out }
         assert(out == "(ln 8, col 20): undeclared variable \"x\"") { out }
     }
+    @Disabled // cannot return function
     @Test
     fun n10_pool_closure () {
         val out = all(
@@ -1680,6 +1683,7 @@ class TExec {
         //assert(out == "5\n") { out }
         assert(out == "(ln 6, col 19): undeclared variable \"x\"") { out }
     }
+    @Disabled // cannot return function
     @Test
     fun n11_pool_closure () {
         val out = all(
@@ -1704,6 +1708,7 @@ class TExec {
         //assert(out == "5\n") { out }
         assert(out == "(ln 6, col 19): undeclared variable \"x\"") { out }
     }
+    @Disabled // removed closures
     @Test
     fun n13_pool_ups1 () {
         val out = all(
@@ -1725,6 +1730,27 @@ class TExec {
         assert(out == "10\n") { out }
     }
     @Test
+    fun xn13_pool_ups1 () {
+        val out = all(
+            """
+            var f : func @[] -> _int -> ()
+            set f = func @[] -> _int -> () { @A
+                var x: _int
+                set x = arg
+                var g : func @[] -> () -> _int
+                set g = func @[] -> () -> _int {
+                    set ret = x
+                    return
+                }
+                output std g ()
+            }
+            call f _10:_int
+        """.trimIndent()
+        )
+        assert(out == "10\n") { out }
+    }
+    @Disabled // removed closures
+    @Test
     fun n14_pool_ups2 () {
         val out = all(
             """
@@ -1736,6 +1762,30 @@ class TExec {
                 set g = func @A -> @[] -> () -> _int {
                     var h : func @A -> @[] -> () -> _int
                     set h = func @A -> @[] -> () -> _int {
+                        set ret = x
+                        return
+                    }
+                    output std h ()
+                }
+                call g ()
+            }
+            call f _10:_int
+        """.trimIndent()
+        )
+        assert(out == "10\n") { out }
+    }
+    @Test
+    fun xn14_pool_ups2 () {
+        val out = all(
+            """
+            var f : func @[] -> _int -> ()
+            set f = func @[] -> _int -> () { @A
+                var x: _int
+                set x = arg
+                var g : func @[] -> () -> _int
+                set g = func @[] -> () -> _int {
+                    var h : func @[] -> () -> _int
+                    set h = func @[] -> () -> _int {
                         set ret = x
                         return
                     }
@@ -2170,6 +2220,7 @@ class TExec {
         )
         assert(out == "15\n") { out }
     }
+    @Disabled // removed closures
     @Test
     fun z17_curry () {
         val out = all("""

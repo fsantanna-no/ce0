@@ -49,17 +49,7 @@ fun <T> Any.env_first_map (f: (Any)->T): T? {
     return aux (this.getEnv())
 }
 
-fun Any.env (id: String, skip:Boolean=false): Any? {
-    // skip=true: can skip function boundaries normally
-    //print(">>> ") ; println(id)
-
-    // first try to skip and check if is global (globals are always ok)
-    if (!skip) {
-        val glb = this.env(id,true)
-        if (glb!=null && glb.ups_first { it is Stmt.Block }==null) {
-            return glb
-        }
-    }
+fun Any.env (id: String): Any? {
     // keep types apart from var/block
     val xid = if (id.istype()) id else id.toUpperCase()
     return this.env_first_map {
@@ -73,34 +63,16 @@ fun Any.env (id: String, skip:Boolean=false): Any? {
                     (id == "arg") -> it.type.inp
                     (id == "pub") -> it.type.pub!!
                     (id == "ret") -> it.type.out
-                    (id == "evt") -> Type.Alias(Tk.Id(TK.XID, it.tk.lin, it.tk.col, "Event"), false, emptyList())
-                                .clone(it, it.tk.lin, it.tk.col)
-                    skip  -> null   // try next
-
-                    // ensures that var is *not* between myself and base scope (excluding myself/base)
-                    // Unit means stop search + fail result
-                    else -> {
-                        val base = it.type.xscps.first
-                        when {
-                            // base is myself, so this function can live anywhere and var would leak
-                            (base == null) -> Unit
-                            // base is unknown, also not sure if var leaks
-                            (base.scp1.isscopepar()) -> Unit
-                            // search id above base
-                            else -> it.block.ups_first (true) {
-                                val blk = it is Stmt.Block && (it.ups_first {
-                                    it is Stmt.Block && it.scp1?.id==base.scp1.id
-                                } != null)
-                                blk
-                            }?.env(id,true)
-                        }
-                    }
+                    (id == "evt") -> Type.Alias (
+                        Tk.Id(TK.XID, it.tk.lin, it.tk.col, "Event"),
+                        false,
+                        emptyList()
+                    ).clone(it, it.tk.lin, it.tk.col)
+                    else  -> null
                 }
             }
             else -> null
         }
-    }.let {
-        if (it is Unit) null else it
     }
 }
 
@@ -112,7 +84,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
         tp.wenv = if (this is Stmt.Typedef) this else env
         when (tp) {
             is Type.Alias -> {
-                tp.xisrec = tp.env(tp.tk_.id,true)?.toType()?.let {
+                tp.xisrec = tp.env(tp.tk_.id)?.toType()?.let {
                     it.flattenLeft().any { it is Type.Alias && it.tk_.id==tp.tk_.id }
                 } ?: false
             }

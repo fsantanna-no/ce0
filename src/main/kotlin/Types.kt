@@ -28,12 +28,12 @@ fun Stmt.setTypes () {
                 when (tpd) {
                     is Type.Nat, is Type.Spawn, is Type.Spawns -> tpd
                     is Type.Func -> {
-                        if (tpd.xscps.second.size != e.xscps.first.size) {
+                        if (tpd.xscps.first.size != e.xscps.first.size) {
                             // TODO: may fail before check2, return anything
                             Type.Nat(Tk.Nat(TK.NATIVE, e.tk.lin, e.tk.col, null, "ERR"))
                         } else {
                             tpd.out.mapScps(true,
-                                tpd.xscps.second.map { it.scp1.id }.zip(e.xscps.first).toMap()
+                                tpd.xscps.first.map { it.scp1.id }.zip(e.xscps.first).toMap()
                             )
                         }
                     }

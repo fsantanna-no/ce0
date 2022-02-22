@@ -813,7 +813,7 @@ class TParser {
 
     @Test
     fun d01_type_task () {
-        All_new(PushbackReader(StringReader("task @LOCAL->@[]->()->()->() {}"), 2))
+        All_new(PushbackReader(StringReader("task @[]->()->()->() {}"), 2))
         Lexer.lex()
         val tp = Parser().type(false)
         assert(tp is Type.Func && tp.tk.enu==TK.TASK)
@@ -896,19 +896,21 @@ class TParser {
     fun d09_tasks () { // task @LOCAL->@[]->()->()->() {}
         All_new(PushbackReader(StringReader("active tasks @[]->()->()->()"), 2))
         Lexer.lex()
-        try {
-            Parser().type(false)
-            error("impossible case")
-        } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 14): expected `@´ : have `@[´") { e.message!! }
-        }
+        //try {
+            val s = Parser().type(false)
+        //    error("impossible case")
+        //} catch (e: Throwable) {
+            //assert(e.message == "(ln 1, col 14): expected `@´ : have `@[´") { e.message!! }
+            assert(s is Type.Spawns)
+        //}
     }
+    @Disabled // no more closures
     @Test
     fun d10_tassk () {
         All_new(PushbackReader(StringReader("active tasks @LOCAL->@[]->()->()->()"), 2))
         Lexer.lex()
         val tp = Parser().type(false)
-        assert(tp is Type.Spawns && tp.tsk.tk.enu==TK.TASKS && tp.tsk.xscps.first!!.scp1.id=="LOCAL")
+        assert(tp is Type.Spawns && tp.tsk.tk.enu==TK.TASKS)
     }
 
     // TYPEDEF
