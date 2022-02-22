@@ -70,6 +70,12 @@ fun check_01_before_tps (s: Stmt) {
     }
     fun fe (e: Expr) {
         when (e) {
+            is Expr.Var -> {
+                All_assert_tk(e.tk, e.env(e.tk_.id) != null) {
+                    "undeclared variable \"${e.tk_.id}\""
+                }
+            }
+
             is Expr.UNull -> {
                 if (e.xtype != null) e.check()
             }

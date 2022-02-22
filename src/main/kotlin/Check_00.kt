@@ -12,10 +12,11 @@ fun check_00_after_envs (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.Var -> {
-                All_assert_tk(e.tk, e.env(e.tk_.id) != null) {
+                All_assert_tk(e.tk, e.env(e.tk_.id, true) != null) {
                     "undeclared variable \"${e.tk_.id}\""
                 }
             }
+
             is Expr.Upref -> {
                 var track = false   // start tracking count if crosses UDisc
                 var count = 1       // must remain positive after track (no uprefs)

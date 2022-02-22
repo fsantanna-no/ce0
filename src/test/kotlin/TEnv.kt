@@ -23,7 +23,9 @@ class TEnv {
             check_02_after_tps(s)
             return "OK"
         } catch (e: Throwable) {
-            //throw e
+            if (THROW) {
+                throw e
+            }
             return e.message!!
         }
     }

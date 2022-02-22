@@ -80,9 +80,7 @@ fun Any.env (id: String, skip:Boolean=false): Any? {
                     // ensures that var is *not* between myself and base scope (excluding myself/base)
                     // Unit means stop search + fail result
                     else -> {
-                        //println(">2> $id")
                         val base = it.type.xscps.first
-                        //println(base?.scp1?.id)
                         when {
                             // base is myself, so this function can live anywhere and var would leak
                             (base == null) -> Unit
@@ -90,16 +88,11 @@ fun Any.env (id: String, skip:Boolean=false): Any? {
                             (base.scp1.isscopepar()) -> Unit
                             // search id above base
                             else -> it.block.ups_first (true) {
-                                //println(">>> " + id)
-                                //println(it)
                                 val blk = it is Stmt.Block && (it.ups_first {
-                                    //println(it)
                                     it is Stmt.Block && it.scp1?.id==base.scp1.id
                                 } != null)
-                                //println(blk)
-                                //println("<<<")
                                 blk
-                            }?.env(id,true) /*.let { println("OK? + $it"); it }*/ ?: Unit
+                            }?.env(id,true)
                         }
                     }
                 }
