@@ -405,14 +405,14 @@ class TParser {
         All_new(PushbackReader(StringReader("<.1 ()>:<()>"), 2))
         Lexer.lex()
         val e = Parser().expr()
-        assert(e is Expr.UCons && e.tk_.num==1 && e.arg is Expr.Unit)
+        assert(e is Expr.UCons && e.tk_.num==1 && e.xarg is Expr.Unit)
     }
     @Test
     fun b17_parser_expr_cons () {
         All_new(PushbackReader(StringReader("<.2 <.1 [(),()]>:<()>>:<()>"), 2))
         Lexer.lex()
         val e = Parser().expr()
-        assert(e is Expr.UCons && e.tk_.num==2 && e.arg is Expr.UCons && (e.arg as Expr.UCons).arg is Expr.TCons)
+        assert(e is Expr.UCons && e.tk_.num==2 && e.xarg is Expr.UCons && (e.xarg as Expr.UCons).xarg is Expr.TCons)
     }
 
     // INDEX

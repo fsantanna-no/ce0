@@ -31,7 +31,7 @@ fun Expr.UNull.check () {
 }
 
 fun Expr.UCons.check () {
-    val tp = this.xtype!!.noalias()     // .noalias() b/c of Ce1
+    val tp = this.xtype!!
     All_assert_tk(this.xtype!!.tk, tp is Type.Union) { "invalid type : expected union" }
     val uni = tp as Type.Union
     val ok = (uni.vec.size >= this.tk_.num)

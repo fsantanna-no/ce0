@@ -50,7 +50,7 @@ fun check_02_after_tps (s: Stmt) {
                 e.check()
                 val uni = e.xtype as Type.Union
                 val sup = uni.vec[e.tk_.num - 1]
-                val sub = e.arg.wtype!!
+                val sub = e.xarg.wtype!!
                 All_assert_tk(e.tk, sup.isSupOf(sub)) {
                     "invalid union constructor : ${mismatch(sup,sub)}"
                 }

@@ -2846,12 +2846,12 @@ class TEnv {
         assert(out == "OK") { out }
     }
 
-    @Test // TODO: noalias in Check_01.UCons.check (need to separate ce0/ce1)
+    @Test
     fun s05_event () {
         val out = inp2env("""
             type Event = <(),_uint64_t,()>
             emit <.3 ()>: Event
        """.trimIndent())
-        assert(out == "111\n222\n") { out }
+        assert(out == "(ln 2, col 15): invalid type : expected union") { out }
     }
 }
