@@ -433,13 +433,12 @@ fun code_fe (e: Expr) {
                     )
                 }
                 (tpf is Type.Func) -> {
-                    val istk   = (tpf.tk.enu == TK.TASK)
                     val block  = e.wup.let {
                         if (it is Stmt.DSpawn) {
                             "&" + (it.dst as Expr.Var).tk_.id.mem(e) + ".block"
                         } else {
                             // always local
-                            tpf.xscps.first!!.toce(e.wup!!)
+                            e.localBlockMem()
                         }
                     }
 

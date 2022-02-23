@@ -91,7 +91,7 @@ type Player = [
         Mage: [...],
     >
 ]
-val x: Player.Warrior = ["Arthur", 32, [10,"arcane"]]
+val x: Player.Warrior = [name="Arthur", age=32, [10,"arcane"]]
 ```
 
 # Tasks

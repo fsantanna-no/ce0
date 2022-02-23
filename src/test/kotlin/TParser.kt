@@ -811,8 +811,9 @@ class TParser {
 
     // TASKS / PUB / POOL
 
+    @Disabled
     @Test
-    fun d01_type_task () {
+    fun noclo_d01_type_task () {
         All_new(PushbackReader(StringReader("task @LOCAL->@[]->()->()->() {}"), 2))
         Lexer.lex()
         val tp = Parser().type(false)
@@ -892,8 +893,9 @@ class TParser {
 
     // TASKS TYPE
 
+    @Disabled
     @Test
-    fun d09_tasks () { // task @LOCAL->@[]->()->()->() {}
+    fun noclo_d09_tasks () { // task @LOCAL->@[]->()->()->() {}
         All_new(PushbackReader(StringReader("active tasks @[]->()->()->()"), 2))
         Lexer.lex()
         try {
@@ -904,11 +906,11 @@ class TParser {
         }
     }
     @Test
-    fun d10_tassk () {
-        All_new(PushbackReader(StringReader("active tasks @LOCAL->@[]->()->()->()"), 2))
+    fun noclo_d10_tassk () {
+        All_new(PushbackReader(StringReader("active tasks @[]->()->()->()"), 2))
         Lexer.lex()
         val tp = Parser().type(false)
-        assert(tp is Type.Spawns && tp.tsk.tk.enu==TK.TASKS && tp.tsk.xscps.first!!.scp1.id=="LOCAL")
+        assert(tp is Type.Spawns && tp.tsk.tk.enu==TK.TASKS && tp.tsk.xscps.first.scp1.id=="LOCAL")
     }
 
     // TYPEDEF

@@ -1,5 +1,3 @@
-
-
 fun check_ctrs (up: Any, dcl_scps: Pair<List<Tk.Id>, List<Pair<String, String>>>, use_scps: List<Scope>): Boolean {
     val pairs = dcl_scps.first.map { it.id }.zip(use_scps!!)
     dcl_scps.second.forEach { ctr ->   // for each constraint
