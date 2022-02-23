@@ -69,7 +69,7 @@ sealed class Expr (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?, var wt
     data class Nat   (val tk_: Tk.Nat, val xtype: Type): Expr(N++, tk_, null, null, xtype)
     data class As    (val tk_: Tk.Sym, val e: Expr, val type: Type.Alias): Expr(N++, tk_, null, null, type)
     data class TCons (val tk_: Tk.Chr, val arg: List<Expr>): Expr(N++, tk_, null, null, null)
-    data class UCons (val tk_: Tk.Num, val xtype: Type, val xarg: Expr): Expr(N++, tk_, null, null, xtype)
+    data class UCons (val tk_: Tk.Num, val xtype: Type, val arg: Expr): Expr(N++, tk_, null, null, xtype)
     data class UNull (val tk_: Tk.Num, val xtype: Type): Expr(N++, tk_, null, null, xtype)
     data class TDisc (val tk_: Tk.Num, val tup: Expr): Expr(N++, tk_, null, null, null)
     data class UDisc (val tk_: Tk.Num, val uni: Expr): Expr(N++, tk_, null, null, null)
