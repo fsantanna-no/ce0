@@ -1444,78 +1444,6 @@ class TEnv {
         """.trimIndent())
         assert(out.startsWith("(ln 2, col 9): invalid assignment : type mismatch")) { out }
     }
-    @Disabled // ^^
-    @Test
-    fun i04_uni_rec_err () {
-        val out = inp2env("""
-            var xxx: <(),</^^ @LOCAL,/^ @LOCAL>>
-            set xxx  = <.1()>:<(),</^^ @LOCAL,/^ @LOCAL>>
-        """.trimIndent())
-        //assert(out == "(ln 2, col 14): invalid union constructor : expected `new`") { out }
-        assert(out == "OK") { out }
-    }
-    @Disabled // ^^
-    @Test
-    fun i05_uni_rec_ok () {
-        val out = inp2env("""
-            var xxx: /<(),</^^ @LOCAL,/^ @LOCAL>> @LOCAL
-            set xxx = new <.1()>:<(),</^^ @LOCAL,/^ @LOCAL>>: @LOCAL
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
-    @Disabled // ^^
-    @Test
-    fun i06_uni_rec_ok1 () {
-        val out = inp2env("""
-            var xxx: /<(),/</^^ @LOCAL,/^ @LOCAL> @LOCAL> @LOCAL
-            set xxx = new <.1()>:<(),/</^^ @LOCAL,/^ @LOCAL> @LOCAL>: @LOCAL
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
-    @Test
-    fun i07_list_err () {
-        val out = inp2env("""
-            var xxx: <[_int,</_int @LOCAL>]>
-            set xxx = <.0>:</_int @LOCAL>
-        """.trimIndent())
-        //assert(out == "(ln 2, col 9): invalid assignment : type mismatch") { out }
-        //assert(out == "(ln 2, col 13): invalid union constructor : type mismatch") { out }
-        assert(out == "(ln 2, col 16): invalid type : expected pointer to union") { out }
-    }
-    @Disabled // ^^
-    @Test
-    fun i08_mutual () {
-        val out = inp2env("""
-            var e: /<(), <(),/^^ @LOCAL>> @LOCAL
-            set e = new <.2 <.1()>:<(),/<(), <(),/^^ @LOCAL>> @LOCAL>>:<(), <(),/^^ @LOCAL>>: @LOCAL
-            var s: /<(), <(),/^^ @LOCAL>> @LOCAL
-            set s = e\!2!2
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
-    @Disabled // ^^
-    @Test
-    fun i09_mutual () {
-        val out = inp2env("""
-            var e: /<</^^ @LOCAL,()>, ()> @LOCAL
-            set e = new <.1 <.2()>:</<</^^ @LOCAL,()>, ()> @LOCAL,()>>:<</^^ @LOCAL,()>, ()>: @LOCAL
-            var s: /<</^^ @LOCAL,()>, ()> @LOCAL
-            set s = e\!1!1
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
-    @Disabled // ^^
-    @Test
-    fun i10_mutual () {
-        val out = inp2env("""
-            var e: /<</^^ @LOCAL,()>, ()> @LOCAL
-            set e = new <.1 new <.2()>:</<</^^ @LOCAL,()>, ()> @LOCAL,()>: @LOCAL>:<</^^ @LOCAL,()>, ()>: @LOCAL
-               -- err: ~new~ <.2>
-        """.trimIndent())
-        //assert(out == "(ln 2, col 7): invalid assignment : type mismatch") { out }
-        assert(out.startsWith("(ln 2, col 15): invalid union constructor : type mismatch")) { out }
-    }
-
     // XEXPR
 
     @Test
@@ -1591,28 +1519,6 @@ class TEnv {
         //assert(out == "(ln 2, col 11): invalid union constructor : expected `new`") { out }
         //assert(out == "(ln 1, col 20): invalid `copy` : expected recursive variable")
         //assert(out == "(ln 1, col 5): invalid assignment : expected `new` operation modifier")
-        assert(out == "OK") { out }
-    }
-    @Disabled // ^^
-    @Test
-    fun j08_rec_xepr_double_rec_err () {
-        val out = inp2env("""
-            var x: <</^^^ @LOCAL>>
-            --set x = <.1 <.1 <.0>>>
-        """.trimIndent())
-        assert(out == "(ln 1, col 11): invalid `^^^´ : missing enclosing recursive type") { out }
-    }
-    @Disabled // ^^
-    @Test
-    fun j11_rec_xepr_double_rec () {
-        val out = inp2env("""
-            var x: /</<[/^^ @LOCAL,/^ @LOCAL]> @LOCAL> @LOCAL
-            var z1: /</<[/^^ @LOCAL,/^ @LOCAL]> @LOCAL> @LOCAL
-            var z2: /<[/</<[/^^ @LOCAL,/^ @LOCAL]> @LOCAL> @LOCAL,/^ @LOCAL]> @LOCAL
-            set z1 = <.0>: /</<[/^^ @LOCAL,/^ @LOCAL]> @LOCAL> @LOCAL
-            set z2 = <.0>: /<[/</<[/^^ @LOCAL,/^ @LOCAL]> @LOCAL> @LOCAL,/^ @LOCAL]> @LOCAL
-            set x = new <.1 new <.1 [z1,z2]>:<[/</<[/^^ @LOCAL,/^ @LOCAL]> @LOCAL> @LOCAL,/^ @LOCAL]>: @LOCAL>:</<[/^^ @LOCAL,/^ @LOCAL]> @LOCAL>: @LOCAL
-        """.trimIndent())
         assert(out == "OK") { out }
     }
     @Test
@@ -1775,15 +1681,6 @@ class TEnv {
             var l: <()>
         """.trimIndent())
         //assert(out == "(ln 1, col 8): invalid type declaration : unexpected `?´") { out }
-        assert(out == "OK") { out }
-    }
-    @Disabled // ^^
-    @Test
-    fun j29_rec_mutual () {
-        val out = inp2env("""
-            var e: /<(),<(),/^^ @LOCAL>> @LOCAL
-            set e = new <.2 <.1()>:<(),/<(),<(),/^^ @LOCAL>> @LOCAL>>:<(),<(),/^^ @LOCAL>>: @LOCAL
-        """.trimIndent())
         assert(out == "OK") { out }
     }
 
@@ -2141,16 +2038,6 @@ class TEnv {
 
     // UNION SELF POINTER / HOLD
 
-    @Disabled // ^^
-    @Test
-    fun n08_hold_err () {
-        val out = inp2env("""
-            var x: /<? <?//^^>>  -- err: <? ...>
-        """.trimIndent())
-        //assert(out == "(ln 1, col 12): invalid type declaration : unexpected `?´") { out }
-        //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
-        assert(out == "(ln 1, col 10): expected type : have `?´") { out }
-    }
     @Test
     fun n08_hold_ok2 () {
         val out = inp2env("""
@@ -2161,37 +2048,6 @@ class TEnv {
         //assert(out == "(ln 2, col 11): unexpected <.0> : not a pointer") { out }
         //assert(out == "(ln 1, col 8): invalid type declaration : unexpected `?´") { out }
         assert(out == "(ln 1, col 9): expected type : have `?´") { out }
-    }
-    @Disabled // ^^
-    @Test
-    fun n08_hold_ok3 () {
-        val out = inp2env("""
-            var x: /<? [<?//^^>,/^]>
-            set x = new <.1 [<.0>,<.0>]>
-            set x\!1.1 = <.1 /x>  -- ok
-        """.trimIndent())
-        //assert(out == "OK") { out }
-        //assert(out == "(ln 2, col 20): unexpected <.0> : not a pointer") { out }
-        //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
-        //assert(out == "(ln 1, col 13): invalid type declaration : unexpected `?´") { out }
-        assert(out == "(ln 1, col 10): expected type : have `?´") { out }
-    }
-    @Disabled // ^^
-    @Test
-    fun n09_hold_err () {
-        val out = inp2env("""
-            var x: /<? [<?//^^>,/^]>
-            set x = new <.1 [<.0>,<.0>]>
-            var y: /<? [<?//^^>,/^]>
-            set y = x
-            output std y
-        """.trimIndent())
-        //assert(out == "(ln 2, col 35): invalid `consume` : expected recursive variable") { out }
-        //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
-        //assert(out == "OK") { out }
-        //assert(out == "(ln 2, col 20): unexpected <.0> : not a pointer") { out }
-        //assert(out == "(ln 1, col 13): invalid type declaration : unexpected `?´") { out }
-        assert(out == "(ln 1, col 10): expected type : have `?´") { out }
     }
 
     // POINTER CROSSING UNION
@@ -2434,99 +2290,6 @@ class TEnv {
         assert(out.startsWith("(ln 7, col 13): invalid return : type mismatch")) { out }
         //assert(out == "OK") { out }
     }
-    @Disabled
-    @Test
-    fun noclo_p17_pool_closure_ok() {
-        val out = inp2env(
-            """
-            var g: (func@[a1]->() -> (func@[a1]->()->()))
-            set g = func@[a1]->() -> (func@[a1]->()->()) {
-                var f:(func@[b1]->() -> ())
-                set f = func@[b1]->() -> () {
-                    output std ()
-                }           
-               set ret = f
-            }
-            var f: (func@[a1]->() -> ())
-            set f = g @[LOCAL] ()
-            call f @[LOCAL] ()
-        """.trimIndent()
-        )
-        assert(out == "OK") { out }
-    }
-    @Test
-    fun noclo_p19_pool_closure_err() {
-        val out = inp2env(
-            """
-            var f: func@[]->() -> ()
-            {
-                var x: /</_int@LOCAL>@LOCAL
-                set f = func@[]->() -> () { -- OK?: x escapes but no enclosing func
-                    output std x
-                }
-            }
-        """.trimIndent()
-        )
-        //assert(out == "OK") { out }
-        //assert(out == "(ln 5, col 20): invalid access to \"x\" : invalid closure declaration (ln 4)") { out }
-        //assert(out == "(ln 5, col 20): undeclared variable \"x\"") { out }
-        assert(out.startsWith("(ln 4, col 11): invalid assignment : type mismatch :")) { out }
-    }
-    @Test
-    fun noclo_p20_pool_closure_err() {
-        val out = inp2env(
-            """
-            var g: func@[]->() -> ()
-            set g = func@[]->() -> () {
-                var x: ()
-                var f: func@[]->() -> ()
-                set f = func@[]->() -> () {
-                    output std x    -- x escapes f
-                }
-            }
-        """.trimIndent()
-        )
-        //assert(out == "(ln 6, col 20): invalid access to \"x\" : invalid closure declaration (ln 5)") { out }
-        //assert(out == "(ln 6, col 20): undeclared variable \"x\"") { out }
-        assert(out == "OK") { out }
-    }
-    @Test
-    fun noclo_p21_pool_closure_err() {
-        val out = inp2env(
-            """
-            var f : func @[]->() -> ()
-            set f = func @[]->() -> () {
-                var x: ()
-                output std x
-            }
-        """.trimIndent()
-        )
-        //assert(out == "(ln 2, col 9): invalid function : unexpected closure declaration") { out }
-        assert(out == "OK") { out }
-    }
-    @Disabled
-    @Test // passou a falhar qd mudei env p/ upvals
-    fun noclo_p22_pool_closure_err() {
-        val out = inp2env(
-            """
-            var g : func @[a1]->() -> (func @[a1]->()->())
-            set g = func @[a1]->() -> (func @[a1]->()->()) {
-                var f: func @[b1]->() -> ()
-                var x: /</_int@a1>@a1
-                --set x = new <.1 <.0>:/</_int@a1>@a1>: </_int@a1>: @a1
-                set f = func @[b1]->()  -> () {
-                    output std x
-                }
-                set ret = f
-            }
-            var f : func @[a1]->() -> ()
-            set f = g @[LOCAL] ()
-            call f @[LOCAL] ()
-        """.trimIndent()
-        )
-        //assert(out == "(ln 7, col 20): invalid access to \"x\" : invalid closure declaration (ln 6)") { out }
-        assert(out == "(ln 7, col 20): undeclared variable \"x\"") { out }
-    }
     @Test
     fun p23_pool_closure_err2() {
         val out = inp2env(
@@ -2623,22 +2386,6 @@ class TEnv {
             }
         """.trimIndent())
         assert(out == "OK") { out }
-    }
-    @Disabled
-    @Test
-    fun noclo_p30_closure_ok () {
-        val out = inp2env("""
-            var g: func @[a1]->() -> (func @a1->@[b1]->()->/</_int@b1>@b1)
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
-    @Disabled
-    @Test
-    fun noclo_p31_closure_err () {
-        val out = inp2env("""
-            var g: func @[a1] -> () -> (func @a1->@[]->()->/</_int@b1>@b1)
-        """.trimIndent())
-        assert(out == "(ln 1, col 29): invalid function type : missing scope argument") { out }
     }
     @Test
     fun p32_test () {
@@ -2924,18 +2671,6 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK") { out }
     }
-    @Disabled
-    @Test
-    fun noclo_q18_curry () {
-        val out = inp2env("""
-            type Num @[s] = /<Num @[s]> @s
-            var add: func @[a,b,r] -> [Num @[a],Num @[b]] -> Num @[r]
-            var curry: func @[] -> func @[a,b,r] -> [Num @[a],Num @[b]] -> Num @[r] -> func @GLOBAL -> @[a] -> Num @[a] -> func @a -> @[b,r] -> Num @[b] -> Num @[r]
-            var addc: func @GLOBAL -> @[a] -> Num @[a] -> func @a -> @[b,r] -> Num @[b] -> Num @[r]
-            set addc = (curry @[] add: @GLOBAL)
-        """.trimIndent())
-        assert(out == "OK") { out }
-    }
 
     // CLOSURE
 
@@ -2968,23 +2703,6 @@ class TEnv {
         """.trimIndent())
         assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch")) { out }
         //assert(out == "OK") { out }
-    }
-    @Disabled
-    @Test
-    fun noclo_r03 () {
-        val out = inp2env("""
-            var f: func@[]->()->()
-            { @A
-                var pa: ()
-                set pa = ()
-                set f = func @A->@[]->()->() {
-                    output std pa
-                }
-            }
-            call f()
-        """.trimIndent())
-        //assert(out == "(ln 5, col 13): undeclared variable \"xxx\"") { out }
-        assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch :")) { out }
     }
     @Test
     fun noclo_r04 () {
@@ -3065,42 +2783,6 @@ class TEnv {
         """.trimIndent())
         assert(out == "OK") { out }
     }
-    @Disabled
-    @Test
-    fun noclo_r09 () {
-        val out = inp2env("""
-            var f: func () -> _int          -- 1. `f` is a reference to a function
-            {
-                var x: _int
-                set x = _10: _int
-                set f = func () -> _int {   -- 2. `f` is created
-                    set ret = x             -- 3. `f` needs access to `x`
-                    return
-                }
-            }                               -- 4. `x` goes out of scope
-            call f ()                       -- 5. `f` still wants to access `x`
-        """.trimIndent()
-        )
-        //assert(out == "(ln 6, col 19): invalid access to \"x\" : invalid closure declaration (ln 5)") { out }
-        assert(out == "(ln 6, col 19): undeclared variable \"x\"") { out }
-    }
-    @Disabled
-    @Test
-    fun noclo_r11 () {
-        val out = inp2env(
-            """
-            var g: func @[a1]->() -> func @a1->@[]-> ()->()
-            set g = func@[a1]->() -> func @a1->@[]-> ()->() {
-                var x: ()
-                var f: func @a1->@[]-> () -> ()
-                set f = func @a1 ->() -> () {   -- ERR: x is between f and a1, so it will leak
-                    output std x
-                }
-            }
-        """.trimIndent()
-        )
-        assert(out == "(ln 6, col 20): undeclared variable \"x\"") { out }
-    }
     @Test
     fun noclo_todo_r12_err () {
         val out = inp2env(
@@ -3171,31 +2853,5 @@ class TEnv {
             emit <.3 ()>: Event
        """.trimIndent())
         assert(out == "111\n222\n") { out }
-    }
-
-    @Disabled
-    @Test
-    fun noclo_s06_pool_closure () {
-        val out = inp2env(
-            """
-            var f: func@[]-> (func@[]->()->()) -> func @GLOBAL->()->()
-            set f = func@[]-> func@[]->()->() -> (func @GLOBAL->()->()) {
-                var ff: func@[]->()->()
-                set ff = arg
-                set ret = func @GLOBAL->@[]->()->() {   -- ERR: ff is between f and a1, so it will leak
-                    call ff ()
-                }
-            }
-            var u: func()->()
-            set u = func()->() {
-                output std ()
-            }
-            var ff: (func @GLOBAL->@[]->()->())
-            set ff = f u
-            call ff ()
-        """.trimIndent()
-        )
-        //assert(out == "()\n") { out }
-        assert(out == "(ln 6, col 14): undeclared variable \"ff\"") { out }
     }
 }
