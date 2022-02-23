@@ -47,7 +47,7 @@ fun check_02_after_tps (s: Stmt) {
             }
             is Expr.UNull -> e.check()
             is Expr.UCons -> {
-                e.check()
+                e.check(e.xtype!!)
                 val uni = e.xtype as Type.Union
                 val sup = uni.vec[e.tk_.num - 1]
                 val sub = e.arg.wtype!!

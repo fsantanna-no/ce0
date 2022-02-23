@@ -30,9 +30,8 @@ fun Expr.UNull.check () {
     All_assert_tk(this.xtype!!.tk, ok) { "invalid type : expected pointer to union"}
 }
 
-fun Expr.UCons.check () {
-    val tp = this.xtype!!
-    All_assert_tk(this.xtype!!.tk, tp is Type.Union) { "invalid type : expected union" }
+fun Expr.UCons.check (tp: Type) {
+    All_assert_tk(tp.tk, tp is Type.Union) { "invalid type : expected union" }
     val uni = tp as Type.Union
     val ok = (uni.vec.size >= this.tk_.num)
     All_assert_tk(this.tk, ok) {
@@ -72,7 +71,7 @@ fun check_01_before_tps (s: Stmt) {
                 if (e.xtype != null) e.check()
             }
             is Expr.UCons -> {
-                if (e.xtype != null) e.check()
+                if (e.xtype != null) e.check(e.xtype!!)
             }
 
             is Expr.Func -> {
