@@ -1,6 +1,6 @@
 open class Parser
 {
-    open fun type (tasks: Boolean): Type {
+    open fun type (): Type {
         return when {
             all.accept(TK.XID) -> {
                 val tk0 = all.tk0.astype()
@@ -15,7 +15,7 @@ open class Parser
             }
             all.accept(TK.CHAR, '/') -> {
                 val tk0 = all.tk0 as Tk.Chr
-                val pln = this.type(false)
+                val pln = this.type()
                 val scp = if (all.accept(TK.CHAR, '@')) {
                     all.accept_err(TK.XID)
                     all.tk0.asscope()
@@ -24,7 +24,7 @@ open class Parser
                 }
                 Type.Pointer(tk0, Scope(scp,null), pln)
             }
-            all.accept(TK.FUNC) || all.accept(TK.TASK) || (tasks && all.accept(TK.TASKS)) -> {
+            all.accept(TK.FUNC) || all.accept(TK.TASK) -> {
                 val tk0 = all.tk0 as Tk.Key
 
                 val (scps, ctrs) = if (all.check(TK.ATBRACK)) {
@@ -35,15 +35,15 @@ open class Parser
                     Pair(emptyList(), emptyList())
                 }
 
-                val inp = this.type(false)
+                val inp = this.type()
 
                 val pub = if (tk0.enu != TK.FUNC) {
                     all.accept_err(TK.ARROW)
-                    this.type(false)
+                    this.type()
                 } else null
 
                 all.accept_err(TK.ARROW)
-                val out = this.type(false) // right associative
+                val out = this.type() // right associative
 
                 Type.Func(tk0,
                     Triple (
@@ -56,19 +56,19 @@ open class Parser
             all.accept(TK.UNIT) -> Type.Unit(all.tk0 as Tk.Sym)
             all.accept(TK.XNAT) -> Type.Nat(all.tk0 as Tk.Nat)
             all.accept(TK.CHAR, '(') -> {
-                val tp = this.type(false)
+                val tp = this.type()
                 all.accept_err(TK.CHAR, ')')
                 tp
             }
             all.accept(TK.CHAR, '[') || all.accept(TK.CHAR, '<') -> {
                 val tk0 = all.tk0 as Tk.Chr
-                val tp = this.type(false)
+                val tp = this.type()
                 val tps = arrayListOf(tp)
                 while (true) {
                     if (!all.accept(TK.CHAR, ',')) {
                         break
                     }
-                    val tp2 = this.type(false)
+                    val tp2 = this.type()
                     tps.add(tp2)
                 }
                 if (tk0.chr == '[') {
@@ -82,11 +82,16 @@ open class Parser
             }
             all.accept(TK.ACTIVE) -> {
                 val tk0 = all.tk0 as Tk.Key
-                all.check(TK.TASKS) || all.check_err(TK.TASK)
-                val task = this.type(true)
-                assert(task is Type.Func && task.tk.enu != TK.FUNC)
-                if (task.tk.enu == TK.TASKS) {
-                    Type.Spawns(tk0, task as Type.Func)
+                val (isdyn,len) = if (!all.accept(TK.CHAR,'{')) Pair(false,null) else {
+                    val len = if (all.accept(TK.XNUM)) all.tk0 as Tk.Num else null
+                    all.accept_err(TK.CHAR, '}')
+                    Pair(true, len)
+                }
+                all.check_err(TK.TASK)
+                val task = this.type()
+                assert(task is Type.Func && task.tk.enu == TK.TASK)
+                if (isdyn) {
+                    Type.Spawns(tk0, len, task as Type.Func)
                 } else {
                     Type.Spawn(tk0, task as Type.Func)
                 }
@@ -103,7 +108,7 @@ open class Parser
             all.accept(TK.XNAT) -> {
                 val tk0 = all.tk0 as Tk.Nat
                 all.accept_err(TK.CHAR, ':')
-                val tp = this.type(false)
+                val tp = this.type()
                 Expr.Nat(tk0, tp)
             }
             all.accept(TK.CHAR, '<') -> {
@@ -113,7 +118,7 @@ open class Parser
                 val cons = if (tk0.num == 0) null else this.expr()
                 all.accept_err(TK.CHAR, '>')
                 all.accept_err(TK.CHAR, ':')
-                val tp = this.type(false)
+                val tp = this.type()
                 if (tk0.num == 0) {
                     Expr.UNull(tk0, tp)
                 } else {
@@ -170,7 +175,7 @@ open class Parser
             }
             all.check(TK.TASK) || all.check(TK.FUNC) -> {
                 val tk = all.tk1 as Tk.Key
-                val tp = this.type(false) as Type.Func
+                val tp = this.type() as Type.Func
                 val block = this.block()
                 Expr.Func(tk, tp, block)
             }
@@ -213,7 +218,7 @@ open class Parser
                 all.accept_err(TK.XID)
                 val tk_id = all.tk0 as Tk.Id
                 all.accept_err(TK.CHAR, ':')
-                val tp = this.type(false)
+                val tp = this.type()
                 Stmt.Var(tk_id, tp)
             }
             all.accept(TK.SET) -> {
@@ -228,7 +233,7 @@ open class Parser
                         val lib = (all.tk0 as Tk.Id)
                         val arg = this.expr()
                         all.accept_err(TK.CHAR, ':')
-                        val tp = this.type(false)
+                        val tp = this.type()
                         Stmt.Input(tk, tp, dst, lib, arg)
                     }
                     all.check(TK.SPAWN) -> {
@@ -249,7 +254,7 @@ open class Parser
                 val lib = (all.tk0 as Tk.Id)
                 val arg = this.expr()
                 all.accept_err(TK.CHAR, ':')
-                val tp = this.type(false)
+                val tp = this.type()
                 Stmt.Input(tk, tp, null, lib, arg)
             }
             all.accept(TK.IF) -> {
@@ -270,7 +275,7 @@ open class Parser
                     Pair(emptyList(), emptyList())
                 }
                 all.accept_err(TK.CHAR, '=')
-                val tp = this.type(false)
+                val tp = this.type()
                 Stmt.Typedef(id, scp1s, tp)
             }
             all.accept(TK.NATIVE) -> {
@@ -384,7 +389,7 @@ open class Parser
     fun expr_as (e: Expr): Expr {
         return if (!all.accept(TK.XAS)) e else {
             val tk0 = all.tk0 as Tk.Sym
-            val type = this.type(false)
+            val type = this.type()
             All_assert_tk(all.tk0, type is Type.Alias) {
                 "expected alias type"
             }
@@ -455,7 +460,7 @@ open class Parser
     fun attr_as (e: Attr): Attr {
         return if (!all.accept(TK.XAS)) e else {
             val tk0 = all.tk0 as Tk.Sym
-            val type = this.type(false)
+            val type = this.type()
             All_assert_tk(all.tk0, type is Type.Alias) {
                 "expected alias type"
             }
@@ -468,7 +473,7 @@ open class Parser
             all.accept(TK.XID) -> Attr.Var(all.tk0 as Tk.Id)
             all.accept(TK.XNAT) -> {
                 all.accept_err(TK.CHAR, ':')
-                val tp = this.type(false)
+                val tp = this.type()
                 Attr.Nat(all.tk0 as Tk.Nat, tp)
             }
             all.accept(TK.CHAR, '\\') -> {

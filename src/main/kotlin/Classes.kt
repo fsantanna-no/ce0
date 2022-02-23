@@ -5,7 +5,7 @@ enum class TK {
     XID, XNAT, XNUM, XAS,
     UNIT, ARROW, ATBRACK,
     ACTIVE, AWAIT, BREAK, CALL, CATCH, ELSE, EMIT, FUNC, IF, IN, INPUT,
-    LOOP, NATIVE, NEW, OUTPUT, RETURN, SET, SPAWN, TASK, TASKS, THROW, TYPE, VAR,
+    LOOP, NATIVE, NEW, OUTPUT, RETURN, SET, SPAWN, TASK, THROW, TYPE, VAR,
 }
 
 val key2tk: HashMap<String, TK> = hashMapOf (
@@ -28,7 +28,6 @@ val key2tk: HashMap<String, TK> = hashMapOf (
     "set"    to TK.SET,
     "spawn"  to TK.SPAWN,
     "task"   to TK.TASK,
-    "tasks"  to TK.TASKS,
     "throw"  to TK.THROW,
     "type"   to TK.TYPE,
     "var"    to TK.VAR,
@@ -41,7 +40,7 @@ sealed class Type(val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Union   (val tk_: Tk.Chr, val vec: List<Type>): Type(tk_, null, null)
     data class Pointer (val tk_: Tk.Chr, val xscp: Scope, val pln: Type): Type(tk_, null, null)
     data class Spawn   (val tk_: Tk.Key, val tsk: Type.Func): Type(tk_, null, null)
-    data class Spawns  (val tk_: Tk.Key, val tsk: Type.Func): Type(tk_, null, null)
+    data class Spawns  (val tk_: Tk.Key, val len: Tk.Num?, val tsk: Type.Func): Type(tk_, null, null)
     data class Func (
         val tk_: Tk.Key,
         val xscps: Triple<Scope,List<Scope>,List<Pair<String,String>>>,   // [closure scope, input scopes, input scopes constraints]
