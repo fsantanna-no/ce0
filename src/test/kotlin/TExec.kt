@@ -1430,8 +1430,8 @@ class TExec {
     fun m02_scope_f () {
         val out = all("""
             type List @[a] = </List @[a] @a>
-            var f: func @[i1]->/(List @[i1])@i1->()
-            set f = func@[i1]-> /(List @[i1])@i1->() {
+            var f : func @[i1]->/(List @[i1])@i1->()
+            set f = func @[i1]-> /(List @[i1])@i1->() {
                 set arg\ :- List@[i1] !1 = new <.1 <.0>:/(List @[i1])@i1>:</List @[i1] @i1>:+(List @[i1]): @i1
             }
             {

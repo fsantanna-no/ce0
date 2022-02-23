@@ -686,9 +686,9 @@ class TEnv {
             }
             call f()
         """.trimIndent())
-        //assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch :")) { out }
+        assert(out.startsWith("(ln 5, col 11): invalid assignment : type mismatch :")) { out }
         //assert(out == "(ln 6, col 20): invalid access to \"pa\" : invalid closure declaration (ln 5)") { out }
-        assert(out.startsWith("ERR: cannot assign f in diff scopes")) { out }
+        //assert(out.startsWith("ERR: cannot assign f in diff scopes")) { out }
     }
     @Disabled // no more closures
     @Test
@@ -2466,8 +2466,10 @@ class TEnv {
         """.trimIndent()
         )
         //assert(out == "(ln 7, col 4): invalid return : type mismatch") { out }
-        assert(out == "OK") { out }
+        //assert(out == "OK") { out }
+        assert(out.startsWith("(ln 7, col 12): invalid return : type mismatch :")) { out }
     }
+    @Disabled // no more closures
     @Test
     fun p17_pool_closure_ok() {
         val out = inp2env(
@@ -2534,6 +2536,7 @@ class TEnv {
         //assert(out == "(ln 2, col 9): invalid function : unexpected closure declaration") { out }
         assert(out == "OK") { out }
     }
+    @Disabled // no more closures
     @Test // passou a falhar qd mudei env p/ upvals
     fun p22_pool_closure_err() {
         val out = inp2env(
@@ -3380,6 +3383,7 @@ class TEnv {
         //assert(out == "()\n") { out }
         assert(out == "(ln 6, col 14): undeclared variable \"ff\"") { out }
     }
+    @Disabled // no more closures
     @Test
     fun s06_pool_closure () {
         val out = inp2env(

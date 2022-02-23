@@ -26,6 +26,7 @@ fun Type.Func.mapLabels (up: Any): Type.Func {
     }
     return Type.Func (
         this.tk_,
+        this.xdepth,
         this.xscps,
         this.inp.aux(),
         this.pub?.aux(),
@@ -68,13 +69,14 @@ fun Type.isSupOf (sub: Type, isproto: Boolean=false): Boolean {
             val sup2 = this.mapLabels(this.wup!!)
             val sub2 = sub.mapLabels(sub.wup!!)
             (
+                sup2.xdepth >= sub2.xdepth &&
                 sup2.inp.isSupOf(sub2.inp,true) &&
                 sub2.inp.isSupOf(sup2.inp,true) &&
                 sup2.out.isSupOf(sub2.out,true) &&
                 sub2.out.isSupOf(sup2.out,true) &&
                 (
-                    (sup2.pub==null && sub2.pub==null) ||
-                    ( sup2.pub!=null && sub2.pub!=null &&
+                    (sup2.pub ==null && sub2.pub ==null) ||
+                    ( sup2.pub !=null && sub2.pub !=null &&
                       sup2.pub.isSupOf(sub2.pub,true) &&
                       sub2.pub.isSupOf(sup2.pub,true) )
                 )

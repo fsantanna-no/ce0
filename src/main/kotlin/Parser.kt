@@ -45,9 +45,9 @@ open class Parser
                 all.accept_err(TK.ARROW)
                 val out = this.type(false) // right associative
 
-                Type.Func(tk0,
-                    Pair(scps.map { Scope(it,null) }, ctrs),
-                    inp, pub, out)
+                Type.Func(tk0, 0,
+                    Pair(scps.map { Scope(it,null) }, ctrs), inp, pub, out
+                )
             }
             all.accept(TK.UNIT) -> Type.Unit(all.tk0 as Tk.Sym)
             all.accept(TK.XNAT) -> Type.Nat(all.tk0 as Tk.Nat)

@@ -39,6 +39,7 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
             )
             is Type.Func -> Type.Func(
                 this.tk_.copy(lin_ = lin, col_ = col),
+                this.xdepth,
                 Pair (
                     this.xscps.first?.map { Scope(it.scp1.copy(lin_ = lin, col_ = col), it.scp2) },
                     this.xscps.second
@@ -142,6 +143,7 @@ fun Type.mapScps (dofunc: Boolean, map: Map<String, Scope>): Type {
         is Type.Func -> if (!dofunc) this else {
             Type.Func(
                 this.tk_,
+                this.xdepth,
                 Pair(this.xscps.first, this.xscps.second),
                 this.inp.mapScps(dofunc,map),
                 this.pub?.mapScps(dofunc,map),
