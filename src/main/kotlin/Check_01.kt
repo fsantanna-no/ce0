@@ -45,14 +45,12 @@ fun check_01_before_tps (s: Stmt) {
         when (tp) {
             is Type.Pointer -> tp.xscp?.check(tp)
             is Type.Func -> {
-                tp.xscps.first?.check(tp)
                 val ptrs = (tp.inp.flattenLeft() + tp.out.flattenLeft()).filter { it is Type.Pointer } as List<Type.Pointer>
                 val ok = ptrs.all {
                     val ptr = it.xscp!!
                     when {
                         (ptr.scp1.id == "GLOBAL") -> true
                         (
-                            tp.xscps.first.let  { it!=null && ptr.scp1.id==it.scp1.id } || // {@a} ...@a
                             tp.xscps.second?.any { ptr.scp1.id==it.scp1.id } ?: false      // (@i1 -> ...@i1...)
                         ) -> true
                         (tp.ups_first {                     // { @aaa \n ...@aaa... }
@@ -70,12 +68,6 @@ fun check_01_before_tps (s: Stmt) {
     }
     fun fe (e: Expr) {
         when (e) {
-            is Expr.Var -> {
-                All_assert_tk(e.tk, e.env(e.tk_.id) != null) {
-                    "undeclared variable \"${e.tk_.id}\""
-                }
-            }
-
             is Expr.UNull -> {
                 if (e.xtype != null) e.check()
             }

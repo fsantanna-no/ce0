@@ -2,7 +2,7 @@ fun check_00_after_envs (s: Stmt) {
     fun ft (tp: Type) {
         when (tp) {
             is Type.Alias -> {
-                val def = tp.env(tp.tk_.id,true)
+                val def = tp.env(tp.tk_.id)
                 All_assert_tk(tp.tk, def is Stmt.Typedef) {
                     "undeclared type \"${tp.tk_.id}\""
                 }
@@ -12,7 +12,7 @@ fun check_00_after_envs (s: Stmt) {
     fun fe (e: Expr) {
         when (e) {
             is Expr.Var -> {
-                All_assert_tk(e.tk, e.env(e.tk_.id, true) != null) {
+                All_assert_tk(e.tk, e.env(e.tk_.id) != null) {
                     "undeclared variable \"${e.tk_.id}\""
                 }
             }

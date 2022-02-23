@@ -26,17 +26,6 @@ open class Parser
             }
             all.accept(TK.FUNC) || all.accept(TK.TASK) || (tasks && all.accept(TK.TASKS)) -> {
                 val tk0 = all.tk0 as Tk.Key
-                if (tk0.enu != TK.FUNC) {
-                    all.check_err(TK.CHAR, '@')
-                }
-                val clo = if (all.accept(TK.CHAR, '@')) {
-                    all.accept_err(TK.XID)
-                    val tk = all.tk0.asscope()
-                    all.accept_err(TK.ARROW)
-                    tk
-                } else {
-                    null
-                }
 
                 val (scps, ctrs) = if (all.check(TK.ATBRACK)) {
                     val (x, y) = this.scopepars()
@@ -58,7 +47,7 @@ open class Parser
 
                 Type.Func(tk0,
                     Triple (
-                        clo.let { if (it == null) null else Scope(it,null) },
+                        Scope(Tk.Id(TK.XID, tk0.lin, tk0.col, "LOCAL"),null),
                         scps.map { Scope(it,null) },
                         ctrs
                     ),

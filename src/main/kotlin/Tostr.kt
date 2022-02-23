@@ -13,10 +13,6 @@ fun Stmt.tostr(): String {
 open class Tostr
 {
     open fun tostr (tp: Type): String {
-        fun Scope?.clo(): String {
-            return if (this == null) "" else
-                " @" + this.scp1.anon2local() + " ->"
-        }
         return when (tp) {
             is Type.Unit -> "()"
             is Type.Nat -> tp.tk_.toce()
@@ -34,7 +30,7 @@ open class Tostr
                         .joinToString(",")
                 }
                 val scps = " @[" + tp.xscps.second!!.map { it.scp1.anon2local() }.joinToString(",") + ctrs + "]"
-                tp.tk_.key + tp.xscps.first.clo() + scps + " -> " + this.tostr(tp.inp) + " -> " + tp.pub.let { if (it == null) "" else this.tostr(it) + " -> " } + this.tostr(tp.out)
+                tp.tk_.key + scps + " -> " + this.tostr(tp.inp) + " -> " + tp.pub.let { if (it == null) "" else this.tostr(it) + " -> " } + this.tostr(tp.out)
             }
         }
     }

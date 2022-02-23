@@ -70,7 +70,7 @@ fun Type.isSupOf (sub: Type, isproto: Boolean=false): Boolean {
             val sup2 = this.mapLabels(this.wup!!)
             val sub2 = sub.mapLabels(sub.wup!!)
             (
-                sup2.xscps.first?.scp2?.third == sub2.xscps.first?.scp2?.third &&
+                sup2.xscps.first.scp2!!.third == sub2.xscps.first.scp2!!.third &&
                 sup2.inp.isSupOf(sub2.inp,true) &&
                 sub2.inp.isSupOf(sup2.inp,true) &&
                 sup2.out.isSupOf(sub2.out,true) &&

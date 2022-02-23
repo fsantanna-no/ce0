@@ -44,7 +44,7 @@ sealed class Type(val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Spawns  (val tk_: Tk.Key, val tsk: Type.Func): Type(tk_, null, null)
     data class Func (
         val tk_: Tk.Key,
-        val xscps: Triple<Scope?,List<Scope>,List<Pair<String,String>>>,   // [closure scope, input scopes, input scopes constraints]
+        val xscps: Triple<Scope,List<Scope>,List<Pair<String,String>>>,   // [closure scope, input scopes, input scopes constraints]
         val inp: Type, val pub: Type?, val out: Type
     ): Type(tk_, null, null)
     data class Alias (

@@ -11,7 +11,7 @@ fun Type.visit (ft: ((Type) -> Unit)?, fx: ((Any,Scope) -> Unit)?) {
         is Type.Alias   -> if (fx!=null && this.xscps!=null) this.xscps!!.forEach { fx(this,it) }
         is Type.Func    -> {
             this.xscps.let {
-                if (it.first != null) if (fx!=null) fx(this,it.first!!)
+                if (fx!=null) fx(this,it.first!!)
                 it.second?.forEach { if (fx!=null) fx(this,it) }
             }
             this.inp.visit(ft,fx) ; this.pub?.visit(ft,fx) ; this.out.visit(ft,fx)

@@ -438,14 +438,8 @@ fun code_fe (e: Expr) {
                         if (it is Stmt.DSpawn) {
                             "&" + (it.dst as Expr.Var).tk_.id.mem(e) + ".block"
                         } else {
-                            // closure block: allows the func to escape up to it
-                            tpf.xscps.first.let {
-                                if (it == null) {
-                                    e.localBlockMem()
-                                } else {
-                                    tpf.xscps.first!!.toce(e.wup!!)
-                                }
-                            }
+                            // always local
+                            tpf.xscps.first!!.toce(e.wup!!)
                         }
                     }
 

@@ -39,11 +39,13 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
             )
             is Type.Func -> Type.Func(
                 this.tk_.copy(lin_ = lin, col_ = col),
-                Triple (
-                    this.xscps.first.let { if (it==null) null else Scope(it.scp1.copy(lin_ = lin, col_ = col), it.scp2) },
-                    this.xscps.second?.map { Scope(it.scp1.copy(lin_ = lin, col_ = col), it.scp2) },
-                    this.xscps.third
-                ),
+                this.xscps.let {
+                    Triple (
+                        Scope(it.first.scp1.copy(lin_ = lin, col_ = col), it.first.scp2),
+                        it.second?.map { Scope(it.scp1.copy(lin_ = lin, col_ = col), it.scp2) },
+                        it.third
+                    )
+                },
                 this.inp.aux(lin, col),
                 this.pub?.aux(lin, col),
                 this.out.aux(lin, col)
@@ -76,7 +78,7 @@ fun Type.isrec (): Boolean {
 
 fun Type.noalias (): Type {
     return if (this !is Type.Alias) this else {
-        val def = this.env(this.tk_.id,true)!! as Stmt.Typedef
+        val def = this.env(this.tk_.id)!! as Stmt.Typedef
 
         // Original constructor:
         //      typedef Pair @[a] = [/_int@a,/_int@a]
@@ -144,7 +146,7 @@ fun Type.mapScps (dofunc: Boolean, map: Map<String, Scope>): Type {
             Type.Func(
                 this.tk_,
                 Triple (
-                    this.xscps.first?.idx(),
+                    this.xscps.first.idx(),
                     this.xscps.second,
                     this.xscps.third
                 ),
