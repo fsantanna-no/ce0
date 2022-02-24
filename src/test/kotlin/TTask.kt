@@ -210,39 +210,9 @@ class TTask {
             --awake f _1:_int
             --awake g _1:_int
             emit @GLOBAL <.3 _1:_int>:<(),_uint64_t,_int>:+ Event
-            output std _12:_int
+            output std _13:_int
         """.trimIndent())
-        assert(out == "10\n1\n11\n1\n12\n2\n2\n12\n") { out }
-    }
-    @Disabled
-    @Test
-    fun noclo_a06_par2 () {
-        val out = all("""
-            type Event = <(),_uint64_t,_int>
-            var build : func @[r1] -> () -> task @r1->@[]->()->()->()
-            set build = func @[r1] -> () -> task @r1->@[]->()->()->() {
-                set ret = task @r1->@[]->()->()->() {
-                    output std _1:_int
-                    await evt?3
-                    output std _2:_int
-                }
-            }
-            var f: task @[]->()->()->()
-            set f = build @[LOCAL] ()
-            var g: task @[]->()->()->()
-            set g = build @[LOCAL] ()
-            output std _10:_int
-            var x : active task @[]->()->()->()
-            set x = spawn f ()
-            output std _11:_int
-            var y : active task @[]->()->()->()
-            set y = spawn g ()
-            --awake x _1:_int
-            --awake y _1:_int
-            emit @GLOBAL <.3 _1:_int>:<(),_uint64_t,_int>:+ Event
-            output std _12:_int
-        """.trimIndent())
-        assert(out == "10\n1\n11\n1\n2\n2\n12\n") { out }
+        assert(out == "10\n1\n11\n1\n12\n2\n2\n13\n") { out }
     }
     @Test
     fun a07_bcast () {
@@ -1043,37 +1013,31 @@ class TTask {
             type Event = <(),_uint64_t,()>
             
             spawn (task  @[] -> () -> () -> () {
-                output std (_111: _int)                                         
+                output std (_1: _int)                                         
             
                 var t1: active task @[] -> () -> () -> ()             
                 set t1 = spawn (task @[] -> () -> () -> () {              
-                    native _{printf(">2> %p\n", task0);}                          
-                    output std (_("Dragging..."): _(char*))                        
             
                     var t2: active task @[] -> () -> () -> ()        
                     set t2 = spawn (task @[] -> () -> () -> () {
-                        native _{printf(">1> %p\n", task0);}
+                        output std _2:_int
                         await (_1: _int)                               
-                        output std (_222: _int)                             
+                        output std (_4: _int)                             
                     } @[] ())                          
             
                     await ((evt:- Event)?2)     
-                    native _{printf(">1> %p\n", (void*)xxx.evt->payload.Task);}    
-                    output std (_333: _int)                  
-                    output std (_("Dropped!"): _(char*))
+                    output std (_5: _int)                  
                 } @[] ())                   
             
                 await ((evt:- Event)?2)            
-                output std (_444: _int)                                  
-                native _{printf(">2> %p\n", (void*)xxx.evt->payload.Task);}
-                output std (_555: _int)
+                output std (_6: _int)                                  
             } @[] ())
             
-            output std _999:_int
+            output std _3:_int
             emit @GLOBAL (<.3 ()>: <(),_uint64_t,()>:+ Event)
-            output std (_666: _int)
+            output std (_7: _int)
        """.trimIndent())
-        assert(out == "111\n222\n") { out }
+        assert(out == "1\n2\n3\n4\n5\n6\n7\n") { out }
     }
 
     @Test
@@ -1082,10 +1046,14 @@ class TTask {
             type Event = <(),_uint64_t,()>
             type Bird = task  @[] -> () -> () -> ()
             
+            var x:List = <.1>: <()>:+ List
+                           e        as Alias
+            
             var t1: Bird
-            set t1 = Bird ({
+            set t1 = task  @[] -> () -> () -> () {
                  output std _111:_int
-            } :+ Bird)
+            } :+ Bird
+            
             var x1: active Bird
             set x1 = spawn t1:-Bird ()
        """.trimIndent())
@@ -1120,6 +1088,6 @@ class TTask {
             emit <.3 ()>: <(),_uint64_t,(),()>:+Event
             
        """.trimIndent())
-        assert(out == "111\n") { out }
+        assert(out == "1\n2\n1\n2\n") { out }
     }
 }

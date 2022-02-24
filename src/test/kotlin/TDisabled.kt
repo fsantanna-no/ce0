@@ -554,6 +554,33 @@ class TDisabled {
         assert(out == "(ln 2, col 14): invalid type : expected pointer to union") { out }
     }
 
+    // <.0> must be pointer to alias (not alias as pointer)
+
+    /*
+    @Test
+    fun nullptr_o06_type_ptr () {
+        val out = all("""
+            type List @[s] = /<List @[s]> @s
+            var l: List @[LOCAL]
+            set l = new <.1 <.0>:List @[LOCAL]>:<List @[LOCAL]>
+            output std l\!1\!0
+        """.trimIndent())
+        assert(out == "()\n") { out }
+    }
+    @Test
+    fun o11_type_ptr () {
+        val out = all("""
+            type Num @[i] = /<Num @[i]> @i
+            var zero: Num @[GLOBAL]
+            set zero = <.0>: Num @[GLOBAL]
+            var one: Num @[GLOBAL]
+            set one = (new <.1 zero>: <Num @[GLOBAL]>:+ ???: @GLOBAL)
+            output std one
+        """.trimIndent())
+        assert(out == "()\n") { out }
+    }
+     */
+
     // CLOSURES
 
     @Test
@@ -1046,6 +1073,36 @@ class TDisabled {
         """.trimIndent()
         )
         assert(out == "<.1 <.0>>\n<.1 <.1 <.0>>>\n") { out }
+    }
+    @Disabled
+    @Test
+    fun noclo_a06_par2 () {
+        val out = all("""
+            type Event = <(),_uint64_t,_int>
+            var build : func @[r1] -> () -> task @r1->@[]->()->()->()
+            set build = func @[r1] -> () -> task @r1->@[]->()->()->() {
+                set ret = task @r1->@[]->()->()->() {
+                    output std _1:_int
+                    await evt?3
+                    output std _2:_int
+                }
+            }
+            var f: task @[]->()->()->()
+            set f = build @[LOCAL] ()
+            var g: task @[]->()->()->()
+            set g = build @[LOCAL] ()
+            output std _10:_int
+            var x : active task @[]->()->()->()
+            set x = spawn f ()
+            output std _11:_int
+            var y : active task @[]->()->()->()
+            set y = spawn g ()
+            --awake x _1:_int
+            --awake y _1:_int
+            emit @GLOBAL <.3 _1:_int>:<(),_uint64_t,_int>:+ Event
+            output std _12:_int
+        """.trimIndent())
+        assert(out == "10\n1\n11\n1\n2\n2\n12\n") { out }
     }
      */
 }

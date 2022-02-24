@@ -1625,18 +1625,10 @@ class TExec {
             set l = new <.1 <.0>:List @[LOCAL]>:<List @[LOCAL]>
             output std l
         """.trimIndent())
-        assert(out == "<.1 <.0>>\n") { out }
+        //assert(out == "<.1 <.0>>\n") { out }
+        assert(out == "(ln 3, col 22): invalid type : expected pointer to alias type") { out }
     }
-    @Test
-    fun o06_type_ptr () {
-        val out = all("""
-            type List @[s] = /<List @[s]> @s
-            var l: List @[LOCAL]
-            set l = new <.1 <.0>:List @[LOCAL]>:<List @[LOCAL]>
-            output std l\!1\!0
-        """.trimIndent())
-        assert(out == "()\n") { out }
-    }
+
     @Test
     fun o07_type_pln () {
         val out = all("""
@@ -1678,18 +1670,6 @@ class TExec {
             type Tx1 @[] = [()]
             type Tx2 @[] = [Tx1]
             output std ()
-        """.trimIndent())
-        assert(out == "()\n") { out }
-    }
-    @Test
-    fun o11_type_ptr () {
-        val out = all("""
-            type Num @[i] = /<Num @[i]> @i
-            var zero: Num @[GLOBAL]
-            set zero = <.0>: Num @[GLOBAL]
-            var one: Num @[GLOBAL]
-            set one = (new <.1 zero>: <Num @[GLOBAL]>:+ ???: @GLOBAL)
-            output std one
         """.trimIndent())
         assert(out == "()\n") { out }
     }

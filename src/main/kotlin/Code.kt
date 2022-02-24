@@ -24,11 +24,15 @@ fun Type.pos (): String {
 //it is Type.Alias   && it.noalias().let { it is Type.Pointer && it.pln is Type.Union }
 
 fun Type.output_std (c: String, arg: String): String {
-    val alias1 = this is Type.Pointer && this.pln.noalias().let { it is Type.Tuple || it is Type.Union }
-    val alias2 = this is Type.Alias   && this.    noalias().let { it is Type.Pointer && (it.pln is Type.Tuple || it.pln is Type.Union) }
+    val pln_from_ptr_to_tup_or_uni: Type? = this.noalias().let {
+        if (it !is Type.Pointer) null else {
+            it.pln.noalias().let {
+                if (it is Type.Tuple || it is Type.Union) it else null
+            }
+        }
+    }
     return when {
-        alias1 -> "output_std_${(this as Type.Pointer).pln.noalias().toce()}$c($arg);\n"
-        alias2 -> "output_std_${(this.noalias() as Type.Pointer).pln.toce()}$c($arg);\n"
+        (pln_from_ptr_to_tup_or_uni != null) ->"output_std_${pln_from_ptr_to_tup_or_uni.toce()}$c($arg);\n"
         this is Type.Pointer || this is Type.Func -> {
             if (c == "_") "putchar('_');\n" else "puts(\"_\");\n"
         }
@@ -691,6 +695,7 @@ fun code_fs (s: Stmt) {
                 {
                     Stack stk = { stack, ${s.self_or_null()}, ${s.localBlockMem()} };
                     block_throw(&stk, &stk);
+                    assert(stk.block == NULL);
                     if (stk.block == NULL) {
                         return;
                     }
@@ -774,7 +779,7 @@ fun code_fs (s: Stmt) {
                 } else if (up is Expr.Func) {
                     """
                     //task0->links.tsk_up   = NULL;
-                    task0->links.tsk_next = NULL;
+                    //task0->links.tsk_next = NULL;
                     task0->links.blk_down = NULL;
                     task0->state = TASK_DEAD;                        
                     """.trimIndent()
@@ -1028,7 +1033,7 @@ fun Stmt.code (): String {
         
         void block_bcast_event (Stack* stack, Block* block, _Event* evt) {
             
-            Stack stk = { stack, NULL, block };
+            Stack stk = { stack, stack->task, block };
             
             void aux (Task* task) {
                 if (task == NULL) return;
