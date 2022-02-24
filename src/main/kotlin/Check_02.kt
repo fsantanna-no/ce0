@@ -47,8 +47,7 @@ fun check_02_after_tps (s: Stmt) {
             }
             is Expr.UCons -> {
                 e.check(e.xtype!!)
-                val uni = e.xtype as Type.Union
-                val sup = uni.vec[e.tk_.num - 1]
+                val sup = e.xtype.vec[e.tk_.num - 1]
                 val sub = e.arg.wtype!!
                 All_assert_tk(e.tk, sup.isSupOf(sub)) {
                     "invalid union constructor : ${mismatch(sup,sub)}"
@@ -61,15 +60,19 @@ fun check_02_after_tps (s: Stmt) {
             }
 
             is Expr.Call -> {
-                val func = e.f.wtype
+                val func = e.f.wtype?.noalias()
                 val ret1 = e.wtype!!
                 val arg1 = e.arg.wtype!!
 
                 val (scp1s,inp1,out1) = when (func) {
-                    is Type.Spawn  -> Triple(Pair(func.tsk.xscps.second,func.tsk.xscps.third),func.tsk.inp,func.tsk.out)
-                    is Type.Spawns -> Triple(Pair(func.tsk.xscps.second,func.tsk.xscps.third),func.tsk.inp,func.tsk.out)
                     is Type.Func   -> Triple(Pair(func.xscps.second,func.xscps.third),func.inp,func.out)
                     is Type.Nat    -> Triple(Pair(emptyList(),emptyList()),func,func)
+                    is Type.Spawn  -> (func.tsk.noalias() as Type.Func).let {
+                        Triple(Pair(it.xscps.second, it.xscps.third), it.inp, it.out)
+                    }
+                    is Type.Spawns -> (func.tsk.noalias() as Type.Func).let {
+                        Triple(Pair(it.xscps.second, it.xscps.third), it.inp, it.out)
+                    }
                     else -> error("impossible case")
                 }
 
@@ -124,7 +127,7 @@ fun check_02_after_tps (s: Stmt) {
                 }
             }
             is Stmt.SSpawn -> {
-                val call = s.call.f.wtype!!
+                val call = s.call.f.wtype!!.noalias()
                 All_assert_tk(s.call.tk, call is Type.Func && call.tk.enu == TK.TASK) {
                     "invalid `spawn` : type mismatch : expected task : have ${call.tostr()}"
                 }

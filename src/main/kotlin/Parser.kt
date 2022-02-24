@@ -87,13 +87,16 @@ open class Parser
                     all.accept_err(TK.CHAR, '}')
                     Pair(true, len)
                 }
-                all.check_err(TK.TASK)
+                //all.check_err(TK.TASK)
                 val task = this.type()
-                assert(task is Type.Func && task.tk.enu == TK.TASK)
+                //assert(task is Type.Func && task.tk.enu == TK.TASK)
+                All_assert_tk(tk0, task is Type.Alias || task is Type.Func && task.tk.enu==TK.TASK) {
+                    "invalid type : expected task type"
+                }
                 if (isdyn) {
-                    Type.Spawns(tk0, len, task as Type.Func)
+                    Type.Spawns(tk0, len, task)
                 } else {
-                    Type.Spawn(tk0, task as Type.Func)
+                    Type.Spawn(tk0, task)
                 }
             }
             else -> {
@@ -182,9 +185,9 @@ open class Parser
                 all.accept_err(TK.CHAR, ']')
                 Expr.TCons(tk0, es)
             }
-            all.check(TK.TASK) || all.check(TK.FUNC) -> {
-                val tk = all.tk1 as Tk.Key
-                val tp = this.type() as Type.Func
+            all.check(TK.TASK) || all.check(TK.FUNC) || (all.check(TK.XID) || all.tk1.istype()) -> {
+                val tk = all.tk1
+                val tp = this.type()
                 val block = this.block()
                 Expr.Func(tk, tp, block)
             }

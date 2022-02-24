@@ -1082,11 +1082,12 @@ class TTask {
             type Event = <(),_uint64_t,()>
             type Bird = task  @[] -> () -> () -> ()
             
-            var t1: Bird {
+            var t1: Bird
+            set t1 = Bird ({
                  output std _111:_int
-            }
+            } :+ Bird)
             var x1: active Bird
-            set x1 = spawn t1 ()
+            set x1 = spawn t1:-Bird ()
        """.trimIndent())
         assert(out == "111\n222\n") { out }
     }

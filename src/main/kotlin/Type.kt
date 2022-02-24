@@ -52,12 +52,12 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
             )
             is Type.Spawn -> Type.Spawn (
                 this.tk_.copy(lin_ = lin, col_ = col),
-                this.tsk.aux(lin, col) as Type.Func
+                this.tsk.aux(lin, col)
             )
             is Type.Spawns -> Type.Spawns (
                 this.tk_.copy(lin_ = lin, col_ = col),
                 this.len,
-                this.tsk.aux(lin, col) as Type.Func
+                this.tsk.aux(lin, col)
             )
             is Type.Pointer -> Type.Pointer(
                 this.tk_.copy(lin_ = lin, col_ = col),

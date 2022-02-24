@@ -39,8 +39,8 @@ sealed class Type(val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Tuple   (val tk_: Tk.Chr, val vec: List<Type>): Type(tk_, null, null)
     data class Union   (val tk_: Tk.Chr, val vec: List<Type>): Type(tk_, null, null)
     data class Pointer (val tk_: Tk.Chr, val xscp: Scope, val pln: Type): Type(tk_, null, null)
-    data class Spawn   (val tk_: Tk.Key, val tsk: Type.Func): Type(tk_, null, null)
-    data class Spawns  (val tk_: Tk.Key, val len: Tk.Num?, val tsk: Type.Func): Type(tk_, null, null)
+    data class Spawn   (val tk_: Tk.Key, val tsk: Type): Type(tk_, null, null)
+    data class Spawns  (val tk_: Tk.Key, val len: Tk.Num?, val tsk: Type): Type(tk_, null, null)
     data class Func (
         val tk_: Tk.Key,
         val xscps: Triple<Scope,List<Scope>,List<Pair<String,String>>>,   // [closure scope, input scopes, input scopes constraints]
@@ -78,7 +78,7 @@ sealed class Expr (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?, var wt
     data class Dnref (val tk_: Tk,     val ptr: Expr): Expr(N++, tk_, null, null, null)
     data class Upref (val tk_: Tk.Chr, val pln: Expr): Expr(N++, tk_, null, null, null)
     data class Call  (val tk_: Tk, val f: Expr, val arg: Expr, val xscps: Pair<List<Scope>,Scope?>): Expr(N++, tk_, null, null, null)
-    data class Func  (val tk_: Tk.Key, val type: Type.Func, val block: Stmt.Block) : Expr(N++, tk_, null, null, type)
+    data class Func  (val tk_: Tk, val type: Type, val block: Stmt.Block) : Expr(N++, tk_, null, null, type)
     data class Pub   (val tk_: Tk.Id, val tsk: Expr): Expr(N++, tk_, null, null, null)
 }
 

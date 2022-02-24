@@ -40,7 +40,7 @@ open class Tostr
             "(" + v + ":+ " + this.tostr(e.wtype!!) + ")"
         }
     }
-    fun dncast (e: Expr, dn: Type?, v: String): String {
+    fun dncast (dn: Type?, v: String): String {
         return if (dn !is Type.Alias) v else {
             "(" + v + ":- " + this.tostr(dn) + ")"
         }
@@ -57,17 +57,17 @@ open class Tostr
             is Expr.TCons -> this.upcast(e, "[" + e.arg.map { this.tostr(it) }.joinToString(",") + "]")
             is Expr.UCons -> this.upcast(e, "<." + e.tk_.num + " " + this.tostr(e.arg) + ">: " + this.tostr(e.wtype!!.noalias()))
             is Expr.UNull -> "<.0>: " + this.tostr(e.wtype!!)
-            is Expr.TDisc -> "(" + this.dncast(e,e.tup.wtype,this.tostr(e.tup)) + "." + e.tk_.num + ")"
+            is Expr.TDisc -> "(" + this.dncast(e.tup.wtype, this.tostr(e.tup)) + "." + e.tk_.num + ")"
             is Expr.Pub -> "(" + this.tostr(e.tsk) + ".${e.tk_.id})"
             is Expr.UDisc -> {
                 val uni = this.tostr(e.uni).let {
-                    if (e.tk_.num == 0) it else this.dncast(e,e.uni.wtype,it)
+                    if (e.tk_.num == 0) it else this.dncast(e.uni.wtype, it)
                 }
                 "(" + uni + "!" + e.tk_.num + ")"
             }
             is Expr.UPred -> {
                 val uni = this.tostr(e.uni).let {
-                    if (e.tk_.num == 0) it else this.dncast(e,e.uni.wtype,it)
+                    if (e.tk_.num == 0) it else this.dncast(e.uni.wtype, it)
                 }
                 "(" + uni + "?" + e.tk_.num + ")"
             }

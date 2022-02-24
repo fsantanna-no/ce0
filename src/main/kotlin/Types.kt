@@ -24,7 +24,7 @@ fun Stmt.setTypes () {
             }
             is Expr.TCons -> Type.Tuple(e.tk_, e.arg.map { it.wtype!! })
             is Expr.New   -> Type.Pointer(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.xscp!!, e.arg.wtype!!)
-            is Expr.Call -> e.f.wtype.let { tpd ->
+            is Expr.Call -> e.f.wtype?.noalias().let { tpd ->
                 when (tpd) {
                     is Type.Nat, is Type.Spawn, is Type.Spawns -> tpd
                     is Type.Func -> {
@@ -60,7 +60,7 @@ fun Stmt.setTypes () {
                     "invalid \"pub\" : type mismatch : expected active task : have ${e.tsk.wtype!!.tostr()}"
                 }
                 when (e.tk_.id) {
-                    "pub"   -> (it as Type.Spawn).tsk.pub!!
+                    "pub"   -> ((it as Type.Spawn).tsk as Type.Func).pub!!
                     "state" -> Type.Nat(Tk.Nat(TK.XNAT, e.tk.lin, e.tk.col, null, "int"))
                     else -> error("bug found")
                 }
