@@ -515,7 +515,7 @@ fun code_fe (e: Expr) {
                 void func_${e.n} (Stack* stack, struct Func_${e.n}* task2, X_${e.type.toce()} xxx) {
                     Task*             task0 = &task2->task1.task0;
                     ${e.type.toce()}* task1 = &task2->task1;
-                    ${(e.type.noalias() as Type.Func).xscps.second.mapIndexed { i, _ -> "task1->blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
+                    ${e.type.xscps.second.mapIndexed { i, _ -> "task1->blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
                     assert(task0->state==TASK_UNBORN || task0->state==TASK_AWAITING);
                     switch (task0->pc) {
                         case 0: {                    

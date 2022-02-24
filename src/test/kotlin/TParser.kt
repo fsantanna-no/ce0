@@ -706,7 +706,7 @@ class TParser {
         assert (
             (s is Stmt.Set) && ((s.dst as Expr.Var).tk_.id=="f") &&
             s.src.let {
-                (it is Expr.Func) && ((it.type as Type.Func).inp is Type.Unit) && it.block.body is Stmt.Return
+                (it is Expr.Func) && (it.type.inp is Type.Unit) && it.block.body is Stmt.Return
             }
         )
     }
@@ -877,7 +877,7 @@ class TParser {
         All_new(PushbackReader(StringReader("active {} task @[]->()->()->()"), 2))
         Lexer.lex()
         val tp = Parser().type()
-        assert(tp is Type.Spawns && tp.tsk.tk.enu==TK.TASK && (tp.tsk as Type.Func).xscps.first.scp1.id=="LOCAL")
+        assert(tp is Type.Spawns && tp.tsk.tk.enu==TK.TASK && tp.tsk.xscps.first.scp1.id=="LOCAL")
     }
 
     // TYPEDEF

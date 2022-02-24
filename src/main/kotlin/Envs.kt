@@ -59,19 +59,16 @@ fun Any.env (id: String): Any? {
             (it is Stmt.Block   && it.scp1?.id?.toUpperCase()==xid) -> it
             (it is Expr.Func) -> {
                 //println(">1> $id")
-                if (it.type !is Type.Func) null else {
-                    val ftp = it.type as Type.Func
-                    when {
-                        (id == "arg") -> ftp.inp
-                        (id == "pub") -> ftp.pub!!
-                        (id == "ret") -> ftp.out
-                        (id == "evt") -> Type.Alias(
-                            Tk.Id(TK.XID, it.tk.lin, it.tk.col, "Event"),
-                            false,
-                            emptyList()
-                        ).clone(it, it.tk.lin, it.tk.col)
-                        else -> null
-                    }
+                when {
+                    (id == "arg") -> it.type.inp
+                    (id == "pub") -> it.type.pub!!
+                    (id == "ret") -> it.type.out
+                    (id == "evt") -> Type.Alias (
+                        Tk.Id(TK.XID, it.tk.lin, it.tk.col, "Event"),
+                        false,
+                        emptyList()
+                    ).clone(it, it.tk.lin, it.tk.col)
+                    else  -> null
                 }
             }
             else -> null

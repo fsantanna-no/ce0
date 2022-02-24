@@ -9,7 +9,7 @@ fun Scope.check (up: Any) {
         } -> true
         (up.ups_first {                                     // [@i1, ...] { @i1 }
             it is Stmt.Typedef && (it.xscp1s.first!!.any { it.id==this.scp1.id })
-         || it is Expr.Func    && ((it.type.noalias() as Type.Func).xscps.second?.any { it.scp1.id==this.scp1.id } ?: false)
+         || it is Expr.Func    && (it.type.xscps.second?.any { it.scp1.id==this.scp1.id } ?: false)
         } != null) -> true
         else -> false
     }
@@ -65,12 +65,9 @@ fun check_01_before_tps (s: Stmt) {
                 val outers: List<Scope> = e.ups_tolist().let {
                     val es = it.filter { it is Expr.Func }.let { it as List<Expr.Func> }.map { it.type }
                     val ts = it.filter { it is Type.Func }.let { it as List<Type.Func> }
-                    (es + ts)
-                        .filter { it is Type.Func }
-                        .let { it as List<Type.Func> }
-                        .map { it.xscps.second ?: emptyList() }.flatten()
+                    (es + ts).map { it.xscps.second ?: emptyList() }.flatten()
                 }
-                val err = outers.find { out -> (e.type.noalias() as Type.Func).xscps.second!!.any { it.scp1.id==out.scp1.id } }
+                val err = outers.find { out -> e.type.xscps.second!!.any { it.scp1.id==out.scp1.id } }
                 All_assert_tk(e.tk, err==null) {
                     "invalid scope : \"${err!!.scp1.id}\" is already declared (ln ${err!!.scp1.lin})"
                 }

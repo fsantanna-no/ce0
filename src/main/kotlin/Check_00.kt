@@ -7,16 +7,6 @@ fun check_00_after_envs (s: Stmt) {
                     "undeclared type \"${tp.tk_.id}\""
                 }
             }
-            is Type.Spawn -> {
-                All_assert_tk(tp.tk, tp.tsk.noalias().let { it is Type.Func && it.tk.enu==TK.TASK }) {
-                    "invalid type : expected task type"
-                }
-            }
-            is Type.Spawns -> {
-                All_assert_tk(tp.tk, tp.tsk.noalias().let { it is Type.Func && it.tk.enu==TK.TASK }) {
-                    "invalid type : expected task type"
-                }
-            }
         }
     }
     fun fe (e: Expr) {
@@ -26,11 +16,7 @@ fun check_00_after_envs (s: Stmt) {
                     "undeclared variable \"${e.tk_.id}\""
                 }
             }
-            is Expr.Func -> {
-                All_assert_tk(e.tk, e.type.noalias() is Type.Func) {
-                    "invalid type : expected function type"
-                }
-            }
+
             is Expr.Upref -> {
                 var track = false   // start tracking count if crosses UDisc
                 var count = 1       // must remain positive after track (no uprefs)
