@@ -155,19 +155,6 @@ class TParser {
         val tp = Parser().type()
         assert(tp is Type.Pointer)
     }
-    @Disabled
-    @Test
-    fun a11_parser_type_issupof () {
-        All_new(PushbackReader(StringReader("<(),<(),^^>>"), 2))
-        Lexer.lex()
-        val tp1 = Parser().type()
-        tp1.visit({ it.wup = Any() }, null)
-        val tp2 = (tp1 as Type.Union).vec[1]
-        // <(),<(),^^>> = <(),<(),<(),^^>>>
-        val ok1 = tp1.isSupOf(tp2)
-        val ok2 = tp2.isSupOf(tp1)
-        assert(ok1 && ok2)
-    }
     @Test
     fun a12_parser_type_ptr_null () {
         All_new(PushbackReader(StringReader("<? /()>"), 2))
@@ -397,7 +384,7 @@ class TParser {
             Parser().expr()
             //error("impossible case")
         } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 9): invalid type : expected union") { e.message!! }
+            assert(e.message == "(ln 1, col 9): invalid type : expected union type") { e.message!! }
         }
     }
     @Test
@@ -811,14 +798,6 @@ class TParser {
 
     // TASKS / PUB / POOL
 
-    @Disabled
-    @Test
-    fun noclo_d01_type_task () {
-        All_new(PushbackReader(StringReader("task @LOCAL->@[]->()->()->() {}"), 2))
-        Lexer.lex()
-        val tp = Parser().type()
-        assert(tp is Type.Func && tp.tk.enu==TK.TASK)
-    }
     @Test
     fun d02_stmt_spawn () {
         All_new(PushbackReader(StringReader("set x = spawn f ()"), 2))
@@ -893,18 +872,6 @@ class TParser {
 
     // TASKS TYPE
 
-    @Disabled
-    @Test
-    fun noclo_d09_tasks () { // task @LOCAL->@[]->()->()->() {}
-        All_new(PushbackReader(StringReader("active tasks @[]->()->()->()"), 2))
-        Lexer.lex()
-        try {
-            Parser().type()
-            error("impossible case")
-        } catch (e: Throwable) {
-            assert(e.message == "(ln 1, col 14): expected `@´ : have `@[´") { e.message!! }
-        }
-    }
     @Test
     fun noclo_d10_tassk () {
         All_new(PushbackReader(StringReader("active {} task @[]->()->()->()"), 2))

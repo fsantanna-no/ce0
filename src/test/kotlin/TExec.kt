@@ -1164,16 +1164,6 @@ class TExec {
         """.trimIndent())
         assert(out == "<.1 <.1 <.0>>>\n") { out }
     }
-    @Disabled // ^^
-    @Test
-    fun j11_rec_double2 () {
-        val out = all("""
-            var n: /<</^^ @LOCAL>> @LOCAL
-            set n = <.0>: /<</^^ @LOCAL>> @LOCAL
-            output std n
-        """.trimIndent())
-        assert(out == "<.0>\n") { out }
-    }
     @Test
     fun j09_tup_list_err () {
         val out = all("""
@@ -1322,58 +1312,6 @@ class TExec {
 
     // UNION SELF POINTER / HOLD
 
-    @Disabled // ^^
-    @Test
-    fun l02_hold_ok () {
-        val out = all("""
-            var x: /< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]> @LOCAL
-            var z: /< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]> @LOCAL
-            set z = <.0>: /< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]> @LOCAL
-            set x = new <.1 [z,_1: _int,new <.1 [z,_2: _int,z]>:< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]>: @LOCAL]>:< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]>: @LOCAL
-            set x!1.3!1.1 = <.1 /x>: <(),//< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]> @LOCAL @LOCAL>
-            set x!1.1 = <.1 /x!1.3>: <(),//< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]> @LOCAL @LOCAL> -- err: address of field inside union
-            output std x!1.3!1.2
-            output std x!1.1!1\!1.1!1\!1.2
-        """.trimIndent())
-        //assert(out == "2\n1\n") { out }
-        //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
-        assert(out == "(ln 6, col 17): invalid operand to `/´ : union discriminator") { out }
-    }
-    @Disabled // ^^
-    @Test
-    fun l02_hold_ok1 () {
-        val out = all("""
-            var x: /< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL
-            var z: /< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL
-            set z = <.0>: /< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL
-            var o: <(),/< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL>
-            set o = <.1()>: <(),/< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL>
-            set x = new <.1 [o,_1:_int,new <.1 [o,_2:_int,z]>:< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]>: @LOCAL]>:< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]>: @LOCAL
-            set x\!1.3\!1.1 = <.2 x>: <(),/< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL>
-            set x\!1.1 = <.2 x\!1.3>: <(),/< [<(),/^^ @LOCAL>,_int,/^ @LOCAL]> @LOCAL>
-            output std x\!1.3\!1.2
-            output std x\!1.2
-        """.trimIndent())
-        assert(out == "2\n1\n") { out }
-        //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
-        //assert(out == "(ln 4, col 17): invalid operand to `/´ : union discriminator") { out }
-    }
-    @Disabled // ^^
-    @Test
-    fun l02_hold_ok2 () {
-        val out = all("""
-            var z: /< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]> @LOCAL
-            set z = <.0>: /< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]> @LOCAL
-            var o: <(),//< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]> @LOCAL @LOCAL>
-            set o = <.1()>: <(),//< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]> @LOCAL @LOCAL>
-
-            var x: /< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]> @LOCAL
-            set x = new <.1 [o,_2:_int,z]>:< [<(),//^^ @LOCAL @LOCAL>,_int,/^ @LOCAL]>: @LOCAL
-            output std x
-        """.trimIndent())
-        assert(out == "<.1 [<.1>,2,<.0>]>\n") { out }
-        //assert(out == "(ln 1, col 14): invalid type declaration : unexpected `^´") { out }
-    }
     @Test
     fun l04_ptr_null () {
         val out = all("""
@@ -1570,51 +1508,6 @@ class TExec {
         )
         assert(out == "_\n") { out }
     }
-    @Disabled
-    @Test
-    fun noclo_n07_pool_closure() {
-        val out = all(
-            """
-            var g: func@[a1]-> () -> func @[a1]->()->()
-            set g = func @[a1]->() -> func@[a1]->()->() {
-                var f: func@[b1]-> () -> ()
-                set f = func@[b1]-> () -> () {
-                    output std ()
-                }
-               set ret = f
-            }
-            var f: func@[a1]->() -> ()
-            set f = g @[LOCAL] ()
-            call f @[LOCAL] ()
-        """.trimIndent()
-        )
-        assert(out == "()\n") { out }
-    }
-
-    @Disabled
-    @Test
-    fun noclo_n08_pool_closure() {
-        val out = all(
-            """
-            type List @[a] = </List @[a] @a>
-            var g: func @[a1]->() -> func @a1->@[]-> ()->()
-            set g = func@[a1]->() -> func @a1->@[]-> ()->() {
-                var x: /(List @[a1])@a1
-                set x = new <.1 <.0>:/(List @[a1])@a1>:</List @[a1] @a1>:+ (List @[a1]): @a1
-                var f: func @a1->@[]-> () -> ()
-                set f = func @a1 ->() -> () {   -- ERR: x is between f and a1, so it will leak
-                    output std x
-                }
-               set ret = f
-            }
-            var f: func @LOCAL -> @[] -> () -> ()
-            set f = g @[LOCAL] ()
-            call f @[]()
-        """.trimIndent()
-        )
-        //assert(out == "<.1 <.0>>\n") { out }
-        assert(out == "(ln 8, col 20): undeclared variable \"x\"") { out }
-    }
     @Test
     fun noclo_n08_clo_int () {
         val out = all("""
@@ -1632,82 +1525,6 @@ class TExec {
             }
         """.trimIndent())
         assert(out == "20\n20\n") { out }
-    }
-    @Disabled
-    @Test
-    fun noclo_n09_pool_closure_err() {
-        val out = all(
-            """
-            type List @[a] = </List @[a] @a>
-            var g: /func @[i1]->() -> func@[i1]-> ()->()@LOCAL
-            set g = func@[i1]-> () -> func@[i1]-> ()->() {
-                var f: /func@[a1]-> () -> ()@LOCAL
-                var x: /(List @[LOCAL])@LOCAL
-                set x = new <.1 <.0>:/(List @[LOCAL])@LOCAL>:</List @[LOCAL] @LOCAL>:+ (List @[LOCAL]): @LOCAL
-                set f = func@[a1]-> () -> () {
-                    output std x    -- f uses x in @LOCAL
-                }
-               set ret = f             -- cannot return f which uses x in @LOCAL
-            }
-            var f:/(func  @[i1]-> () -> () )@LOCAL
-            set f = g\ @[LOCAL] ()
-            call f\ @[LOCAL] ()
-        """.trimIndent()
-        )
-        //assert(out == "(ln 8, col 20): invalid access to \"x\" : invalid closure declaration (ln 7)") { out }
-        assert(out == "(ln 8, col 20): undeclared variable \"x\"") { out }
-    }
-    @Disabled
-    @Test
-    fun noclo_n10_pool_closure () {
-        val out = all(
-            """
-            var cnst: func@[i1]-> /_int@i1 -> (func @i1-> () -> /_int@i1)
-            set cnst = func@[i1]-> /_int@i1 -> (func @i1-> () -> /_int@i1) {
-                var x: /_int@i1
-                set x = arg
-                set ret = func@i1->@[]-> () -> /_int@i1 {   -- ERR: x is between f and i1, so it will leak
-                    set ret = x
-                }
-            }
-            { @AAA
-            var five: _int
-            set five = _5: _int
-            var f: func @LOCAL -> @[] -> () -> /_int@LOCAL
-            set f = cnst @[LOCAL] /five
-            var v: /_int@LOCAL
-            set v = f ()
-            output std v\ --@LOCAL
-            }
-        """.trimIndent()
-        )
-        //assert(out == "5\n") { out }
-        assert(out == "(ln 6, col 19): undeclared variable \"x\"") { out }
-    }
-    @Disabled
-    @Test
-    fun noclo_n11_pool_closure () {
-        val out = all(
-            """
-            var cnst:  func@[i1]-> /_int@i1 -> (func @i1-> () -> /_int@i1)
-            set cnst = func@[i1]-> /_int@i1 -> (func @i1-> () -> /_int@i1) {
-                var x: /_int@i1
-                set x = arg
-                set ret = func @i1->@[]-> () -> /_int@i1 {
-                    set ret = x
-                }
-            }
-            var five: _int
-            set five = _5: _int
-            var f: func @LOCAL -> @[] -> () -> /_int@LOCAL
-            set f = cnst @[LOCAL] /five
-            var v: /_int@LOCAL
-            set v = f ()
-            output std v\ --@LOCAL
-        """.trimIndent()
-        )
-        //assert(out == "5\n") { out }
-        assert(out == "(ln 6, col 19): undeclared variable \"x\"") { out }
     }
     @Test
     fun noclo_n13_pool_ups1 () {
@@ -2174,18 +1991,5 @@ class TExec {
         """.trimIndent()
         )
         assert(out == "15\n") { out }
-    }
-    @Disabled
-    @Test
-    fun noclo_z17_curry () {
-        val out = all("""
-            type Num @[s] = </Num @[s] @s>
-            var add: func @[a,b,r] -> [/Num @[a] @a,/Num @[b] @b] -> /Num @[r] @r
-            var curry: func @[] -> func @[a,b,r] -> [/Num @[a] @a,/Num @[b] @b] -> /Num @[r] @r -> func @GLOBAL -> @[a] -> /Num @[a] @a -> func @a -> @[b,r] -> /Num @[b] @b -> /Num @[r] @r
-            var addc: func @GLOBAL -> @[a] -> /Num @[a] @a -> func @a -> @[b,r] -> /Num @[b] @b -> /Num @[r] @r
-            --set addc = (curry @[] add: @GLOBAL)
-            output std ()
-        """.trimIndent())
-        assert(out == "()\n") { out }
     }
 }

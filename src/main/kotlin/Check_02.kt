@@ -45,7 +45,6 @@ fun check_02_after_tps (s: Stmt) {
                     "invalid type cast : ${mismatch(e.e.wtype!!,e.type)}"
                 }
             }
-            is Expr.UNull -> e.check()
             is Expr.UCons -> {
                 e.check(e.xtype!!)
                 val uni = e.xtype as Type.Union

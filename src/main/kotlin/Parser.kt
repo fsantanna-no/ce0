@@ -119,10 +119,18 @@ open class Parser
                 all.accept_err(TK.CHAR, '>')
                 all.accept_err(TK.CHAR, ':')
                 val tp = this.type()
+                when (tk0.num) {
+                    0 -> all.assert_tk(tp.tk,tp is Type.Pointer && tp.pln is Type.Alias) {
+                        "invalid type : expected pointer to alias type"
+                    }
+                    else -> all.assert_tk(tp.tk,tp is Type.Union) {
+                        "invalid type : expected union type"
+                    }
+                }
                 if (tk0.num == 0) {
-                    Expr.UNull(tk0, tp)
+                    Expr.UNull(tk0, tp as Type.Pointer)
                 } else {
-                    Expr.UCons(tk0, tp, cons!!)
+                    Expr.UCons(tk0, tp as Type.Union, cons!!)
                 }
             }
             all.accept(TK.NEW) -> {
@@ -141,6 +149,7 @@ open class Parser
                 }
                 Expr.New(tk0 as Tk.Key, Scope(scp,null), e as Expr.As)
             }
+
             all.accept(TK.UNIT) -> Expr.Unit(all.tk0 as Tk.Sym)
             all.tk1.isvar() && all.accept(TK.XID) -> Expr.Var(all.tk0 as Tk.Id)
             all.accept(TK.CHAR, '/') -> {
