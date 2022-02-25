@@ -9,7 +9,7 @@ fun Type.Func.mapLabels (up: Any): Type.Func {
     val MAP: Map<String, String> = scps.zip((1..scps.size).map { 'a'+it-1+"" }).toMap()
     fun Type.aux (): Type {
         return when (this) {
-            is Type.Spawn, is Type.Spawns -> TODO()
+            is Type.Active, is Type.Actives -> TODO()
             is Type.Unit, is Type.Nat, is Type.Alias -> this
             is Type.Tuple   -> Type.Tuple(this.tk_, this.vec.map { it.aux() })
             is Type.Union   -> Type.Union(this.tk_, this.vec.map { it.aux() })
@@ -62,7 +62,7 @@ fun Scope.isNestIn (sub: Scope, up: Any): Boolean {
 fun Type.isSupOf (sub: Type, isproto: Boolean=false): Boolean {
     return when {
         (this is Type.Nat  || sub is Type.Nat) -> true
-        (this is Type.Spawn && sub is Type.Spawns) -> this.tsk.isSupOf(sub.tsk)
+        (this is Type.Active && sub is Type.Actives) -> this.tsk.isSupOf(sub.tsk)
         (this is Type.Alias && sub is Type.Alias) -> (this.tk_.id == sub.tk_.id)    // TODO: check scopes
         (this::class != sub::class) -> false
         (this is Type.Unit && sub is Type.Unit) -> true

@@ -7,6 +7,7 @@
   - $x (x in other task)
   - check 00/01 detect var in between funcs
   - Type.Alias.supOf (check scopes)
+- refactor XTypes to use visit
 - ce1:
   - if/until condition
     - _int -> Bool:<(),()>

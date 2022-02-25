@@ -19,8 +19,8 @@ open class Tostr
             is Type.Pointer -> tp.xscp!!.let { "/" + this.tostr(tp.pln) + " @" + it.scp1.anon2local() }
             is Type.Tuple -> "[" + tp.vec.map { this.tostr(it) }.joinToString(",") + "]"
             is Type.Union -> "<" + tp.vec.map { this.tostr(it) }.joinToString(",") + ">"
-            is Type.Spawn -> "active " + this.tostr(tp.tsk)
-            is Type.Spawns -> "active {${tp.len ?: ""}} " + this.tostr(tp.tsk)
+            is Type.Active -> "active " + this.tostr(tp.tsk)
+            is Type.Actives -> "active {${tp.len ?: ""}} " + this.tostr(tp.tsk)
             is Type.Alias -> tp.tk_.id + tp.xscps!!.let {
                 if (it.size == 0) "" else " @[" + it.map { it.scp1.anon2local() }.joinToString(",") + "]"
             }

@@ -18,7 +18,7 @@ fun Type.flattenLeft (): List<Type> {
         is Type.Tuple -> listOf(this) + this.vec.map { it.flattenLeft() }.flatten()
         is Type.Union -> listOf(this) + this.vec.map { it.flattenLeft() }.flatten()
         is Type.Func  -> listOf(this) //this.inp.flatten() + this.out.flatten()
-        is Type.Spawn, is Type.Spawns -> TODO()
+        is Type.Active, is Type.Actives -> TODO()
         is Type.Pointer   -> listOf(this) + this.pln.flattenLeft()
     }
 }
@@ -50,11 +50,11 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
                 this.pub?.aux(lin, col),
                 this.out.aux(lin, col)
             )
-            is Type.Spawn -> Type.Spawn (
+            is Type.Active -> Type.Active (
                 this.tk_.copy(lin_ = lin, col_ = col),
                 this.tsk.aux(lin, col) as Type.Func
             )
-            is Type.Spawns -> Type.Spawns (
+            is Type.Actives -> Type.Actives (
                 this.tk_.copy(lin_ = lin, col_ = col),
                 this.len,
                 this.tsk.aux(lin, col) as Type.Func
@@ -103,8 +103,8 @@ fun Type.toce (): String {
         is Type.Tuple   -> "T_" + this.vec.map { it.toce() }.joinToString("_") + "_T"
         is Type.Union   -> "U_" + this.vec.map { it.toce() }.joinToString("_") + "_U"
         is Type.Func    -> "F_" + (if (this.tk.enu==TK.TASK) "TK_" else "") + (this.xscps.first.let { if (it==null) "" else "CLO_"}) + this.inp.toce() + "_" + this.out.toce() + "_F"
-        is Type.Spawn   -> "S_" + this.tsk.toce() + "_S"
-        is Type.Spawns  -> "SS_" + this.tsk.toce() + "_SS"
+        is Type.Active   -> "S_" + this.tsk.toce() + "_S"
+        is Type.Actives  -> "SS_" + this.tsk.toce() + "_SS"
     }
 }
 
@@ -156,6 +156,6 @@ fun Type.mapScps (dofunc: Boolean, map: Map<String, Scope>): Type {
                 this.out.mapScps(dofunc,map)
             )
         }
-        is Type.Unit, is Type.Nat, is Type.Spawn, is Type.Spawns -> this
+        is Type.Unit, is Type.Nat, is Type.Active, is Type.Actives -> this
     }
 }

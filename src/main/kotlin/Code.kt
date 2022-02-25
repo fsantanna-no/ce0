@@ -15,8 +15,8 @@ fun Type.pos (): String {
         is Type.Tuple   -> "struct " + this.toce()
         is Type.Union   -> "struct " + this.toce()
         is Type.Func    -> "struct " + this.toce() + "*"
-        is Type.Spawn   -> this.tsk.pos()
-        is Type.Spawns  -> "Tasks"
+        is Type.Active   -> this.tsk.pos()
+        is Type.Actives  -> "Tasks"
     }
 }
 
@@ -58,8 +58,8 @@ fun code_ft (tp: Type) {
     CODE.addFirst(when (tp) {
         is Type.Nat, is Type.Unit, is Type.Alias -> Code("","","","","")
         is Type.Pointer -> CODE.removeFirst()
-        is Type.Spawn   -> CODE.removeFirst()
-        is Type.Spawns  -> CODE.removeFirst()
+        is Type.Active   -> CODE.removeFirst()
+        is Type.Actives  -> CODE.removeFirst()
         is Type.Func -> {
             val out = CODE.removeFirst()
             val pub = if (tp.pub == null) Code("","","","","") else CODE.removeFirst()
@@ -421,8 +421,8 @@ fun code_fe (e: Expr) {
             val blks = e.xscps.first.map { it.toce(e) }.joinToString(",")
             val tpf  = e.f.wtype.let {
                 when (it) {
-                    is Type.Spawn  -> it.tsk
-                    is Type.Spawns -> it.tsk
+                    is Type.Active  -> it.tsk
+                    is Type.Actives -> it.tsk
                     else         -> it
                 }
             }
@@ -580,7 +580,7 @@ fun code_fs (s: Stmt) {
             Code(s1.type+s2.type, s1.struct+s2.struct, s1.func+s2.func, s1.stmt+s2.stmt, "")
         }
         is Stmt.Var -> CODE.removeFirst().let {
-            val src = if (s.xtype is Type.Spawns) {
+            val src = if (s.xtype is Type.Actives) {
                 s.tk_.id.mem(s).let {
                     """
                         $it = (Tasks) { TASK_POOL, { NULL, NULL }, { NULL, 0, { NULL, NULL, NULL } } };

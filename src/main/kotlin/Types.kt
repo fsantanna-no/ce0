@@ -26,7 +26,7 @@ fun Stmt.setTypes () {
             is Expr.New   -> Type.Pointer(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.xscp!!, e.arg.wtype!!)
             is Expr.Call -> e.f.wtype.let { tpd ->
                 when (tpd) {
-                    is Type.Nat, is Type.Spawn, is Type.Spawns -> tpd
+                    is Type.Nat, is Type.Active, is Type.Actives -> tpd
                     is Type.Func -> {
                         if (tpd.xscps.second.size != e.xscps.first.size) {
                             // TODO: may fail before check2, return anything
@@ -56,11 +56,11 @@ fun Stmt.setTypes () {
                 it.vec[e.tk_.num - 1]
             }
             is Expr.Pub -> e.tsk.wtype.let {
-                All_assert_tk(e.tk, it is Type.Spawn) {
+                All_assert_tk(e.tk, it is Type.Active) {
                     "invalid \"pub\" : type mismatch : expected active task : have ${e.tsk.wtype!!.tostr()}"
                 }
                 when (e.tk_.id) {
-                    "pub"   -> (it as Type.Spawn).tsk.pub!!
+                    "pub"   -> (it as Type.Active).tsk.pub!!
                     "state" -> Type.Nat(Tk.Nat(TK.XNAT, e.tk.lin, e.tk.col, null, "int"))
                     else -> error("bug found")
                 }

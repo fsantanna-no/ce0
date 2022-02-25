@@ -1,4 +1,3 @@
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
@@ -877,7 +876,7 @@ class TParser {
         All_new(PushbackReader(StringReader("active {} task @[]->()->()->()"), 2))
         Lexer.lex()
         val tp = Parser().type()
-        assert(tp is Type.Spawns && tp.tsk.tk.enu==TK.TASK && tp.tsk.xscps.first.scp1.id=="LOCAL")
+        assert(tp is Type.Actives && tp.tsk.tk.enu==TK.TASK && tp.tsk.xscps.first.scp1.id=="LOCAL")
     }
 
     // TYPEDEF

@@ -91,9 +91,9 @@ open class Parser
                 val task = this.type()
                 assert(task is Type.Func && task.tk.enu == TK.TASK)
                 if (isdyn) {
-                    Type.Spawns(tk0, len, task as Type.Func)
+                    Type.Actives(tk0, len, task as Type.Func)
                 } else {
-                    Type.Spawn(tk0, task as Type.Func)
+                    Type.Active(tk0, task as Type.Func)
                 }
             }
             else -> {
