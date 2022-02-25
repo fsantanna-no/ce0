@@ -705,7 +705,7 @@ class TParser {
         assert (
             (s is Stmt.Set) && ((s.dst as Expr.Var).tk_.id=="f") &&
             s.src.let {
-                (it is Expr.Func) && (it.type.inp is Type.Unit) && it.block.body is Stmt.Return
+                (it is Expr.Func) && (it.xtype.inp is Type.Unit) && it.block.body is Stmt.Return
             }
         )
     }

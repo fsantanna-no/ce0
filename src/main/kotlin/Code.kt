@@ -502,24 +502,24 @@ fun code_fe (e: Expr) {
             val type = """
                 // Expr.Func.type
                 struct Func_${e.n};
-                //void func_${e.n} (Stack* stack, struct Func_${e.n}* task2, X_${e.type.toce()} xxx);
+                //void func_${e.n} (Stack* stack, struct Func_${e.n}* task2, X_${e.ftp()!!.toce()} xxx);
                 
             """.trimIndent()
 
             val struct = """
                 // Expr.Func.struct
                 typedef struct Func_${e.n} {
-                    ${e.type.toce()} task1;
+                    ${e.ftp()!!.toce()} task1;
                     ${e.block.mem_vars()}
                 } Func_${e.n};
                 
             """.trimIndent()
 
             val func = """
-                void func_${e.n} (Stack* stack, struct Func_${e.n}* task2, X_${e.type.toce()} xxx) {
+                void func_${e.n} (Stack* stack, struct Func_${e.n}* task2, X_${e.ftp()!!.toce()} xxx) {
                     Task*             task0 = &task2->task1.task0;
-                    ${e.type.toce()}* task1 = &task2->task1;
-                    ${e.type.xscps.second.mapIndexed { i, _ -> "task1->blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
+                    ${e.ftp()!!.toce()}* task1 = &task2->task1;
+                    ${e.ftp()!!.xscps.second.mapIndexed { i, _ -> "task1->blks[$i] = xxx.pars.blks[$i];\n" }.joinToString("")}
                     assert(task0->state==TASK_UNBORN || task0->state==TASK_AWAITING);
                     switch (task0->pc) {
                         case 0: {                    
@@ -546,7 +546,7 @@ fun code_fe (e: Expr) {
     
             """.trimIndent()
 
-            Code(tp.type+type+block.type, tp.struct+block.struct+struct, tp.func+block.func+func, src, "((${e.type.pos()}) frame_${e.n})")
+            Code(tp.type+type+block.type, tp.struct+block.struct+struct, tp.func+block.func+func, src, "((${e.ftp()!!.pos()}) frame_${e.n})")
         }
     }.let {
         val line = if (!LINES) "" else "\n#line ${e.tk.lin} \"CEU\"\n"

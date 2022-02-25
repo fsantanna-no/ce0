@@ -77,7 +77,7 @@ open class Tostr
                 val out = e.xscps.second.let { if (it == null) "" else ": @" + it.scp1.anon2local() }
                 "(" + this.tostr(e.f) + inps + " " + this.tostr(e.arg) + out + ")"
             }
-            is Expr.Func -> this.tostr(e.type) + " " + this.tostr(e.block)
+            is Expr.Func -> this.tostr(e.ftp()!!) + " " + this.tostr(e.block)
         }
     }
 

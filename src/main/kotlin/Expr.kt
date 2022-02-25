@@ -1,3 +1,7 @@
+fun Expr.Func.ftp (): Type.Func? {
+    return this.wtype as Type.Func?
+}
+
 fun Expr.flattenRight (): List<Expr> {
     return when (this) {
         is Expr.Unit, is Expr.Var, is Expr.Nat, is Expr.Func -> listOf(this)

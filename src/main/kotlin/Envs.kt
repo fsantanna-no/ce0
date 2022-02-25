@@ -58,11 +58,11 @@ fun Any.env (id: String): Any? {
             (it is Stmt.Var     && it.tk_.id.toUpperCase()==xid)    -> it
             (it is Stmt.Block   && it.scp1?.id?.toUpperCase()==xid) -> it
             (it is Expr.Func) -> {
-                //println(">1> $id")
                 when {
-                    (id == "arg") -> it.type.inp
-                    (id == "pub") -> it.type.pub!!
-                    (id == "ret") -> it.type.out
+                    (it.xtype == null) -> null
+                    (id == "arg") -> it.ftp()!!.inp
+                    (id == "pub") -> it.ftp()!!.pub!!
+                    (id == "ret") -> it.ftp()!!.out
                     (id == "evt") -> Type.Alias (
                         Tk.Id(TK.XID, it.tk.lin, it.tk.col, "Event"),
                         false,
