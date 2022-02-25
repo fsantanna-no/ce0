@@ -32,13 +32,7 @@ fun check_02_after_tps (s: Stmt) {
         when (e) {
             is Expr.As -> {
                 //val def = e.env(e.type.tk_.id) as Stmt.Typedef
-                val noact = e.e.wtype!!.let {
-                    when (it) {
-                        is Type.Active -> it.tsk
-                        is Type.Actives -> it.tsk
-                        else -> it
-                    }
-                }
+                val noact = e.e.wtype!!.noact()
                 val okalias = e.type
                 val noalias = e.type.noalias()
                 val (sup,sub) = when (e.tk_.sym) {
@@ -154,8 +148,9 @@ fun check_02_after_tps (s: Stmt) {
                 }
                 val dst = (s.dst.wtype!! as Type.Actives).tsk
                 //println("invalid `spawn` : type mismatch : ${dst.tostr()} = ${call.tostr()}")
-                All_assert_tk(s.tk, dst.isSupOf(call)) {
-                    "invalid `spawn` : ${mismatch(dst,call)}"
+                val alias = if (s.call.f !is Expr.As) call else s.call.f.e.wtype!!
+                All_assert_tk(s.tk, dst.isSupOf(alias)) {
+                    "invalid `spawn` : ${mismatch(dst,alias)}"
                 }
             }
             is Stmt.Emit -> {

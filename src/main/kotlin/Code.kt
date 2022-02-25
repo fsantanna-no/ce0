@@ -419,13 +419,7 @@ fun code_fe (e: Expr) {
             val arg  = CODE.removeFirst()
             val f    = CODE.removeFirst()
             val blks = e.xscps.first.map { it.toce(e) }.joinToString(",")
-            val tpf  = e.f.wtype.let {
-                when (it) {
-                    is Type.Active  -> it.tsk
-                    is Type.Actives -> it.tsk
-                    else         -> it
-                }
-            }
+            val tpf  = e.f.wtype!!.noact()
             when {
                 (e.f is Expr.Var && e.f.tk_.id=="output_std") -> {
                     Code (

@@ -1090,4 +1090,24 @@ class TTask {
         """.trimIndent())
         assert(out == "1\n2\n3\n10\n") { out }
     }
+
+    @Test
+    fun g08_task_type () {
+        val out = all("""
+            type Event = <()>
+            type Xask @[] = task @[] -> () -> _int -> ()
+            var t: Xask
+            set t = task ()->_int->() {
+                set pub = _10:_int
+                await _0:_int
+            } :+ Xask
+            var xs: active {} Xask
+            spawn ((t:- Xask) @[] ()) in xs
+            var i: active Xask
+            loop i in xs {
+                output std (i:-Xask).pub
+            }
+        """.trimIndent())
+        assert(out == "10\n") { out }
+    }
 }

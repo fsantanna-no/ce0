@@ -5,8 +5,8 @@ fun Type.visit (ft: ((Type) -> Unit)?, fx: ((Any,Scope) -> Unit)?) {
         is Type.Unit, is Type.Nat -> {}
         is Type.Tuple   -> this.vec.forEach { it.visit(ft,fx) }
         is Type.Union   -> this.vec.forEach { it.visit(ft,fx) } //(if (xpd) this.expand() else this.vec).forEach { it.visit_(xpd,ft) }
-        is Type.Active   -> this.tsk.visit(ft,fx)
-        is Type.Actives  -> this.tsk.visit(ft,fx)
+        is Type.Active  -> this.tsk.visit(ft,fx)
+        is Type.Actives -> this.tsk.visit(ft,fx)
         is Type.Pointer -> { if (fx!=null && this.xscp!=null) fx(this,this.xscp!!) ; this.pln.visit(ft,fx) }
         is Type.Alias   -> if (fx!=null && this.xscps!=null) this.xscps!!.forEach { fx(this,it) }
         is Type.Func    -> {

@@ -30,12 +30,12 @@ fun Type.setUps (up: Any) {
     this.wup = up
     when (this) {
         is Type.Unit, is Type.Nat, is Type.Alias -> {}
-        is Type.Tuple -> this.vec.forEach { it.setUps(this) }
-        is Type.Union -> this.vec.forEach { it.setUps(this) }
-        is Type.Func  -> { this.inp.setUps(this) ; this.pub?.setUps(this) ; this.out.setUps(this) }
-        is Type.Active   -> this.tsk.setUps(this)
-        is Type.Actives  -> this.tsk.setUps(this)
-        is Type.Pointer   -> this.pln.setUps(this)
+        is Type.Tuple   -> this.vec.forEach { it.setUps(this) }
+        is Type.Union   -> this.vec.forEach { it.setUps(this) }
+        is Type.Func    -> { this.inp.setUps(this) ; this.pub?.setUps(this) ; this.out.setUps(this) }
+        is Type.Active  -> this.tsk.setUps(this)
+        is Type.Actives -> this.tsk.setUps(this)
+        is Type.Pointer -> this.pln.setUps(this)
         else -> TODO(this.toString()) // do not remove this line b/c we may add new cases
     }
 }

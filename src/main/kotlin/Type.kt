@@ -81,6 +81,14 @@ fun Type.isrec (): Boolean {
     return this.flattenLeft().any { it is Type.Alias && it.xisrec }
 }
 
+fun Type.noact (): Type {
+    return when (this) {
+        is Type.Active -> this.tsk
+        is Type.Actives -> this.tsk
+        else -> this
+    }
+}
+
 fun Type.noalias (): Type {
     return if (this !is Type.Alias) this else {
         val def = this.env(this.tk_.id)!! as Stmt.Typedef
