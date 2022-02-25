@@ -65,8 +65,6 @@ fun check_02_after_tps (s: Stmt) {
                 val arg1 = e.arg.wtype!!
 
                 val (scp1s,inp1,out1) = when (func) {
-                    is Type.Active  -> Triple(Pair(func.tsk.xscps.second,func.tsk.xscps.third),func.tsk.inp,func.tsk.out)
-                    is Type.Actives -> Triple(Pair(func.tsk.xscps.second,func.tsk.xscps.third),func.tsk.inp,func.tsk.out)
                     is Type.Func   -> Triple(Pair(func.xscps.second,func.xscps.third),func.inp,func.out)
                     is Type.Nat    -> Triple(Pair(emptyList(),emptyList()),func,func)
                     else -> error("impossible case")

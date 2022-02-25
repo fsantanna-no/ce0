@@ -59,7 +59,7 @@ fun Any.env (id: String): Any? {
             (it is Stmt.Block   && it.scp1?.id?.toUpperCase()==xid) -> it
             (it is Expr.Func) -> {
                 when {
-                    (it.xtype == null) -> null
+                    (it.ftp() == null) -> if (id in listOf("arg","pub","ret","evt")) true else null
                     (id == "arg") -> it.ftp()!!.inp
                     (id == "pub") -> it.ftp()!!.pub!!
                     (id == "ret") -> it.ftp()!!.out

@@ -73,6 +73,10 @@ fun Type.clone (up: Any, lin: Int, col: Int): Type {
     return this.aux(lin,col)
 }
 
+fun Expr.Func.ftp (): Type.Func? {
+    return this.wtype as Type.Func?
+}
+
 fun Type.isrec (): Boolean {
     return this.flattenLeft().any { it is Type.Alias && it.xisrec }
 }

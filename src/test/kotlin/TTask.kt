@@ -1072,4 +1072,20 @@ class TTask {
        """.trimIndent())
         assert(out == "1\n2\n1\n2\n") { out }
     }
+
+    @Test
+    fun g07_task_type () {
+        val out = all("""
+            type Xask = task ()->()->()
+            var t : Xask
+            set t = task ()->()->() {
+                output std _2:_int
+            } :+ Xask
+            var x : active Xask
+            output std _1:_int
+            set x = spawn (t:-Xask) () :+ Xask
+            output std _3:_int
+        """.trimIndent())
+        assert(out == "1\n2\n3\n") { out }
+    }
 }
