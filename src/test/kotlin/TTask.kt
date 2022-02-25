@@ -1034,8 +1034,8 @@ class TTask {
                  output std _2:_int
             } :+ Bird
             
-            var x1: active task @[] -> () -> () -> ()
-             output std _1:_int
+            var x1: active Bird
+            output std _1:_int
             set x1 = spawn t1:-Bird ()
              output std _3:_int
        """.trimIndent())
@@ -1076,16 +1076,18 @@ class TTask {
     @Test
     fun g07_task_type () {
         val out = all("""
-            type Xask = task ()->()->()
+            type Xask = task ()->_int->()
             var t : Xask
-            set t = task ()->()->() {
+            set t = task ()->_int->() {
+                set pub = _10:_int
                 output std _2:_int
             } :+ Xask
             var x : active Xask
             output std _1:_int
-            set x = spawn (t:-Xask) () :+ Xask
+            set x = spawn (t:-Xask) ()
             output std _3:_int
+            output std (x:-Xask).pub
         """.trimIndent())
-        assert(out == "1\n2\n3\n") { out }
+        assert(out == "1\n2\n3\n10\n") { out }
     }
 }

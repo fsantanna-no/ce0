@@ -87,13 +87,16 @@ open class Parser
                     all.accept_err(TK.CHAR, '}')
                     Pair(true, len)
                 }
-                all.check_err(TK.TASK)
+                //all.check_err(TK.TASK)
                 val task = this.type()
-                assert(task is Type.Func && task.tk.enu == TK.TASK)
+                //assert(task is Type.Func && task.tk.enu == TK.TASK)
+                All_assert_tk(tk0, task is Type.Alias || task is Type.Func && task.tk.enu==TK.TASK) {
+                    "invalid type : expected task type"
+                }
                 if (isdyn) {
-                    Type.Actives(tk0, len, task as Type.Func)
+                    Type.Actives(tk0, len, task)
                 } else {
-                    Type.Active(tk0, task as Type.Func)
+                    Type.Active(tk0, task)
                 }
             }
             else -> {

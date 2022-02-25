@@ -7,6 +7,14 @@ fun Stmt.setTypes () {
                     ":+" -> e.type
                     ":-" -> e.type.noalias()
                     else -> error("bug found")
+                }.let { ret ->
+                    e.e.wtype.let {
+                        when (it) {
+                            is Type.Active  -> Type.Active (it.tk_,ret).clone(e,e.tk.lin,e.tk.col)
+                            is Type.Actives -> Type.Actives(it.tk_,it.len,it).clone(e,e.tk.lin,e.tk.col)
+                            else -> ret
+                        }
+                    }
                 }
             }
             is Expr.Upref -> e.pln.wtype!!.let {
@@ -60,7 +68,7 @@ fun Stmt.setTypes () {
                     "invalid \"pub\" : type mismatch : expected active task : have ${e.tsk.wtype!!.tostr()}"
                 }
                 when (e.tk_.id) {
-                    "pub"   -> (it as Type.Active).tsk.pub!!
+                    "pub"   -> ((it as Type.Active).tsk as Type.Func).pub!!
                     "state" -> Type.Nat(Tk.Nat(TK.XNAT, e.tk.lin, e.tk.col, null, "int"))
                     else -> error("bug found")
                 }

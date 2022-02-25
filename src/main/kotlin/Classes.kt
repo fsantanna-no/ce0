@@ -39,8 +39,8 @@ sealed class Type(val tk: Tk, var wup: Any?, var wenv: Any?) {
     data class Tuple   (val tk_: Tk.Chr, val vec: List<Type>): Type(tk_, null, null)
     data class Union   (val tk_: Tk.Chr, val vec: List<Type>): Type(tk_, null, null)
     data class Pointer (val tk_: Tk.Chr, val xscp: Scope, val pln: Type): Type(tk_, null, null)
-    data class Active  (val tk_: Tk.Key, val tsk: Type.Func): Type(tk_, null, null)
-    data class Actives (val tk_: Tk.Key, val len: Tk.Num?, val tsk: Type.Func): Type(tk_, null, null)
+    data class Active  (val tk_: Tk.Key, val tsk: Type): Type(tk_, null, null)
+    data class Actives (val tk_: Tk.Key, val len: Tk.Num?, val tsk: Type): Type(tk_, null, null)
     data class Func (
         val tk_: Tk.Key,
         val xscps: Triple<Scope,List<Scope>,List<Pair<String,String>>>,   // [closure scope, input scopes, input scopes constraints]
