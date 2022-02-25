@@ -655,23 +655,6 @@ class TTask {
         """.trimIndent())
         assert(out == "1\n2\n3\n") { out }
     }
-    @Disabled
-    @Test
-    fun c03_try_catch () {
-        val out = all("""
-            catch (file not found) {
-                var f = open ()
-                defer {
-                    call close f
-                }
-                loop {
-                    var c = read f
-                    ... throw err ...
-                }
-            }
-        """.trimIndent())
-        assert(out == "0\n1\n2\n") { out }
-    }
 
     // FIELDS
 
@@ -916,7 +899,7 @@ class TTask {
                 output std _1:_int
                 await evt?3
             }
-            var fs: active tasks @[]->()->_int->()
+            var fs: active {} task @[]->()->_int->()
             spawn f () in fs
             var x: active task @[]->()->_int->()
             loop x in fs {
@@ -1041,23 +1024,22 @@ class TTask {
     }
 
     @Test
-    fun todo_g05_type_task () {
+    fun g05_type_task () {
         val out = all("""
             type Event = <(),_uint64_t,()>
             type Bird = task  @[] -> () -> () -> ()
             
-            var x:List = <.1>: <()>:+ List
-                           e        as Alias
-            
             var t1: Bird
             set t1 = task  @[] -> () -> () -> () {
-                 output std _111:_int
+                 output std _2:_int
             } :+ Bird
             
-            var x1: active Bird
+            var x1: active task @[] -> () -> () -> ()
+             output std _1:_int
             set x1 = spawn t1:-Bird ()
+             output std _3:_int
        """.trimIndent())
-        assert(out == "111\n222\n") { out }
+        assert(out == "1\n2\n3\n") { out }
     }
     @Test
     fun g06_spawn_abort () {

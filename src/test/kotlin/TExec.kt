@@ -1697,6 +1697,23 @@ class TExec {
         """.trimIndent())
         assert(out == "5\n") { out }
     }
+    @Test
+    fun o13_func_alias () {
+        val out = all("""
+            type Int2Int = func @[] -> _int -> _int
+            
+            var f: Int2Int
+            set f = func @[] -> _int -> _int {
+                set ret = arg
+            } :+ Int2Int
+            
+            var x: _int
+            set x = f:-Int2Int _10:_int
+            
+            output std x
+       """.trimIndent())
+        assert(out == "10\n") { out }
+    }
 
     // ALL
 

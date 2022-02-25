@@ -2540,4 +2540,22 @@ class TEnv {
        """.trimIndent())
         assert(out == "(ln 2, col 15): invalid type : expected union type") { out }
     }
+
+    @Test
+    fun s06 () {
+        val out = inp2env("""
+            type Int2Int = func @[] -> _int -> _int
+            
+            var f: Int2Int
+            set f = func @[] -> _int -> _int {
+                set ret = arg
+            } :+ Int2Int
+            
+            var x: _int
+            set x = f:-Int2Int _10:_int
+            
+            output std x
+       """.trimIndent())
+        assert(out == "OK") { out }
+    }
 }
