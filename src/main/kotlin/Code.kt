@@ -239,13 +239,21 @@ fun String.loc_mem (up: Any): String {
 fun String.out_mem (up: Any): String {
     val env = up.env(this)!!
     val str = if (env is Stmt.Block) "B${env.n}" else this
-    val ret = str.loc_mem(env)
-    return if (ret != "(task2->$str)") ret else {
-        val out  = env.ups_first { it is Expr.Func } as Expr.Func
-        val jmps = up.ups_tolist().filter { it is Expr.Func }.takeWhile { it != out }.size
-        if (jmps == 0) ret else {
-            "((Func_${out.n}*)(task0" + ("->links.tsk_up".repeat(jmps)) + "))->$str"
-        }
+
+    val upf = env.ups_first(true){ it is Expr.Func }
+    if (upf == null) {
+        return "(global.$str)"
+    }
+
+    val ispar = this in listOf("arg","pub","evt","ret","state")
+    val jmps = up.ups_tolist().filter { it is Expr.Func }.takeWhile { it != upf }.size
+    if (jmps == 0) {
+        val tsk = if (ispar) "task1" else "task2"
+        return "($tsk->$str)"
+    } else {
+        val lnks = ("->links.tsk_up").repeat(jmps)
+        val tsk = if (ispar) "task1." else ""
+        return "((Func_${(upf as Expr.Func).n}*)(task0" + lnks + "))->${tsk}$str"
     }
 }
 

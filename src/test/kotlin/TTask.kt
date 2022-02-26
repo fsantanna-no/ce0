@@ -740,6 +740,23 @@ class TTask {
         """.trimIndent())
         assert(out == "1\n2\n3\n4\n") { out }
     }
+    @Test
+    fun e03_spawn_anon () {
+        val out = all("""
+            var t: task @[] -> () -> [_int] -> ()
+            set t = task @[] -> () -> [_int] -> () {
+                var xxx: _int
+                spawn (task @[] -> () -> _ -> () {
+                    set pub = [_10:_int]
+                    set xxx = _10:_int
+                } @[] ())
+            }
+            var xt: active task @[] -> () -> [_int] -> ()
+            set xt = spawn (t @[] ())
+            output std xt.pub.1
+        """.trimIndent())
+        assert(out == "10\n") { out }
+    }
 
     // POOL / TASKS / LOOPT
 

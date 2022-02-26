@@ -58,16 +58,19 @@ fun Any.env (id: String): Any? {
             (it is Stmt.Var     && it.tk_.id.toUpperCase()==xid)    -> it
             (it is Stmt.Block   && it.scp1?.id?.toUpperCase()==xid) -> it
             (it is Expr.Func) -> {
+                fun Type.nonat_ (): Type? {
+                    return if (this is Type.Nat && this.tk_.src=="") null else this
+                }
                 when {
                     (it.ftp() == null) -> if (id in listOf("arg","pub","ret","evt")) true else null
-                    (id == "arg") -> it.ftp()!!.inp
-                    (id == "pub") -> it.ftp()!!.pub!!
-                    (id == "ret") -> it.ftp()!!.out
+                    (id == "arg") -> it.ftp()!!.inp.nonat_()
+                    (id == "pub") -> it.ftp()!!.pub!!.nonat_()
+                    (id == "ret") -> it.ftp()!!.out.nonat_()
                     (id == "evt") -> Type.Alias (
                         Tk.Id(TK.XID, it.tk.lin, it.tk.col, "Event"),
                         false,
                         emptyList()
-                    ).clone(it, it.tk.lin, it.tk.col)
+                    ).clone(it, it.tk.lin, it.tk.col).nonat_()
                     else  -> null
                 }
             }
