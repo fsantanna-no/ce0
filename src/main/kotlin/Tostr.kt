@@ -102,7 +102,7 @@ open class Tostr
             is Stmt.SSpawn -> (if (s.dst == null) "" else "set " + this.tostr(s.dst) + " = ") + "spawn " + this.tostr(s.call) + "\n"
             is Stmt.DSpawn -> "spawn " + this.tostr(s.call) + " in " + this.tostr(s.dst) + "\n"
             is Stmt.Await -> "await " + this.tostr(s.e) + "\n"
-            is Stmt.Emit -> "emit @" + s.scp.scp1.id + " " + this.tostr(s.e) + "\n"
+            is Stmt.Emit -> "emit @" + s.scp.scp1.anon2local() + " " + this.tostr(s.e) + "\n"
             is Stmt.Throw -> "throw\n"
             is Stmt.DLoop -> "loop " + this.tostr(s.i) + " in " + this.tostr(s.tsks) + " " + this.tostr(s.block)
             is Stmt.Typedef -> {
