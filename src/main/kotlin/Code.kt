@@ -231,8 +231,7 @@ fun String.loc_mem (up: Any): String {
     val isglb = up.ups_first(true){ it is Expr.Func } == null
     return when {
         isglb -> "(global.$this)"
-        (this == "ret") -> "(task1->$this)"
-        (this in listOf("arg","pub","evt","state")) -> "(task2->task1.$this)"
+        (this in listOf("arg","pub","evt","ret","state")) -> "(task1->$this)"
         else -> "(task2->$this)"
     }
 }
