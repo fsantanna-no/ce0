@@ -1,11 +1,7 @@
 - emit EVENT_TASK to correct scope (not GLOBAL)
   - can infer from func signature
 - bugs
-  - BookPtr
-    - make inference repeat scope?
-      - but only for type, not func
   - $x (x in other task)
-  - check 00/01 detect var in between funcs
   - Type.Alias.supOf (check scopes)
 - refactor XTypes to use visit
 - ce1:
@@ -19,7 +15,6 @@
     - tuples
       x = [1,2,3]
       x.1
-      x?[v], x![v]
     - vector
       x = #[1,2,3,...]
       x?1, x!1
@@ -37,7 +32,6 @@
   - only in ce0: :-/:+
   - only in ce1: 1s
 - Never type
-- typedef para task (birds example)
 - pico-ce
   - image scale (birds)
 - change @[@a1,@a2] -> @[a,b: a>b]
@@ -55,10 +49,6 @@
 - explicit `free`
 - test block pass w/o data (e.g., internal `new` call)
 - reserve `arg`,`pub`,`evt`,`ret`
-- remove CLO from task
-  - always local, can never escape
-    - ~task must support parametric closure and check if spawn is local~
-      - ~task @a ...~
 - DLoop:
   - is it possible to create new state=TASK_POOL_LOOP
     and not free while in it?

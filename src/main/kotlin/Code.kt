@@ -227,7 +227,7 @@ fun code_ft (tp: Type) {
     })
 }
 
-fun String.mem (up: Any): String {
+fun String.loc_mem (up: Any): String {
     val isglb = up.ups_first(true){ it is Expr.Func } == null
     return when {
         isglb -> "(global.$this)"
@@ -237,10 +237,10 @@ fun String.mem (up: Any): String {
     }
 }
 
-fun String.env_mem (up: Any): String {
+fun String.out_mem (up: Any): String {
     val env = up.env(this)!!
     val str = if (env is Stmt.Block) "B${env.n}" else this
-    val ret = str.mem(env)
+    val ret = str.loc_mem(env)
     return if (ret != "(task2->$str)") ret else {
         val out  = env.ups_first { it is Expr.Func } as Expr.Func
         val jmps = up.ups_tolist().filter { it is Expr.Func }.takeWhile { it != out }.size
@@ -257,13 +257,13 @@ fun Scope.toce (up: Any): String {
         // @i_1 is always an argument (must be after closure test)
         this.scp1.isscopepar() -> "(task1->${this.scp1.id})"
         // otherwise depends (calls mem)
-        else -> "(&" + this.scp1.id.env_mem(up) + ")"
+        else -> "(&" + this.scp1.id.out_mem(up) + ")"
     }
 }
 
 fun Any.localBlockMem (): String {
     val id = this.localBlockScp1Id(true)
-    return if (id == "GLOBAL") "GLOBAL" else ("(&" + id.mem(this) + ")")
+    return if (id == "GLOBAL") "GLOBAL" else ("(&" + id.loc_mem(this) + ")")
 }
 
 fun String.native (up: Any, tk: Tk): String {
@@ -288,7 +288,7 @@ fun String.native (up: Any, tk: Tk): String {
             All_assert_tk(tk, env!=null) {
                 "invalid variable \"$ce\""
             }
-            ce.mem(env!!)
+            ce.out_mem(up)
         } else {
             this[i++]
         }
@@ -345,7 +345,7 @@ fun code_fe (e: Expr) {
     CODE.addFirst(when (e) {
         is Expr.Unit  -> Code("", "", "", "", "0")
         is Expr.Nat   -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, e.tk_.src.native(e, e.tk)) }
-        is Expr.Var   -> Code("", "", "", "", e.tk_.id.env_mem(e))
+        is Expr.Var   -> Code("", "", "", "", e.tk_.id.out_mem(e))
         is Expr.Upref -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, "(&" + it.expr + ")") }
         is Expr.Dnref -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, "(*" + it.expr + ")") }
         is Expr.TDisc -> CODE.removeFirst().let { Code(it.type, it.struct, it.func, it.stmt, it.expr + "._" + e.tk_.num) }
@@ -433,7 +433,7 @@ fun code_fe (e: Expr) {
                 (tpf is Type.Func) -> {
                     val block = e.wup.let {
                         if (it is Stmt.DSpawn) {
-                            "&" + (it.dst as Expr.Var).tk_.id.mem(e) + ".block"
+                            "&" + (it.dst as Expr.Var).tk_.id.out_mem(e) + ".block"
                         } else {
                             // always local
                             e.localBlockMem()
@@ -452,7 +452,7 @@ fun code_fe (e: Expr) {
                             ${if (e.wup !is Stmt.DSpawn) "" else {
                                 val dst = (e.wup as Stmt.DSpawn).dst as Expr.Var
                                 val len = ((dst.env(dst.tk_.id) as Stmt.Var).xtype as Type.Actives).len?.num ?: 0
-                                val mem = dst.tk_.id.mem(e)
+                                val mem = dst.tk_.id.out_mem(e)
                                 "if ($len==0 || pool_size((Task*)&$mem)<$len) {"
                             }}
                             Stack stk_${e.n} = { stack, ${e.self_or_null()}, ${e.localBlockMem()} };
@@ -582,7 +582,7 @@ fun code_fs (s: Stmt) {
         }
         is Stmt.Var -> CODE.removeFirst().let {
             val src = if (s.xtype is Type.Actives) {
-                s.tk_.id.mem(s).let {
+                s.tk_.id.loc_mem(s).let {
                     """
                         $it = (Tasks) { TASK_POOL, { NULL, NULL }, { NULL, 0, { NULL, NULL, NULL } } };
                         task_link(${s.localBlockMem()}, (Task*) &$it);
@@ -728,11 +728,11 @@ fun code_fs (s: Stmt) {
         }
         is Stmt.Block -> CODE.removeFirst().let {
             val up = s.ups_first { it is Expr.Func || it is Stmt.Block }
-            val blk = "B${s.n}".mem(s)
+            val blk = "B${s.n}".loc_mem(s)
 
             val src = """
             {
-                ${"B${s.n}".mem(s)} = (Block) { NULL, ${if (s.iscatch) s.n else 0}, {NULL,NULL,NULL} };
+                $blk = (Block) { NULL, ${if (s.iscatch) s.n else 0}, {NULL,NULL,NULL} };
                 
                 // link
                 ${if (up is Stmt.Block) {
