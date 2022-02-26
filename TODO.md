@@ -34,7 +34,8 @@
   - SetBlock
     - var x: () = { ... escape () }
 - XLexer para ce1
-  - ce0: :-/:+
+  - only in ce0: :-/:+
+  - only in ce1: 1s
 - Never type
 - typedef para task (birds example)
 - pico-ce

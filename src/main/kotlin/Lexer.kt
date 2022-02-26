@@ -12,6 +12,7 @@ sealed class Tk (
     data class Id  (val enu_: TK, val lin_: Int, val col_: Int, val id: String):  Tk(enu_,lin_,col_)
     data class Nat (val enu_: TK, val lin_: Int, val col_: Int, val chr: Char?, val src: String): Tk(enu_,lin_,col_)
     data class Num (val enu_: TK, val lin_: Int, val col_: Int, val num: Int):    Tk(enu_,lin_,col_)
+    data class Clk (val enu_: TK, val lin_: Int, val col_: Int, val ms: Int):     Tk(enu_,lin_,col_)
 }
 
 fun Tk.astype (): Tk.Id {
@@ -203,13 +204,59 @@ object Lexer {
                 all.tk1 = Tk.Nat(TK.XNAT, LIN, COL, open, pay)
             }
             x1.isDigit() -> {
-                var pay = ""
-                do {
-                    pay += x1
-                    all.read().let { c1 = it.first; x1 = it.second }
-                } while (x1.isDigit())
-                all.unread(c1)
-                all.tk1 = Tk.Num(TK.XNUM, LIN, COL, pay.toInt())
+                fun digits (): Int {
+                    assert(x1.isDigit())
+                    var pay = ""
+                    do {
+                        pay += x1
+                        all.read().let { c1 = it.first; x1 = it.second }
+                    } while (x1.isDigit())
+                    all.unread(c1)
+                    return pay.toInt()
+                }
+                var num = digits()
+                if (!x1.isLetter()) {
+                    all.tk1 = Tk.Num(TK.XNUM, LIN, COL, num)
+                } else {
+                    fun letters(): String {
+                        assert(x1.isLetter())
+                        var pay = ""
+                        do {
+                            pay += x1
+                            all.read().let { c1 = it.first; x1 = it.second }
+                        } while (x1.isLetter())
+                        all.unread(c1)
+                        return pay
+                    }
+
+                    var ms = 0
+                    while (true) {
+                        all.read().let { c1 = it.first; x1 = it.second }
+                        if (!x1.isLetter()) {
+                            all.unread(c1)
+                            all.tk1 = Tk.Err(TK.ERR, LIN, COL, "invalid time constant")
+                            break
+                        }
+                        val unit = letters()
+                        ms += when (unit) {
+                            "ms" -> num
+                            "s" -> num * 1000
+                            "min" -> num * 1000 * 60
+                            "h" -> num * 1000 * 60 * 60
+                            else -> {
+                                all.tk1 = Tk.Err(TK.ERR, LIN, COL, "invalid time constant")
+                                break
+                            }
+                        }
+                        all.read().let { c1 = it.first; x1 = it.second }
+                        if (!x1.isDigit()) {
+                            all.unread(c1)
+                            all.tk1 = Tk.Clk(TK.XCLK, LIN, COL, ms)
+                            break
+                        }
+                        num = digits()
+                    }
+                }
             }
             x1.isLetter() -> {
                 var pay = ""

@@ -103,6 +103,7 @@ fun All.err_expected (str: String) {
             (this is Tk.Sym)     -> '`' + this.sym + '´'
             (this is Tk.Id)      -> '"' + this.id + '"'
             (this is Tk.Num)     -> "" + this.num
+            (this is Tk.Clk)     -> "time constant"
             (this is Tk.Key)     -> '`' + this.key + '`'
             (this is Tk.Nat)     -> '"' + this.src + '"'
             else -> TODO(this.toString())

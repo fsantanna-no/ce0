@@ -162,4 +162,33 @@ class TLexer {
         //assert(all.tk1.enu==TK.ERR && (all.tk1 as Tk.Err).err=="@")
         assert(all.tk1.enu==TK.ATBRACK)
     }
+
+    // WCLOCK
+
+    @Test
+    fun d01_clk () {
+        All_new(PushbackReader(StringReader("1s"), 2))
+        Lexer.lex()
+        println(all.tk1)
+        assert(all.tk1.enu==TK.XCLK && (all.tk1 as Tk.Clk).ms==1000)
+    }
+    @Test
+    fun d02_clk () {
+        All_new(PushbackReader(StringReader("1ss"), 2))
+        Lexer.lex()
+        assert(all.tk1.enu==TK.ERR && (all.tk1 as Tk.Err).err=="invalid time constant")
+    }
+    @Test
+    fun d03_clk () {
+        All_new(PushbackReader(StringReader("1s1"), 2))
+        Lexer.lex()
+        assert(all.tk1.enu==TK.ERR && (all.tk1 as Tk.Err).err=="invalid time constant")
+    }
+    @Test
+    fun d04_clk () {
+        All_new(PushbackReader(StringReader("1h5min2s20ms"), 2))
+        Lexer.lex()
+        println(all.tk1)
+        assert(all.tk1 is Tk.Clk && (all.tk1 as Tk.Clk).ms==3902020)
+    }
 }
