@@ -2,7 +2,7 @@ import java.io.PushbackReader
 import java.io.StringReader
 import java.lang.AssertionError
 
-val THROW = true
+val THROW = false
 var LINES = false
 
 // search in tests output for

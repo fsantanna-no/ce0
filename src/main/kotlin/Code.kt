@@ -11,7 +11,7 @@ fun Type.pos (): String {
         is Type.Alias   -> this.tk_.id
         is Type.Unit    -> "int"
         is Type.Pointer -> this.pln.pos() + "*"
-        is Type.Nat     -> this.tk_.src
+        is Type.Nat     -> this.tk_.src.let { if (it == "") "int" else it }
         is Type.Tuple   -> "struct " + this.toce()
         is Type.Union   -> "struct " + this.toce()
         is Type.Func    -> "struct " + this.toce() + "*"
