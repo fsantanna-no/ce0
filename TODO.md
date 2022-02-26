@@ -15,6 +15,19 @@
   - defer
   - var [x,y] = arg   (arg is tuple)
   - option, subtyping, generics, typeclass
+  - collections:
+    - tuples
+      x = [1,2,3]
+      x.1
+      x?[v], x![v]
+    - vector
+      x = #[1,2,3,...]
+      x?1, x!1
+      x?[v], x![v]
+    - dicts
+      x = @[x=1,y=2,...]
+      x?x, x!x
+      x?[v], x![v]
 - isSupOf for Nat, make it false against others
 - return -> escape?
   - cross task

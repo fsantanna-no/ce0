@@ -431,7 +431,7 @@ fun code_fe (e: Expr) {
                     )
                 }
                 (tpf is Type.Func) -> {
-                    val block  = e.wup.let {
+                    val block = e.wup.let {
                         if (it is Stmt.DSpawn) {
                             "&" + (it.dst as Expr.Var).tk_.id.mem(e) + ".block"
                         } else {
@@ -449,6 +449,12 @@ fun code_fe (e: Expr) {
                     val pre = """
                         $ret1
                         {
+                            ${if (e.wup !is Stmt.DSpawn) "" else {
+                                val dst = (e.wup as Stmt.DSpawn).dst as Expr.Var
+                                val len = ((dst.env(dst.tk_.id) as Stmt.Var).xtype as Type.Actives).len?.num ?: 0
+                                val mem = dst.tk_.id.mem(e)
+                                "if ($len==0 || pool_size((Task*)&$mem)<$len) {"
+                            }}
                             Stack stk_${e.n} = { stack, ${e.self_or_null()}, ${e.localBlockMem()} };
                             ${tpf.toce()}* frame = (${tpf.toce()}*) malloc(${f.expr}->task0.size);
                             assert(frame!=NULL && "not enough memory");
@@ -467,6 +473,7 @@ fun code_fe (e: Expr) {
                                 return;
                             }
                             $ret2
+                            ${if (e.wup !is Stmt.DSpawn) "" else "}"}
                         }
                         
                         """.trimIndent()
@@ -968,6 +975,16 @@ fun Stmt.code (): String {
                 }
             }
             pool->links.blk_down->links.tsk_last = prv;                 // last to survive
+        }
+        
+        int pool_size (Task* pool) {
+            int ret = 0;
+            Task* nxt = pool->links.blk_down->links.tsk_first;
+            while (nxt != NULL) {
+                ret += 1;
+                nxt = nxt->links.tsk_next;
+            }            
+            return ret;
         }
         
         ///

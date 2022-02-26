@@ -1110,4 +1110,53 @@ class TTask {
         """.trimIndent())
         assert(out == "10\n") { out }
     }
+    @Test
+    fun g14_task_type () {
+        val out = all("""
+            type Event = <()>
+
+            var n: _int
+            set n = _0:_int
+
+            type Xask @[] = task @[] -> () -> () -> ()
+            var t: Xask
+            set t = task ()->()->() {
+                set n = _(${D}n+1):_int
+                await _0:_int
+            } :+ Xask
+            
+            var xs: active {2} Xask
+            spawn ((t:- Xask) @[] ()) in xs
+            spawn ((t:- Xask) @[] ()) in xs
+            spawn ((t:- Xask) @[] ()) in xs
+            spawn ((t:- Xask) @[] ()) in xs
+            output std n
+        """.trimIndent())
+        assert(out == "2\n") { out }
+    }
+
+    @Test
+    fun g15_task_type () {
+        val out = all("""
+            type Event = <()>
+
+            var n: _int
+            set n = _0:_int
+
+            type Xask @[] = task @[] -> () -> () -> ()
+            var t: Xask
+            set t = task ()->()->() {
+                set n = _(${D}n+1):_int
+                --await _0:_int
+            } :+ Xask
+            
+            var xs: active {2} Xask
+            spawn ((t:- Xask) @[] ()) in xs
+            spawn ((t:- Xask) @[] ()) in xs
+            spawn ((t:- Xask) @[] ()) in xs
+            spawn ((t:- Xask) @[] ()) in xs
+            output std n
+        """.trimIndent())
+        assert(out == "4\n") { out }
+    }
 }
