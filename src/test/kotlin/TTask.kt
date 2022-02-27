@@ -57,7 +57,7 @@ class TTask {
     @Test
     fun a02_emit_err () {
         val out = all("""
-            emit _1:_int
+            emit @GLOBAL _1:_int
         """.trimIndent())
         assert(out == "(ln 1, col 1): invalid `emit` : type mismatch : expected Event : have _int") { out }
     }
@@ -75,7 +75,7 @@ class TTask {
             set x = spawn f ()
             output std _2:_int
             --awake x _1:_int
-            emit <.3 _1:_int>:<(),_uint64_t,_int>:+Event
+            emit @GLOBAL <.3 _1:_int>:<(),_uint64_t,_int>:+Event
         """.trimIndent())
         assert(out == "1\n2\n3\n") { out }
     }
@@ -746,7 +746,7 @@ class TTask {
             var t: task @[] -> () -> [_int] -> ()
             set t = task @[] -> () -> [_int] -> () {
                 var xxx: _int
-                spawn (task @[] -> () -> _ -> () {
+                spawn (task _ -> _ -> _ {
                     set pub = [_10:_int]
                     set xxx = _10:_int
                 } @[] ())
@@ -951,7 +951,7 @@ class TTask {
                 output std _2:_int
             }) ()
             output std _1:_int
-            emit <.3 _1:_int>:<(),_uint64_t,_int>:+Event
+            emit @GLOBAL <.3 _1:_int>:<(),_uint64_t,_int>:+Event
             output std _3:_int
        """.trimIndent())
         assert(out == "1\n2\n3\n") { out }
@@ -985,7 +985,7 @@ class TTask {
                 }
             }) ()
             output std _1:_int
-            emit <.3 _1:_int>:<(),_uint64_t,_int>:+Event
+            emit @GLOBAL <.3 _1:_int>:<(),_uint64_t,_int>:+Event
             output std _4:_int
        """.trimIndent())
         assert(out == "1\n2\n3\n4\n") { out }
@@ -1041,25 +1041,7 @@ class TTask {
     }
 
     @Test
-    fun g05_type_task () {
-        val out = all("""
-            type Event = <(),_uint64_t,()>
-            type Bird = task  @[] -> () -> () -> ()
-            
-            var t1: Bird
-            set t1 = task  @[] -> () -> () -> () {
-                 output std _2:_int
-            } :+ Bird
-            
-            var x1: active Bird
-            output std _1:_int
-            set x1 = spawn t1:-Bird ()
-             output std _3:_int
-       """.trimIndent())
-        assert(out == "1\n2\n3\n") { out }
-    }
-    @Test
-    fun g06_spawn_abort () {
+    fun g05_spawn_abort () {
         val out = all("""
             type Event = <(),_uint64_t,(),()>
             var t: task @[] -> () -> () -> ()
@@ -1082,16 +1064,36 @@ class TTask {
                 }
             }) ()
             
-            emit <.3 ()>: <(),_uint64_t,(),()>:+Event
-            emit <.4 ()>: <(),_uint64_t,(),()>:+Event
-            emit <.3 ()>: <(),_uint64_t,(),()>:+Event
+            emit @GLOBAL <.3 ()>: <(),_uint64_t,(),()>:+Event
+            emit @GLOBAL <.4 ()>: <(),_uint64_t,(),()>:+Event
+            emit @GLOBAL <.3 ()>: <(),_uint64_t,(),()>:+Event
             
        """.trimIndent())
         assert(out == "1\n2\n1\n2\n") { out }
     }
+    // TYPE TASK
 
     @Test
-    fun g07_task_type () {
+    fun h01_type_task () {
+        val out = all("""
+            type Event = <(),_uint64_t,()>
+            type Bird = task  @[] -> () -> () -> ()
+            
+            var t1: Bird
+            set t1 = task  @[] -> () -> () -> () {
+                 output std _2:_int
+            } :+ Bird
+            
+            var x1: active Bird
+            output std _1:_int
+            set x1 = spawn t1:-Bird ()
+             output std _3:_int
+       """.trimIndent())
+        assert(out == "1\n2\n3\n") { out }
+    }
+
+    @Test
+    fun h02_task_type () {
         val out = all("""
             type Xask = task ()->_int->()
             var t : Xask
@@ -1109,7 +1111,7 @@ class TTask {
     }
 
     @Test
-    fun g08_task_type () {
+    fun h03_task_type () {
         val out = all("""
             type Event = <()>
             type Xask @[] = task @[] -> () -> _int -> ()
@@ -1128,7 +1130,7 @@ class TTask {
         assert(out == "10\n") { out }
     }
     @Test
-    fun g14_task_type () {
+    fun h04_task_type () {
         val out = all("""
             type Event = <()>
 
@@ -1153,7 +1155,7 @@ class TTask {
     }
 
     @Test
-    fun g15_task_type () {
+    fun h05_task_type () {
         val out = all("""
             type Event = <()>
 
@@ -1175,5 +1177,36 @@ class TTask {
             output std n
         """.trimIndent())
         assert(out == "4\n") { out }
+    }
+
+    // EMIT LOCAL
+
+    @Test
+    fun i01_local () {
+        val out = all("""
+            type Event = <(),_uint64_t,_int>
+            var f : task @[]->()->()->()
+            set f = task @[]->()->()->() {
+                output std _1:_int
+                await evt?3
+                output std _2:_int
+            }
+            var x1 : active task @[]->()->()->()
+            set x1 = spawn f ()
+            var x2 : active task @[]->()->()->()
+            set x2 = spawn f ()
+            emit x1 <.3 _1:_int>:<(),_uint64_t,_int>:+Event
+            output std _3:_int
+        """.trimIndent())
+        assert(out == "1\n1\n2\n3\n") { out }
+    }
+
+    @Test
+    fun i02_err () {
+        val out = all("""
+            var x1 : active task @[]->()->()->()
+            emit @GLOBAL x1 ()
+        """.trimIndent())
+        assert(out == "(ln 2, col 14): invalid call : not a function") { out }
     }
 }

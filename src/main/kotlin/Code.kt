@@ -685,18 +685,35 @@ fun code_fs (s: Stmt) {
             """.trimIndent()
             Code(it.type, it.struct, it.func, it.stmt+src, "")
         }
-        is Stmt.Emit -> CODE.removeFirst().let {
-            val src = """
+        is Stmt.Emit -> {
+            val evt = CODE.removeFirst()
+            if (s.tgt is Scope) {
+                val src = """
                 {
                     Stack stk = { stack, ${s.self_or_null()}, ${s.localBlockMem()} };
-                    block_bcast_event(&stk, ${s.scp.toce(s)}, (_Event*) &${it.expr});
+                    bcast_event_block(&stk, ${s.tgt.toce(s)}, (_Event*) &${evt.expr});
                     if (stk.block == NULL) {
                         return;
                     }
                 }
                 
-            """.trimIndent()
-            Code(it.type, it.struct, it.func, it.stmt+src, "")
+                """.trimIndent()
+                Code(evt.type, evt.struct, evt.func, evt.stmt+src, "")
+            } else {
+                val tsk = CODE.removeFirst()
+                val src = """
+                {
+                    Stack stk = { stack, ${s.self_or_null()}, ${s.localBlockMem()} };
+                    bcast_event_task(&stk, &${tsk.expr}->task0, (_Event*) &${evt.expr}, 0);
+                    if (stk.block == NULL) {
+                        return;
+                    }
+                }
+                
+                """.trimIndent()
+                Code(tsk.type+evt.type, tsk.struct+evt.struct, tsk.func+evt.func, tsk.stmt+evt.stmt+src, "")
+
+            }
         }
         is Stmt.Throw -> {
             val src = """
@@ -764,7 +781,7 @@ fun code_fs (s: Stmt) {
                     //task0->state = TASK_DYING;
                     _Event evt = { EVENT_TASK, {.Task=(uint64_t)task0} };
                     Stack stk = { stack, task0, &$blk };
-                    block_bcast_event(&stk, GLOBAL, (_Event*) &evt);
+                    bcast_event_block(&stk, GLOBAL, (_Event*) &evt);
                     if (stk.block == NULL) {
                         //task0->state = TASK_DEAD;
 //printf("do not continue %p\n", task0);
@@ -1049,30 +1066,34 @@ fun Stmt.code (): String {
             block_free(block);                                      // X. free myself
         }
         
-        void block_bcast_event (Stack* stack, Block* block, _Event* evt) {
+        void bcast_event_task (Stack* stack, Task* task, _Event* evt, int gonxt);
+
+        void bcast_event_block (Stack* stack, Block* block, _Event* evt) {
             
             Stack stk = { stack, stack->task, block };
             
-            void aux (Task* task) {
-                if (task == NULL) return;
-                //assert(task->links.blk_down != NULL);
-                if (task->links.blk_down != NULL) {
-                    block_bcast_event(&stk, task->links.blk_down, evt); // 1.1
-                    if (stk.block == NULL) return;  // outer block died, cannot continue to next task
-                }
-                if (task->state == TASK_POOL) {
-                    pool_maybe_free(task);
-                } else if (task->state == TASK_AWAITING) {
-                    task->f(&stk, task, evt);                       // 1.2
-                    if (stk.block == NULL) return;  // outer block died, cannot continue to next task
-                }
-                aux(task->links.tsk_next);                          // 1.3
-            }
-            
-            aux(block->links.tsk_first);                            // 1. awake my inner tasks
+            bcast_event_task(&stk, block->links.tsk_first, evt, 1); // 1. awake my inner tasks
             if (stk.block == NULL) return;  // I died in aux, cannot continue to nested block
             if (block->links.blk_down != NULL) {                    // 2. awake my nested block
-                block_bcast_event(stack, block->links.blk_down, evt);
+                bcast_event_block(stack, block->links.blk_down, evt);
+            }
+        }
+
+        void bcast_event_task (Stack* stack, Task* task, _Event* evt, int gonxt) {
+            if (task == NULL) return;
+            //assert(task->links.blk_down != NULL);
+            if (task->links.blk_down != NULL) {
+                bcast_event_block(stack, task->links.blk_down, evt); // 1.1
+                if (stack->block == NULL) return;  // outer block died, cannot continue to next task
+            }
+            if (task->state == TASK_POOL) {
+                pool_maybe_free(task);
+            } else if (task->state == TASK_AWAITING) {
+                task->f(stack, task, evt);                       // 1.2
+                if (stack->block == NULL) return;  // outer block died, cannot continue to next task
+            }
+            if (gonxt) {
+                bcast_event_task(stack, task->links.tsk_next, evt, 1); // 1.3
             }
         }
 

@@ -65,7 +65,14 @@ fun Stmt.visit (fs: ((Stmt) -> Unit)?, fe: ((Expr) -> Unit)?, ft: ((Type) -> Uni
         is Stmt.SSpawn  -> { this.dst?.visit(fs, fe, ft, fx) ; this.call.visit(fs, fe, ft, fx) }
         is Stmt.DSpawn  -> { this.dst.visit(fs, fe, ft, fx) ; this.call.visit(fs, fe, ft, fx) }
         is Stmt.Await   -> this.e.visit(fs, fe, ft, fx)
-        is Stmt.Emit   -> { if (fx!=null) fx(this,this.scp) ; this.e.visit(fs, fe, ft, fx) }
+        is Stmt.Emit    -> {
+            if (this.tgt is Expr) {
+                this.tgt.visit(fs, fe, ft, fx)
+            } else if (fx != null) {
+                fx(this, this.tgt as Scope)
+            }
+            this.e.visit(fs, fe, ft, fx)
+        }
         is Stmt.Input   -> { this.xtype?.visit(ft, fx) ; this.dst?.visit(fs, fe, ft, fx) ; this.arg.visit(fs, fe, ft, fx) }
         is Stmt.Output  -> this.arg.visit(fs, fe, ft, fx)
         is Stmt.Seq     -> { this.s1.visit(fs, fe, ft, fx) ; this.s2.visit(fs, fe, ft, fx) }

@@ -34,7 +34,7 @@ fun Stmt.setTypes () {
             is Expr.New   -> Type.Pointer(Tk.Chr(TK.CHAR,e.tk.lin,e.tk.col,'/'), e.xscp!!, e.arg.wtype!!)
             is Expr.Call -> e.f.wtype.let { tpd ->
                 when (tpd) {
-                    is Type.Nat, is Type.Active, is Type.Actives -> tpd
+                    is Type.Nat -> tpd
                     is Type.Func -> {
                         if (tpd.xscps.second.size != e.xscps.first.size) {
                             // TODO: may fail before check2, return anything
@@ -44,6 +44,12 @@ fun Stmt.setTypes () {
                                 tpd.xscps.second.map { it.scp1.id }.zip(e.xscps.first).toMap()
                             )
                         }
+                    }
+                    is Type.Active, is Type.Actives -> {
+                        All_assert_tk(e.f.tk, e.wup is Stmt.SSpawn) {
+                            "invalid call : not a function"
+                        }
+                        tpd
                     }
                     else -> {
                         All_assert_tk(e.f.tk, false) {
