@@ -117,7 +117,7 @@ fun check_02_after_tps (s: Stmt) {
     fun fs (s: Stmt) {
         when (s) {
             is Stmt.Await -> {
-                All_assert_tk(s.tk, s.e.wtype is Type.Nat) {
+                All_assert_tk(s.tk, s.e.wtype is Type.Active || s.e.wtype.let { it is Type.Nat && it.tk_.src=="int" }) {
                     "invalid condition : type mismatch : expected _int : have ${s.e.wtype!!.tostr()}"
                 }
             }

@@ -991,6 +991,30 @@ class TTask {
     }
 
     @Test
+    fun g03_kill () {
+        val out = all("""
+            type Event = <(),_uint64_t,_int>
+            spawn (task @[]->()->()->() {
+                loop {
+                    var f: task @[]->()->()->()
+                    set f = task @[]->()->()->() {
+                        await evt?3
+                        output std _2:_int
+                    }
+                    var x : active task @[]->()->()->()
+                    set x = spawn f ()
+                    await x
+                    output std _3:_int
+                }
+            }) ()
+            output std _1:_int
+            emit @GLOBAL <.3 _1:_int>:<(),_uint64_t,_int>:+Event
+            output std _4:_int
+       """.trimIndent())
+        assert(out == "1\n2\n3\n4\n") { out }
+    }
+
+    @Test
     fun g03_f_kill () {
         val out = all("""
             var fff: func () -> () {}
@@ -1231,6 +1255,6 @@ class TTask {
             output std _4:_int
             emit @GLOBAL <.3 _1:_int>:<(),_uint64_t,_int>:+Event
         """.trimIndent())
-        assert(out == "1\n2\n3\n4\n5") { out }
+        assert(out == "1\n2\n3\n4\n5\n") { out }
     }
 }

@@ -4,10 +4,14 @@
   - $x (x in other task)
   - Type.Alias.supOf (check scopes)
 - refactor XTypes to use visit
+- List @[...].1 doesnt work
+- command to kill task
+- check pause/resume types
 - ce1:
   - if/until condition
     - _int -> Bool:<(),()>
   - await task
+  - loop 1..5
   - defer
   - var [x,y] = arg   (arg is tuple)
   - option, subtyping, generics, typeclass

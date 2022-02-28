@@ -688,6 +688,12 @@ fun code_fs (s: Stmt) {
             Code(it.type, it.struct, it.func, it.stmt+src, "")
         }
         is Stmt.Await -> CODE.removeFirst().let {
+            val cnd = if (s.e.wtype is Type.Nat) {
+                "${it.expr}"
+            } else {
+                "(task1->evt.tag == 2) && (((_Event*)(&task1->evt))->payload.Task == ((uint64_t)(${it.expr})))"
+            }
+
             val src = """
                 {
                     task0->pc = ${s.n};      // next awake
@@ -696,7 +702,7 @@ fun code_fs (s: Stmt) {
                 case ${s.n}:                // awake here
                     assert(task0->state == TASK_AWAITING);
                     task1->evt = * (Event*) xxx.evt;
-                    if (!(${it.expr})) {
+                    if (!($cnd)) {
                         return;             // (0 = awake no)
                     }
                     task0->state = TASK_RUNNING;
