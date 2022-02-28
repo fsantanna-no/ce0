@@ -1085,8 +1085,13 @@ fun Stmt.code (): String {
         void bcast_event_task (Stack* stack, Task* task, _Event* evt, int gonxt) {
             if (task == NULL) return;
             //assert(task->links.blk_down != NULL);
+
             if (task->links.blk_down != NULL) {
+                // prevents nested pool tasks to free themselves while I'm currently traversing them
+                Stack stk = { stack, task, NULL };
+                if (task->state==TASK_POOL) stack = &stk;
                 bcast_event_block(stack, task->links.blk_down, evt); // 1.1
+                if (task->state==TASK_POOL) stack = stk.stk_up;
                 if (stack->block == NULL) return;  // outer block died, cannot continue to next task
             }
             if (task->state == TASK_POOL) {
