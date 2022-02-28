@@ -63,6 +63,7 @@ fun Type.isSupOf (sub: Type, isproto: Boolean=false): Boolean {
     return when {
         (this is Type.Nat  || sub is Type.Nat) -> true
         (this is Type.Active && sub is Type.Actives) -> this.tsk.isSupOf(sub.tsk)
+        (this is Type.Active && sub is Type.Active)  -> this.tsk.isSupOf(sub.tsk)
         (this is Type.Alias && sub is Type.Alias) -> (this.tk_.id == sub.tk_.id)    // TODO: check scopes
         (this::class != sub::class) -> false
         (this is Type.Unit && sub is Type.Unit) -> true

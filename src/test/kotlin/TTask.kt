@@ -926,6 +926,28 @@ class TTask {
         assert(out == "1\n10\n") { out }
     }
 
+    @Test
+    fun f10_track () {
+        val out = all("""
+            type Event = <(),_uint64_t,_int>
+            var f : task @[]->()->_int->()
+            set f = task @[]->()->_int->() {
+                set pub = _3:_int
+                output std _1:_int
+                await evt?3
+            }
+            var fs: active {} task @[]->()->_int->()
+            spawn f () in fs
+            var y: active task @[]->()->_int->()
+            var x: active task @[]->()->_int->()
+            loop x in fs {
+                set y = x
+            }
+            output std y.pub
+        """.trimIndent())
+        assert(out == "1\n3\n") { out }
+    }
+
     // AWAIT TASK
 
     @Test
