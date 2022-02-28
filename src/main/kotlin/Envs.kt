@@ -107,6 +107,7 @@ fun Stmt.setEnvs (env: Any?): Any? {
         is Stmt.SSpawn -> { this.dst?.visit(null,::fe,::ft,null) ; this.call.visit(null,::fe,::ft,null) ; env }
         is Stmt.DSpawn -> { this.dst.visit(null,::fe,::ft,null) ; this.call.visit(null,::fe,::ft,null) ; env }
         is Stmt.Await  -> { this.e.visit(null,::fe,::ft,null) ; env }
+        is Stmt.Pause  -> { this.tsk.visit(null,::fe,::ft,null) ; env }
         is Stmt.Emit  -> {
             if (this.tgt is Expr) {
                 this.tgt.visit(null,::fe,::ft,null)

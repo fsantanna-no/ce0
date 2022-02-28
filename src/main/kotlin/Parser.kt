@@ -312,6 +312,16 @@ open class Parser
                     Stmt.SSpawn(tk0, null, e as Expr.Call)
                 }
             }
+            all.accept(TK.PAUSE) -> {
+                val tk0 = all.tk0 as Tk.Key
+                val e = this.expr()
+                Stmt.Pause(tk0, e, true)
+            }
+            all.accept(TK.RESUME) -> {
+                val tk0 = all.tk0 as Tk.Key
+                val e = this.expr()
+                Stmt.Pause(tk0, e, false)
+            }
             all.accept(TK.AWAIT) -> {
                 val tk0 = all.tk0 as Tk.Key
                 val e = this.expr()

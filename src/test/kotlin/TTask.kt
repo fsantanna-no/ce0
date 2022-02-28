@@ -1208,4 +1208,29 @@ class TTask {
         """.trimIndent())
         assert(out == "(ln 2, col 14): invalid call : not a function") { out }
     }
+
+    // PAUSE
+
+    @Test
+    fun j01_pause () {
+        val out = all("""
+            type Event = <(),_uint64_t,_int>
+            var f : task @[]->()->()->()
+            set f = task @[]->()->()->() {
+                output std _1:_int
+                await evt?3
+                output std _5:_int
+            }
+            var x : active task @[]->()->()->()
+            set x = spawn f ()
+            output std _2:_int
+            pause x
+            output std _3:_int
+            emit @GLOBAL <.3 _1:_int>:<(),_uint64_t,_int>:+Event
+            resume x
+            output std _4:_int
+            emit @GLOBAL <.3 _1:_int>:<(),_uint64_t,_int>:+Event
+        """.trimIndent())
+        assert(out == "1\n2\n3\n4\n5") { out }
+    }
 }

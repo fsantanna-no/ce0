@@ -65,6 +65,7 @@ fun Stmt.visit (fs: ((Stmt) -> Unit)?, fe: ((Expr) -> Unit)?, ft: ((Type) -> Uni
         is Stmt.SSpawn  -> { this.dst?.visit(fs, fe, ft, fx) ; this.call.visit(fs, fe, ft, fx) }
         is Stmt.DSpawn  -> { this.dst.visit(fs, fe, ft, fx) ; this.call.visit(fs, fe, ft, fx) }
         is Stmt.Await   -> this.e.visit(fs, fe, ft, fx)
+        is Stmt.Pause   -> this.tsk.visit(fs, fe, ft, fx)
         is Stmt.Emit    -> {
             if (this.tgt is Expr) {
                 this.tgt.visit(fs, fe, ft, fx)

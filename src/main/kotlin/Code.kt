@@ -307,7 +307,8 @@ fun Stmt.mem_vars (): String {
     return when (this) {
         is Stmt.Nop, is Stmt.Set, is Stmt.Native, is Stmt.SCall, is Stmt.SSpawn,
         is Stmt.DSpawn, is Stmt.Await, is Stmt.Emit, is Stmt.Throw,
-        is Stmt.Input, is Stmt.Output, is Stmt.Return, is Stmt.Break, is Stmt.Typedef -> ""
+        is Stmt.Input, is Stmt.Output, is Stmt.Pause, is Stmt.Return, is Stmt.Break,
+        is Stmt.Typedef -> ""
 
         is Stmt.Var -> "${this.xtype!!.pos()} ${this.tk_.id};\n"
         is Stmt.Loop -> this.block.mem_vars()
@@ -669,6 +670,22 @@ fun code_fs (s: Stmt) {
             val call = CODE.removeFirst()
             val tsks = CODE.removeFirst()
             Code(tsks.type+call.type, tsks.struct+call.struct, tsks.func+call.func, tsks.stmt+call.stmt, "")
+        }
+        is Stmt.Pause -> CODE.removeFirst().let {
+            val src = if (s.pause) {
+                """
+                assert(${it.expr}->task0.state==TASK_AWAITING && "trying to pause non-awaiting task");
+                ${it.expr}->task0.state = TASK_PAUSED;
+                
+                """.trimIndent()
+            } else {
+                """
+                ${it.expr}->task0.state = TASK_AWAITING;
+                
+                """.trimIndent()
+
+            }
+            Code(it.type, it.struct, it.func, it.stmt+src, "")
         }
         is Stmt.Await -> CODE.removeFirst().let {
             val src = """

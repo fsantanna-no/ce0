@@ -82,6 +82,7 @@ fun Stmt.setUps (up: Any?) {
         is Stmt.SSpawn -> { this.dst?.setUps(this) ; this.call.setUps(this) }
         is Stmt.DSpawn -> { this.dst.setUps(this) ; this.call.setUps(this) }
         is Stmt.Await -> this.e.setUps(this)
+        is Stmt.Pause -> this.tsk.setUps(this)
         is Stmt.Emit -> {
             if (this.tgt is Expr) {
                 this.tgt.setUps(this)
