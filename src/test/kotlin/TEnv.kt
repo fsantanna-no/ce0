@@ -2470,7 +2470,7 @@ class TEnv {
         assert(out == "OK") { out }
     }
     @Test
-    fun noclo_todo_r12_err () {
+    fun noclo_r12_err () {
         val out = inp2env(
             """
             var f : func @[] -> _int -> ()

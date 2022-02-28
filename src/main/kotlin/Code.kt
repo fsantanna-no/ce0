@@ -627,12 +627,15 @@ fun code_fs (s: Stmt) {
             val tsks  = CODE.removeFirst()
             val i     = CODE.removeFirst()
             val src   = """
-                {
+                {   // DLoop
+                    Stack stk = { stack, (Task*)&${tsks.expr}, NULL };
+                    stack = &stk;
                     ${i.expr} = (${s.i.wtype!!.pos()}) ${tsks.expr}.block.links.tsk_first;
                     while (${i.expr}!=NULL && ${i.expr}->task0.state!=TASK_DEAD) {
                         ${block.stmt}
                         ${i.expr} = (${s.i.wtype!!.pos()}) ${i.expr}->task0.links.tsk_next;
                     }
+                    stack = stk.stk_up;
                 }
                 
             """.trimIndent()
@@ -1087,7 +1090,18 @@ fun Stmt.code (): String {
                 if (stack->block == NULL) return;  // outer block died, cannot continue to next task
             }
             if (task->state == TASK_POOL) {
-                pool_maybe_free(task);
+                int ok = 1;
+                Stack* cur = stack;
+                while (cur != NULL) {
+                    if (cur->task == task) {
+                        ok = 0;
+                        break;
+                    }
+                    cur = cur->stk_up; 
+                }
+                if (ok) {
+                    pool_maybe_free(task);
+                }
             } else if (task->state == TASK_AWAITING) {
                 task->f(stack, task, evt);                       // 1.2
                 if (stack->block == NULL) return;  // outer block died, cannot continue to next task

@@ -905,14 +905,13 @@ class TTask {
         assert(out == "1\n2\n1\n2\n2\n()\n") { out }
     }
 
-    @Disabled   // TODO: can't kill itself b/c i becomes dangling
     @Test
     fun f09_dloop_kill () {
         val out = all("""
             type Event = <(),_uint64_t,_int>
             var f : task @[]->()->_int->()
             set f = task @[]->()->_int->() {
-                set pub = _3:_int
+                set pub = _10:_int
                 output std _1:_int
                 await evt?3
             }
@@ -920,11 +919,11 @@ class TTask {
             spawn f () in fs
             var x: active task @[]->()->_int->()
             loop x in fs {
-                emit <.3 _10:_int>:<(),_uint64_t,_int>:+ Event
+                emit @GLOBAL <.3 _10:_int>:<(),_uint64_t,_int>:+ Event
                 output std x.pub
             }
         """.trimIndent())
-        assert(out == "1\n") { out }
+        assert(out == "1\n10\n") { out }
     }
 
     // AWAIT TASK

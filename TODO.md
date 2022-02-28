@@ -50,6 +50,7 @@
 - test block pass w/o data (e.g., internal `new` call)
 - reserve `arg`,`pub`,`evt`,`ret`
 - DLoop:
+  - cannot await inside dloop, would loose the stack with TASK_POOL at top
   - is it possible to create new state=TASK_POOL_LOOP
     and not free while in it?
   1. reject await/emit/etc inside DLoop
