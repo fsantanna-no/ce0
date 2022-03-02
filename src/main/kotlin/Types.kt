@@ -69,13 +69,14 @@ fun Stmt.setTypes () {
                 }
                 it.vec[e.tk_.num - 1]
             }
-            is Expr.Pub -> e.tsk.wtype.let {
+            is Expr.Field -> e.tsk.wtype.let {
                 All_assert_tk(e.tk, it is Type.Active) {
                     "invalid \"pub\" : type mismatch : expected active task : have ${e.tsk.wtype!!.tostr()}"
                 }
                 when (e.tk_.id) {
-                    "pub"   -> ((it as Type.Active).tsk as Type.Func).pub!!
                     "state" -> Type.Nat(Tk.Nat(TK.XNAT, e.tk.lin, e.tk.col, null, "int"))
+                    "pub"   -> ((it as Type.Active).tsk as Type.Func).pub!!
+                    "ret"   -> ((it as Type.Active).tsk as Type.Func).out
                     else -> error("bug found")
                 }
 

@@ -362,8 +362,13 @@ fun code_fe (e: Expr) {
             val e = CODE.removeFirst()
             Code(tp.type+e.type, tp.struct+e.struct, tp.func+e.func, tp.stmt+e.stmt, tp.expr+e.expr)
         }
-        is Expr.Pub   -> CODE.removeFirst().let {
-            val src = if (e.tk_.id == "state") it.expr + "->task0.${e.tk_.id}" else it.expr + "->${e.tk_.id}"
+        is Expr.Field -> CODE.removeFirst().let {
+            val src = when (e.tk_.id) {
+                "state" -> it.expr + "->task0.state"
+                "pub"   -> it.expr + "->pub"
+                "ret"   -> it.expr + "->ret"
+                else    -> error("bug found")
+            }
             Code(it.type, it.struct, it.func, it.stmt, src)
         }
         is Expr.UDisc -> CODE.removeFirst().let {

@@ -58,7 +58,7 @@ open class Tostr
             is Expr.UCons -> this.upcast(e, "<." + e.tk_.num + " " + this.tostr(e.arg) + ">: " + this.tostr(e.wtype!!.noalias()))
             is Expr.UNull -> "<.0>: " + this.tostr(e.wtype!!)
             is Expr.TDisc -> "(" + this.dncast(e.tup.wtype, this.tostr(e.tup)) + "." + e.tk_.num + ")"
-            is Expr.Pub -> {
+            is Expr.Field -> {
                 val tsk = this.dncast(e.tsk.wtype!!.noact(), this.tostr(e.tsk))
                 "(" + tsk + ".${e.tk_.id})"
             }

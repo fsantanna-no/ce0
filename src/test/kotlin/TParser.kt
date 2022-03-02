@@ -866,7 +866,7 @@ class TParser {
         All_new(PushbackReader(StringReader("set x.pub = ()"), 2))
         Lexer.lex()
         val s = Parser().stmt()
-        assert(s is Stmt.Set && s.dst is Expr.Pub)
+        assert(s is Stmt.Set && s.dst is Expr.Field)
     }
 
     // TASKS TYPE

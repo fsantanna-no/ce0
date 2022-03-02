@@ -1035,6 +1035,28 @@ class TTask {
        """.trimIndent())
         assert(out == "1\n2\n3\n4\n") { out }
     }
+    @Test
+    fun g03_kill_return () {
+        val out = all("""
+            type Event = <(),_uint64_t,_int>
+            spawn (task @[]->()->()->() {
+                loop {
+                    var f: task @[]->()->()->_int
+                    set f = task @[]->()->()->_int {
+                        await evt?3
+                        set ret = _10:_int
+                    }
+                    var x : active task @[]->()->()->_int
+                    set x = spawn f ()
+                    await x
+                    output std x.ret
+                }
+            }) ()
+            emit @GLOBAL <.3 _1:_int>:<(),_uint64_t,_int>:+Event
+       """.trimIndent())
+        assert(out == "10\n") { out }
+    }
+
 
     @Test
     fun g03_f_kill () {
