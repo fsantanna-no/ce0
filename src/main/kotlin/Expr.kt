@@ -22,7 +22,7 @@ fun Attr.toExpr (): Expr {
         is Attr.As    -> Expr.As(this.tk_, this.e.toExpr(), this.type)
         is Attr.Dnref -> Expr.Dnref(this.tk_,this.ptr.toExpr())
         is Attr.TDisc -> Expr.TDisc(this.tk_,this.tup.toExpr())
-        is Attr.Pub   -> Expr.Field(this.tk_,this.tsk.toExpr())
+        is Attr.Field   -> Expr.Field(this.tk_,this.tsk.toExpr())
         is Attr.UDisc -> Expr.UDisc(this.tk_,this.uni.toExpr())
     }
 }

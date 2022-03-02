@@ -62,7 +62,7 @@ sealed class Attr(val tk: Tk) {
     data class Dnref (val tk_: Tk, val ptr: Attr): Attr(tk_)
     data class TDisc (val tk_: Tk.Num, val tup: Attr): Attr(tk_)
     data class UDisc (val tk_: Tk.Num, val uni: Attr): Attr(tk_)
-    data class Pub   (val tk_: Tk.Id, val tsk: Attr): Attr(tk_)
+    data class Field (val tk_: Tk.Id, val tsk: Attr): Attr(tk_)
 }
 
 sealed class Expr (val n: Int, val tk: Tk, var wup: Any?, var wenv: Any?, var wtype: Type?) {

@@ -553,7 +553,7 @@ open class Parser
                     (chr.chr == '!') -> Attr.UDisc(num!!, e)
                     (chr.chr == '.') -> {
                         if (all.tk0.enu == TK.XID) {
-                            Attr.Pub(all.tk0 as Tk.Id, e)
+                            Attr.Field(all.tk0 as Tk.Id, e)
                         } else {
                             Attr.TDisc(num!!, e)
                         }
