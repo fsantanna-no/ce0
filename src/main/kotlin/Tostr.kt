@@ -114,6 +114,7 @@ open class Tostr
                 val scps = " @[" + s.xscp1s.first!!.map { it.id }.joinToString(",") + "]"
                 "type " + s.tk_.id + scps + " = " + this.tostr(s.type) + "\n"
             }
+            else -> error("bug found")
         }
     }
 }

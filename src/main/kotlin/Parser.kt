@@ -224,6 +224,30 @@ open class Parser
         return e
     }
 
+    fun set_tail (tk0: Tk.Chr, dst: Expr): Stmt {
+        return when {
+            all.accept(TK.INPUT) -> {
+                val tk = all.tk0 as Tk.Key
+                all.accept_err(TK.XID)
+                val lib = (all.tk0 as Tk.Id)
+                val arg = this.expr()
+                all.accept_err(TK.CHAR, ':')
+                val tp = this.type()
+                Stmt.Input(tk, tp, dst, lib, arg)
+            }
+            all.check(TK.SPAWN) -> {
+                val s = this.stmt()
+                All_assert_tk(s.tk, s is Stmt.SSpawn) { "unexpected dynamic `spawn`" }
+                val ss = s as Stmt.SSpawn
+                Stmt.SSpawn(ss.tk_, dst, ss.call)
+            }
+            else -> {
+                val src = this.expr()
+                Stmt.Set(tk0, dst, src)
+            }
+        }
+    }
+
     open fun stmt (): Stmt {
         return when {
             all.accept(TK.VAR) -> {
@@ -231,34 +255,13 @@ open class Parser
                 val tk_id = all.tk0 as Tk.Id
                 all.accept_err(TK.CHAR, ':')
                 val tp = this.type()
-                Stmt.Var(tk_id, tp)
+                Stmt.Var(tk_id, tp, null)
             }
             all.accept(TK.SET) -> {
                 val dst = this.attr().toExpr()
                 all.accept_err(TK.CHAR, '=')
                 val tk0 = all.tk0 as Tk.Chr
-                when {
-                    all.check(TK.INPUT) -> {
-                        all.accept(TK.INPUT)
-                        val tk = all.tk0 as Tk.Key
-                        all.accept_err(TK.XID)
-                        val lib = (all.tk0 as Tk.Id)
-                        val arg = this.expr()
-                        all.accept_err(TK.CHAR, ':')
-                        val tp = this.type()
-                        Stmt.Input(tk, tp, dst, lib, arg)
-                    }
-                    all.check(TK.SPAWN) -> {
-                        val s = this.stmt()
-                        All_assert_tk(s.tk, s is Stmt.SSpawn) { "unexpected dynamic `spawn`" }
-                        val ss = s as Stmt.SSpawn
-                        Stmt.SSpawn(ss.tk_, dst, ss.call)
-                    }
-                    else -> {
-                        val src = this.expr()
-                        Stmt.Set(tk0, dst, src)
-                    }
-                }
+                this.set_tail(tk0, dst)
             }
             all.accept(TK.INPUT) -> {
                 val tk = all.tk0 as Tk.Key

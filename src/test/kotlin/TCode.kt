@@ -43,7 +43,8 @@ class TCode {
         e.wenv =
             Stmt.Var (
                 Tk.Id(TK.XID,1,1,"xxx"),
-                Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
+                Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int")),
+                null
             )
         e.wtype = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
         code_fe(e)
@@ -55,7 +56,8 @@ class TCode {
         e.wenv =
             Stmt.Var (
                 Tk.Id(TK.XID,1,1,"xxx"),
-                Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
+                Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int")),
+                null
             )
         e.wtype = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
         code_fe(e)
@@ -87,7 +89,8 @@ class TCode {
         e.tup.wenv =
             Stmt.Var (
                 Tk.Id(TK.XID,1,1,"x"),
-                Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), listOf(Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))))
+                Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), listOf(Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int")))),
+                null
             )
         e.wtype = Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))
         e.tup.wtype = Type.Tuple(Tk.Chr(TK.CHAR,1,1,'('), listOf(Type.Nat(Tk.Nat(TK.XNAT,1,1,null,"int"))))
