@@ -94,31 +94,31 @@ fun TK.toErr (chr: Char?): String {
 object Lexer {
     fun blanks() {
         while (true) {
-            val (c1, x1) = alls.first().read()
+            val (c1, x1) = all().read()
             when (x1) {
                 '\n', ' ' -> {
                 }                // ignore line/space
                 '-' -> {
-                    val (c2, x2) = alls.first().read()
+                    val (c2, x2) = all().read()
                     if (x2 == '-') {            // ignore comments
                         while (true) {
-                            val (c3, x3) = alls.first().read()
+                            val (c3, x3) = all().read()
                             if (c3 == -1) {     // EOF stops comment
                                 break
                             }
                             if (x3 == '\n') {   // LN stops comment
-                                alls.first().unread(c3)
+                                all().unread(c3)
                                 break
                             }
                         }
                     } else {
-                        alls.first().unread(c2)
-                        alls.first().unread(c1)
+                        all().unread(c2)
+                        all().unread(c1)
                         return
                     }
                 }
                 else -> {
-                    alls.first().unread(c1)
+                    all().unread(c1)
                     return
                 }
             }
@@ -126,45 +126,45 @@ object Lexer {
     }
 
     fun lincol (): Boolean {
-        var (c1,x1) = alls.first().read()
+        var (c1,x1) = all().read()
         if (x1 != '^') {
-            alls.first().unread(c1)
+            all().unread(c1)
             return false
         }
-        x1 = alls.first().read().second
+        x1 = all().read().second
         when (x1) {
             '[' -> {
-                x1 = alls.first().read().second
+                x1 = all().read().second
                 if (x1 == ']') {
-                    alls.first().stack.removeFirst()
+                    all().stack.removeFirst()
                 } else if (x1.isDigit()) {
                     fun digits (): Int {
                         assert(x1.isDigit())
                         var pay = ""
                         do {
                             pay += x1
-                            alls.first().read().let { c1 = it.first; x1 = it.second }
+                            all().read().let { c1 = it.first; x1 = it.second }
                         } while (x1.isDigit())
-                        alls.first().unread(c1)
+                        all().unread(c1)
                         return pay.toInt()
                     }
 
                     val lin = digits()
-                    x1 = alls.first().read().second
+                    x1 = all().read().second
                     if (x1 != ',')  TODO()
-                    x1 = alls.first().read().second
+                    x1 = all().read().second
                     if (!x1.isDigit()) TODO()
                     val col = digits()
-                    x1 = alls.first().read().second
+                    x1 = all().read().second
                     if (x1 != ']') TODO()
-                    alls.first().stack.addFirst(Pair(lin, col))
+                    all().stack.addFirst(Pair(lin, col))
                 }
             }
             '"' -> {
                 var file = ""
-                val (lin,col) = alls.first().let { Pair(it.lin,it.col) }
+                val (lin,col) = all().let { Pair(it.lin,it.col) }
                 while (true) {
-                    x1 = alls.first().read().second
+                    x1 = all().read().second
                     if (x1 == '"') {
                         break
                     }
@@ -172,7 +172,7 @@ object Lexer {
                 }
                 assert(x1 == '"')
                 val f = File(file)
-                All_assert_tk(alls.first().let{Tk.Err(TK.ERR,lin,col,"")}, f.exists()) {
+                All_assert_tk(all().let{Tk.Err(TK.ERR,lin,col,"")}, f.exists()) {
                     "file not found : $file"
                 }
                 alls.addFirst(All(file, PushbackReader(StringReader(f.readText()), 2)))
@@ -183,61 +183,61 @@ object Lexer {
     }
 
     fun token () {
-        val LIN = alls.first().lin
-        val COL = alls.first().col
+        val LIN = all().lin
+        val COL = all().col
 
         fun lin (): Int {
-            return if (alls.first().stack.isEmpty()) LIN else alls.first().stack.first().first
+            return if (all().stack.isEmpty()) LIN else all().stack.first().first
         }
         fun col (): Int {
-            return if (alls.first().stack.isEmpty()) COL else alls.first().stack.first().second
+            return if (all().stack.isEmpty()) COL else all().stack.first().second
         }
 
-        var (c1, x1) = alls.first().read()
+        var (c1, x1) = all().read()
 
         when {
-            (c1 == -1) -> alls.first().tk1 = Tk.Sym(TK.EOF, lin(), col(), "")
+            (c1 == -1) -> all().tk1 = Tk.Sym(TK.EOF, lin(), col(), "")
             (x1 in listOf(')', '{', '}', '[', ']', '<', '>', ';', '=', ',', '\\', '/', '.', '!', '?')) -> {
-                alls.first().tk1 = Tk.Chr(TK.CHAR, lin(), col(), x1)
+                all().tk1 = Tk.Chr(TK.CHAR, lin(), col(), x1)
             }
             (x1 == ':') -> {
-                val (c2, x2) = alls.first().read()
+                val (c2, x2) = all().read()
                 if (x2=='-' || x2=='+') {
-                    alls.first().tk1 = Tk.Sym(TK.XAS, lin(), col(), ""+x1+x2)
+                    all().tk1 = Tk.Sym(TK.XAS, lin(), col(), ""+x1+x2)
 
                 } else {
-                    alls.first().tk1 = Tk.Chr(TK.CHAR, lin(), col(), ':')
-                    alls.first().unread(c2)
+                    all().tk1 = Tk.Chr(TK.CHAR, lin(), col(), ':')
+                    all().unread(c2)
                 }
             }
             (x1 == '(') -> {
-                val (c2, x2) = alls.first().read()
+                val (c2, x2) = all().read()
                 if (x2 == ')') {
-                    alls.first().tk1 = Tk.Sym(TK.UNIT, lin(), col(), "()")
+                    all().tk1 = Tk.Sym(TK.UNIT, lin(), col(), "()")
                 } else {
-                    alls.first().tk1 = Tk.Chr(TK.CHAR, lin(), col(), x1)
-                    alls.first().unread(c2)
+                    all().tk1 = Tk.Chr(TK.CHAR, lin(), col(), x1)
+                    all().unread(c2)
                 }
             }
             (x1 == '-') -> {
-                val (_, x2) = alls.first().read()
+                val (_, x2) = all().read()
                 if (x2 == '>') {
-                    alls.first().tk1 = Tk.Sym(TK.ARROW, lin(), col(), "->")
+                    all().tk1 = Tk.Sym(TK.ARROW, lin(), col(), "->")
                 } else {
-                    alls.first().tk1 = Tk.Err(TK.ERR, lin(), col(), "" + x1 + x2)
+                    all().tk1 = Tk.Err(TK.ERR, lin(), col(), "" + x1 + x2)
                 }
             }
             (x1 == '@') -> {
-                alls.first().read().let { c1 = it.first; x1 = it.second }
+                all().read().let { c1 = it.first; x1 = it.second }
                 if (x1 == '[') {
-                    alls.first().tk1 = Tk.Sym(TK.ATBRACK, lin(), col(), "@[")
+                    all().tk1 = Tk.Sym(TK.ATBRACK, lin(), col(), "@[")
                 } else {
-                    alls.first().unread(c1)
-                    alls.first().tk1 = Tk.Chr(TK.CHAR, lin(), col(), '@')
+                    all().unread(c1)
+                    all().tk1 = Tk.Chr(TK.CHAR, lin(), col(), '@')
                 }
             }
             (x1 == '_') -> {
-                var (c2, x2) = alls.first().read()
+                var (c2, x2) = all().read()
                 var pay = ""
 
                 var open: Char? = null
@@ -247,12 +247,12 @@ object Lexer {
                     open = x2
                     close = if (x2 == '(') ')' else '}'
                     open_close += 1
-                    alls.first().read().let { c2 = it.first; x2 = it.second }
+                    all().read().let { c2 = it.first; x2 = it.second }
                 }
 
                 while ((close != null || x2.isLetterOrDigit() || x2 == '_')) {
                     if (c2 == -1) {
-                        alls.first().tk1 = Tk.Err(TK.ERR, lin(), col(), "unterminated token")
+                        all().tk1 = Tk.Err(TK.ERR, lin(), col(), "unterminated token")
                         return
                     }
                     if (x2 == open) {
@@ -264,12 +264,12 @@ object Lexer {
                         }
                     }
                     pay += x2
-                    alls.first().read().let { c2 = it.first; x2 = it.second }
+                    all().read().let { c2 = it.first; x2 = it.second }
                 }
                 if (close == null) {
-                    alls.first().unread(c2)
+                    all().unread(c2)
                 }
-                alls.first().tk1 = Tk.Nat(TK.XNAT, lin(), col(), open, pay)
+                all().tk1 = Tk.Nat(TK.XNAT, lin(), col(), open, pay)
             }
             x1.isDigit() -> {
                 fun digits (): Int {
@@ -277,33 +277,33 @@ object Lexer {
                     var pay = ""
                     do {
                         pay += x1
-                        alls.first().read().let { c1 = it.first; x1 = it.second }
+                        all().read().let { c1 = it.first; x1 = it.second }
                     } while (x1.isDigit())
-                    alls.first().unread(c1)
+                    all().unread(c1)
                     return pay.toInt()
                 }
 
                 var num = digits()
                 if (!x1.isLetter()) {
-                    alls.first().tk1 = Tk.Num(TK.XNUM, lin(), col(), num)
+                    all().tk1 = Tk.Num(TK.XNUM, lin(), col(), num)
                 } else {
                     fun letters(): String {
                         assert(x1.isLetter())
                         var pay = ""
                         do {
                             pay += x1
-                            alls.first().read().let { c1 = it.first; x1 = it.second }
+                            all().read().let { c1 = it.first; x1 = it.second }
                         } while (x1.isLetter())
-                        alls.first().unread(c1)
+                        all().unread(c1)
                         return pay
                     }
 
                     var ms = 0
                     while (true) {
-                        alls.first().read().let { c1 = it.first; x1 = it.second }
+                        all().read().let { c1 = it.first; x1 = it.second }
                         if (!x1.isLetter()) {
-                            alls.first().unread(c1)
-                            alls.first().tk1 = Tk.Err(TK.ERR, lin(), col(), "invalid time constant")
+                            all().unread(c1)
+                            all().tk1 = Tk.Err(TK.ERR, lin(), col(), "invalid time constant")
                             break
                         }
                         val unit = letters()
@@ -313,14 +313,14 @@ object Lexer {
                             "min" -> num * 1000 * 60
                             "h" -> num * 1000 * 60 * 60
                             else -> {
-                                alls.first().tk1 = Tk.Err(TK.ERR, lin(), col(), "invalid time constant")
+                                all().tk1 = Tk.Err(TK.ERR, lin(), col(), "invalid time constant")
                                 break
                             }
                         }
-                        alls.first().read().let { c1 = it.first; x1 = it.second }
+                        all().read().let { c1 = it.first; x1 = it.second }
                         if (!x1.isDigit()) {
-                            alls.first().unread(c1)
-                            alls.first().tk1 = Tk.Clk(TK.XCLK, lin(), col(), ms)
+                            all().unread(c1)
+                            all().tk1 = Tk.Clk(TK.XCLK, lin(), col(), ms)
                             break
                         }
                         num = digits()
@@ -331,11 +331,11 @@ object Lexer {
                 var pay = ""
                 do {
                     pay += x1
-                    alls.first().read().let { c1 = it.first; x1 = it.second }
+                    all().read().let { c1 = it.first; x1 = it.second }
                 } while (x1.isLetterOrDigit() || x1 == '_')
-                alls.first().unread(c1)
+                all().unread(c1)
 
-                alls.first().tk1 = key2tk[pay].let {
+                all().tk1 = key2tk[pay].let {
                     if (it != null) {
                         Tk.Key(it, lin(), col(), pay)
                     } else {
@@ -344,16 +344,16 @@ object Lexer {
                 }
             }
             else -> {
-                alls.first().tk1 = Tk.Err(TK.ERR, lin(), col(), x1.toString())
+                all().tk1 = Tk.Err(TK.ERR, lin(), col(), x1.toString())
             }
         }
     }
 
     fun lex () {
-        alls.first().tk0 = alls.first().tk1
+        all().tk0 = all().tk1
         blanks(); while (lincol()) { blanks() }
         token()
-        while (alls.first().tk1.enu == TK.EOF) {
+        while (all().tk1.enu == TK.EOF) {
             if (alls.size == 1) {
                 break
             } else {

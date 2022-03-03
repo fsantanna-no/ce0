@@ -15,6 +15,10 @@ val VALGRIND = ""
 
 var alls: ArrayDeque<All> = ArrayDeque()
 
+fun all (): All {
+    return alls.first()
+}
+
 data class All (
     val file:  String?,
     val inp:   PushbackReader,
@@ -31,10 +35,10 @@ fun All_restart (file: String?, inp: PushbackReader) {
 }
 
 fun All_nest (file: String?, src: String): All {
-    val old = alls.first()
+    val old = all()
     All_restart(file, PushbackReader(StringReader(src), 2))
-    alls.first().lin = old.lin
-    alls.first().col = 1
+    all().lin = old.lin
+    all().col = 1
     Lexer.lex()
     return old
 }
