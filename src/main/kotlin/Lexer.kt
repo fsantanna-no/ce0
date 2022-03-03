@@ -128,31 +128,36 @@ object Lexer {
             return false
         }
         x1 = all.read().second
-        if (x1 != '[') TODO()
-        x1 = all.read().second
-        if (x1 == ']') {
-            all.stack.removeFirst()
-        } else if (x1.isDigit()) {
-            fun digits (): Int {
-                assert(x1.isDigit())
-                var pay = ""
-                do {
-                    pay += x1
-                    all.read().let { c1 = it.first; x1 = it.second }
-                } while (x1.isDigit())
-                all.unread(c1)
-                return pay.toInt()
-            }
+        when (x1) {
+            '[' -> {
+                x1 = all.read().second
+                if (x1 == ']') {
+                    all.stack.removeFirst()
+                } else if (x1.isDigit()) {
+                    fun digits (): Int {
+                        assert(x1.isDigit())
+                        var pay = ""
+                        do {
+                            pay += x1
+                            all.read().let { c1 = it.first; x1 = it.second }
+                        } while (x1.isDigit())
+                        all.unread(c1)
+                        return pay.toInt()
+                    }
 
-            val lin = digits()
-            x1 = all.read().second
-            if (x1 != ',')  TODO()
-            x1 = all.read().second
-            if (!x1.isDigit()) TODO()
-            val col = digits()
-            x1 = all.read().second
-            if (x1 != ']') TODO()
-            all.stack.addFirst(Pair(lin, col))
+                    val lin = digits()
+                    x1 = all.read().second
+                    if (x1 != ',')  TODO()
+                    x1 = all.read().second
+                    if (!x1.isDigit()) TODO()
+                    val col = digits()
+                    x1 = all.read().second
+                    if (x1 != ']') TODO()
+                    all.stack.addFirst(Pair(lin, col))
+                }
+            }
+            '"' -> TODO()
+            else -> TODO()
         }
         return true
     }
