@@ -84,12 +84,12 @@ fun code_ft (tp: Type) {
                             }
                         };
                     };
-                    union {
+                    struct {
                         ${tp.inp.pos()} arg;
                         $Event evt;
+                        ${tp.pub.let { if (it == null) "" else it.pos() + " pub;" }}
+                        ${tp.out.pos()} ret;
                     };
-                    ${tp.pub.let { if (it == null) "" else it.pos() + " pub;" }}
-                    ${tp.out.pos()} ret;
                 } ${tp.toce()};
                 
                 typedef union {

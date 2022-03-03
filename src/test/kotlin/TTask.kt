@@ -177,6 +177,21 @@ class TTask {
         assert(out == "\"hello\"\n10\n20\n") { out }
     }
     @Test
+    fun a05_args2 () {
+        val out = all("""
+            type Event = <(),_uint64_t,_int>
+            var f : task @[]->_int->()->_int
+            set f = task @[]->_int->()->_int {
+                await evt?3
+                output std arg
+            }
+            var x : active task @[]->_int->()->_int
+            set x = spawn f _10:_int
+            emit @GLOBAL <.3 _20:_int>:<(),_uint64_t,_int>:+ Event
+        """.trimIndent())
+        assert(out == "10\n") { out }
+    }
+    @Test
     fun a06_par_err () {
         val out = all("""
             var build : func @[] -> () -> task @[]->()->()->()
