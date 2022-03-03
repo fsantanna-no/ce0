@@ -31,7 +31,7 @@ fun All_nest (src: String): All {
     val old = all
     All_new(PushbackReader(StringReader(src), 2))
     all.lin = old.lin
-    all.col = old.col
+    all.col = 1
     Lexer.lex()
     return old
 }

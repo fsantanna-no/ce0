@@ -191,4 +191,14 @@ class TLexer {
         println(all.tk1)
         assert(all.tk1 is Tk.Clk && (all.tk1 as Tk.Clk).ms==3902020)
     }
+
+    // LIN / COL
+
+    @Test
+    fun e01_lincol () {
+        All_new(PushbackReader(StringReader("c1 ^[5,10]\na\n^[]\n b"), 2))
+        Lexer.lex() ; assert(all.tk1.lin==1 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XID  && (all.tk1 as Tk.Id).id=="c1")
+        Lexer.lex() ; println(all.tk1); assert(all.tk1.lin==5 && all.tk1.col==10) ; assert(all.tk1.enu==TK.XID  && (all.tk1 as Tk.Id).id=="a")
+        Lexer.lex() ; assert(all.tk1.lin==4 && all.tk1.col==2) ; assert(all.tk1.enu==TK.XID  && (all.tk1 as Tk.Id).id=="b")
+    }
 }
