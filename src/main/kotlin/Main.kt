@@ -6,7 +6,7 @@ fun ce2c (file: String?, ce: String): Pair<Boolean,String> {
     //TYPEX.clear()
     EXPR_WTYPE = true
     //N = 1
-    All_new(file, PushbackReader(StringReader(ce), 2))
+    All_restart(file, PushbackReader(StringReader(ce), 2))
     Lexer.lex()
     try {
         val s = Parser().stmts()

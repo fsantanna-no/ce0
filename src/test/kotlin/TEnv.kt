@@ -1,4 +1,3 @@
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
@@ -9,7 +8,7 @@ import java.io.StringReader
 class TEnv {
 
     fun inp2env (inp: String): String {
-        All_new(null, PushbackReader(StringReader(inp), 2))
+        All_restart(null, PushbackReader(StringReader(inp), 2))
         Lexer.lex()
         try {
             val s = Parser().stmts()

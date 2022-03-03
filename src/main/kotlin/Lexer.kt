@@ -1,3 +1,7 @@
+import java.io.File
+import java.io.PushbackReader
+import java.io.StringReader
+
 val D = "\$"
 
 sealed class Tk (
@@ -156,7 +160,22 @@ object Lexer {
                     alls.first().stack.addFirst(Pair(lin, col))
                 }
             }
-            '"' -> TODO()
+            '"' -> {
+                var file = ""
+                while (true) {
+                    x1 = alls.first().read().second
+                    if (x1 == '"') {
+                        break
+                    }
+                    file += x1
+                }
+                assert(x1 == '"')
+                val f = File(file)
+                All_assert_tk(alls.first().tk1, f.exists()) {
+                    "file not found : $file"
+                }
+                alls.addFirst(All(file, PushbackReader(StringReader(f.readText()), 2)))
+            }
             else -> TODO()
         }
         return true
@@ -329,12 +348,22 @@ object Lexer {
         }
     }
 
-    fun lex() {
+    fun lex () {
         alls.first().tk0 = alls.first().tk1
         blanks()
         while (lincol()) blanks()
-        token()
-        blanks()
-        while (lincol()) blanks()
+        while (true) {
+            token()
+            blanks()
+            while (lincol()) blanks()
+            when {
+                (alls.first().tk1.enu != TK.EOF) -> break
+                (alls.size == 1) -> break
+                else -> {
+                    assert(alls.size > 1)
+                    alls.removeFirst()
+                }
+            }
+        }
     }
 }

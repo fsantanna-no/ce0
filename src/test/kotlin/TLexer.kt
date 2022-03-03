@@ -36,7 +36,7 @@ class TLexer {
     @Test
     fun b01_lexer_blanks () {
         val inp = PushbackReader(StringReader("-- foobar"),2)
-        alls.addFirst(All(null, inp, Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,"")))
+        alls.addFirst(All(null, inp))
         Lexer.blanks()
         assert(inp.read() == 65535)     // for some reason, it returns this value after reading -1
         assert(inp.read() == -1)        // then, it returns -1 correctly
@@ -47,7 +47,7 @@ class TLexer {
     @Test
     fun b02_lexer_blanks () {
         val inp = PushbackReader(StringReader("-- c1\n--c2\n\n"), 2)
-        alls.addFirst(All(null, inp, Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,"")))
+        alls.addFirst(All(null, inp))
         Lexer.blanks()
         assert(alls.first().lin == 4)
         assert(alls.first().col == 1)
@@ -57,7 +57,7 @@ class TLexer {
 
     @Test
     fun b03_lexer_syms () {
-        All_new(null, PushbackReader(StringReader("{ -> , ()"), 2))
+        All_restart(null, PushbackReader(StringReader("{ -> , ()"), 2))
         Lexer.lex() ; assert(alls.first().tk1.enu==TK.CHAR && (alls.first().tk1 as Tk.Chr).chr=='{')
         Lexer.lex() ; assert(alls.first().tk1.enu==TK.ARROW)
         Lexer.lex() ; assert(alls.first().tk1.enu==TK.CHAR && (alls.first().tk1 as Tk.Chr).chr==',')
@@ -66,7 +66,7 @@ class TLexer {
     }
     @Test
     fun b04_lexer_syms () {
-        All_new(null, PushbackReader(StringReader(": }{ :"), 2))
+        All_restart(null, PushbackReader(StringReader(": }{ :"), 2))
         Lexer.lex() ; assert(alls.first().tk1.enu==TK.CHAR && (alls.first().tk1 as Tk.Chr).chr==':')
         Lexer.lex() ; assert(alls.first().tk1.enu==TK.CHAR && (alls.first().tk1 as Tk.Chr).chr=='}')
         Lexer.lex() ; assert(alls.first().tk1.enu==TK.CHAR && (alls.first().tk1 as Tk.Chr).chr=='{')
@@ -77,7 +77,7 @@ class TLexer {
 
     @Test
     fun b05_lexer_keys () {
-        All_new(null, PushbackReader(StringReader("xvar var else varx type output //@rec"), 2))
+        All_restart(null, PushbackReader(StringReader("xvar var else varx type output //@rec"), 2))
         Lexer.lex() ; assert(alls.first().tk1.enu==TK.XID && (alls.first().tk1 as Tk.Id).id=="xvar")
         Lexer.lex() ; assert(alls.first().tk1.enu==TK.VAR)
         Lexer.lex() ; assert(alls.first().tk1.enu==TK.ELSE)
@@ -91,7 +91,7 @@ class TLexer {
 
     @Test
     fun b06_lexer_xs () {
-        All_new(null, PushbackReader(StringReader("c1\nc2 c3  \n    \nc4"), 2))
+        All_restart(null, PushbackReader(StringReader("c1\nc2 c3  \n    \nc4"), 2))
         Lexer.lex() ; assert(alls.first().tk1.lin==1 && alls.first().tk1.col==1) ; assert(alls.first().tk1.enu==TK.XID && (alls.first().tk1 as Tk.Id).id=="c1")
         Lexer.lex() ; assert(alls.first().tk1.lin==2 && alls.first().tk1.col==1) ; assert(alls.first().tk1.enu==TK.XID && (alls.first().tk1 as Tk.Id).id=="c2")
         Lexer.lex() ; assert(alls.first().tk1.lin==2 && alls.first().tk1.col==4) ; assert(alls.first().tk1.enu==TK.XID && (alls.first().tk1 as Tk.Id).id=="c3")
@@ -99,7 +99,7 @@ class TLexer {
     }
     @Test
     fun b07_lexer_xs () {
-        All_new(null, PushbackReader(StringReader("c1 a"), 2))
+        All_restart(null, PushbackReader(StringReader("c1 a"), 2))
         Lexer.lex() ; assert(alls.first().tk1.lin==1 && alls.first().tk1.col==1) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="c1")
         Lexer.lex() ; assert(alls.first().tk1.lin==1 && alls.first().tk1.col==4) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="a")
     }
@@ -108,13 +108,13 @@ class TLexer {
 
     @Test
     fun b07_lexer_xnat () {
-        All_new(null, PushbackReader(StringReader("_char _Tp"), 2))
+        All_restart(null, PushbackReader(StringReader("_char _Tp"), 2))
         Lexer.lex() ; assert(alls.first().tk1.enu==TK.XNAT && (alls.first().tk1 as Tk.Nat).src=="char")
         Lexer.lex() ; assert(alls.first().tk1.enu==TK.XNAT && (alls.first().tk1 as Tk.Nat).src=="Tp")
     }
     @Test
     fun b08_lexer_xnat () {
-        All_new(null, PushbackReader(StringReader("_{(1)} _(2+2)"), 2))
+        All_restart(null, PushbackReader(StringReader("_{(1)} _(2+2)"), 2))
         Lexer.lex() ; assert(alls.first().tk1.enu==TK.XNAT && (alls.first().tk1 as Tk.Nat).src=="(1)")
         Lexer.lex() ; assert(alls.first().tk1.enu==TK.XNAT && (alls.first().tk1 as Tk.Nat).src=="2+2")
     }
@@ -123,13 +123,13 @@ class TLexer {
 
     @Test
     fun b09_lexer_xnum () {
-        All_new(null, PushbackReader(StringReader(".a"), 2))
+        All_restart(null, PushbackReader(StringReader(".a"), 2))
         Lexer.lex() ; assert(alls.first().tk1.enu==TK.CHAR && (alls.first().tk1 as Tk.Chr).chr== '.')
         //Lexer.lex() ; assert(alls.first().tk1.enu==TK.ERR && (alls.first().tk1 as Tk.Err).err=="a")
     }
     @Test
     fun b10_lexer_xnum () {
-        All_new(null, PushbackReader(StringReader(".10"), 2))
+        All_restart(null, PushbackReader(StringReader(".10"), 2))
         Lexer.lex() ; Lexer.lex()
         assert(alls.first().tk1.enu==TK.XNUM && (alls.first().tk1 as Tk.Num).num==10)
     }
@@ -138,24 +138,24 @@ class TLexer {
 
     @Test
     fun c01_scope () {
-        All_new(null, PushbackReader(StringReader("GLOBAL"), 2))
+        All_restart(null, PushbackReader(StringReader("GLOBAL"), 2))
         Lexer.lex() ; assert(alls.first().tk1.isscopecst() && (alls.first().tk1.asscopecst()).id=="GLOBAL")
     }
     @Test
     fun c02_scope () {
-        All_new(null, PushbackReader(StringReader("i1"), 2))
+        All_restart(null, PushbackReader(StringReader("i1"), 2))
         Lexer.lex()
         //assert(alls.first().tk1.enu==TK.ERR && (alls.first().tk1 as Tk.Err).err=="@")
         assert(alls.first().tk1.isscopepar() && (alls.first().tk1.asscopepar().id=="i1"))
     }
     @Test
     fun c03_scope () {
-        All_new(null, PushbackReader(StringReader("x11"), 2))
+        All_restart(null, PushbackReader(StringReader("x11"), 2))
         Lexer.lex() ; assert(alls.first().tk1.isscopepar() && (alls.first().tk1.asscopepar().id=="x11"))
     }
     @Test
     fun c04_scope () {
-        All_new(null, PushbackReader(StringReader("@[]"), 2))
+        All_restart(null, PushbackReader(StringReader("@[]"), 2))
         Lexer.lex()
         //println(alls.first().tk1)
         //assert(alls.first().tk1.enu==TK.XSCPCST && (alls.first().tk1 as Tk.Scp1).lbl=="" && (alls.first().tk1 as Tk.Scp1).num==null)
@@ -167,26 +167,26 @@ class TLexer {
 
     @Test
     fun d01_clk () {
-        All_new(null, PushbackReader(StringReader("1s"), 2))
+        All_restart(null, PushbackReader(StringReader("1s"), 2))
         Lexer.lex()
         println(alls.first().tk1)
         assert(alls.first().tk1.enu==TK.XCLK && (alls.first().tk1 as Tk.Clk).ms==1000)
     }
     @Test
     fun d02_clk () {
-        All_new(null, PushbackReader(StringReader("1ss"), 2))
+        All_restart(null, PushbackReader(StringReader("1ss"), 2))
         Lexer.lex()
         assert(alls.first().tk1.enu==TK.ERR && (alls.first().tk1 as Tk.Err).err=="invalid time constant")
     }
     @Test
     fun d03_clk () {
-        All_new(null, PushbackReader(StringReader("1s1"), 2))
+        All_restart(null, PushbackReader(StringReader("1s1"), 2))
         Lexer.lex()
         assert(alls.first().tk1.enu==TK.ERR && (alls.first().tk1 as Tk.Err).err=="invalid time constant")
     }
     @Test
     fun d04_clk () {
-        All_new(null, PushbackReader(StringReader("1h5min2s20ms"), 2))
+        All_restart(null, PushbackReader(StringReader("1h5min2s20ms"), 2))
         Lexer.lex()
         println(alls.first().tk1)
         assert(alls.first().tk1 is Tk.Clk && (alls.first().tk1 as Tk.Clk).ms==3902020)
@@ -196,14 +196,14 @@ class TLexer {
 
     @Test
     fun e01_lincol () {
-        All_new(null, PushbackReader(StringReader("c1 ^[5,10]\na\n^[]\n b"), 2))
+        All_restart(null, PushbackReader(StringReader("c1 ^[5,10]\na\n^[]\n b"), 2))
         Lexer.lex() ; assert(alls.first().tk1.lin==1 && alls.first().tk1.col==1) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="c1")
         Lexer.lex() ; println(alls.first().tk1); assert(alls.first().tk1.lin==5 && alls.first().tk1.col==10) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="a")
         Lexer.lex() ; assert(alls.first().tk1.lin==4 && alls.first().tk1.col==2) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="b")
     }
     @Test
     fun e02_lincol () {
-        All_new(null, PushbackReader(StringReader("c1 ^[5,10]\na\n^\"x.ce\"\n^[]\n b"), 2))
+        All_restart(null, PushbackReader(StringReader("c1 ^[5,10]\na\n^\"x.ce\"\n^[]\n b"), 2))
         Lexer.lex() ; assert(alls.first().tk1.lin==1 && alls.first().tk1.col==1) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="c1")
         Lexer.lex() ; println(alls.first().tk1); assert(alls.first().tk1.lin==5 && alls.first().tk1.col==10) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="a")
         Lexer.lex() ; assert(alls.first().tk1.lin==4 && alls.first().tk1.col==2) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="b")

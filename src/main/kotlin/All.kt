@@ -18,20 +18,21 @@ var alls: ArrayDeque<All> = ArrayDeque()
 data class All (
     val file:  String?,
     val inp:   PushbackReader,
-    var tk0:   Tk,
-    var tk1:   Tk,
+    var tk0:   Tk = Tk.Err(TK.ERR,1,1,""),
+    var tk1:   Tk = Tk.Err(TK.ERR,1,1,""),
     var lin:   Int = 1,
     var col:   Int = 1,
     val stack: ArrayDeque<Pair<Int,Int>> = ArrayDeque()
 )
 
-fun All_new (file: String?, inp: PushbackReader) {
-    alls.addFirst(All(file, inp, Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,"")))
+fun All_restart (file: String?, inp: PushbackReader) {
+    alls.clear()
+    alls.addFirst(All(file, inp))
 }
 
 fun All_nest (file: String?, src: String): All {
     val old = alls.first()
-    All_new(file, PushbackReader(StringReader(src), 2))
+    All_restart(file, PushbackReader(StringReader(src), 2))
     alls.first().lin = old.lin
     alls.first().col = 1
     Lexer.lex()
