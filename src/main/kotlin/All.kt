@@ -34,13 +34,16 @@ fun All_restart (file: String?, inp: PushbackReader) {
     alls.addFirst(All(file, inp))
 }
 
-fun All_nest (file: String?, src: String): All {
-    val old = all()
-    All_restart(file, PushbackReader(StringReader(src), 2))
+fun All_nest (src: String, f: ()->Any): Any {
+    val old = alls.removeFirst()
+    alls.addFirst(All(old.file,PushbackReader(StringReader(src),2)))
     all().lin = old.lin
     all().col = 1
     Lexer.lex()
-    return old
+    val ret = f()
+    alls.removeFirst()
+    alls.addFirst(old)
+    return ret
 }
 
 fun All.read (): Pair<Int,Char> {
