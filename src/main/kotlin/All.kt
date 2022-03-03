@@ -13,12 +13,7 @@ var LINES = false
 val VALGRIND = ""
 //val VALGRIND = "valgrind "
 
-var all: All = All (
-    null,
-    PushbackReader(StringReader(""), 2),
-    Tk.Err(TK.ERR,1,1,""),
-    Tk.Err(TK.ERR,1,1,"")
-)
+var alls: ArrayDeque<All> = ArrayDeque()
 
 data class All (
     val file:  String?,
@@ -31,14 +26,14 @@ data class All (
 )
 
 fun All_new (file: String?, inp: PushbackReader) {
-    all = All(file, inp, Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,""))
+    alls.addFirst(All(file, inp, Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,"")))
 }
 
 fun All_nest (file: String?, src: String): All {
-    val old = all
+    val old = alls.first()
     All_new(file, PushbackReader(StringReader(src), 2))
-    all.lin = old.lin
-    all.col = 1
+    alls.first().lin = old.lin
+    alls.first().col = 1
     Lexer.lex()
     return old
 }

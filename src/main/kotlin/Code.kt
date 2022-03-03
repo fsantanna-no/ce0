@@ -894,7 +894,7 @@ fun Stmt.code (): String {
         struct Task;
         
         // When a block K terminates, it traverses the stack and sets to NULL
-        // all matching blocks K in the stack.
+        // alls.first() matching blocks K in the stack.
         // All call/spawn/awake/emit operations need to test if its enclosing
         // block is still alive before continuing.
         typedef struct Stack {
