@@ -10,7 +10,7 @@ import java.io.StringReader
 class TDisabled {
 
     fun inp2env (inp: String): String {
-        All_new(PushbackReader(StringReader(inp), 2))
+        All_new(null, PushbackReader(StringReader(inp), 2))
         Lexer.lex()
         try {
             val s = Parser().stmts()
@@ -35,7 +35,7 @@ class TDisabled {
 
     @Test
     fun a11_parser_type_issupof () {
-        All_new(PushbackReader(StringReader("<(),<(),^^>>"), 2))
+        All_new(null, PushbackReader(StringReader("<(),<(),^^>>"), 2))
         Lexer.lex()
         val tp1 = Parser().type()
         tp1.visit({ it.wup = Any() }, null)
@@ -585,14 +585,14 @@ class TDisabled {
 
     @Test
     fun noclo_d01_type_task () {
-        All_new(PushbackReader(StringReader("task @LOCAL->@[]->()->()->() {}"), 2))
+        All_new(null, PushbackReader(StringReader("task @LOCAL->@[]->()->()->() {}"), 2))
         Lexer.lex()
         val tp = Parser().type()
         assert(tp is Type.Func && tp.tk.enu==TK.TASK)
     }
     @Test
     fun noclo_d09_tasks () { // task @LOCAL->@[]->()->()->() {}
-        All_new(PushbackReader(StringReader("active tasks @[]->()->()->()"), 2))
+        All_new(null, PushbackReader(StringReader("active tasks @[]->()->()->()"), 2))
         Lexer.lex()
         try {
             Parser().type()

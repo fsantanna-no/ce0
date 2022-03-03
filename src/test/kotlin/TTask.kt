@@ -8,7 +8,7 @@ import java.io.File
 class TTask {
 
     fun all (inp: String): String {
-        val (ok1,out1) = ce2c(inp)
+        val (ok1,out1) = ce2c(null, inp)
         if (!ok1) {
             return out1
         }

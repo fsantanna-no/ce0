@@ -43,7 +43,7 @@ fun main (args: Array<String>) {
     }
 
     val inp = File(xinp).readText()
-    val (ok1,out1) = ce2c(inp)
+    val (ok1,out1) = ce2c(xinp, inp)
     if (!ok1) {
         println(out1)
         return

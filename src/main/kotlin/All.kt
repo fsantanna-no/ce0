@@ -13,9 +13,10 @@ var LINES = false
 val VALGRIND = ""
 //val VALGRIND = "valgrind "
 
-var all: All = All(PushbackReader(StringReader(""), 2), Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,""))
+var all: All = All(null, PushbackReader(StringReader(""), 2), Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,""))
 
 data class All(
+    val file: String?,
     val inp: PushbackReader,
     var tk0: Tk,
     var tk1: Tk,
@@ -23,13 +24,13 @@ data class All(
     var col: Int = 1,
 )
 
-fun All_new (inp: PushbackReader) {
-    all = All(inp, Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,""))
+fun All_new (file: String?, inp: PushbackReader) {
+    all = All(file, inp, Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,""))
 }
 
-fun All_nest (src: String): All {
+fun All_nest (file: String?, src: String): All {
     val old = all
-    All_new(PushbackReader(StringReader(src), 2))
+    All_new(file, PushbackReader(StringReader(src), 2))
     all.lin = old.lin
     all.col = 1
     Lexer.lex()
