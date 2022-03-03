@@ -76,8 +76,7 @@ open class Parser
                     Type.Tuple(tk0, tps)
                 } else {
                     alls.accept_err(TK.CHAR, '>')
-                    val vec = tps
-                    Type.Union(tk0, vec)
+                    Type.Union(tk0, tps)
                 }
             }
             alls.accept(TK.ACTIVE) -> {

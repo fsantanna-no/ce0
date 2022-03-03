@@ -1,20 +1,21 @@
 - emit EVENT_TASK to correct scope (not GLOBAL)
   - can infer from func signature
 - bugs
-  - $x (x in other task)
   - Type.Alias.supOf (check scopes)
-- refactor XTypes to use visit
 - List @[...].1 doesnt work
 - command to kill task
 - check pause/resume types
 - ce1:
   - if/until condition
     - _int -> Bool:<(),()>
-  - await task
   - loop 1..5
   - defer
   - var [x,y] = arg   (arg is tuple)
   - option, subtyping, generics, typeclass
+  - return -> escape?
+    - cross task
+    - SetBlock
+      - var x: () = { ... escape () }
   - collections:
     - tuples
       x = [1,2,3]
@@ -28,10 +29,6 @@
       x?x, x!x
       x?[v], x![v]
 - isSupOf for Nat, make it false against others
-- return -> escape?
-  - cross task
-  - SetBlock
-    - var x: () = { ... escape () }
 - XLexer para ce1
   - only in ce0: :-/:+
   - only in ce1: 1s
@@ -44,7 +41,6 @@
 - var z = spawn h ()
   - optional in ce0?
   - optional in ce1?
-- \#line, stack debug
 - optimizations
   - use C stack for normal func
   - static alloc for clo/task that do not escape

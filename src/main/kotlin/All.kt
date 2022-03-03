@@ -126,11 +126,13 @@ fun Alls.err_expected (str: String) {
             else -> TODO(this.toString())
         }
     }
-    error("(ln ${this.tk1.lin}, col ${this.tk1.col}): expected $str : have ${this.tk1.toPay()}")
+    val file = all().file.let { if (it==null) "" else it+" : " }
+    error(file + "(ln ${this.tk1.lin}, col ${this.tk1.col}): expected $str : have ${this.tk1.toPay()}")
 }
 
 fun All_err_tk (tk: Tk, str: String): String {
-    error("(ln ${tk.lin}, col ${tk.col}): $str")
+    val file = all().file.let { if (it==null) "" else it+" : " }
+    error(file + "(ln ${tk.lin}, col ${tk.col}): $str")
 }
 
 inline fun All_assert_tk (tk: Tk, value: Boolean, lazyMessage: () -> String = {"Assertion failed"}) {
