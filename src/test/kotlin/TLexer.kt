@@ -201,4 +201,11 @@ class TLexer {
         Lexer.lex() ; println(all.tk1); assert(all.tk1.lin==5 && all.tk1.col==10) ; assert(all.tk1.enu==TK.XID  && (all.tk1 as Tk.Id).id=="a")
         Lexer.lex() ; assert(all.tk1.lin==4 && all.tk1.col==2) ; assert(all.tk1.enu==TK.XID  && (all.tk1 as Tk.Id).id=="b")
     }
+    @Test
+    fun e02_lincol () {
+        All_new(null, PushbackReader(StringReader("c1 ^[5,10]\na\n^\"x.ce\"\n^[]\n b"), 2))
+        Lexer.lex() ; assert(all.tk1.lin==1 && all.tk1.col==1) ; assert(all.tk1.enu==TK.XID  && (all.tk1 as Tk.Id).id=="c1")
+        Lexer.lex() ; println(all.tk1); assert(all.tk1.lin==5 && all.tk1.col==10) ; assert(all.tk1.enu==TK.XID  && (all.tk1 as Tk.Id).id=="a")
+        Lexer.lex() ; assert(all.tk1.lin==4 && all.tk1.col==2) ; assert(all.tk1.enu==TK.XID  && (all.tk1 as Tk.Id).id=="b")
+    }
 }

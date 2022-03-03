@@ -1,5 +1,3 @@
-val LINCOL = ArrayDeque<Pair<Int,Int>>()
-
 val D = "\$"
 
 sealed class Tk (
@@ -133,7 +131,7 @@ object Lexer {
         if (x1 != '[') TODO()
         x1 = all.read().second
         if (x1 == ']') {
-            LINCOL.removeFirst()
+            all.stack.removeFirst()
         } else if (x1.isDigit()) {
             fun digits (): Int {
                 assert(x1.isDigit())
@@ -154,7 +152,7 @@ object Lexer {
             val col = digits()
             x1 = all.read().second
             if (x1 != ']') TODO()
-            LINCOL.addFirst(Pair(lin, col))
+            all.stack.addFirst(Pair(lin, col))
         }
         return true
     }
@@ -164,10 +162,10 @@ object Lexer {
         val COL = all.col
 
         fun lin (): Int {
-            return if (LINCOL.isEmpty()) LIN else LINCOL.first().first
+            return if (all.stack.isEmpty()) LIN else all.stack.first().first
         }
         fun col (): Int {
-            return if (LINCOL.isEmpty()) COL else LINCOL.first().second
+            return if (all.stack.isEmpty()) COL else all.stack.first().second
         }
 
         var (c1, x1) = all.read()

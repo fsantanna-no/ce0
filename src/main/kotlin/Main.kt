@@ -2,8 +2,11 @@ import java.io.File
 import java.io.PushbackReader
 import java.io.StringReader
 
-fun ce2c (ce: String): Pair<Boolean,String> {
-    All_new(PushbackReader(StringReader(ce), 2))
+fun ce2c (file: String?, ce: String): Pair<Boolean,String> {
+    //TYPEX.clear()
+    EXPR_WTYPE = true
+    //N = 1
+    All_new(file, PushbackReader(StringReader(ce), 2))
     Lexer.lex()
     try {
         val s = Parser().stmts()

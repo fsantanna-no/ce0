@@ -13,15 +13,21 @@ var LINES = false
 val VALGRIND = ""
 //val VALGRIND = "valgrind "
 
-var all: All = All(null, PushbackReader(StringReader(""), 2), Tk.Err(TK.ERR,1,1,""), Tk.Err(TK.ERR,1,1,""))
+var all: All = All (
+    null,
+    PushbackReader(StringReader(""), 2),
+    Tk.Err(TK.ERR,1,1,""),
+    Tk.Err(TK.ERR,1,1,"")
+)
 
-data class All(
-    val file: String?,
-    val inp: PushbackReader,
-    var tk0: Tk,
-    var tk1: Tk,
-    var lin: Int = 1,
-    var col: Int = 1,
+data class All (
+    val file:  String?,
+    val inp:   PushbackReader,
+    var tk0:   Tk,
+    var tk1:   Tk,
+    var lin:   Int = 1,
+    var col:   Int = 1,
+    val stack: ArrayDeque<Pair<Int,Int>> = ArrayDeque()
 )
 
 fun All_new (file: String?, inp: PushbackReader) {
