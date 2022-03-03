@@ -162,6 +162,7 @@ object Lexer {
             }
             '"' -> {
                 var file = ""
+                val (lin,col) = alls.first().let { Pair(it.lin,it.col) }
                 while (true) {
                     x1 = alls.first().read().second
                     if (x1 == '"') {
@@ -171,7 +172,7 @@ object Lexer {
                 }
                 assert(x1 == '"')
                 val f = File(file)
-                All_assert_tk(alls.first().tk1, f.exists()) {
+                All_assert_tk(alls.first().let{Tk.Err(TK.ERR,lin,col,"")}, f.exists()) {
                     "file not found : $file"
                 }
                 alls.addFirst(All(file, PushbackReader(StringReader(f.readText()), 2)))
@@ -181,7 +182,7 @@ object Lexer {
         return true
     }
 
-    fun token() {
+    fun token () {
         val LIN = alls.first().lin
         val COL = alls.first().col
 
@@ -350,20 +351,18 @@ object Lexer {
 
     fun lex () {
         alls.first().tk0 = alls.first().tk1
-        blanks()
-        while (lincol()) blanks()
-        while (true) {
-            token()
-            blanks()
-            while (lincol()) blanks()
-            when {
-                (alls.first().tk1.enu != TK.EOF) -> break
-                (alls.size == 1) -> break
-                else -> {
-                    assert(alls.size > 1)
-                    alls.removeFirst()
-                }
+        blanks(); while (lincol()) { blanks() }
+        token()
+        while (alls.first().tk1.enu == TK.EOF) {
+            if (alls.size == 1) {
+                break
+            } else {
+                assert(alls.size > 1)
+                alls.removeFirst()
             }
+            blanks(); while (lincol()) { blanks() }
+            token()
         }
+        blanks()
     }
 }

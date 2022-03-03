@@ -188,7 +188,6 @@ class TLexer {
     fun d04_clk () {
         All_restart(null, PushbackReader(StringReader("1h5min2s20ms"), 2))
         Lexer.lex()
-        println(alls.first().tk1)
         assert(alls.first().tk1 is Tk.Clk && (alls.first().tk1 as Tk.Clk).ms==3902020)
     }
 
@@ -198,14 +197,25 @@ class TLexer {
     fun e01_lincol () {
         All_restart(null, PushbackReader(StringReader("c1 ^[5,10]\na\n^[]\n b"), 2))
         Lexer.lex() ; assert(alls.first().tk1.lin==1 && alls.first().tk1.col==1) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="c1")
-        Lexer.lex() ; println(alls.first().tk1); assert(alls.first().tk1.lin==5 && alls.first().tk1.col==10) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="a")
+        Lexer.lex() ; assert(alls.first().tk1.lin==5 && alls.first().tk1.col==10) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="a")
         Lexer.lex() ; assert(alls.first().tk1.lin==4 && alls.first().tk1.col==2) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="b")
     }
     @Test
     fun e02_lincol () {
-        All_restart(null, PushbackReader(StringReader("c1 ^[5,10]\na\n^\"x.ce\"\n^[]\n b"), 2))
-        Lexer.lex() ; assert(alls.first().tk1.lin==1 && alls.first().tk1.col==1) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="c1")
-        Lexer.lex() ; println(alls.first().tk1); assert(alls.first().tk1.lin==5 && alls.first().tk1.col==10) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="a")
-        Lexer.lex() ; assert(alls.first().tk1.lin==4 && alls.first().tk1.col==2) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="b")
+        try {
+            All_restart(null, PushbackReader(StringReader("c1 \na\n ^\"err.ce\"\n^[]\n b"), 2))
+            Lexer.lex(); Lexer.lex(); Lexer.lex()
+            error("bug found")
+        } catch (e: Throwable) {
+            assert(e.message!! == "(ln 3, col 4): file not found : err.ce") { e.message!! }
+        }
+    }
+    @Test
+    fun e03_lincol () {
+        All_restart(null, PushbackReader(StringReader("c1 ^[5,10]\na\n^\"test-lincol.ce\"\n^[]\n b"), 2))
+        println(alls.first().tk1); Lexer.lex() ; assert(alls.first().tk1.lin==1 && alls.first().tk1.col==1) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="c1")
+        println(alls.first().tk1); Lexer.lex() ; assert(alls.first().tk1.lin==5 && alls.first().tk1.col==10) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="a")
+        println(alls.first().tk1); Lexer.lex() ; assert(alls.first().file=="test-lincol.ce" && alls.first().tk1.lin==1 && alls.first().tk1.col==1) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="inside")
+        println(alls.first().tk1); Lexer.lex() ; assert(alls.first().tk1.lin==5 && alls.first().tk1.col==2) ; assert(alls.first().tk1.enu==TK.XID  && (alls.first().tk1 as Tk.Id).id=="b")
     }
 }
